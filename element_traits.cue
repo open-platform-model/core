@@ -13,13 +13,17 @@ package core
 // governance - governance-related (e.g., resource quota, priority, compliance)
 
 // Containers as Traits
-#Container: #ElementBase & {
-	#elements: Container: #PrimitiveTrait & {
+#ContainerElement: {
+	Container: #PrimitiveTrait & {
 		description: "Single container primitive"
 		target: ["component"]
 		labels: {"core.opm.dev/category": "workload"}
 		#schema: #ContainerSpec
 	}
+}
+
+#Container: #ElementBase & {
+	#elements: #ContainerElement
 
 	container: #ContainerSpec
 }
@@ -50,25 +54,33 @@ package core
 }
 
 // Sidecar Containers as Traits
-#SideCarContainers: #ElementBase & {
-	#elements: SideCarContainers: #PrimitiveTrait & {
+#SideCarContainersElement: {
+	SideCarContainers: #PrimitiveTrait & {
 		description: "List of sidecar containers"
 		target: ["component"]
 		labels: {"core.opm.dev/category": "workload"}
 		#schema: [#ContainerSpec]
 	}
+}
+
+#SideCarContainers: #ElementBase & {
+	#elements: #SideCarContainersElement
 
 	sideCarContainers: [#ContainerSpec]
 }
 
 // Network Scope as Trait
-#NetworkScope: #ElementBase & {
-	#elements: NetworkScope: #PrimitiveTrait & {
+#NetworkScopeElement: {
+	NetworkScope: #PrimitiveTrait & {
 		description: "Primitive scope to define a shared network boundary"
 		target: ["scope"]
 		labels: {"core.opm.dev/category": "connectivity"}
 		#schema: #NetworkScopeSpec
 	}
+}
+
+#NetworkScope: #ElementBase & {
+	#elements: #NetworkScopeElement
 
 	networkScope: #NetworkScopeSpec
 }

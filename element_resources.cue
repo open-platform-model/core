@@ -13,13 +13,18 @@ package core
 // governance - governance-related (e.g., resource quota, priority, compliance)
 
 // Volumes as Resources (claims, ephemeral, projected)
-#Volume: #ElementBase & {
-	#elements: Volume: #PrimitiveResource & {
+#VolumeElement: {
+	Volume: #PrimitiveResource & {
 		description: "A set of volume types for data storage and sharing"
 		target: ["component"]
 		labels: {"core.opm.dev/category": "data"}
 		#schema: #VolumeSpec
 	}
+}
+
+#Volume: #ElementBase & {
+	#elements: #VolumeElement
+
 	volumes: [string]: #VolumeSpec
 }
 
@@ -47,14 +52,19 @@ package core
 }
 
 // ConfigMaps as Resources
-#ConfigMap: #ElementBase & {
-	#elements: ConfigMap: #PrimitiveResource & {
+#ConfigMapElement: {
+	ConfigMap: #PrimitiveResource & {
 		name:        "ConfigMap"
 		description: "Key-value pairs for configuration data"
 		target: ["component"]
 		labels: {"core.opm.dev/category": "data"}
 		#schema: #ConfigMapSpec
 	}
+}
+
+#ConfigMap: #ElementBase & {
+	#elements: #ConfigMapElement
+
 	configMaps: [string]: #ConfigMapSpec
 }
 
@@ -63,14 +73,19 @@ package core
 }
 
 // Secrets as Resources
-#Secret: #ElementBase & {
-	#elements: Secret: #PrimitiveResource & {
+#SecretElement: {
+	Secret: #PrimitiveResource & {
 		name:        "Secret"
 		description: "Sensitive data such as passwords, tokens, or keys"
 		target: ["component"]
 		labels: {"core.opm.dev/category": "data"}
 		#schema: #SecretSpec
 	}
+}
+
+#Secret: #ElementBase & {
+	#elements: #SecretElement
+
 	secrets: [string]: #SecretSpec
 }
 
