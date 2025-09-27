@@ -1,4 +1,4 @@
-module: "opm.dev/core"
+module: "github.com/open-platform-model/core"
 language: {
 	version: "v0.14.0"
 }
