@@ -25,6 +25,7 @@ import (
 	(#RestartPolicyElement.#fullyQualifiedName):       #RestartPolicyElement
 	(#UpdateStrategyElement.#fullyQualifiedName):      #UpdateStrategyElement
 	(#ExposeElement.#fullyQualifiedName):              #ExposeElement
+	(#SimpleDatabaseElement.#fullyQualifiedName):      #SimpleDatabaseElement
 }
 
 // Containers
@@ -46,10 +47,7 @@ import (
 	name:            string
 	image:           string
 	imagePullPolicy: "Always" | "IfNotPresent" | "Never" | *"IfNotPresent"
-	ports?: [string]: {
-		containerPort: int
-		protocol?:     "TCP" | "UDP" | *"TCP"
-	}
+	ports?: [PortName=string]: #PortSpec & {name: PortName}
 	env?: [string]: {
 		name:  string
 		value: string
@@ -222,3 +220,76 @@ import (
 	// This must be a valid port number, 0 < x < 65536.
 	exposedPort?: uint & >=1 & <=65535
 })
+
+/////////////////////////////////////////////////////////////////
+//// Composite Traits
+/////////////////////////////////////////////////////////////////
+
+#SimpleDatabaseElement: #CompositeTrait & {
+	#name:       "Database"
+	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	description: "Composite trait to add a database to a component"
+	target: ["component"]
+	labels: {"core.opm.dev/category": "data"}
+	composes: [#ContainerElement, #VolumeElement]
+	#schema: #SimpleDatabaseSpec
+}
+
+#SimpleDatabase: close(#ElementBase & {
+	#elements: (#SimpleDatabaseElement.#fullyQualifiedName): #SimpleDatabaseElement
+
+	database: #SimpleDatabaseSpec
+
+	container: #ContainerSpec & {
+		if database.engine == "postgres" {
+			name:  "database"
+			image: "postgres:latest"
+			ports: {
+				db: {
+					targetPort: 5432
+				}
+			}
+			env: {
+				DB_NAME: {
+					name:  "DB_NAME"
+					value: database.dbName
+				}
+				DB_USER: {
+					name:  "DB_USER"
+					value: database.username
+				}
+				DB_PASSWORD: {
+					name:  "DB_PASSWORD"
+					value: database.password
+				}
+			}
+			volumeMounts: {
+				data: {
+					name:      "data"
+					mountPath: "/var/lib/postgresql/data"
+				}
+			}
+		}
+	}
+	volumes: {
+		if database.persistence.enabled {
+			data: {
+				persistentClaim: {
+					size: database.persistence.size
+				}
+			}
+		}
+	}
+})
+
+#SimpleDatabaseSpec: {
+	engine:  "postgres" | "mysql" | "mongodb" | "redis" | *"postgres"
+	version: string | *"latest"
+	dbName:  string | *"appdb"
+	username: string | *"admin"
+	password: string | *"password"
+	persistence: {
+		enabled: bool | *true
+		size:    string | *"1Gi"
+	}
+}

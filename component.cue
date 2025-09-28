@@ -11,14 +11,14 @@ package core
 
 		name!: string | *#id
 
-		type!:         #ComponentType
-		workloadType?: string
-		if type == "workload" {
-			workloadType!: #WorkloadTypes
-		}
-		if type == "resource" {
-			if workloadType != _|_ {error("Resource components cannot have workloadType")}
-		}
+		// type!:         #ComponentTypes
+		// if type == "workload" {
+		// 	workloadType!: #WorkloadTypes
+		// }
+		// if type == "resource" {
+		// 	if workloadType != _|_ {error("Resource components cannot have workloadType")}
+		// }
+		workloadType?: #WorkloadTypes
 
 		// Component specific labels and annotations
 		labels?:      #LabelsAnnotationsType
@@ -52,7 +52,12 @@ package core
 
 #ComponentTypeResource: "resource" // A pure resource (e.g. ConfigMap, Secret, Volume, etc.)
 #ComponentTypeWorkload: "workload" // A workload that runs code (e.g. Deployment, StatefulSet, Function, VM, etc.)
+#ComponentTypes: "resource" | "workload"
 
-#ComponentType: "resource" | "workload"
-
-#WorkloadTypes: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
+#WorkloadTypeStateless:      "stateless"      // e.g. Deployment, etc.
+#WorkloadTypeStateful:       "stateful"       // e.g. StatefulSet, Database, etc.
+#WorkloadTypeDaemon:         "daemon"         // e.g. DaemonSet, etc.
+#WorkloadTypeTask:           "task"           // e.g. Job, etc.
+#WorkloadTypeScheduledTask:  "scheduled-task" // e.g. CronJob, etc.
+#WorkloadTypeFunction:       "function"       // e.g. Serverless function, etc.
+#WorkloadTypes: #WorkloadTypeStateless | #WorkloadTypeStateful | #WorkloadTypeDaemon | #WorkloadTypeTask | #WorkloadTypeScheduledTask | #WorkloadTypeFunction

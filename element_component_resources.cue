@@ -34,11 +34,11 @@ package core
 	volumes: [string]: #VolumeSpec
 })
 
-#VolumeMountSpec: #VolumeSpec & {
+#VolumeMountSpec: close(#VolumeSpec & {
 	mountPath!: string
 	subPath?:   string
 	readOnly?:  bool | *false
-}
+})
 
 #VolumeSpec: {
 	emptyDir?: {

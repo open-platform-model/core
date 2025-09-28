@@ -19,7 +19,6 @@ package core
 			#metadata: {
 				#id:          "web"
 				name:         "web"
-				type:         "workload"
 				workloadType: "stateless"
 				labels: {
 					app: "web"
@@ -40,9 +39,6 @@ package core
 					DB_PORT: {name: "DB_PORT", value: "5432"}
 					DB_NAME: {name: "DB_NAME", value: "my-web-app"}
 				}
-				volumeMounts: {
-					data: volumes.data & {mountPath: "/var/lib/data"}
-				}
 			}
 			volumes: {
 				data: {persistentClaim: {size: "10Gi"}}
@@ -50,19 +46,21 @@ package core
 		}
 		db: {
 			#metadata: {
-				type: "resource"
 				labels: {
 					app:             "database"
 					"database-type": "postgres"
 				}
 			}
+			// Add composite element
+			#SimpleDatabase
 
-			// Add primitive elements
-			#Volume
-
-			// Define volume details
-			volumes: {
-				data: {persistentClaim: {size: "20Gi"}}
+			database: {
+				engine:   "postgres"
+				version:  "13"
+				size:     "1Gi"
+				dbName:   "my-web-app"
+				username: "admin"
+				password: "password"
 			}
 		}
 	}
@@ -106,7 +104,6 @@ myApp: #Module & {
 	components: {
 		auditLogging: {
 			#metadata: {
-				type:         "workload"
 				workloadType: "stateless"
 				labels: {
 					app: "audit-logging"

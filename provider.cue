@@ -59,12 +59,9 @@ import (
 	// What native resource this transformer creates
 	creates: string // e.g. "k8s.io/api/apps/v1.Deployment"
 
-	// What type of component this transformer supports (if any)
-	// If not specified, supports all component types
-	componentType?: #ComponentType
 	// What type of component workloadType this transformer supports (if any)
 	// If not specified, supports all workload types
-	workloadType?: #WorkloadTypes
+	workloadType?: #WorkloadTypes // e.g. "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
 
 	// Element registry - must be populated by provider implementation
 	_registry: #ElementRegistry
@@ -74,6 +71,8 @@ import (
 
 	// Optional OPM elements that can enhance the resource
 	optional: [...string] | *[] // e.g. ["core.opm.dev/v1alpha1.Replicas", "core.opm.dev/v1alpha1.UpdateStrategy", "core.opm.dev/v1alpha1.Expose", "core.opm.dev/v1alpha1.LivenessProbe", "core.opm.dev/v1alpha1.ReadinessProbe"]
+
+	// All element names (required + optional)
 	allElementNames: [...string] & list.Concat([required, optional])
 
 	#supportedElements: #ElementMap

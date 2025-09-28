@@ -3,8 +3,21 @@ package core
 /////////////////////////////////////////////////////////////////
 //// Module
 /////////////////////////////////////////////////////////////////
+#ModuleBase: {
+	#apiVersion: "core.opm.dev/v1"
+	#metadata: {
+		name!:    #NameType
+		version!: #VersionType
 
-#ModuleDefinition: {
+		labels?:      #LabelsAnnotationsType
+		annotations?: #LabelsAnnotationsType
+		...
+	}
+	#status: {...}
+	...
+}
+
+#ModuleDefinition: close(#ModuleBase & {
 	#apiVersion: "core.opm.dev/v1"
 	#kind:       "ModuleDefinition"
 	#metadata: {
@@ -41,13 +54,13 @@ package core
 		componentCount: {if components != _|_ {len(components)}}
 		scopeCount:     {if scopes != _|_ {len(scopes)}}
 	}
-}
+})
 
 // Module is a clustered resource that references a ModuleDefinition and adds platform-specific configuration'
 // Platform can add components and scopes but not remove
 // Platform can modify defaults in values but not structure
 // It is a cluster-scoped resource
-#Module: {
+#Module: close(#ModuleBase & {
 	#apiVersion: "core.opm.dev/v1"
 	#kind:       "Module"
 	#metadata: {
@@ -104,7 +117,29 @@ package core
 		platformScopeCount: {if scopes != _|_ {len(scopes)}}
 		// platformScopes: [for id, scope in scopes if scope.#metadata.immutable {id}]
 	}
-}
+})
+
+// Module Release - a specific deployment of a Module
+// Tracks the state of a Module deployment
+// Includes a reference to the Module and the resolved values
+// Includes status of the deployment
+#ModuleRelease: close(#ModuleBase & {
+	#apiVersion: "core.opm.dev/v1"
+	#kind:       "ModuleRelease"
+	#metadata: {
+		name!:    #NameType
+		version?: #VersionType
+	}
+
+	module:   #Module
+
+	provider: #Provider
+
+	// Resolved values after merging moduleDefinition.values and module.values
+	values:   module.moduleDefinition.values & module.values
+
+	#status: {}
+})
 
 // Module dependency resolution helper
 #ModuleDependencyResolver: {
