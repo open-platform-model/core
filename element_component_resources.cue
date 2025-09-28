@@ -12,21 +12,27 @@ package core
 // observability - observability-related (e.g., logging, monitoring, alerting)
 // governance - governance-related (e.g., resource quota, priority, compliance)
 
-// Volumes as Resources (claims, ephemeral, projected)
-#VolumeElement: {
-	Volume: #PrimitiveResource & {
-		description: "A set of volume types for data storage and sharing"
-		target: ["component"]
-		labels: {"core.opm.dev/category": "data"}
-		#schema: #VolumeSpec
-	}
+#CoreElementRegistry: {
+	(#VolumeElement.#fullyQualifiedName):    #VolumeElement
+	(#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
+	(#SecretElement.#fullyQualifiedName):    #SecretElement
 }
 
-#Volume: #ElementBase & {
-	#elements: #VolumeElement
+// Volumes as Resources (claims, ephemeral, projected)
+#VolumeElement: #PrimitiveResource & {
+	#name:       "Volume"
+	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	description: "A set of volume types for data storage and sharing"
+	target: ["component"]
+	labels: {"core.opm.dev/category": "data"}
+	#schema: #VolumeSpec
+}
+
+#Volume: close(#ElementBase & {
+	#elements: (#VolumeElement.#fullyQualifiedName): #VolumeElement
 
 	volumes: [string]: #VolumeSpec
-}
+})
 
 #VolumeMountSpec: #VolumeSpec & {
 	mountPath!: string
@@ -52,42 +58,40 @@ package core
 }
 
 // ConfigMaps as Resources
-#ConfigMapElement: {
-	ConfigMap: #PrimitiveResource & {
-		name:        "ConfigMap"
-		description: "Key-value pairs for configuration data"
-		target: ["component"]
-		labels: {"core.opm.dev/category": "data"}
-		#schema: #ConfigMapSpec
-	}
+#ConfigMapElement: #PrimitiveResource & {
+	#name:       "ConfigMap"
+	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	description: "Key-value pairs for configuration data"
+	target: ["component"]
+	labels: {"core.opm.dev/category": "data"}
+	#schema: #ConfigMapSpec
 }
 
-#ConfigMap: #ElementBase & {
-	#elements: #ConfigMapElement
+#ConfigMap: close(#ElementBase & {
+	#elements: (#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
 
 	configMaps: [string]: #ConfigMapSpec
-}
+})
 
 #ConfigMapSpec: {
 	data: [string]: string
 }
 
 // Secrets as Resources
-#SecretElement: {
-	Secret: #PrimitiveResource & {
-		name:        "Secret"
-		description: "Sensitive data such as passwords, tokens, or keys"
-		target: ["component"]
-		labels: {"core.opm.dev/category": "data"}
-		#schema: #SecretSpec
-	}
+#SecretElement: #PrimitiveResource & {
+	#name:       "Secret"
+	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	description: "Sensitive data such as passwords, tokens, or keys"
+	target: ["component"]
+	labels: {"core.opm.dev/category": "data"}
+	#schema: #SecretSpec
 }
 
-#Secret: #ElementBase & {
-	#elements: #SecretElement
+#Secret: close(#ElementBase & {
+	#elements: (#SecretElement.#fullyQualifiedName): #SecretElement
 
 	secrets: [string]: #SecretSpec
-}
+})
 
 #SecretSpec: {
 	type?: string | *"Opaque"

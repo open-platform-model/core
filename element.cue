@@ -1,10 +1,14 @@
 package core
 
+import (
+	"strings"
+)
+
 /////////////////////////////////////////////////////////////////
 //// Element Definition
 /////////////////////////////////////////////////////////////////
 #Element: {
-	#name!:              string
+	#name!:              string & strings.MinRunes(1) & strings.MaxRunes(254)
 	#apiVersion:         string | *"core.opm.dev/v1alpha1"
 	#fullyQualifiedName: "\(#apiVersion).\(#name)"
 
@@ -15,10 +19,10 @@ package core
 	labels?: #LabelsAnnotationsType
 
 	// The type of this element
-	type!: "trait" | "resource" | "policy"
+	type!: #ElementTypes
 
 	// kind of element
-	kind!: "primitive" | "composite" | "modifier" | "custom"
+	kind!: #ElementKinds
 
 	// Where can element be applied
 	// Can be one or more of "component", "scope"
@@ -30,8 +34,30 @@ package core
 	...
 }
 
+#ElementTypeTrait: "trait" // A trait that modifies a component's behavior
+#ElementTypeResource: "resource" // A resource that is managed by the platform
+#ElementTypePolicy: "policy" // A policy that governs the behavior of components
+#ElementTypes: #ElementTypeTrait | #ElementTypeResource | #ElementTypePolicy
+
+#ElementKindPrimitive: "primitive"   // A basic building block. Like a lego block
+#ElementKindComposite: "composite"   // A composite element made up of multiple composite and/or primitive elements
+#ElementKindModifier: "modifier"     // A modifier element that alters other elements
+#ElementKindCustom: "custom"         // A custom element with special handling
+#ElementKinds: #ElementKindPrimitive | #ElementKindComposite | #ElementKindModifier | #ElementKindCustom
+
+// Different element categories
+#PrimitiveElements: #PrimitiveTrait | #PrimitiveResource
+#CompositeElements: #CompositeTrait | #CompositeResource
+
+// Element map and list types
+#Elements: #PrimitiveElements | #CompositeElements
+#ElementMap: [string]: #Elements
+#ElementList: [...#Elements]
+
 #ElementBase: {
-	#elements: [elementName=string]: #Element & {#name!: elementName}
+	#elements: #ElementMap
+
+	// Allow additional fields for extensibility
 	...
 }
 
@@ -46,7 +72,25 @@ package core
 	kind: "composite"
 
 	// Which primitives/elements this composes
-	composes: [...#Element]
+	composes: #ElementList
+
+	// Recursively extract all primitive elements from this composite
+	#primitiveElements: #ElementMap
+	#primitiveElements: {
+		// For each element in composes
+		for i, element in composes {
+			// If it's primitive, add it directly
+			if element.kind == "primitive" {
+				(element.#name): element
+			}
+			// If it's composite, merge its primitives
+			if element.kind == "composite" {
+				for primName, primElement in element.#primitiveElements {
+					(primName): primElement
+				}
+			}
+		}
+	}
 }
 
 // Modifier element - modifies other elements
@@ -56,7 +100,7 @@ package core
 	kind: "modifier"
 
 	// Which elements this can modify
-	modifies: [...#Element]
+	modifies: #ElementList
 }
 
 // Custom element - special handling outside of OPM spec
@@ -68,22 +112,18 @@ package core
 /////////////////////////////////////////////////////////////////
 //// Trait & Resource Bases
 /////////////////////////////////////////////////////////////////
-#PrimitiveTrait: #Primitive & {
+#PrimitiveTrait: close(#Primitive & {
 	type: "trait"
-	kind: "primitive"
-}
+})
 
-#CompositeTrait: #Composite & {
+#CompositeTrait: close(#Composite & {
 	type: "trait"
-	kind: "composite"
-}
+})
 
-#PrimitiveResource: #Primitive & {
+#PrimitiveResource: close(#Primitive & {
 	type: "resource"
-	kind: "primitive"
-}
+})
 
-#CompositeResource: #Composite & {
+#CompositeResource: close(#Composite & {
 	type: "resource"
-	kind: "composite"
-}
+})

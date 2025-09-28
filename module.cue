@@ -36,14 +36,17 @@ package core
 	}
 
 	#status: {
-		componentCount: len(components)
-		scopeCount:     len(scopes)
+		componentCount: int | *0
+		scopeCount:     int | *0
+		componentCount: {if components != _|_ {len(components)}}
+		scopeCount:     {if scopes != _|_ {len(scopes)}}
 	}
 }
 
 // Module is a clustered resource that references a ModuleDefinition and adds platform-specific configuration'
 // Platform can add components and scopes but not remove
 // Platform can modify defaults in values but not structure
+// It is a cluster-scoped resource
 #Module: {
 	#apiVersion: "core.opm.dev/v1"
 	#kind:       "Module"
@@ -56,37 +59,95 @@ package core
 	}
 
 	// Platform context for this module instance
+	// Future plans for dynamic data.
+	// Queried from the platform at runtime
+	// e.g. current user, environment, region, cluster info, etc.
 	#context: {...}
 
-	#moduleDefinition: #ModuleDefinition
+	moduleDefinition: #ModuleDefinition
 
 	// Platform can add components but not remove
 	components?: [Id=string]: #Component & {#metadata: #id: Id}
 	#allComponents: {
-		if #moduleDefinition.components != _|_ {#moduleDefinition.components}
+		if moduleDefinition.components != _|_ {moduleDefinition.components}
 		if components != _|_ {components}
 	}
 
 	// Platform can add scopes but not remove
 	scopes?: [Id=string]: #Scope & {#metadata: #id: Id}
 	#allScopes: {
-		if #moduleDefinition.scopes != _|_ {#moduleDefinition.scopes}
+		if moduleDefinition.scopes != _|_ {moduleDefinition.scopes}
 		if scopes != _|_ {scopes}
 	}
 
+	// Collect all primitive elements used by this module
+	#allPrimitiveElements: #ElementMap
+	#allPrimitiveElements: {
+		for _, comp in #allComponents {
+			for elementName, element in comp.#primitiveElements {
+				(element.#fullyQualifiedName): element
+			}
+		}
+	}
+
 	// Platform can modify defaults but not structure
-	values?: #moduleDefinition.values & {
+	// TODO: Walk through moduleDefinition.values and replace with values from #Module.values
+	values?: moduleDefinition.values & {
 		...
 	}
 
 	#status: {
 		totalComponentCount: len(#allComponents)
-		platformScopes: [
-			for id, scope in scopes if scope.#metadata.immutable {id},
-		]
 		platformComponentCount: int | *0
 		platformComponentCount: {if components != _|_ {len(components)}}
 		platformScopeCount: int | *0
 		platformScopeCount: {if scopes != _|_ {len(scopes)}}
+		// platformScopes: [for id, scope in scopes if scope.#metadata.immutable {id}]
+	}
+}
+
+// Module dependency resolution helper
+#ModuleDependencyResolver: {
+	module:   #Module
+	provider: #Provider
+
+	// Get all elements that need to be resolved
+	requiredElements: #ElementMap
+	requiredElements: module.#allPrimitiveElements
+
+	// Check which elements are supported by the provider
+	supportedElements: #ElementMap
+	supportedElements: provider.#supportedElements
+
+	// Find unsupported elements
+	unsupportedElements: #ElementMap
+	unsupportedElements : {
+		for rn, re in requiredElements {
+			if supportedElements[rn] == _|_ {
+				(rn): re
+			}
+		}
+	}
+
+	// Resolution status
+	resolved: len(unsupportedElements) == 0
+
+	// Resolution report
+	report: {
+		totalElements:    len(requiredElements)
+		supported:        len(supportedElements)
+		unsupported:      len(unsupportedElements)
+		resolutionStatus: resolved
+
+		if len(unsupportedElements) > 0 {
+			missingElements: unsupportedElements
+			error: "Module requires elements not supported by provider"
+		}
+
+		elementMapping: {
+			for s in supportedElements {
+				"\(s.element)": s.handledBy
+			}
+		}
 	}
 }

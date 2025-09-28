@@ -101,7 +101,7 @@ myApp: #Module & {
 		}
 	}
 
-	#moduleDefinition: #MyApplication
+	moduleDefinition: #MyApplication
 
 	components: {
 		auditLogging: {

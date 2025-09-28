@@ -1,9 +1,5 @@
 package core
 
-import (
-	"list"
-)
-
 /////////////////////////////////////////////////////////////////
 //// Component
 /////////////////////////////////////////////////////////////////
@@ -30,29 +26,32 @@ import (
 		...
 	}
 
-	#elements: [elementName=string]: #Element & {#name!: elementName}
+	#elements: #ElementMap
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
-	#primitiveElements: [...string]
+	#primitiveElements: #ElementMap
 	#primitiveElements: {
-		// Collect all primitive elements
-		let allElements = [
-			for _, e in #elements if e != _|_ {
-				// Primitive traits contribute themselves
-				if e.kind == "primitive" {
-					e.#fullyQualifiedName
+		// Collect primitives from all elements
+		for elementName, element in #elements {
+			// If it's primitive, add it directly
+			if element.kind == "primitive" {
+				(elementName): element
+			}
+			// If it's composite, merge its primitives
+			if element.kind == "composite" {
+				for primName, primElement in element.#primitiveElements {
+					(primName): primElement
 				}
-			},
-		]
-
-		// Deduplicate and sort
-		let set = {for cap in allElements {(cap): _}}
-		list.SortStrings([for k, _ in set {k}])
+			}
+		}
 	}
 
 	// TODO add validation to ensure only traits/resources are added based on componentType
 	...
 }
+
+#ComponentTypeResource: "resource" // A pure resource (e.g. ConfigMap, Secret, Volume, etc.)
+#ComponentTypeWorkload: "workload" // A workload that runs code (e.g. Deployment, StatefulSet, Function, VM, etc.)
 
 #ComponentType: "resource" | "workload"
 

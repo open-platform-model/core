@@ -54,10 +54,15 @@ The "chicken and egg" problem: How does OPM deploy the infrastructure it needs t
 Every trait can provide an optional reference implementation using OPM elements, guaranteeing it can always be deployed:
 
 ```cue
-#SQLDatabase: #PrimitiveTrait & {
+#SQLDatabaseElement: #PrimitiveTrait & {
+    #name: "SQLDatabase"
+    #apiVersion: "elements.opm.dev/core/v1alpha1"
+    description: "A single SQL database"
+    target: ["component"]
+    labels: {"opm.dev/category": "data"}
     type: "trait"
     kind: "primitive"
-    
+
     // The contract - what developers configure
     #schema: {
         engine: "postgresql" | "mysql" | "mariadb"
@@ -118,15 +123,31 @@ Every trait can provide an optional reference implementation using OPM elements,
     }
 }
 
-#NoSQLDatabase: #PrimitiveTrait & {
+
+#SQLDatabase: {
+    #elements: SQLDatabase: #SQLDatabaseElement
+
+    sqlDatabase: #SQLDatabaseSpec
+}
+
+#SQLDatabaseSpec: {
+    engine: "postgresql" | "mysql" | "mariadb"
+    name: string
+    database: string
+    size?: string | *"10Gi"
+    version?: string
+}
+
+#NoSQLDatabaseElement: #PrimitiveTrait & {
+    #name: "NoSQLDatabase"
+    #apiVersion: "elements.opm.dev/core/v1alpha1"
+    description: "A single noSQL database"
+    target: ["component"]
+    labels: {"opm.dev/category": "data"}
     type: "trait"
     kind: "primitive"
     
-    #schema: {
-        engine: "redis" | "mongodb" | "cassandra"
-        name: string
-        size?: string | *"10Gi"
-    }
+    #schema: #NoSQLDatabaseSpec
     
     #fallbackImplementation?: #Component & {
         #metadata: {
@@ -148,6 +169,18 @@ Every trait can provide an optional reference implementation using OPM elements,
         }
     }
 }
+
+#NoSQLDatabase: {
+    #elements: NoSQLDatabase: #NoSQLDatabaseElement
+
+    noSQLDatabase: #NoSQLDatabaseSpec
+}
+
+#NoSQLDatabaseSpec: {
+    engine: "redis" | "mongodb" | "cassandra"
+    name: string
+    size?: string | *"10Gi"
+}
 ```
 
 ### Simple Dependency System
@@ -161,8 +194,7 @@ Modules declare dependencies on traits without any platform awareness:
 }
 
 #ModuleDependency: {
-    capability: string  // e.g., "trait:SQLDatabase"
-    version: string     // Version constraint
+    element: string  // e.g., "elements.opm.dev/core/v1alpha1.SQLDatabase"
     required: bool | *true  // Is this required?
     
     onMissing?: {

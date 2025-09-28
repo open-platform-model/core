@@ -1,9 +1,5 @@
 package core
 
-import (
-	"list"
-)
-
 /////////////////////////////////////////////////////////////////
 //// Scope
 /////////////////////////////////////////////////////////////////
@@ -18,29 +14,29 @@ import (
 
 		// Platform scopes are immutable by developers
 		immutable: bool
-
-		// Validation: Scopes must have exactly one trait
-		#validateSingleTrait: len(#elements) == 1 | error("Scope must have exactly one trait. Current count: \(len(#elements))")
 	}
 
-	#elements: [elementName=string]: #Element & {#name!: elementName}
+	#elements: #ElementMap
+
+	// Validation: Scopes must have exactly one trait
+	#validateSingleTrait: len(#elements) == 1 | error("Scope must have exactly one trait. Current count: \(len(#elements))")
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
-	#primitiveElements: [...string]
+	#primitiveElements: #ElementMap
 	#primitiveElements: {
-		// Collect all primitive elements
-		let allElements = [
-			for _, e in #elements if e != _|_ {
-				// Primitive traits contribute themselves
-				if e.kind == "primitive" {
-					e.#fullyQualifiedName
+		// Collect primitives from all elements
+		for elementName, element in #elements {
+			// If it's primitive, add it directly
+			if element.kind == "primitive" {
+				(elementName): element
+			}
+			// If it's composite, merge its primitives
+			if element.kind == "composite" {
+				for primName, primElement in element.#primitiveElements {
+					(primName): primElement
 				}
-			},
-		]
-
-		// Deduplicate and sort
-		let set = {for cap in allElements {(cap): _}}
-		list.SortStrings([for k, _ in set {k}])
+			}
+		}
 	}
 
 	appliesTo!: [...#Component] | "*"
