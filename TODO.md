@@ -25,3 +25,4 @@
 - How do a platform team curate a catalog of modules, and is able to enforce certain policies on the end-user consuming the modules?
 - Investigate how an integration with OPA could be used for policies. The ability to define polices in rego and have that be a part of a ModuleDefinition and Module.
 - Investigate how to add queries to a module, meaning when the module is deployed it can pull data from the target environment. For example metadata about the environment.
+- Every component requires a unique identity (SPIFFE/SPIRE) so that it can be utilized to grab secrets accesible to the component
