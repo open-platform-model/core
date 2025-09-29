@@ -8,7 +8,7 @@ OPM provides a declarative model for describing cloud-native applications throug
 
 ## Core Concepts
 
-- **Components**: Basic building blocks representing workloads (stateless, stateful, daemon, task) or resources
+- **Components**: Basic building blocks representing workloads (stateless, stateful, daemonSet, task, scheduled-task) or resources
 - **Elements**: Reusable capabilities that can be primitive, composite, modifier, or custom types
   - **Traits**: Behavioral aspects like containers, sidecars, or network scopes
   - **Resources**: Infrastructure dependencies like volumes, configmaps, and secrets

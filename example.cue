@@ -17,27 +17,28 @@ package core
 	components: {
 		web: {
 			#metadata: {
-				#id:          "web"
-				name:         "web"
-				workloadType: "stateless"
 				labels: {
 					app: "web"
 				}
 			}
 
 			// Add primitive elements
-			#Container
 			#Volume
 
+			// Add composite elements
+			#StatelessWorkload
+
 			// Define the container and volume details
-			container: {
-				image: values.web.image
-				name:  "web"
-				ports: http: {containerPort: 80}
-				env: {
-					DB_HOST: {name: "DB_HOST", value: "db"}
-					DB_PORT: {name: "DB_PORT", value: "5432"}
-					DB_NAME: {name: "DB_NAME", value: "my-web-app"}
+			stateless: {
+				container: {
+					image: values.web.image
+					name:  "web"
+					ports: http: {targetPort: 80}
+					env: {
+						DB_HOST: {name: "DB_HOST", value: "db"}
+						DB_PORT: {name: "DB_PORT", value: "5432"}
+						DB_NAME: {name: "DB_NAME", value: "my-web-app"}
+					}
 				}
 			}
 			volumes: {
@@ -51,16 +52,20 @@ package core
 					"database-type": "postgres"
 				}
 			}
+
 			// Add composite element
 			#SimpleDatabase
 
 			database: {
 				engine:   "postgres"
 				version:  "13"
-				size:     "1Gi"
 				dbName:   "my-web-app"
 				username: "admin"
 				password: "password"
+				persistence: {
+					enabled: true
+					size:    values.dbVolume.persistentClaim.size
+				}
 			}
 		}
 	}
@@ -83,7 +88,7 @@ package core
 			image: _ | *"ghcr.io/example/web:2.0.0"
 		}
 		dbVolume: #VolumeSpec & {
-			persistentClaim: _ | *{size: "50Gi"}
+			persistentClaim: _ | *{size: "10Gi"}
 		}
 	}
 }
@@ -104,22 +109,23 @@ myApp: #Module & {
 	components: {
 		auditLogging: {
 			#metadata: {
-				workloadType: "stateless"
 				labels: {
 					app: "audit-logging"
 				}
 			}
 
 			// Add primitive elements
-			#Container
+			#StatelessWorkload
 
 			// Define the container details
-			container: {
-				image: string | *"ghcr.io/example/audit-logging:1.0.0"
-				name:  "audit-logging"
-				ports: http: {containerPort: 8080}
-				env: {
-					LOG_LEVEL: {name: "LOG_LEVEL", value: "info"}
+			stateless: {
+				container: {
+					image: string | *"ghcr.io/example/audit-logging:1.0.0"
+					name:  "audit-logging"
+					ports: http: {containerPort: 8080}
+					env: {
+						LOG_LEVEL: {name: "LOG_LEVEL", value: "info"}
+					}
 				}
 			}
 		}

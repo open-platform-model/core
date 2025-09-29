@@ -14,19 +14,23 @@ package core
 	// Native Kubernetes resources mapped to OPM elements they support
 	transformers: {
 		"k8s.io/api/apps/v1.Deployment": #Transformer & {
-			creates: "k8s.io/api/apps/v1.Deployment"
-			_registry: #CoreElementRegistry
-			required: ["elements.opm.dev/core/v1alpha1.Container"]
+			#kind:       "Deployment"
+			#apiVersion: "k8s.io/api/apps/v1"
+			_registry:   #CoreElementRegistry
+			required: ["elements.opm.dev/core/v1alpha1.Container", "elements.opm.dev/core/v1alpha1.StatelessWorkload"]
 			optional: [
+				"elements.opm.dev/core/v1alpha1.SidecarContainers",
+				"elements.opm.dev/core/v1alpha1.InitContainers",
 				"elements.opm.dev/core/v1alpha1.Replicas",
 				"elements.opm.dev/core/v1alpha1.UpdateStrategy",
-				"elements.opm.dev/core/v1alpha1.RestartPolicy",
+				"elements.opm.dev/core/v1alpha1.HealthCheck",
 			]
 			transform: {...}
 		}
 		"k8s.io/api/core/v1.Service": #Transformer & {
-			creates: "k8s.io/api/core/v1.Service"
-			_registry: #CoreElementRegistry
+			#kind:       "Service"
+			#apiVersion: "k8s.io/api/core/v1"
+			_registry:   #CoreElementRegistry
 			required: ["elements.opm.dev/core/v1alpha1.Expose"]
 			optional: []
 			transform: {...}
@@ -57,10 +61,8 @@ package core
 		components: {
 			frontend: {
 				#metadata: {
-					#id:          "frontend"
-					name:         "frontend"
-					type:         "workload"
-					workloadType: "stateless"
+					#id:  "frontend"
+					name: "frontend"
 				}
 
 				// Add traits that are supported by the provider
@@ -119,10 +121,8 @@ package core
 		components: {
 			processor: {
 				#metadata: {
-					#id:          "processor"
-					name:         "processor"
-					type:         "workload"
-					workloadType: "task"
+					#id:  "processor"
+					name: "processor"
 				}
 
 				// Use some supported traits
@@ -140,19 +140,17 @@ package core
 			}
 			db: {
 				#metadata: {
-					#id:          "db"
-					name:         "db"
-					type:         "workload"
-					workloadType: "stateful"
+					#id:  "db"
+					name: "db"
 				}
 
 				// Add a custom trait that doesn't exist in the provider
 				// Define a custom element inline (simulating org.example.com/v1.SQLDatabase)
 				#elements: {
 					SQLDatabase: #PrimitiveTrait & {
-						#name:               "SQLDatabase"
-						#apiVersion:         "org.example.com/v1"
-						#type:               "trait"
+						#name:       "SQLDatabase"
+						#apiVersion: "org.example.com/v1"
+						#type:       "trait"
 						target: ["component"]
 						#fullyQualifiedName: "org.example.com/v1.SQLDatabase"
 						#schema: {

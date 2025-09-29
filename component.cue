@@ -1,5 +1,9 @@
 package core
 
+import (
+	"list"
+)
+
 /////////////////////////////////////////////////////////////////
 //// Component
 /////////////////////////////////////////////////////////////////
@@ -11,14 +15,15 @@ package core
 
 		name!: string | *#id
 
-		// type!:         #ComponentTypes
-		// if type == "workload" {
-		// 	workloadType!: #WorkloadTypes
-		// }
-		// if type == "resource" {
-		// 	if workloadType != _|_ {error("Resource components cannot have workloadType")}
-		// }
-		workloadType?: #WorkloadTypes
+		// Workload type is automatically derived from included elements
+		// If multiple workload types are included, this will result in a validation error
+		// If workloadType is set to "", it means the component is not a workload (e.g., a configuration component)
+		workloadType: #WorkloadTypes
+		for _, elem in #elements {
+			if elem.workloadType != _|_ {
+				workloadType: elem.workloadType
+			}
+		}
 
 		// Component specific labels and annotations
 		labels?:      #LabelsAnnotationsType
@@ -29,35 +34,22 @@ package core
 	#elements: #ElementMap
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
-	#primitiveElements: #ElementMap
-	#primitiveElements: {
-		// Collect primitives from all elements
-		for elementName, element in #elements {
+	#primitiveElements: #ElementStringArray & list.FlattenN([
+		// For each element in composes
+		for _, element in #elements
+		if element.kind == "primitive" || element.kind == "composite" {
 			// If it's primitive, add it directly
 			if element.kind == "primitive" {
-				(elementName): element
+				[element.#fullyQualifiedName]
 			}
+
 			// If it's composite, merge its primitives
 			if element.kind == "composite" {
-				for primName, primElement in element.#primitiveElements {
-					(primName): primElement
-				}
+				element.#primitiveElements
 			}
-		}
-	}
+		},
+	], 1)
 
 	// TODO add validation to ensure only traits/resources are added based on componentType
 	...
 }
-
-#ComponentTypeResource: "resource" // A pure resource (e.g. ConfigMap, Secret, Volume, etc.)
-#ComponentTypeWorkload: "workload" // A workload that runs code (e.g. Deployment, StatefulSet, Function, VM, etc.)
-#ComponentTypes: "resource" | "workload"
-
-#WorkloadTypeStateless:      "stateless"      // e.g. Deployment, etc.
-#WorkloadTypeStateful:       "stateful"       // e.g. StatefulSet, Database, etc.
-#WorkloadTypeDaemon:         "daemon"         // e.g. DaemonSet, etc.
-#WorkloadTypeTask:           "task"           // e.g. Job, etc.
-#WorkloadTypeScheduledTask:  "scheduled-task" // e.g. CronJob, etc.
-#WorkloadTypeFunction:       "function"       // e.g. Serverless function, etc.
-#WorkloadTypes: #WorkloadTypeStateless | #WorkloadTypeStateful | #WorkloadTypeDaemon | #WorkloadTypeTask | #WorkloadTypeScheduledTask | #WorkloadTypeFunction

@@ -1,5 +1,9 @@
 package core
 
+import (
+	"list"
+)
+
 /////////////////////////////////////////////////////////////////
 //// Module
 /////////////////////////////////////////////////////////////////
@@ -52,7 +56,7 @@ package core
 		componentCount: int | *0
 		scopeCount:     int | *0
 		componentCount: {if components != _|_ {len(components)}}
-		scopeCount:     {if scopes != _|_ {len(scopes)}}
+		scopeCount: {if scopes != _|_ {len(scopes)}}
 	}
 })
 
@@ -82,26 +86,35 @@ package core
 	// Platform can add components but not remove
 	components?: [Id=string]: #Component & {#metadata: #id: Id}
 	#allComponents: {
-		if moduleDefinition.components != _|_ {moduleDefinition.components}
-		if components != _|_ {components}
+		for id, comp in moduleDefinition.components {
+			"\(id)": comp
+		}
+		if components != _|_ {
+			for id, comp in components {
+				"\(id)": comp
+			}
+		}
 	}
 
 	// Platform can add scopes but not remove
 	scopes?: [Id=string]: #Scope & {#metadata: #id: Id}
 	#allScopes: {
-		if moduleDefinition.scopes != _|_ {moduleDefinition.scopes}
-		if scopes != _|_ {scopes}
-	}
-
-	// Collect all primitive elements used by this module
-	#allPrimitiveElements: #ElementMap
-	#allPrimitiveElements: {
-		for _, comp in #allComponents {
-			for elementName, element in comp.#primitiveElements {
-				(element.#fullyQualifiedName): element
+		if moduleDefinition.scopes != _|_ {
+			for id, scope in moduleDefinition.scopes {
+				"\(id)": scope
+			}
+		}
+		if scopes != _|_ {
+			for id, scope in scopes {
+				"\(id)": scope
 			}
 		}
 	}
+
+	// Collect all primitive elements used by this module
+	#allPrimitiveElements: #ElementStringArray & list.FlattenN([
+		for _, comp in #allComponents {comp.#primitiveElements},
+	], 1)
 
 	// Platform can modify defaults but not structure
 	// TODO: Walk through moduleDefinition.values and replace with values from #Module.values
@@ -109,8 +122,8 @@ package core
 		...
 	}
 
-	#status: {
-		totalComponentCount: len(#allComponents)
+	#status: moduleDefinition.#status & {
+		totalComponentCount:    len(#allComponents)
 		platformComponentCount: int | *0
 		platformComponentCount: {if components != _|_ {len(components)}}
 		platformScopeCount: int | *0
@@ -131,12 +144,12 @@ package core
 		version?: #VersionType
 	}
 
-	module:   #Module
+	module: #Module
 
 	provider: #Provider
 
 	// Resolved values after merging moduleDefinition.values and module.values
-	values:   module.moduleDefinition.values & module.values
+	values: module.moduleDefinition.values & module.values
 
 	#status: {}
 })
@@ -147,22 +160,19 @@ package core
 	provider: #Provider
 
 	// Get all elements that need to be resolved
-	requiredElements: #ElementMap
-	requiredElements: module.#allPrimitiveElements
+	requiredElements: #ElementStringArray & module.#allPrimitiveElements
 
 	// Check which elements are supported by the provider
-	supportedElements: #ElementMap
-	supportedElements: provider.#supportedElements
+	supportedElements: #ElementStringArray & provider.#supportedElements
 
 	// Find unsupported elements
-	unsupportedElements: #ElementMap
-	unsupportedElements : {
-		for rn, re in requiredElements {
-			if supportedElements[rn] == _|_ {
-				(rn): re
-			}
+	unsupportedElements: [
+		for re in requiredElements
+		if (re & string) == re // Only include concrete strings
+		if !list.Contains(supportedElements, re) {
+			re
 		}
-	}
+	]
 
 	// Resolution status
 	resolved: len(unsupportedElements) == 0
@@ -176,13 +186,9 @@ package core
 
 		if len(unsupportedElements) > 0 {
 			missingElements: unsupportedElements
-			error: "Module requires elements not supported by provider"
+			error:           "Module requires elements not supported by provider"
 		}
 
-		elementMapping: {
-			for s in supportedElements {
-				"\(s.element)": s.handledBy
-			}
-		}
+		supportedElementsList: supportedElements
 	}
 }

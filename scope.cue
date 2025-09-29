@@ -22,22 +22,16 @@ package core
 	#validateSingleTrait: len(#elements) == 1 | error("Scope must have exactly one trait. Current count: \(len(#elements))")
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
-	#primitiveElements: #ElementMap
-	#primitiveElements: {
+	#primitiveElements: #ElementStringArray & [
 		// Collect primitives from all elements
-		for elementName, element in #elements {
+		for _, element in #elements {
 			// If it's primitive, add it directly
-			if element.kind == "primitive" {
-				(elementName): element
-			}
+			if element.kind == "primitive" {(element.#fullyQualifiedName)}
+
 			// If it's composite, merge its primitives
-			if element.kind == "composite" {
-				for primName, primElement in element.#primitiveElements {
-					(primName): primElement
-				}
-			}
-		}
-	}
+			if element.kind == "composite" for _, p in element.#primitiveElements {(p)}
+		},
+	]
 
 	appliesTo!: [...#Component] | "*"
 	...

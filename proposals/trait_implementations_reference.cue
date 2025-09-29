@@ -44,7 +44,7 @@ package core
 #ExampleProvider: {
 	// Current simplified approach - direct mapping
 	transformers: {
-		"k8s.io/api/apps/v1.Deployment": #DeploymentTransformer
+		"k8s.io/api/apps/v1.Deployment":  #DeploymentTransformer
 		"k8s.io/api/apps/v1.StatefulSet": #StatefulSetTransformer
 	}
 
@@ -62,9 +62,9 @@ package core
 					transformer: "k8s.io/api/apps/v1.StatefulSet"
 				},
 				{
-					name: "stateless"
+					name:        "stateless"
 					transformer: "k8s.io/api/apps/v1.Deployment"
-				}
+				},
 			]
 		}
 	}

@@ -19,6 +19,11 @@ import (
 		minVersion:  string // The minimum version of the provider
 	}
 
+	#registry: #ElementRegistry
+	#registryStringArray: #ElementStringArray & [
+		for k, _ in #registry {k},
+	]
+
 	// Transformer registry - maps traits to transformers
 	// Example:
 	// transformers: {
@@ -32,23 +37,17 @@ import (
 	// }
 	transformers: #TransformerMap
 
-	#supportedElements: #ElementMap
-	#supportedElements: {
-		if transformers != null {
-			for _, transformer in transformers {
-				for elementName, element in transformer.#supportedElements {
-					if element != _|_ {
-						(elementName): element
-					}
-				}
-			}
-		}
-	}
+	#supportedElements: #ElementStringArray & list.FlattenN([
+		for _, transformer in transformers {
+			transformer.#supportedElements
+		},
+	], 1)
 
 	// Render function
 	render: {
 		module: #Module
 		output: _ // Provider-specific output format. e.g., Kubernetes List object
+		...
 	}
 }
 
@@ -56,85 +55,60 @@ import (
 
 // Transformer interface - generic for all providers
 #Transformer: {
-	// What native resource this transformer creates
-	creates: string // e.g. "k8s.io/api/apps/v1.Deployment"
+	#kind: string // e.g. "Deployment"
 
-	// What type of component workloadType this transformer supports (if any)
-	// If not specified, supports all workload types
-	workloadType?: #WorkloadTypes // e.g. "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
+	#apiVersion: string // e.g. "k8s.io/api/apps/v1"
+
+	#fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "k8s.io/api/apps/v1.Deployment""
 
 	// Element registry - must be populated by provider implementation
-	_registry: #ElementRegistry
+	_registry: #ElementMap
 
-	// Required OPM elements for this transformer to work
-	required!: [...string] // e.g. ["core.opm.dev/v1alpha1.Container"]
+	// Required OPM primitive elements for this transformer to work
+	required!: #ElementStringArray // e.g. ["core.opm.dev/v1alpha1.StatelessWorkload", "core.opm.dev/v1alpha1.StatefulWorkload"]
 
-	// Optional OPM elements that can enhance the resource
-	optional: [...string] | *[] // e.g. ["core.opm.dev/v1alpha1.Replicas", "core.opm.dev/v1alpha1.UpdateStrategy", "core.opm.dev/v1alpha1.Expose", "core.opm.dev/v1alpha1.LivenessProbe", "core.opm.dev/v1alpha1.ReadinessProbe"]
+	// Optional OPM modifier elements that can enhance the resource
+	optional: #ElementStringArray | *[] // e.g. ["core.opm.dev/v1alpha1.SidecarContainers", "core.opm.dev/v1alpha1.Replicas", "core.opm.dev/v1alpha1.UpdateStrategy", "core.opm.dev/v1alpha1.Expose", "core.opm.dev/v1alpha1.HealthCheck"]
 
-	// All element names (required + optional)
-	allElementNames: [...string] & list.Concat([required, optional])
+	// All element fully qualified names (required + optional)
+	#allProviderElements: #ElementStringArray & list.Concat([required, optional])
 
-	#supportedElements: #ElementMap
-	#supportedElements: {
-		for elementName in allElementNames {
-			let resolvedElement = #ResolveElement & {
-				name:      elementName
-				_reg: _registry
-			}
-			if resolvedElement.element != _|_ {
-				(elementName): resolvedElement.element
-			}
-		}
-	}
+	#supportedElements: #ElementStringArray & [
+		for elementFQN in #allProviderElements
+		if _registry[elementFQN] != _|_ {elementFQN},
+	]
 
 	// Auto-generated defaults from optional element schemas
 	defaults: {
 		// Resolve schemas from optional elements only
-		for elementName in (optional | *[]) {
-			let resolvedSchema = #ResolveElement & {
-				name:      elementName
-				_reg: _registry
-			}
-			if resolvedSchema.elementSchema != _|_ {
-				resolvedSchema.elementSchema
+		for elementFQN, element in _registry {
+			if list.Contains(optional, elementFQN) {
+				if element.kind == "modifier" {
+					// Only include modifier elements as defaults
+					// Composite elements are made up of other elements and should not be top-level defaults
+					// Primitive elements do not have defaults
+					(element.#nameCamel): element.#schema
+				}
 			}
 		}
+
 		// Allow transformer-specific additional defaults
 		...
 	}
 
 	// Transform function
-	transform: {...}
-	// transform: {
-	// 	component: #Component
-	// 	context:   #ProviderContext
-	// 	output:    _ // Provider-specific output format
-	// }
-}
-
-// Helper to resolve element schema by name from registry
-#ResolveElement: {
-	name:      string
-	_reg: #ElementRegistry
-
-	element: {
-		if _reg[name] != _|_ {
-			_reg[name]
-		}
-	}
-	elementSchema: {
-		if element != _|_ {
-			element.#schema
-		}
+	transform: {
+		component: #Component
+		context:   #ProviderContext
+		output:    _ // Provider-specific output format
 	}
 }
 
 // Provider context passed to transformers
 // Contains hierarchical metadata for resource generation
 #ProviderContext: {
-	name:      string // Application name
-	namespace: string // Application namespace
+	name:      string // Module name
+	namespace: string // Module namespace
 
 	// Module and component being processed
 	_module:    #Module
@@ -155,4 +129,29 @@ import (
 			"\(k)": "\(v)" // Convert all annotation values to strings
 		}
 	} | *{}
+}
+
+// Transformer selection logic
+// Matches component primitives to available transformers
+// For now, each primitive maps to exactly one transformer
+#SelectTransformer: {
+	component:             #Component
+	availableTransformers: #TransformerMap
+
+	// Grab primitive elements from component
+	primitiveElements: #ElementStringArray & component.#primitiveElements
+
+	// Direct mapping: each primitive gets exactly one transformer
+	// Future versions may support multiple transformers per primitive with selection logic
+	selectedTransformers: [
+		for primitiveFQN in primitiveElements {
+			for _, transformer in availableTransformers {
+				if list.Contains(transformer.required, primitiveFQN) {
+					// Current implementation assumes 1:1 mapping
+					primitive:   primitiveFQN
+					transformer: transformer.#fullyQualifiedName
+				}
+			}
+		},
+	]
 }

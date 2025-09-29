@@ -52,7 +52,7 @@ package core
 }
 
 #PersistentClaimSpec: {
-	size:          string | *"1Gi"
+	size:          string
 	accessMode:    "ReadWriteOnce" | "ReadOnlyMany" | "ReadWriteMany" | *"ReadWriteOnce"
 	storageClass?: string | *"standard"
 }

@@ -17,22 +17,33 @@ import (
 // governance - governance-related (e.g., resource quota, priority, compliance)
 
 #CoreElementRegistry: {
-	(#ContainerElement.#fullyQualifiedName):           #ContainerElement
+	// Primitive Traits
+	(#ContainerElement.#fullyQualifiedName): #ContainerElement
+	// Modifier Traits
 	(#SidecarContainersElement.#fullyQualifiedName):   #SidecarContainersElement
 	(#InitContainersElement.#fullyQualifiedName):      #InitContainersElement
 	(#EphemeralContainersElement.#fullyQualifiedName): #EphemeralContainersElement
 	(#ReplicasElement.#fullyQualifiedName):            #ReplicasElement
 	(#RestartPolicyElement.#fullyQualifiedName):       #RestartPolicyElement
 	(#UpdateStrategyElement.#fullyQualifiedName):      #UpdateStrategyElement
+	(#HealthCheckElement.#fullyQualifiedName):         #HealthCheckElement
 	(#ExposeElement.#fullyQualifiedName):              #ExposeElement
-	(#SimpleDatabaseElement.#fullyQualifiedName):      #SimpleDatabaseElement
+	// Composite Traits
+	(#StatelessWorkloadElement.#fullyQualifiedName):     #StatelessWorkloadElement
+	(#StatefulWorkloadElement.#fullyQualifiedName):      #StatefulWorkloadElement
+	(#DaemonSetWorkloadElement.#fullyQualifiedName):     #DaemonSetWorkloadElement
+	(#TaskWorkloadElement.#fullyQualifiedName):          #TaskWorkloadElement
+	(#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
+	(#SimpleDatabaseElement.#fullyQualifiedName):        #SimpleDatabaseElement
 }
 
-// Containers
+// Container - Defines a container within a workload
 #ContainerElement: #PrimitiveTrait & {
 	#name:       "Container"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Single container primitive"
+	description: "A container definition for workloads"
+	// Only allow workloadType to be one of the supported types
+	workloadType: "stateless" | "stateful" | "daemonSet" | "task" | "scheduled-task"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "workload"}
 	#schema: #ContainerSpec
@@ -66,7 +77,7 @@ import (
 }
 
 // Add Sidecar Containers to component
-#SidecarContainersElement: #PrimitiveTrait & {
+#SidecarContainersElement: #ModifierTrait & {
 	#name:       "SidecarContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "List of sidecar containers"
@@ -81,7 +92,7 @@ import (
 })
 
 // Add Init Containers to component
-#InitContainersElement: #PrimitiveTrait & {
+#InitContainersElement: #ModifierTrait & {
 	#name:       "InitContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "List of init containers"
@@ -96,7 +107,7 @@ import (
 })
 
 // Add Ephemeral Containers to component
-#EphemeralContainersElement: #PrimitiveTrait & {
+#EphemeralContainersElement: #ModifierTrait & {
 	#name:       "EphemeralContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "List of ephemeral containers"
@@ -111,7 +122,7 @@ import (
 })
 
 // Add Replicas to component
-#ReplicasElement: #PrimitiveTrait & {
+#ReplicasElement: #ModifierTrait & {
 	#name:       "Replicas"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Number of desired replicas"
@@ -130,7 +141,7 @@ import (
 }
 
 // Add Restart Policy to component
-#RestartPolicyElement: #PrimitiveTrait & {
+#RestartPolicyElement: #ModifierTrait & {
 	#name:       "RestartPolicy"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Restart policy for all containers within the component"
@@ -140,8 +151,21 @@ import (
 }
 
 #RestartPolicy: close(#ElementBase & {
+	#metadata: _
 	#elements: (#RestartPolicyElement.#fullyQualifiedName): #RestartPolicyElement
 	restartPolicy: #RestartPolicySpec
+	if #metadata.workloadType == "stateless" || #metadata.workloadType == "stateful" || #metadata.workloadType == "daemonSet" {
+		// Stateless workloads default to Always
+		restartPolicy: #RestartPolicySpec & {
+			policy: "Always"
+		}
+	}
+	if #metadata.workloadType == "task" || #metadata.workloadType == "scheduled-task" {
+		// Task workloads default to OnFailure
+		restartPolicy: #RestartPolicySpec & {
+			policy: "OnFailure" | "Never" | *"Never"
+		}
+	}
 })
 
 #RestartPolicySpec: {
@@ -149,7 +173,7 @@ import (
 }
 
 // Add Update Strategy to component
-#UpdateStrategyElement: #PrimitiveTrait & {
+#UpdateStrategyElement: #ModifierTrait & {
 	#name:       "UpdateStrategy"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Update strategy for the component"
@@ -159,20 +183,70 @@ import (
 }
 
 #UpdateStrategy: close(#ElementBase & {
+	#metadata: _
 	#elements: (#UpdateStrategyElement.#fullyQualifiedName): #UpdateStrategyElement
-	updateStrategy: #UpdateStrategySpec
+	updateStrategy: #UpdateStrategySpec & {
+		if #metadata.workloadType == "stateless" {
+			type: "RollingUpdate" | "Recreate" | *"RollingUpdate"
+			rollingUpdate?: {
+				maxUnavailable: int | *1
+				maxSurge:       int | *1
+			}
+		}
+		if #metadata.workloadType == "stateful" {
+			type: "RollingUpdate" | "OnDelete" | *"RollingUpdate"
+			rollingUpdate?: {
+				partition: int | *0
+			}
+		}
+		if #metadata.workloadType == "daemonSet" {
+			type: "RollingUpdate" | "OnDelete" | *"RollingUpdate"
+			rollingUpdate: {
+				maxUnavailable: int | *1
+			}
+		}
+	}
 })
 
 #UpdateStrategySpec: {
-	type: "RollingUpdate" | "Recreate" | *"RollingUpdate"
+	type: "RollingUpdate" | "Recreate" | "OnDelete" | *"RollingUpdate"
 	rollingUpdate?: {
-		maxUnavailable: int | string | *1
-		maxSurge:       int | string | *1
+		maxUnavailable?: int | *1
+		maxSurge?:       int | *1
+		partition?:      int | *0
+	}
+}
+
+// Add Health Check to component
+#HealthCheckElement: #ModifierTrait & {
+	#name:       "HealthCheck"
+	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	description: "Liveness and readiness probes for the main container"
+	target: ["component"]
+	labels: {"core.opm.dev/category": "workload"}
+	#schema: #HealthCheckSpec
+}
+
+#HealthCheck: close(#ElementBase & {
+	#elements: (#HealthCheckElement.#fullyQualifiedName): #HealthCheckElement
+	healthCheck: #HealthCheckSpec
+})
+
+#HealthCheckSpec: {
+	liveness?:  #ProbeSpec
+	readiness?: #ProbeSpec
+}
+
+#ProbeSpec: {
+	httpGet?: {
+		path:   string
+		port:   uint & >=1 & <=65535
+		scheme: "HTTP" | "HTTPS"
 	}
 }
 
 // Expose a component as a service
-#ExposeElement: #PrimitiveTrait & {
+#ExposeElement: #ModifierTrait & {
 	#name:       "Expose"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Expose component as a service"
@@ -225,13 +299,154 @@ import (
 //// Composite Traits
 /////////////////////////////////////////////////////////////////
 
+// Sateless workload - A horizontally scalable containerized workload with no requirement for stable identity or storage
+#StatelessWorkloadElement: #CompositeTrait & {
+	#name:        "StatelessWorkload"
+	#apiVersion:  "elements.opm.dev/core/v1alpha1"
+	description:  "A stateless workload with no requirement for stable identity or storage"
+	workloadType: "stateless"
+	target: ["component"]
+	composes: [#ContainerElement, #ReplicasElement, #RestartPolicyElement, #UpdateStrategyElement, #HealthCheckElement, #SidecarContainersElement, #InitContainersElement]
+	labels: {"core.opm.dev/category": "workload"}
+	#schema: #StatelessSpec
+}
+
+#StatelessSpec: {
+	container:       #ContainerSpec
+	replicas?:       #ReplicasSpec
+	restartPolicy?:  #RestartPolicySpec
+	updateStrategy?: #UpdateStrategySpec
+	healthCheck?:    #HealthCheckSpec
+	sidecarContainers?: [#ContainerSpec]
+	initContainers?: [#ContainerSpec]
+}
+
+#StatelessWorkload: close(#ElementBase & {
+	#elements: (#StatelessWorkloadElement.#fullyQualifiedName): #StatelessWorkloadElement
+	stateless: #StatelessSpec
+})
+
+// Stateful workload - A containerized workload that requires stable identity and storage
+#StatefulWorkloadElement: #CompositeTrait & {
+	#name:        "StatefulWorkload"
+	#apiVersion:  "elements.opm.dev/core/v1alpha1"
+	description:  "A stateful workload that requires stable identity and storage"
+	workloadType: "stateful"
+	target: ["component"]
+	composes: [#ContainerElement, #ReplicasElement, #RestartPolicyElement, #UpdateStrategyElement, #HealthCheckElement, #SidecarContainersElement, #InitContainersElement, #VolumeElement]
+	labels: {"core.opm.dev/category": "workload"}
+	#schema: #StatefulWorkloadSpec
+}
+
+#StatefulWorkloadSpec: {
+	container:       #ContainerSpec
+	replicas?:       #ReplicasSpec
+	restartPolicy?:  #RestartPolicySpec
+	updateStrategy?: #UpdateStrategySpec
+	healthCheck?:    #HealthCheckSpec
+	sidecarContainers?: [#ContainerSpec]
+	initContainers?: [#ContainerSpec]
+	volume: #VolumeSpec
+}
+
+#StatefulWorkload: close(#ElementBase & {
+	#elements: (#StatefulWorkloadElement.#fullyQualifiedName): #StatefulWorkloadElement
+	stateful: #StatefulWorkloadSpec
+})
+
+// DaemonSet workload - A containerized workload that runs on all (or some) nodes in the cluster
+#DaemonSetWorkloadElement: #CompositeTrait & {
+	#name:        "DaemonSetWorkload"
+	#apiVersion:  "elements.opm.dev/core/v1alpha1"
+	description:  "A daemonSet workload that runs on all (or some) nodes in the cluster"
+	workloadType: "daemonSet"
+	target: ["component"]
+	composes: [#ContainerElement, #RestartPolicyElement, #UpdateStrategyElement, #HealthCheckElement, #SidecarContainersElement, #InitContainersElement]
+	labels: {"core.opm.dev/category": "workload"}
+	#schema: #DaemonSetSpec
+}
+
+#DaemonSetWorkload: close(#ElementBase & {
+	#elements: (#DaemonSetWorkloadElement.#fullyQualifiedName): #DaemonSetWorkloadElement
+	daemonSet: #DaemonSetSpec
+})
+
+#DaemonSetSpec: {
+	container:       #ContainerSpec
+	restartPolicy?:  #RestartPolicySpec
+	updateStrategy?: #UpdateStrategySpec
+	healthCheck?:    #HealthCheckSpec
+	sidecarContainers?: [#ContainerSpec]
+	initContainers?: [#ContainerSpec]
+}
+
+// Task workload - A containerized workload that runs to completion
+#TaskWorkloadElement: #CompositeTrait & {
+	#name:        "TaskWorkload"
+	#apiVersion:  "elements.opm.dev/core/v1alpha1"
+	description:  "A task workload that runs to completion"
+	workloadType: "task"
+	target: ["component"]
+	composes: [#ContainerElement, #RestartPolicyElement, #SidecarContainersElement, #InitContainersElement]
+	labels: {"core.opm.dev/category": "workload"}
+	#schema: #TaskWorkloadSpec
+}
+
+#TaskWorkload: close(#ElementBase & {
+	#elements: (#TaskWorkloadElement.#fullyQualifiedName): #TaskWorkloadElement
+	task: #TaskWorkloadSpec
+})
+
+#TaskWorkloadSpec: {
+	container:      #ContainerSpec
+	restartPolicy?: #RestartPolicySpec
+	sidecarContainers?: [#ContainerSpec]
+	initContainers?: [#ContainerSpec]
+
+	completions?:             int | *1
+	parallelism?:             int | *1
+	backoffLimit?:            int | *6
+	activeDeadlineSeconds?:   int | *300
+	ttlSecondsAfterFinished?: int | *100
+}
+
+// ScheduledTask workload - A containerized workload that runs on a schedule
+#ScheduledTaskWorkloadElement: #CompositeTrait & {
+	#name:        "ScheduledTaskWorkload"
+	#apiVersion:  "elements.opm.dev/core/v1alpha1"
+	description:  "A scheduled task workload that runs on a schedule"
+	workloadType: "scheduled-task"
+	target: ["component"]
+	composes: [#ContainerElement, #RestartPolicyElement, #SidecarContainersElement, #InitContainersElement]
+	labels: {"core.opm.dev/category": "workload"}
+	#schema: #ScheduledTaskWorkloadSpec
+}
+
+#ScheduledTaskWorkload: close(#ElementBase & {
+	#elements: (#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
+	scheduledTask: #ScheduledTaskWorkloadSpec
+})
+
+#ScheduledTaskWorkloadSpec: {
+	container:      #ContainerSpec
+	restartPolicy?: #RestartPolicySpec
+	sidecarContainers?: [#ContainerSpec]
+	initContainers?: [#ContainerSpec]
+
+	schedule!:                   string // Cron format
+	concurrencyPolicy?:          "Allow" | "Forbid" | "Replace" | *"Allow"
+	startingDeadlineSeconds?:    int
+	successfulJobsHistoryLimit?: int | *3
+	failedJobsHistoryLimit?:     int | *1
+}
+
 #SimpleDatabaseElement: #CompositeTrait & {
-	#name:       "Database"
+	#name:       "SimpleDatabase"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Composite trait to add a database to a component"
+	description: "Composite trait to add a simple database to a component"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}
-	composes: [#ContainerElement, #VolumeElement]
+	composes: [#StatefulWorkloadElement, #VolumeElement]
 	#schema: #SimpleDatabaseSpec
 }
 
@@ -240,42 +455,50 @@ import (
 
 	database: #SimpleDatabaseSpec
 
-	container: #ContainerSpec & {
-		if database.engine == "postgres" {
-			name:  "database"
-			image: "postgres:latest"
-			ports: {
-				db: {
-					targetPort: 5432
+	stateful: #StatefulWorkloadSpec & {
+		container: #ContainerSpec & {
+			if database.engine == "postgres" {
+				name:  "database"
+				image: "postgres:latest"
+				ports: {
+					db: {
+						targetPort: 5432
+					}
 				}
-			}
-			env: {
-				DB_NAME: {
-					name:  "DB_NAME"
-					value: database.dbName
+				env: {
+					DB_NAME: {
+						name:  "DB_NAME"
+						value: database.dbName
+					}
+					DB_USER: {
+						name:  "DB_USER"
+						value: database.username
+					}
+					DB_PASSWORD: {
+						name:  "DB_PASSWORD"
+						value: database.password
+					}
 				}
-				DB_USER: {
-					name:  "DB_USER"
-					value: database.username
-				}
-				DB_PASSWORD: {
-					name:  "DB_PASSWORD"
-					value: database.password
-				}
-			}
-			volumeMounts: {
-				data: {
-					name:      "data"
-					mountPath: "/var/lib/postgresql/data"
+				volumeMounts: {
+					data: {
+						name:      "data"
+						mountPath: "/var/lib/postgresql/data"
+					}
 				}
 			}
 		}
-	}
-	volumes: {
-		if database.persistence.enabled {
-			data: {
-				persistentClaim: {
-					size: database.persistence.size
+		restartPolicy: #RestartPolicySpec & {
+			policy: "Always"
+		}
+		updateStrategy: #UpdateStrategySpec & {
+			type: "RollingUpdate"
+		}
+		healthCheck: #HealthCheckSpec & {
+			liveness: #ProbeSpec & {
+				httpGet: {
+					path:   "/healthz"
+					port:   5432
+					scheme: "HTTP"
 				}
 			}
 		}
@@ -283,9 +506,9 @@ import (
 })
 
 #SimpleDatabaseSpec: {
-	engine:  "postgres" | "mysql" | "mongodb" | "redis" | *"postgres"
-	version: string | *"latest"
-	dbName:  string | *"appdb"
+	engine:   "postgres" | "mysql" | "mongodb" | "redis" | *"postgres"
+	version:  string | *"latest"
+	dbName:   string | *"appdb"
 	username: string | *"admin"
 	password: string | *"password"
 	persistence: {

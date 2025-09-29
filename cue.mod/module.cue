@@ -1,4 +1,4 @@
-module: "github.com/open-platform-model/core"
+module: "github.com/open-platform-model/core@v1"
 language: {
 	version: "v0.14.0"
 }
