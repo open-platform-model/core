@@ -113,7 +113,7 @@ import (
 
 	// Collect all primitive elements used by this module
 	// Optimized: Use list.Concat instead of FlattenN for single-level flattening
-	#allPrimitiveElements: #ElementStringArray & list.Concat([for _, comp in #allComponents {comp.#primitiveElements},])
+	#allPrimitiveElements: #ElementStringArray & list.Concat([for _, comp in #allComponents {comp.#primitiveElements}])
 
 	// Platform can modify defaults but not structure
 	// TODO: Walk through moduleDefinition.values and replace with values from #Module.values
@@ -170,8 +170,8 @@ import (
 			if (re & string) == re
 			if !list.Contains(supportedElements, re) {
 				re
-			}, // Only include concrete strings
-		}
+			} // Only include concrete strings
+		},
 	]
 
 	// Resolution status

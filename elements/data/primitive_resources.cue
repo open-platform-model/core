@@ -1,24 +1,17 @@
-package elements
+package data
 
 import (
 	core "github.com/open-platform-model/core"
+	schema "github.com/open-platform-model/core/schema"
 )
 
 /////////////////////////////////////////////////////////////////
-//// Resource catalog
+//// Data Primitive Resources
 /////////////////////////////////////////////////////////////////
-// Categories for traits and resources
-//
-// workload - workload-related (e.g., container, scaling, networking)
-// data - data-related (e.g., configmap, secret, volume, database)
-// connectivity - connectivity-related (e.g., service, ingress, api)
-// security - security-related (e.g., network policy, pod security)
-// observability - observability-related (e.g., logging, monitoring, alerting)
-// governance - governance-related (e.g., resource quota, priority, compliance)
 
 // Volumes as Resources (claims, ephemeral, projected)
 #VolumeElement: core.#PrimitiveResource & {
-	name:       "Volume"
+	name:        "Volume"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "A set of volume types for data storage and sharing"
 	target: ["component"]
@@ -32,32 +25,9 @@ import (
 	volumes: [string]: #VolumeSpec
 })
 
-#VolumeMountSpec: close(#VolumeSpec & {
-	mountPath!: string
-	subPath?:   string
-	readOnly?:  bool | *false
-})
-
-#VolumeSpec: {
-	emptyDir?: {
-		medium?:    *"node" | "memory"
-		sizeLimit?: string
-	}
-	persistentClaim?: #PersistentClaimSpec
-	configMap?:       #ConfigMapSpec
-	secret?:          #SecretSpec
-	...
-}
-
-#PersistentClaimSpec: {
-	size:          string
-	accessMode:    "ReadWriteOnce" | "ReadOnlyMany" | "ReadWriteMany" | *"ReadWriteOnce"
-	storageClass?: string | *"standard"
-}
-
 // ConfigMaps as Resources
 #ConfigMapElement: core.#PrimitiveResource & {
-	name:       "ConfigMap"
+	name:        "ConfigMap"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Key-value pairs for configuration data"
 	target: ["component"]
@@ -71,13 +41,9 @@ import (
 	configMaps: [string]: #ConfigMapSpec
 })
 
-#ConfigMapSpec: {
-	data: [string]: string
-}
-
 // Secrets as Resources
 #SecretElement: core.#PrimitiveResource & {
-	name:       "Secret"
+	name:        "Secret"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Sensitive data such as passwords, tokens, or keys"
 	target: ["component"]
@@ -91,7 +57,8 @@ import (
 	secrets: [string]: #SecretSpec
 })
 
-#SecretSpec: {
-	type?: string | *"Opaque"
-	data: [string]: string // Base64-encoded values
-}
+// Re-export schema types for convenience
+#VolumeSpec:          schema.#VolumeSpec
+#PersistentClaimSpec: schema.#PersistentClaimSpec
+#ConfigMapSpec:       schema.#ConfigMapSpec
+#SecretSpec:          schema.#SecretSpec

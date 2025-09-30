@@ -69,7 +69,17 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 }
 ```
 
-## Recent Changes (2025-09-29)
+## Recent Changes
+
+### 2025-09-30
+
+1. **Major Reorganization**: Restructured elements into category-based hierarchy
+   - Created `schema/` package for all spec definitions
+   - Organized elements into `workload/`, `data/`, and `connectivity/` subdirectories
+   - Resolved circular import dependencies between element categories
+   - All schema types now in separate package to enable cross-category references
+
+### 2025-09-29
 
 1. Changed `workloadType` to `workloadTypes` (array) in #Transformer to support multiple types
 2. Added #status inheritance in #Module from moduleDefinition
@@ -85,9 +95,90 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 
 ### Adding New Elements
 
-1. Define in appropriate file (element_component_*.cue)
-2. Add to registry if core element
-3. Update transformer requirements as needed
+**IMPORTANT:** All new elements MUST be added to the `elements/elements.cue` index file to be accessible when importing the elements package.
+
+#### Element Organization
+
+Elements are organized into category-based directories with separate schema definitions:
+
+- **Categories**: `workload/` | `data/` | `connectivity/` | (future: `security/` | `observability/` | `governance/`)
+- **Element Types**:
+  - `primitive_traits.cue` - Basic building blocks
+  - `modifier_traits.cue` - Modifiers that extend primitives
+  - `composite_traits.cue` - Combinations of primitives/modifiers
+  - `primitive_resources.cue` - Resource definitions
+  - `composite_traits.cue` - Complex data compositions
+- **Schema Package**: All `*Spec` definitions live in `schema/` package
+
+#### Steps to Add a New Element
+
+1. **Define the schema** in appropriate `schema/{category}.cue` file:
+
+   ```cue
+   // In schema/security.cue
+   package schema
+
+   #PodSecuritySpec: {
+       runAsNonRoot?: bool | *true
+       readOnlyRootFilesystem?: bool | *false
+   }
+   ```
+
+2. **Create the element** in `elements/{category}/{type}.cue`:
+
+   ```cue
+   // In elements/security/primitive_traits.cue
+   package security
+
+   import (
+       core "github.com/open-platform-model/core"
+       schema "github.com/open-platform-model/core/schema"
+   )
+
+   #PodSecurityElement: core.#PrimitiveTrait & {
+       name: "PodSecurity"
+       #apiVersion: "elements.opm.dev/core/v1alpha1"
+       target: ["component"]
+       schema: schema.#PodSecuritySpec
+       labels: {"core.opm.dev/category": "security"}
+   }
+
+   #PodSecurity: close(core.#ElementBase & {
+       #elements: (#PodSecurityElement.#fullyQualifiedName): #PodSecurityElement
+       podSecurity: schema.#PodSecuritySpec
+   })
+
+   // Re-export schema
+   #PodSecuritySpec: schema.#PodSecuritySpec
+   ```
+
+3. **Add to `elements/elements.cue` registry**:
+
+   ```cue
+   import (
+       security "github.com/open-platform-model/core/elements/security"
+   )
+
+   // Re-export element
+   #PodSecurityElement: security.#PodSecurityElement
+   #PodSecurity: security.#PodSecurity
+   #PodSecuritySpec: security.#PodSecuritySpec
+
+   // Add to registry
+   #CoreElementRegistry: {
+       (#PodSecurityElement.#fullyQualifiedName): #PodSecurityElement
+   }
+   ```
+
+4. **Update transformer requirements** if creating a new primitive element that platforms need to support
+
+#### Why Schema Package?
+
+The separate `schema/` package prevents circular import dependencies:
+
+- Element packages can safely import `schema` for type definitions
+- Elements in different categories (e.g., `workload` and `data`) can reference each other's specs through the shared `schema` package
+- No circular dependencies between element packages
 
 ### Lint and Type Checking
 
@@ -556,15 +647,48 @@ import (
 
 ```shell
 core/
-├── element.cue                    # Base element definitions
-├── element_component_traits.cue   # Component trait definitions
-├── element_component_resources.cue # Component resource definitions
-├── component.cue                  # Component definitions
-├── module.cue                     # Module definitions
-├── provider.cue                   # Provider interface
-├── registry.cue                   # Element registry
-└── example.cue                    # Usage examples
+├── element.cue                              # Base element definitions
+├── component.cue                            # Component definitions
+├── module.cue                               # Module definitions
+├── provider.cue                             # Provider interface
+├── registry.cue                             # Element registry
+├── schema/                                  # Schema definitions (shared specs)
+│   ├── workload.cue                         # Workload specs (ContainerSpec, ReplicasSpec, etc.)
+│   ├── data.cue                             # Data specs (VolumeSpec, ConfigMapSpec, etc.)
+│   └── connectivity.cue                     # Connectivity specs (ExposeSpec, NetworkScopeSpec)
+├── elements/                                # Element catalog (organized by category)
+│   ├── elements.cue                         # Index & registry (main entry point)
+│   ├── workload/                            # Workload elements
+│   │   ├── primitive_traits.cue             # Container
+│   │   ├── modifier_traits.cue              # Replicas, RestartPolicy, UpdateStrategy, HealthCheck
+│   │   └── composite_traits.cue             # StatelessWorkload, StatefulWorkload, etc.
+│   ├── data/                                # Data elements
+│   │   ├── primitive_resources.cue          # Volume, ConfigMap, Secret
+│   │   └── composite_traits.cue             # SimpleDatabase
+│   └── connectivity/                        # Connectivity elements
+│       ├── primitive_traits.cue             # NetworkScope
+│       └── modifier_traits.cue              # Expose
+└── examples/                                # Usage examples
+    └── example_module.cue
 ```
+
+**Important Imports:**
+
+```cue
+// For using elements
+import elements "github.com/open-platform-model/core/elements"
+
+// For using schema types directly
+import schema "github.com/open-platform-model/core/schema"
+
+// For element development (imports both schema and core)
+import (
+    core "github.com/open-platform-model/core"
+    schema "github.com/open-platform-model/core/schema"
+)
+```
+
+The elements package provides access to all element definitions through a single import.
 
 ## OSCAL Integration Insights
 

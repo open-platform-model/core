@@ -9,7 +9,7 @@ import (
 //// Element Definition
 /////////////////////////////////////////////////////////////////
 #Element: {
-	name!:              string & strings.MinRunes(1) & strings.MaxRunes(254)
+	name!:               string & strings.MinRunes(1) & strings.MaxRunes(254)
 	#nameCamel:          strings.ToCamel(name)
 	#apiVersion:         string | *"core.opm.dev/v1alpha1"
 	#fullyQualifiedName: "\(#apiVersion).\(name)"
