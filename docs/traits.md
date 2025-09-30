@@ -64,7 +64,7 @@ Primitives create resources and can stand alone:
         description: "Horizontally scalable containerized workload"
         target: ["component"]
         labels: {"core.opm.dev/category": "workload"}
-        #schema: #ContainerSpec
+        schema: #ContainerSpec
     }
 
     stateless: #ContainerSpec
@@ -76,7 +76,7 @@ Primitives create resources and can stand alone:
         description: "Workload with stable identity and persistent storage"
         target: ["component"]
         labels: {"core.opm.dev/category": "workload"}
-        #schema: #ContainerSpec
+        schema: #ContainerSpec
     }
 
     stateful: #ContainerSpec
@@ -88,7 +88,7 @@ Primitives create resources and can stand alone:
         description: "Volume storage primitive"
         target: ["component"]
         labels: {"core.opm.dev/category": "data"}
-        #schema: #VolumeSpec
+        schema: #VolumeSpec
     }
 
     volumes: [string]: #VolumeSpec
@@ -110,7 +110,7 @@ Modifiers enhance primitives and must declare what they modify:
             "core.opm.dev/v1alpha1.StatefulWorkload"
         ]  // Using fullyQualifiedName
         labels: {"core.opm.dev/category": "workload"}
-        #schema: #ReplicasSpec
+        schema: #ReplicasSpec
     }
 
     replicas: #ReplicasSpec
@@ -129,7 +129,7 @@ Modifiers enhance primitives and must declare what they modify:
             "core.opm.dev/v1alpha1.ScheduledTaskWorkload"
         ]
         labels: {"core.opm.dev/category": "workload"}
-        #schema: #HealthCheckSpec
+        schema: #HealthCheckSpec
     }
 
     healthCheck: #HealthCheckSpec
@@ -668,8 +668,8 @@ The #Transformer interface from provider.cue defines how individual transformers
         component: #Component
         context:   #ProviderContext
         output: {
-            apiVersion: #apiVersion
-            kind: #kind
+            #apiVersion: #apiVersion
+            #kind: #kind
             metadata: {
                 name: context.componentMetadata.name
                 namespace: context.namespace
@@ -711,8 +711,8 @@ The #Transformer interface from provider.cue defines how individual transformers
         context:   #ProviderContext
         output: [
             for volumeName, volumeSpec in component.volumes {
-                apiVersion: #apiVersion
-                kind: #kind
+                #apiVersion: #apiVersion
+                #kind: #kind
                 metadata: {
                     name: "\(context.componentMetadata.name)-\(volumeName)"
                     namespace: context.namespace

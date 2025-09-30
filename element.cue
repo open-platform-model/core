@@ -9,28 +9,18 @@ import (
 //// Element Definition
 /////////////////////////////////////////////////////////////////
 #Element: {
-	#name!:              string & strings.MinRunes(1) & strings.MaxRunes(254)
-	#nameCamel:          strings.ToCamel(#name)
+	name!:              string & strings.MinRunes(1) & strings.MaxRunes(254)
+	#nameCamel:          strings.ToCamel(name)
 	#apiVersion:         string | *"core.opm.dev/v1alpha1"
-	#fullyQualifiedName: "\(#apiVersion).\(#name)"
-
-	// Human-readable description of the element
-	description?: string
-
-	// Optional metadata labels for categorization and filtering
-	labels?: #LabelsAnnotationsType
+	#fullyQualifiedName: "\(#apiVersion).\(name)"
 
 	// The type of this element
+	// Possible values: "trait", "resource", "policy"
 	type!: #ElementTypes
 
 	// kind of element
+	// Possible values: "primitive", "modifier", "composite", "custom"
 	kind!: #ElementKinds
-
-	// Workload type (e.g., stateless, stateful, task, etc.) this element is associated with
-	// Only one workload type can be specified per component
-	// If empty, it means the element can be applied to any workload type
-	// For resources this is just ignored
-	workloadType?: #WorkloadTypes
 
 	// Where can element be applied
 	// Can be one or more of "component", "scope"
@@ -38,7 +28,19 @@ import (
 
 	// MUST be an OpenAPIv3 compatible schema
 	// TODO: Add validation to only allow one named struct per trait
-	#schema!: _
+	schema!: _
+
+	// Workload type (e.g., stateless, stateful, task, etc.) this element is associated with
+	// Only one workload type can be specified per component
+	// If empty, it means the element can be applied to any workload type
+	// For resources this is just ignored
+	workloadType?: #WorkloadTypes
+
+	// Human-readable description of the element
+	description?: string
+
+	// Optional metadata labels for categorization and filtering
+	labels?: #LabelsAnnotationsType
 	...
 }
 
@@ -110,21 +112,13 @@ import (
 	composes!: #ElementArray
 
 	// Recursively extract all primitive elements from this composite
-	#primitiveElements: #ElementStringArray & list.FlattenN([
-		// For each element in composes
-		for element in composes
-		if element.kind == "primitive" || element.kind == "composite" {
-			// If it's primitive, add it directly
-			if element.kind == "primitive" {
-				[element.#fullyQualifiedName]
-			}
-
-			// If it's composite, merge its primitives
-			if element.kind == "composite" {
-				element.#primitiveElements
-			}
+	#primitiveElements: list.FlattenN([
+		for element in composes {
+			if element.kind == "primitive" {[element.#fullyQualifiedName]}
+			if element.kind == "composite" {element.#primitiveElements}
+			if element.kind != "primitive" && element.kind != "composite" {[]}
 		},
-	], 1)
+	], -1)
 
 	// Ensure workloadType is set if any composed element has it set
 	workloadType!: #WorkloadTypes

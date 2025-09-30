@@ -15,6 +15,10 @@ OPM provides a declarative model for describing cloud-native applications throug
 - **Scopes**: Logical groupings that apply shared configuration across multiple components
 - **Modules**: Complete application definitions combining components, scopes, and configurable values
 
+## CUE known issues
+
+- When cue evaluates a large dataset and some value cannot be concrete (bottoms) it could slow down the evaluation process significantly. To prevent this, run a `cue export` to find the fault and fix it.
+
 ## Structure
 
 The framework uses CUE's type system to provide strong validation and composition capabilities while maintaining extensibility for platform-specific implementations.

@@ -491,7 +491,7 @@ import (
   ```cue
   #Element: close({
     type: #ElementTypes
-    kind: #ElementKinds
+    #kind: #ElementKinds
   })
   ```
 

@@ -1,4 +1,8 @@
-package core
+package elements
+
+import (
+	core "github.com/open-platform-model/core"
+)
 
 /////////////////////////////////////////////////////////////////
 //// Resource catalog
@@ -6,29 +10,23 @@ package core
 // Categories for traits and resources
 //
 // workload - workload-related (e.g., container, scaling, networking)
-// data - data-related (e.g., configmap, secret, volume)
+// data - data-related (e.g., configmap, secret, volume, database)
 // connectivity - connectivity-related (e.g., service, ingress, api)
 // security - security-related (e.g., network policy, pod security)
 // observability - observability-related (e.g., logging, monitoring, alerting)
 // governance - governance-related (e.g., resource quota, priority, compliance)
 
-#CoreElementRegistry: {
-	(#VolumeElement.#fullyQualifiedName):    #VolumeElement
-	(#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
-	(#SecretElement.#fullyQualifiedName):    #SecretElement
-}
-
 // Volumes as Resources (claims, ephemeral, projected)
-#VolumeElement: #PrimitiveResource & {
-	#name:       "Volume"
+#VolumeElement: core.#PrimitiveResource & {
+	name:       "Volume"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "A set of volume types for data storage and sharing"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}
-	#schema: #VolumeSpec
+	schema: #VolumeSpec
 }
 
-#Volume: close(#ElementBase & {
+#Volume: close(core.#ElementBase & {
 	#elements: (#VolumeElement.#fullyQualifiedName): #VolumeElement
 
 	volumes: [string]: #VolumeSpec
@@ -58,16 +56,16 @@ package core
 }
 
 // ConfigMaps as Resources
-#ConfigMapElement: #PrimitiveResource & {
-	#name:       "ConfigMap"
+#ConfigMapElement: core.#PrimitiveResource & {
+	name:       "ConfigMap"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Key-value pairs for configuration data"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}
-	#schema: #ConfigMapSpec
+	schema: #ConfigMapSpec
 }
 
-#ConfigMap: close(#ElementBase & {
+#ConfigMap: close(core.#ElementBase & {
 	#elements: (#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
 
 	configMaps: [string]: #ConfigMapSpec
@@ -78,16 +76,16 @@ package core
 }
 
 // Secrets as Resources
-#SecretElement: #PrimitiveResource & {
-	#name:       "Secret"
+#SecretElement: core.#PrimitiveResource & {
+	name:       "Secret"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Sensitive data such as passwords, tokens, or keys"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}
-	#schema: #SecretSpec
+	schema: #SecretSpec
 }
 
-#Secret: close(#ElementBase & {
+#Secret: close(core.#ElementBase & {
 	#elements: (#SecretElement.#fullyQualifiedName): #SecretElement
 
 	secrets: [string]: #SecretSpec

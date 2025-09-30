@@ -112,9 +112,8 @@ import (
 	}
 
 	// Collect all primitive elements used by this module
-	#allPrimitiveElements: #ElementStringArray & list.FlattenN([
-		for _, comp in #allComponents {comp.#primitiveElements},
-	], 1)
+	// Optimized: Use list.Concat instead of FlattenN for single-level flattening
+	#allPrimitiveElements: #ElementStringArray & list.Concat([for _, comp in #allComponents {comp.#primitiveElements},])
 
 	// Platform can modify defaults but not structure
 	// TODO: Walk through moduleDefinition.values and replace with values from #Module.values
@@ -167,10 +166,11 @@ import (
 
 	// Find unsupported elements
 	unsupportedElements: [
-		for re in requiredElements
-		if (re & string) == re // Only include concrete strings
-		if !list.Contains(supportedElements, re) {
-			re
+		for re in requiredElements {
+			if (re & string) == re
+			if !list.Contains(supportedElements, re) {
+				re
+			}, // Only include concrete strings
 		}
 	]
 

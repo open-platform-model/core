@@ -2,6 +2,7 @@
 
 ## Nearterm
 
+- [ ] Go through all "Specs" and add sane default to relevant values.
 - [ ] Figure out a better solution to "..." in Element base, etc. It needs to be typed but also allow for extending with fields. Maybe components are allowed to be loosy goosy but Elements are stricter
 - [ ] Investigate and fix the reason why "containers" is not balooned to #ContainerSpec when evaluating #WorkloadSchema "clear && cue eval catalog/traits/core/v2alpha2/workload/workload.cue -e "#WorkloadSchema" --all".
 - [ ] Implement standard status definition for component.

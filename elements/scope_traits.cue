@@ -1,4 +1,8 @@
-package core
+package elements
+
+import (
+	core "github.com/open-platform-model/core"
+)
 
 /////////////////////////////////////////////////////////////////
 //// Trait catalog
@@ -6,27 +10,23 @@ package core
 // Categories for traits and resources
 //
 // workload - workload-related (e.g., container, scaling, networking)
-// data - data-related (e.g., configmap, secret, volume)
+// data - data-related (e.g., configmap, secret, volume, database)
 // connectivity - connectivity-related (e.g., service, ingress, api)
 // security - security-related (e.g., network policy, pod security)
 // observability - observability-related (e.g., logging, monitoring, alerting)
 // governance - governance-related (e.g., resource quota, priority, compliance)
 
-#CoreElementRegistry: {
-	(#NetworkScopeElement.#fullyQualifiedName): #NetworkScopeElement
-}
-
 // Network Scope as Trait
-#NetworkScopeElement: #PrimitiveTrait & {
-	#name:       "NetworkScope"
+#NetworkScopeElement: core.#PrimitiveTrait & {
+	name:       "NetworkScope"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	description: "Primitive scope to define a shared network boundary"
 	target: ["scope"]
 	labels: {"core.opm.dev/category": "connectivity"}
-	#schema: #NetworkScopeSpec
+	schema: #NetworkScopeSpec
 }
 
-#NetworkScope: #ElementBase & {
+#NetworkScope: core.#ElementBase & {
 	#elements: (#NetworkScopeElement.#fullyQualifiedName): #NetworkScopeElement
 
 	networkScope: #NetworkScopeSpec

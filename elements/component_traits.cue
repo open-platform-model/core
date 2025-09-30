@@ -1,64 +1,50 @@
-package core
+package elements
 
 import (
 	"strings"
+
+	core "github.com/open-platform-model/core"
 )
 
 /////////////////////////////////////////////////////////////////
 //// Trait catalog
 /////////////////////////////////////////////////////////////////
+//
 // Categories for traits and resources
 //
 // workload - workload-related (e.g., container, scaling, networking)
-// data - data-related (e.g., configmap, secret, volume)
+// data - data-related (e.g., configmap, secret, volume, database)
 // connectivity - connectivity-related (e.g., service, ingress, api)
 // security - security-related (e.g., network policy, pod security)
 // observability - observability-related (e.g., logging, monitoring, alerting)
 // governance - governance-related (e.g., resource quota, priority, compliance)
-
-#CoreElementRegistry: {
-	// Primitive Traits
-	(#ContainerElement.#fullyQualifiedName): #ContainerElement
-	// Modifier Traits
-	(#SidecarContainersElement.#fullyQualifiedName):   #SidecarContainersElement
-	(#InitContainersElement.#fullyQualifiedName):      #InitContainersElement
-	(#EphemeralContainersElement.#fullyQualifiedName): #EphemeralContainersElement
-	(#ReplicasElement.#fullyQualifiedName):            #ReplicasElement
-	(#RestartPolicyElement.#fullyQualifiedName):       #RestartPolicyElement
-	(#UpdateStrategyElement.#fullyQualifiedName):      #UpdateStrategyElement
-	(#HealthCheckElement.#fullyQualifiedName):         #HealthCheckElement
-	(#ExposeElement.#fullyQualifiedName):              #ExposeElement
-	// Composite Traits
-	(#StatelessWorkloadElement.#fullyQualifiedName):     #StatelessWorkloadElement
-	(#StatefulWorkloadElement.#fullyQualifiedName):      #StatefulWorkloadElement
-	(#DaemonSetWorkloadElement.#fullyQualifiedName):     #DaemonSetWorkloadElement
-	(#TaskWorkloadElement.#fullyQualifiedName):          #TaskWorkloadElement
-	(#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
-	(#SimpleDatabaseElement.#fullyQualifiedName):        #SimpleDatabaseElement
-}
+//
+/////////////////////////////////////////////////////////////////
+//// Primitives Traits
+/////////////////////////////////////////////////////////////////
 
 // Container - Defines a container within a workload
-#ContainerElement: #PrimitiveTrait & {
-	#name:       "Container"
+#ContainerElement: core.#PrimitiveTrait & {
+	name:       "Container"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "A container definition for workloads"
+	target: ["component"]
+	schema: #ContainerSpec
 	// Only allow workloadType to be one of the supported types
 	workloadType: "stateless" | "stateful" | "daemonSet" | "task" | "scheduled-task"
-	target: ["component"]
+	description: "A container definition for workloads"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #ContainerSpec
 }
 
-#Container: close(#ElementBase & {
+#Container: close(core.#ElementBase & {
 	#elements: (#ContainerElement.#fullyQualifiedName): #ContainerElement
 	container: #ContainerSpec
 })
 
 #ContainerSpec: {
-	name:            string
-	image:           string
+	name!:            string
+	image!:           string
 	imagePullPolicy: "Always" | "IfNotPresent" | "Never" | *"IfNotPresent"
-	ports?: [PortName=string]: #PortSpec & {name: PortName}
+	ports?: [portName=string]: #PortSpec & {name: portName}
 	env?: [string]: {
 		name:  string
 		value: string
@@ -76,62 +62,66 @@ import (
 	volumeMounts?: [string]: #VolumeMountSpec
 }
 
+/////////////////////////////////////////////////////////////////
+//// Modifier Traits
+/////////////////////////////////////////////////////////////////
+
 // Add Sidecar Containers to component
-#SidecarContainersElement: #ModifierTrait & {
-	#name:       "SidecarContainers"
+#SidecarContainersElement: core.#ModifierTrait & {
+	name:       "SidecarContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "List of sidecar containers"
 	target: ["component"]
+	schema: [#ContainerSpec]
+	description: "List of sidecar containers"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: [#ContainerSpec]
 }
 
-#SidecarContainers: close(#ElementBase & {
+#SidecarContainers: close(core.#ElementBase & {
 	#elements: (#SidecarContainersElement.#fullyQualifiedName): #SidecarContainersElement
 	sidecarContainers: [#ContainerSpec]
 })
 
 // Add Init Containers to component
-#InitContainersElement: #ModifierTrait & {
-	#name:       "InitContainers"
+#InitContainersElement: core.#ModifierTrait & {
+	name:       "InitContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "List of init containers"
 	target: ["component"]
+	schema: [#ContainerSpec]
+	description: "List of init containers"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: [#ContainerSpec]
 }
 
-#InitContainers: close(#ElementBase & {
+#InitContainers: close(core.#ElementBase & {
 	#elements: InitContainers: #InitContainersElement
 	initContainers: [#ContainerSpec]
 })
 
 // Add Ephemeral Containers to component
-#EphemeralContainersElement: #ModifierTrait & {
-	#name:       "EphemeralContainers"
+#EphemeralContainersElement: core.#ModifierTrait & {
+	name:       "EphemeralContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "List of ephemeral containers"
 	target: ["component"]
+	schema: [#ContainerSpec]
+	description: "List of ephemeral containers"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: [#ContainerSpec]
 }
 
-#EphemeralContainers: close(#ElementBase & {
+#EphemeralContainers: close(core.#ElementBase & {
 	#elements: (#EphemeralContainersElement.#fullyQualifiedName): #EphemeralContainersElement
 	ephemeralContainers: [#ContainerSpec]
 })
 
 // Add Replicas to component
-#ReplicasElement: #ModifierTrait & {
-	#name:       "Replicas"
+#ReplicasElement: core.#ModifierTrait & {
+	name:       "Replicas"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Number of desired replicas"
 	target: ["component"]
+	schema: #ReplicasSpec
+	description: "Number of desired replicas"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #ReplicasSpec
 }
 
-#Replicas: close(#ElementBase & {
+#Replicas: close(core.#ElementBase & {
 	#elements: (#ReplicasElement.#fullyQualifiedName): #ReplicasElement
 	replicas: #ReplicasSpec
 })
@@ -141,16 +131,16 @@ import (
 }
 
 // Add Restart Policy to component
-#RestartPolicyElement: #ModifierTrait & {
-	#name:       "RestartPolicy"
+#RestartPolicyElement: core.#ModifierTrait & {
+	name:       "RestartPolicy"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Restart policy for all containers within the component"
 	target: ["component"]
+	schema: #RestartPolicySpec
+	description: "Restart policy for all containers within the component"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #RestartPolicySpec
 }
 
-#RestartPolicy: close(#ElementBase & {
+#RestartPolicy: close(core.#ElementBase & {
 	#metadata: _
 	#elements: (#RestartPolicyElement.#fullyQualifiedName): #RestartPolicyElement
 	restartPolicy: #RestartPolicySpec
@@ -173,16 +163,16 @@ import (
 }
 
 // Add Update Strategy to component
-#UpdateStrategyElement: #ModifierTrait & {
-	#name:       "UpdateStrategy"
+#UpdateStrategyElement: core.#ModifierTrait & {
+	name:       "UpdateStrategy"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Update strategy for the component"
 	target: ["component"]
+	schema: #UpdateStrategySpec
+	description: "Update strategy for the component"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #UpdateStrategySpec
 }
 
-#UpdateStrategy: close(#ElementBase & {
+#UpdateStrategy: close(core.#ElementBase & {
 	#metadata: _
 	#elements: (#UpdateStrategyElement.#fullyQualifiedName): #UpdateStrategyElement
 	updateStrategy: #UpdateStrategySpec & {
@@ -218,16 +208,16 @@ import (
 }
 
 // Add Health Check to component
-#HealthCheckElement: #ModifierTrait & {
-	#name:       "HealthCheck"
+#HealthCheckElement: core.#ModifierTrait & {
+	name:       "HealthCheck"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Liveness and readiness probes for the main container"
 	target: ["component"]
+	schema: #HealthCheckSpec
+	description: "Liveness and readiness probes for the main container"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #HealthCheckSpec
 }
 
-#HealthCheck: close(#ElementBase & {
+#HealthCheck: close(core.#ElementBase & {
 	#elements: (#HealthCheckElement.#fullyQualifiedName): #HealthCheckElement
 	healthCheck: #HealthCheckSpec
 })
@@ -246,22 +236,22 @@ import (
 }
 
 // Expose a component as a service
-#ExposeElement: #ModifierTrait & {
-	#name:       "Expose"
+#ExposeElement: core.#ModifierTrait & {
+	name:       "Expose"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Expose component as a service"
 	target: ["component"]
+	schema: #ExposeSpec
+	description: "Expose component as a service"
 	labels: {"core.opm.dev/category": "connectivity"}
-	#schema: #ExposeSpec
 }
 
-#Expose: close(#ElementBase & {
+#Expose: close(core.#ElementBase & {
 	#elements: (#ExposeElement.#fullyQualifiedName): #ExposeElement
 	expose: #ExposeSpec
 })
 
 #ExposeSpec: {
-	ports: [string]: #ExposePortSpec
+	ports: [portName=string]: #ExposePortSpec & {name: portName}
 	type: "ClusterIP" | "NodePort" | "LoadBalancer" | *"ClusterIP"
 }
 
@@ -271,13 +261,13 @@ import (
 #IANA_SVC_NAME: string & strings.MinRunes(1) & strings.MaxRunes(15) & =~"^[a-z]([-a-z0-9]{0,13}[a-z0-9])?$"
 
 #PortSpec: {
+	// This must be an IANA_SVC_NAME and unique within the pod. Each named port in a pod must have a unique name.
+	// Name for the port that can be referred to by services.
+	name!: #IANA_SVC_NAME
 	// The port that the container will bind to.
 	// This must be a valid port number, 0 < x < 65536.
 	// If exposedPort is not specified, this value will be used for exposing the port outside the container.
 	targetPort!: uint & >=1 & <=65535
-	// This must be an IANA_SVC_NAME and unique within the pod. Each named port in a pod must have a unique name.
-	// Name for the port that can be referred to by services.
-	name!: #IANA_SVC_NAME
 	// Protocol for port. Must be UDP, TCP, or SCTP. Defaults to "TCP". 
 	protocol: *"TCP" | "UDP" | "SCTP"
 	// What host IP to bind the external port to.
@@ -300,15 +290,15 @@ import (
 /////////////////////////////////////////////////////////////////
 
 // Sateless workload - A horizontally scalable containerized workload with no requirement for stable identity or storage
-#StatelessWorkloadElement: #CompositeTrait & {
-	#name:        "StatelessWorkload"
+#StatelessWorkloadElement: core.#CompositeTrait & {
+	name:        "StatelessWorkload"
 	#apiVersion:  "elements.opm.dev/core/v1alpha1"
-	description:  "A stateless workload with no requirement for stable identity or storage"
 	workloadType: "stateless"
 	target: ["component"]
+	schema: #StatelessSpec
 	composes: [#ContainerElement, #ReplicasElement, #RestartPolicyElement, #UpdateStrategyElement, #HealthCheckElement, #SidecarContainersElement, #InitContainersElement]
+	description:  "A stateless workload with no requirement for stable identity or storage"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #StatelessSpec
 }
 
 #StatelessSpec: {
@@ -321,21 +311,21 @@ import (
 	initContainers?: [#ContainerSpec]
 }
 
-#StatelessWorkload: close(#ElementBase & {
+#StatelessWorkload: close(core.#ElementBase & {
 	#elements: (#StatelessWorkloadElement.#fullyQualifiedName): #StatelessWorkloadElement
 	stateless: #StatelessSpec
 })
 
 // Stateful workload - A containerized workload that requires stable identity and storage
-#StatefulWorkloadElement: #CompositeTrait & {
-	#name:        "StatefulWorkload"
+#StatefulWorkloadElement: core.#CompositeTrait & {
+	name:        "StatefulWorkload"
 	#apiVersion:  "elements.opm.dev/core/v1alpha1"
-	description:  "A stateful workload that requires stable identity and storage"
-	workloadType: "stateful"
 	target: ["component"]
+	schema: #StatefulWorkloadSpec
 	composes: [#ContainerElement, #ReplicasElement, #RestartPolicyElement, #UpdateStrategyElement, #HealthCheckElement, #SidecarContainersElement, #InitContainersElement, #VolumeElement]
+	workloadType: "stateful"
+	description:  "A stateful workload that requires stable identity and storage"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #StatefulWorkloadSpec
 }
 
 #StatefulWorkloadSpec: {
@@ -349,24 +339,24 @@ import (
 	volume: #VolumeSpec
 }
 
-#StatefulWorkload: close(#ElementBase & {
+#StatefulWorkload: close(core.#ElementBase & {
 	#elements: (#StatefulWorkloadElement.#fullyQualifiedName): #StatefulWorkloadElement
 	stateful: #StatefulWorkloadSpec
 })
 
 // DaemonSet workload - A containerized workload that runs on all (or some) nodes in the cluster
-#DaemonSetWorkloadElement: #CompositeTrait & {
-	#name:        "DaemonSetWorkload"
+#DaemonSetWorkloadElement: core.#CompositeTrait & {
+	name:        "DaemonSetWorkload"
 	#apiVersion:  "elements.opm.dev/core/v1alpha1"
-	description:  "A daemonSet workload that runs on all (or some) nodes in the cluster"
-	workloadType: "daemonSet"
 	target: ["component"]
+	schema: #DaemonSetSpec
 	composes: [#ContainerElement, #RestartPolicyElement, #UpdateStrategyElement, #HealthCheckElement, #SidecarContainersElement, #InitContainersElement]
+	workloadType: "daemonSet"
+	description:  "A daemonSet workload that runs on all (or some) nodes in the cluster"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #DaemonSetSpec
 }
 
-#DaemonSetWorkload: close(#ElementBase & {
+#DaemonSetWorkload: close(core.#ElementBase & {
 	#elements: (#DaemonSetWorkloadElement.#fullyQualifiedName): #DaemonSetWorkloadElement
 	daemonSet: #DaemonSetSpec
 })
@@ -381,18 +371,18 @@ import (
 }
 
 // Task workload - A containerized workload that runs to completion
-#TaskWorkloadElement: #CompositeTrait & {
-	#name:        "TaskWorkload"
+#TaskWorkloadElement: core.#CompositeTrait & {
+	name:        "TaskWorkload"
 	#apiVersion:  "elements.opm.dev/core/v1alpha1"
-	description:  "A task workload that runs to completion"
-	workloadType: "task"
 	target: ["component"]
+	schema: #TaskWorkloadSpec
 	composes: [#ContainerElement, #RestartPolicyElement, #SidecarContainersElement, #InitContainersElement]
+	workloadType: "task"
+	description:  "A task workload that runs to completion"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #TaskWorkloadSpec
 }
 
-#TaskWorkload: close(#ElementBase & {
+#TaskWorkload: close(core.#ElementBase & {
 	#elements: (#TaskWorkloadElement.#fullyQualifiedName): #TaskWorkloadElement
 	task: #TaskWorkloadSpec
 })
@@ -411,18 +401,18 @@ import (
 }
 
 // ScheduledTask workload - A containerized workload that runs on a schedule
-#ScheduledTaskWorkloadElement: #CompositeTrait & {
-	#name:        "ScheduledTaskWorkload"
+#ScheduledTaskWorkloadElement: core.#CompositeTrait & {
+	name:        "ScheduledTaskWorkload"
 	#apiVersion:  "elements.opm.dev/core/v1alpha1"
-	description:  "A scheduled task workload that runs on a schedule"
-	workloadType: "scheduled-task"
 	target: ["component"]
+	schema: #ScheduledTaskWorkloadSpec
 	composes: [#ContainerElement, #RestartPolicyElement, #SidecarContainersElement, #InitContainersElement]
+	workloadType: "scheduled-task"
+	description:  "A scheduled task workload that runs on a schedule"
 	labels: {"core.opm.dev/category": "workload"}
-	#schema: #ScheduledTaskWorkloadSpec
 }
 
-#ScheduledTaskWorkload: close(#ElementBase & {
+#ScheduledTaskWorkload: close(core.#ElementBase & {
 	#elements: (#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
 	scheduledTask: #ScheduledTaskWorkloadSpec
 })
@@ -433,24 +423,25 @@ import (
 	sidecarContainers?: [#ContainerSpec]
 	initContainers?: [#ContainerSpec]
 
-	schedule!:                   string // Cron format
+	scheduleCron!:                   string // Cron format
 	concurrencyPolicy?:          "Allow" | "Forbid" | "Replace" | *"Allow"
 	startingDeadlineSeconds?:    int
 	successfulJobsHistoryLimit?: int | *3
 	failedJobsHistoryLimit?:     int | *1
 }
 
-#SimpleDatabaseElement: #CompositeTrait & {
-	#name:       "SimpleDatabase"
+#SimpleDatabaseElement: core.#CompositeTrait & {
+	name:       "SimpleDatabase"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	description: "Composite trait to add a simple database to a component"
 	target: ["component"]
-	labels: {"core.opm.dev/category": "data"}
+	schema: #SimpleDatabaseSpec
 	composes: [#StatefulWorkloadElement, #VolumeElement]
-	#schema: #SimpleDatabaseSpec
+	workloadType: "stateful"
+	description: "Composite trait to add a simple database to a component"
+	labels: {"core.opm.dev/category": "data"}
 }
 
-#SimpleDatabase: close(#ElementBase & {
+#SimpleDatabase: close(core.#ElementBase & {
 	#elements: (#SimpleDatabaseElement.#fullyQualifiedName): #SimpleDatabaseElement
 
 	database: #SimpleDatabaseSpec
@@ -494,7 +485,7 @@ import (
 			type: "RollingUpdate"
 		}
 		healthCheck: #HealthCheckSpec & {
-			liveness: #ProbeSpec & {
+			liveness: {
 				httpGet: {
 					path:   "/healthz"
 					port:   5432

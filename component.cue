@@ -34,21 +34,13 @@ import (
 	#elements: #ElementMap
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
-	#primitiveElements: #ElementStringArray & list.FlattenN([
-		// For each element in composes
-		for _, element in #elements
-		if element.kind == "primitive" || element.kind == "composite" {
-			// If it's primitive, add it directly
-			if element.kind == "primitive" {
-				[element.#fullyQualifiedName]
-			}
-
-			// If it's composite, merge its primitives
-			if element.kind == "composite" {
-				element.#primitiveElements
-			}
+	#primitiveElements: list.FlattenN([
+		for _, element in #elements {
+			if element.kind == "primitive" {[element.#fullyQualifiedName]}
+			if element.kind == "composite" {element.#primitiveElements}
+			if element.kind != "primitive" && element.kind != "composite" {[]}
 		},
-	], 1)
+	], -1)
 
 	// TODO add validation to ensure only traits/resources are added based on componentType
 	...

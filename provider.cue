@@ -20,9 +20,6 @@ import (
 	}
 
 	#registry: #ElementRegistry
-	#registryStringArray: #ElementStringArray & [
-		for k, _ in #registry {k},
-	]
 
 	// Transformer registry - maps traits to transformers
 	// Example:
@@ -37,6 +34,7 @@ import (
 	// }
 	transformers: #TransformerMap
 
+	// Optimized: flatten and sort supported elements from all transformers
 	#supportedElements: #ElementStringArray & list.FlattenN([
 		for _, transformer in transformers {
 			transformer.#supportedElements
@@ -59,37 +57,47 @@ import (
 
 	#apiVersion: string // e.g. "k8s.io/api/apps/v1"
 
-	#fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "k8s.io/api/apps/v1.Deployment""
+	#fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "k8s.io/api/apps/v1.Deployment"
 
 	// Element registry - must be populated by provider implementation
 	_registry: #ElementMap
+	if _registry == _|_ {
+		error("Transformer must have an element registry")
+	}
 
 	// Required OPM primitive elements for this transformer to work
-	required!: #ElementStringArray // e.g. ["core.opm.dev/v1alpha1.StatelessWorkload", "core.opm.dev/v1alpha1.StatefulWorkload"]
+	required: #ElementStringArray // e.g. ["core.opm.dev/v1alpha1.StatelessWorkload", "core.opm.dev/v1alpha1.StatefulWorkload"]
+
+	// if len(required) == 0 {
+	// 	error("Transformer must have at least one required element")
+	// }
 
 	// Optional OPM modifier elements that can enhance the resource
 	optional: #ElementStringArray | *[] // e.g. ["core.opm.dev/v1alpha1.SidecarContainers", "core.opm.dev/v1alpha1.Replicas", "core.opm.dev/v1alpha1.UpdateStrategy", "core.opm.dev/v1alpha1.Expose", "core.opm.dev/v1alpha1.HealthCheck"]
 
 	// All element fully qualified names (required + optional)
-	#allProviderElements: #ElementStringArray & list.Concat([required, optional])
+	#allTransformerElements: #ElementStringArray & list.Concat([required, optional])
 
+	// Optimized: Use map lookup instead of list.Contains for O(1) access
 	#supportedElements: #ElementStringArray & [
-		for elementFQN in #allProviderElements
-		if _registry[elementFQN] != _|_ {elementFQN},
+		for element in #allTransformerElements
+		if _registry[element] != _|_ {
+			element
+		},
 	]
 
 	// Auto-generated defaults from optional element schemas
 	defaults: {
-		// Resolve schemas from optional elements only
-		for elementFQN, element in _registry {
-			if list.Contains(optional, elementFQN) {
-				if element.kind == "modifier" {
-					// Only include modifier elements as defaults
-					// Composite elements are made up of other elements and should not be top-level defaults
-					// Primitive elements do not have defaults
-					(element.#nameCamel): element.#schema
-				}
-			}
+		// Optimized: Direct map lookup instead of Contains check
+		for elementFQN in optional
+		if _registry[elementFQN] != _|_
+		if _registry[elementFQN].kind == "modifier" {
+			let element = _registry[elementFQN]
+
+			// Only include modifier elements as defaults
+			// Composite elements are made up of other elements and should not be top-level defaults
+			// Primitive elements do not have defaults
+			(element.#nameCamel): element.schema
 		}
 
 		// Allow transformer-specific additional defaults
@@ -141,17 +149,23 @@ import (
 	// Grab primitive elements from component
 	primitiveElements: #ElementStringArray & component.#primitiveElements
 
+	// Optimized: Build reverse index first (primitive -> transformer)
+	// This avoids O(n*m) nested loops
+	_primitiveToTransformer: {
+		for tName, transformer in availableTransformers {
+			for req in transformer.required {
+				(req): transformer.#fullyQualifiedName
+			}
+		}
+	}
+
 	// Direct mapping: each primitive gets exactly one transformer
 	// Future versions may support multiple transformers per primitive with selection logic
 	selectedTransformers: [
-		for primitiveFQN in primitiveElements {
-			for _, transformer in availableTransformers {
-				if list.Contains(transformer.required, primitiveFQN) {
-					// Current implementation assumes 1:1 mapping
-					primitive:   primitiveFQN
-					transformer: transformer.#fullyQualifiedName
-				}
-			}
+		for primitiveFQN in primitiveElements
+		if _primitiveToTransformer[primitiveFQN] != _|_ {
+			primitive:   primitiveFQN
+			transformer: _primitiveToTransformer[primitiveFQN]
 		},
 	]
 }

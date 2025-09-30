@@ -1,9 +1,14 @@
-package core
+package examples
+
+import (
+	core "github.com/open-platform-model/core"
+	elements "github.com/open-platform-model/core/elements"
+)
 
 //////////////////////////////////////////////////////////////////
 //// Example
 //////////////////////////////////////////////////////////////////
-#MyApplication: #ModuleDefinition & {
+myAppDefinition: core.#ModuleDefinition & {
 	#metadata: {
 		#id:     "my-app"
 		name:    "my-app"
@@ -23,10 +28,10 @@ package core
 			}
 
 			// Add primitive elements
-			#Volume
+			elements.#Volume
 
 			// Add composite elements
-			#StatelessWorkload
+			elements.#StatelessWorkload
 
 			// Define the container and volume details
 			stateless: {
@@ -54,7 +59,7 @@ package core
 			}
 
 			// Add composite element
-			#SimpleDatabase
+			elements.#SimpleDatabase
 
 			database: {
 				engine:   "postgres"
@@ -70,30 +75,30 @@ package core
 		}
 	}
 
-	scopes: {
-		network: {
-			#NetworkScope
+	// scopes: {
+	// 	network: {
+	// 		elements.#NetworkScope
 
-			appliesTo: [components.web, components.db]
-			policy: {
-				allowInternal: true
-				allowExternal: false
-			}
-		}
-	}
+	// 		appliesTo: [components.web, components.db]
+	// 		policy: {
+	// 			allowInternal: true
+	// 			allowExternal: false
+	// 		}
+	// 	}
+	// }
 
 	values: {
 		web: {
 			// Example of overriding default image tag
 			image: _ | *"ghcr.io/example/web:2.0.0"
 		}
-		dbVolume: #VolumeSpec & {
+		dbVolume: elements.#VolumeSpec & {
 			persistentClaim: _ | *{size: "10Gi"}
 		}
 	}
 }
 
-myApp: #Module & {
+myApp: core.#Module & {
 	#metadata: {
 		#id:     "my-app-instance"
 		name:    "my-app-instance"
@@ -104,7 +109,7 @@ myApp: #Module & {
 		}
 	}
 
-	moduleDefinition: #MyApplication
+	moduleDefinition: myAppDefinition
 
 	components: {
 		auditLogging: {
@@ -115,14 +120,14 @@ myApp: #Module & {
 			}
 
 			// Add primitive elements
-			#StatelessWorkload
+			elements.#StatelessWorkload
 
 			// Define the container details
 			stateless: {
 				container: {
 					image: string | *"ghcr.io/example/audit-logging:1.0.0"
 					name:  "audit-logging"
-					ports: http: {containerPort: 8080}
+					ports: http: {targetPort: 8080}
 					env: {
 						LOG_LEVEL: {name: "LOG_LEVEL", value: "info"}
 					}
