@@ -23,11 +23,13 @@ This document includes both implemented and planned elements:
 ### Current Implementation Summary
 
 **Implemented Elements:**
+
 - **Workload**: ✅ Container (primitive), 8 modifiers, 5 composites
 - **Data**: ✅ Volume, ConfigMap, Secret (primitive resources), SimpleDatabase (composite)
 - **Connectivity**: ✅ NetworkScope (primitive), Expose (modifier)
 
 **Planned Elements:**
+
 - Additional workload, security, governance, observability, and connectivity elements documented below
 
 ### Workload Architecture Summary
@@ -35,6 +37,7 @@ This document includes both implemented and planned elements:
 > **Key Design Decision**: OPM uses `Container` as the single workload primitive, then provides **composite traits** that combine Container with modifiers for different workload patterns.
 >
 > **Architecture:**
+
 > - ✅ `Container` (primitive trait) → The base container definition
 > - ✅ `StatelessWorkload` (composite) → Container + Replicas + modifiers → Creates Deployment
 > - ✅ `StatefulWorkload` (composite) → Container + Volume + modifiers → Creates StatefulSet
@@ -1023,6 +1026,7 @@ This demonstrates how:
 **Modifiers → Resource Enhancement:**
 
 Modifiers enhance composites or primitives, mapped to specific Kubernetes fields:
+
 - ✅ Expose → Service (creates additional resource)
 - ✅ SidecarContainers → `spec.template.spec.containers[1:]` (additional containers)
 - ✅ InitContainers → `spec.template.spec.initContainers`
