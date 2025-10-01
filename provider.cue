@@ -34,7 +34,7 @@ import (
 	// }
 	transformers: #TransformerMap
 
-	// Optimized: flatten and sort supported elements from all transformers
+	// Flatten and sort supported elements from all transformers
 	#supportedElements: #ElementStringArray & list.FlattenN([
 		for _, transformer in transformers {
 			transformer.#supportedElements
@@ -78,7 +78,7 @@ import (
 	// All element fully qualified names (required + optional)
 	#allTransformerElements: #ElementStringArray & list.Concat([required, optional])
 
-	// Optimized: Use map lookup instead of list.Contains for O(1) access
+	// Use map lookup instead of list.Contains for O(1) access
 	#supportedElements: #ElementStringArray & [
 		for element in #allTransformerElements
 		if _registry[element] != _|_ {
@@ -88,7 +88,7 @@ import (
 
 	// Auto-generated defaults from optional element schemas
 	defaults: {
-		// Optimized: Direct map lookup instead of Contains check
+		// Direct map lookup instead of Contains check
 		for elementFQN in optional
 		if _registry[elementFQN] != _|_
 		if _registry[elementFQN].kind == "modifier" {
