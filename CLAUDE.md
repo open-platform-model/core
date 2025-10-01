@@ -71,6 +71,15 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 
 ## Recent Changes
 
+### 2025-10-01
+
+1. **Element File Reorganization**: Changed from type-aggregated to kind-prefixed file naming
+   - Replaced `primitive_traits.cue`, `modifier_traits.cue`, `composite_traits.cue` with individual files
+   - New naming: `{kind}_{element_name}.cue` (e.g., `primitive_container.cue`, `modifier_replicas.cue`)
+   - Removed re-exports from `elements/elements.cue` - now registry only
+   - Elements accessed through category packages (workload, data, connectivity)
+   - Makes element kind immediately visible in file listings
+
 ### 2025-09-30
 
 1. **Major Reorganization**: Restructured elements into category-based hierarchy
@@ -102,12 +111,10 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 Elements are organized into category-based directories with separate schema definitions:
 
 - **Categories**: `workload/` | `data/` | `connectivity/` | (future: `security/` | `observability/` | `governance/`)
-- **Element Types**:
-  - `primitive_traits.cue` - Basic building blocks
-  - `modifier_traits.cue` - Modifiers that extend primitives
-  - `composite_traits.cue` - Combinations of primitives/modifiers
-  - `primitive_resources.cue` - Resource definitions
-  - `composite_traits.cue` - Complex data compositions
+- **File Naming**: `{kind}_{element_name}.cue`
+  - `primitive_*.cue` - Basic building blocks
+  - `modifier_*.cue` - Modifiers that extend primitives
+  - `composite_*.cue` - Combinations of primitives/modifiers
 - **Schema Package**: All `*Spec` definitions live in `schema/` package
 
 #### Steps to Add a New Element
@@ -124,10 +131,10 @@ Elements are organized into category-based directories with separate schema defi
    }
    ```
 
-2. **Create the element** in `elements/{category}/{type}.cue`:
+2. **Create the element** in `elements/{category}/{kind}_{name}.cue`:
 
    ```cue
-   // In elements/security/primitive_traits.cue
+   // In elements/security/primitive_pod_security.cue
    package security
 
    import (
@@ -135,7 +142,7 @@ Elements are organized into category-based directories with separate schema defi
        schema "github.com/open-platform-model/core/schema"
    )
 
-   #PodSecurityElement: core.#PrimitiveTrait & {
+   #PodSecurityElement: core.#Primitive & {
        name: "PodSecurity"
        #apiVersion: "elements.opm.dev/core/v1alpha1"
        target: ["component"]
@@ -158,11 +165,6 @@ Elements are organized into category-based directories with separate schema defi
    import (
        security "github.com/open-platform-model/core/elements/security"
    )
-
-   // Re-export element
-   #PodSecurityElement: security.#PodSecurityElement
-   #PodSecurity: security.#PodSecurity
-   #PodSecuritySpec: security.#PodSecuritySpec
 
    // Add to registry
    #CoreElementRegistry: {
@@ -187,6 +189,26 @@ Run these commands after changes:
 ```bash
 cue fmt ./...
 cue vet ./...
+```
+
+## Git Workflow (Core Repository)
+
+**Note**: See root [CLAUDE.md](../CLAUDE.md#git-workflow) for general git guidelines.
+
+**Core-specific workflow**:
+
+```bash
+# Always work from core directory
+cd /var/home/emil/Development/open-platform-model/core
+
+# Common commit scopes for core:
+git commit -m "feat(elements): ..."      # Element definitions
+git commit -m "refactor(schema): ..."    # Schema changes
+git commit -m "feat(provider): ..."      # Provider/transformer work
+git commit -m "feat(component): ..."     # Component model changes
+git commit -m "feat(module): ..."        # Module definitions
+git commit -m "docs(claude): ..."        # CLAUDE.md updates
+git commit -m "test(examples): ..."      # Example modules
 ```
 
 ## Available Commands (CUE CLI)
@@ -657,38 +679,54 @@ core/
 │   ├── data.cue                             # Data specs (VolumeSpec, ConfigMapSpec, etc.)
 │   └── connectivity.cue                     # Connectivity specs (ExposeSpec, NetworkScopeSpec)
 ├── elements/                                # Element catalog (organized by category)
-│   ├── elements.cue                         # Index & registry (main entry point)
-│   ├── workload/                            # Workload elements
-│   │   ├── primitive_traits.cue             # Container
-│   │   ├── modifier_traits.cue              # Replicas, RestartPolicy, UpdateStrategy, HealthCheck
-│   │   └── composite_traits.cue             # StatelessWorkload, StatefulWorkload, etc.
-│   ├── data/                                # Data elements
-│   │   ├── primitive_resources.cue          # Volume, ConfigMap, Secret
-│   │   └── composite_traits.cue             # SimpleDatabase
-│   └── connectivity/                        # Connectivity elements
-│       ├── primitive_traits.cue             # NetworkScope
-│       └── modifier_traits.cue              # Expose
+│   ├── elements.cue                         # Registry only (no re-exports)
+│   ├── workload/                            # Workload elements (1 primitive, 5 modifiers, 5 composites)
+│   │   ├── primitive_container.cue          # Container element
+│   │   ├── modifier_sidecars.cue            # SidecarContainers, InitContainers, EphemeralContainers
+│   │   ├── modifier_replicas.cue            # Replicas element
+│   │   ├── modifier_restart_policy.cue      # RestartPolicy element
+│   │   ├── modifier_update_strategy.cue     # UpdateStrategy element
+│   │   ├── modifier_health_check.cue        # HealthCheck element
+│   │   ├── composite_stateless.cue          # StatelessWorkload element
+│   │   ├── composite_stateful.cue           # StatefulWorkload element
+│   │   ├── composite_daemonset.cue          # DaemonSetWorkload element
+│   │   ├── composite_task.cue               # TaskWorkload element
+│   │   └── composite_scheduled_task.cue     # ScheduledTaskWorkload element
+│   ├── data/                                # Data elements (3 primitives, 1 composite)
+│   │   ├── primitive_volume.cue             # Volume element
+│   │   ├── primitive_configmap.cue          # ConfigMap element
+│   │   ├── primitive_secret.cue             # Secret element
+│   │   └── composite_simple_database.cue    # SimpleDatabase element
+│   └── connectivity/                        # Connectivity elements (2 primitives)
+│       ├── primitive_network_scope.cue      # NetworkScope element
+│       └── primitive_expose.cue             # Expose element
 └── examples/                                # Usage examples
     └── example_module.cue
 ```
 
+**File Naming Convention**: `{kind}_{element_name}.cue`
+- `primitive_*.cue` - Basic building blocks
+- `modifier_*.cue` - Elements that modify other elements
+- `composite_*.cue` - Compositions of multiple elements
+
 **Important Imports:**
 
 ```cue
-// For using elements
-import elements "github.com/open-platform-model/core/elements"
+// For using elements - import category packages directly
+import workload "github.com/open-platform-model/core/elements/workload"
+import data "github.com/open-platform-model/core/elements/data"
 
 // For using schema types directly
 import schema "github.com/open-platform-model/core/schema"
 
-// For element development (imports both schema and core)
+// For element development
 import (
     core "github.com/open-platform-model/core"
     schema "github.com/open-platform-model/core/schema"
 )
 ```
 
-The elements package provides access to all element definitions through a single import.
+Elements are accessed through their category packages (workload, data, connectivity).
 
 ## OSCAL Integration Insights
 
