@@ -199,7 +199,7 @@ cue vet ./...
 
 ```bash
 # Always work from core directory
-cd /var/home/emil/Development/open-platform-model/core
+cd ./open-platform-model/core
 
 # Common commit scopes for core:
 git commit -m "feat(elements): ..."      # Element definitions
