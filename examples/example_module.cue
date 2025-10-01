@@ -2,7 +2,10 @@ package examples
 
 import (
 	core "github.com/open-platform-model/core"
-	elements "github.com/open-platform-model/core/elements"
+	schema "github.com/open-platform-model/core/schema"
+	workload "github.com/open-platform-model/core/elements/workload"
+	data "github.com/open-platform-model/core/elements/data"
+	connectivity "github.com/open-platform-model/core/elements/connectivity"
 )
 
 //////////////////////////////////////////////////////////////////
@@ -28,10 +31,10 @@ myAppDefinition: core.#ModuleDefinition & {
 			}
 
 			// Add primitive elements
-			elements.#Volume
+			data.#Volume
 
 			// Add composite elements
-			elements.#StatelessWorkload
+			workload.#StatelessWorkload
 
 			// Define the container and volume details
 			stateless: {
@@ -59,7 +62,7 @@ myAppDefinition: core.#ModuleDefinition & {
 			}
 
 			// Add composite element
-			elements.#SimpleDatabase
+			data.#SimpleDatabase
 
 			database: {
 				engine:   "postgres"
@@ -77,7 +80,7 @@ myAppDefinition: core.#ModuleDefinition & {
 
 	// scopes: {
 	// 	network: {
-	// 		elements.#NetworkScope
+	// 		connectivity.#NetworkScope
 
 	// 		appliesTo: [components.web, components.db]
 	// 		policy: {
@@ -92,7 +95,7 @@ myAppDefinition: core.#ModuleDefinition & {
 			// Example of overriding default image tag
 			image: _ | *"ghcr.io/example/web:2.0.0"
 		}
-		dbVolume: elements.#VolumeSpec & {
+		dbVolume: schema.#VolumeSpec & {
 			persistentClaim: _ | *{size: "10Gi"}
 		}
 	}
@@ -120,7 +123,7 @@ myApp: core.#Module & {
 			}
 
 			// Add primitive elements
-			elements.#StatelessWorkload
+			workload.#StatelessWorkload
 
 			// Define the container details
 			stateless: {

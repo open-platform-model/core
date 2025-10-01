@@ -294,7 +294,7 @@ import (
 				// Add a custom trait that doesn't exist in the provider
 				// Define a custom element inline (simulating org.example.com/v1.SQLDatabase)
 				#elements: {
-					SQLDatabase: elements.#PrimitiveTrait & {
+					SQLDatabase: elements.#Primitive & {
 						name:        "SQLDatabase"
 						#apiVersion: "org.example.com/v1"
 						target: ["component"]

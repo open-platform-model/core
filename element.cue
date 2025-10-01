@@ -14,16 +14,10 @@ import (
 	#apiVersion:         string | *"core.opm.dev/v1alpha1"
 	#fullyQualifiedName: "\(#apiVersion).\(name)"
 
-	// The type of this element
-	// Possible values: "trait", "resource", "policy"
-	type!: #ElementTypes
-
-	// kind of element
-	// Possible values: "primitive", "modifier", "composite", "custom"
-	kind!: #ElementKinds
+	// What kind of element this is
+	kind!: #ElementKinds // "primitive", "modifier", "composite", "custom"
 
 	// Where can element be applied
-	// Can be one or more of "component", "scope"
 	target!: ["component"] | ["scope"] | ["component", "scope"]
 
 	// MUST be an OpenAPIv3 compatible schema
@@ -32,8 +26,7 @@ import (
 
 	// Workload type (e.g., stateless, stateful, task, etc.) this element is associated with
 	// Only one workload type can be specified per component
-	// If empty, it means the element can be applied to any workload type
-	// For resources this is just ignored
+	// If null, it means the element is not associated with any specific workload type
 	workloadType?: #WorkloadTypes
 
 	// Human-readable description of the element
@@ -44,52 +37,58 @@ import (
 	...
 }
 
-// Element types
-#ElementTypeTrait: "trait" // A trait that modifies a component's behavior
-
-#ElementTypeResource: "resource" // A resource that is managed by the platform
-
-#ElementTypePolicy: "policy" // A policy that governs the behavior of components
-#ElementTypes:      #ElementTypeTrait | #ElementTypeResource | #ElementTypePolicy
-
 // Element kinds
-#ElementKindPrimitive: "primitive" // A basic building block. Like a lego block
+// A basic building block. Like a lego block
+// MUST be implemented by the provider for the target platform
+#ElementKindPrimitive: "primitive"
 
-#ElementKindModifier: "modifier" // A modifier element that alters other primitive elements
+// A modifier element that alters or enhances other primitive elements
+#ElementKindModifier: "modifier"
 
-#ElementKindComposite: "composite" // A composite element made up of multiple composite, modifiers, and/or primitive elements
+// A composite element made up of multiple composite, primitive, and modifier elements
+#ElementKindComposite: "composite"
 
-#ElementKindCustom: "custom" // A custom element with special handling
+// A custom element with special handling, works as a last resort
+// MUST be implemented by the provider for the target platform
+// e.g., raw Kubernetes manifests or custom operators that do not fit into the primitive/modifier/composite model
+#ElementKindCustom: "custom"
+
 #ElementKinds:      #ElementKindPrimitive | #ElementKindModifier | #ElementKindComposite | #ElementKindCustom
 
 // Workload types
-#WorkloadTypeNone: "" // No specific workload type
+// No specific workload type
+#WorkloadTypeNone: null
 
-#WorkloadTypeStateless: "stateless" // e.g. Deployment, etc.
+// e.g. Deployment, etc.
+#WorkloadTypeStateless: "stateless"
 
-#WorkloadTypeStateful: "stateful" // e.g. StatefulSet, Database, etc.
+// e.g. StatefulSet, Database, etc.
+#WorkloadTypeStateful: "stateful"
 
-#WorkloadTypeDaemon: "daemonSet" // e.g. DaemonSet, etc.
+// e.g. DaemonSet, etc.
+#WorkloadTypeDaemon: "daemonSet"
 
-#WorkloadTypeTask: "task" // e.g. Job, etc.
+// e.g. Job, etc.
+#WorkloadTypeTask: "task"
 
-#WorkloadTypeScheduledTask: "scheduled-task" // e.g. CronJob, etc.
+// e.g. CronJob, etc.
+#WorkloadTypeScheduledTask: "scheduled-task"
 
-#WorkloadTypeFunction: "function" // e.g. Serverless function, etc.
-#WorkloadTypes:        *#WorkloadTypeNone | #WorkloadTypeStateless | #WorkloadTypeStateful | #WorkloadTypeDaemon | #WorkloadTypeTask | #WorkloadTypeScheduledTask | #WorkloadTypeFunction
+// e.g. Serverless function, etc.
+#WorkloadTypeFunction: "function"
 
-// Different element categories
-#PrimitiveElements: #PrimitiveTrait | #PrimitiveResource
-#ModifierElements:  #ModifierTrait | #ModifierResource
-#CompositeElements: #CompositeTrait | #CompositeResource
-#CustomElements:    #CustomTrait | #CustomResource
+// All workload types
+#WorkloadTypes: *#WorkloadTypeNone | #WorkloadTypeStateless | #WorkloadTypeStateful | #WorkloadTypeDaemon | #WorkloadTypeTask | #WorkloadTypeScheduledTask | #WorkloadTypeFunction
 
 // Element map and list types
-#Elements: #PrimitiveElements | #ModifierElements | #CompositeElements | #CustomElements
+#Elements: #Primitive | #Modifier | #Composite | #Custom
+// Map of elements
 #ElementMap: [string]: #Elements
+// Array of elements
 #ElementArray: [...#Elements]
-
-#ElementStringArray: [...string] // TODO: Add validation for #fullyQualifiedName
+// Array of element names (fully qualified)
+// TODO: Add validation for #fullyQualifiedName uniqueness
+#ElementStringArray: [...string] 
 
 #ElementBase: {
 	#elements: #ElementMap
@@ -99,7 +98,7 @@ import (
 }
 
 // Primitive element - basic building block
-// Must be implemented by the platform
+// Must be implemented by the provider for the target platform
 #Primitive: #Element & {
 	kind: "primitive"
 }
@@ -131,7 +130,7 @@ import (
 	kind: "modifier"
 
 	// Which elements this can modify
-	modifies!: #ElementStringArray
+	modifies!: #ElementArray
 }
 
 // Custom element - special handling outside of OPM spec
@@ -139,16 +138,3 @@ import (
 #Custom: #Element & {
 	kind: "custom"
 }
-
-/////////////////////////////////////////////////////////////////
-//// Trait & Resource Bases
-/////////////////////////////////////////////////////////////////
-#PrimitiveTrait: close(#Primitive & {type: "trait"})
-#ModifierTrait: close(#Modifier & {type: "trait"})
-#CompositeTrait: close(#Composite & {type: "trait"})
-#CustomTrait: close(#Custom & {type: "trait"})
-
-#PrimitiveResource: close(#Primitive & {type: "resource"})
-#ModifierResource: close(#Modifier & {type: "resource"})
-#CompositeResource: close(#Composite & {type: "resource"})
-#CustomResource: close(#Custom & {type: "resource"})
