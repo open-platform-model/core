@@ -39,35 +39,35 @@ import (
 
 #CoreElementRegistry: {
 	// Workload - Primitive Traits
-	(#ContainerElement.#fullyQualifiedName): #ContainerElement
+	(#ContainerElement.#fullyQualifiedName): workload.#ContainerElement
 
 	// Workload - Modifier Traits
-	(#SidecarContainersElement.#fullyQualifiedName):   #SidecarContainersElement
-	(#InitContainersElement.#fullyQualifiedName):      #InitContainersElement
-	(#EphemeralContainersElement.#fullyQualifiedName): #EphemeralContainersElement
-	(#ReplicasElement.#fullyQualifiedName):            #ReplicasElement
-	(#RestartPolicyElement.#fullyQualifiedName):       #RestartPolicyElement
-	(#UpdateStrategyElement.#fullyQualifiedName):      #UpdateStrategyElement
-	(#HealthCheckElement.#fullyQualifiedName):         #HealthCheckElement
+	(#SidecarContainersElement.#fullyQualifiedName):   workload.#SidecarContainersElement
+	(#InitContainersElement.#fullyQualifiedName):      workload.#InitContainersElement
+	(#EphemeralContainersElement.#fullyQualifiedName): workload.#EphemeralContainersElement
+	(#ReplicasElement.#fullyQualifiedName):            workload.#ReplicasElement
+	(#RestartPolicyElement.#fullyQualifiedName):       workload.#RestartPolicyElement
+	(#UpdateStrategyElement.#fullyQualifiedName):      workload.#UpdateStrategyElement
+	(#HealthCheckElement.#fullyQualifiedName):         workload.#HealthCheckElement
 
 	// Workload - Composite Traits
-	(#StatelessWorkloadElement.#fullyQualifiedName):     #StatelessWorkloadElement
-	(#StatefulWorkloadElement.#fullyQualifiedName):      #StatefulWorkloadElement
-	(#DaemonSetWorkloadElement.#fullyQualifiedName):     #DaemonSetWorkloadElement
-	(#TaskWorkloadElement.#fullyQualifiedName):          #TaskWorkloadElement
-	(#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
+	(#StatelessWorkloadElement.#fullyQualifiedName):     workload.#StatelessWorkloadElement
+	(#StatefulWorkloadElement.#fullyQualifiedName):      workload.#StatefulWorkloadElement
+	(#DaemonSetWorkloadElement.#fullyQualifiedName):     workload.#DaemonSetWorkloadElement
+	(#TaskWorkloadElement.#fullyQualifiedName):          workload.#TaskWorkloadElement
+	(#ScheduledTaskWorkloadElement.#fullyQualifiedName): workload.#ScheduledTaskWorkloadElement
 
 	// Data - Primitive Resources
-	(#VolumeElement.#fullyQualifiedName):    #VolumeElement
-	(#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
-	(#SecretElement.#fullyQualifiedName):    #SecretElement
+	(#VolumeElement.#fullyQualifiedName):    data.#VolumeElement
+	(#ConfigMapElement.#fullyQualifiedName): data.#ConfigMapElement
+	(#SecretElement.#fullyQualifiedName):    data.#SecretElement
 
 	// Data - Composite Traits
-	(#SimpleDatabaseElement.#fullyQualifiedName): #SimpleDatabaseElement
+	(#SimpleDatabaseElement.#fullyQualifiedName): data.#SimpleDatabaseElement
 
 	// Connectivity - Primitive Traits
-	(#NetworkScopeElement.#fullyQualifiedName): #NetworkScopeElement
+	(#NetworkScopeElement.#fullyQualifiedName): connectivity.#NetworkScopeElement
 
 	// Connectivity - Modifier Traits
-	(#ExposeElement.#fullyQualifiedName): #ExposeElement
+	(#ExposeElement.#fullyQualifiedName): connectivity.#ExposeElement
 }
