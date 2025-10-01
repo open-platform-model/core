@@ -17,6 +17,11 @@ import (
 //
 // All element definitions from subdirectories are re-exported here.
 //
+// Elements are organized by category and kind:
+//   - primitive_{name}.cue: Basic building blocks
+//   - modifier_{name}.cue: Elements that modify other elements
+//   - composite_{name}.cue: Compositions of multiple elements
+//
 /////////////////////////////////////////////////////////////////
 
 // Categories for traits and resources
@@ -27,97 +32,6 @@ import (
 // security - security-related (e.g., network policy, pod security)
 // observability - observability-related (e.g., logging, monitoring, alerting)
 // governance - governance-related (e.g., resource quota, priority, compliance)
-
-/////////////////////////////////////////////////////////////////
-//// Workload Elements Re-exports
-/////////////////////////////////////////////////////////////////
-
-// Workload - Primitive Traits
-#ContainerElement: workload.#ContainerElement
-#Container:        workload.#Container
-#ContainerSpec:    workload.#ContainerSpec
-
-// Workload - Modifier Traits
-#SidecarContainersElement:   workload.#SidecarContainersElement
-#SidecarContainers:          workload.#SidecarContainers
-#InitContainersElement:      workload.#InitContainersElement
-#InitContainers:             workload.#InitContainers
-#EphemeralContainersElement: workload.#EphemeralContainersElement
-#EphemeralContainers:        workload.#EphemeralContainers
-#ReplicasElement:            workload.#ReplicasElement
-#Replicas:                   workload.#Replicas
-#ReplicasSpec:               workload.#ReplicasSpec
-#RestartPolicyElement:       workload.#RestartPolicyElement
-#RestartPolicy:              workload.#RestartPolicy
-#RestartPolicySpec:          workload.#RestartPolicySpec
-#UpdateStrategyElement:      workload.#UpdateStrategyElement
-#UpdateStrategy:             workload.#UpdateStrategy
-#UpdateStrategySpec:         workload.#UpdateStrategySpec
-#HealthCheckElement:         workload.#HealthCheckElement
-#HealthCheck:                workload.#HealthCheck
-#HealthCheckSpec:            workload.#HealthCheckSpec
-
-// Workload - Composite Traits
-#StatelessWorkloadElement:     workload.#StatelessWorkloadElement
-#StatelessWorkload:            workload.#StatelessWorkload
-#StatelessSpec:                workload.#StatelessSpec
-#StatefulWorkloadElement:      workload.#StatefulWorkloadElement
-#StatefulWorkload:             workload.#StatefulWorkload
-#StatefulWorkloadSpec:         workload.#StatefulWorkloadSpec
-#DaemonSetWorkloadElement:     workload.#DaemonSetWorkloadElement
-#DaemonSetWorkload:            workload.#DaemonSetWorkload
-#DaemonSetSpec:                workload.#DaemonSetSpec
-#TaskWorkloadElement:          workload.#TaskWorkloadElement
-#TaskWorkload:                 workload.#TaskWorkload
-#TaskWorkloadSpec:             workload.#TaskWorkloadSpec
-#ScheduledTaskWorkloadElement: workload.#ScheduledTaskWorkloadElement
-#ScheduledTaskWorkload:        workload.#ScheduledTaskWorkload
-#ScheduledTaskWorkloadSpec:    workload.#ScheduledTaskWorkloadSpec
-
-// Workload - Supporting Types
-#PortSpec:        workload.#PortSpec
-#IANA_SVC_NAME:   workload.#IANA_SVC_NAME
-#VolumeMountSpec: workload.#VolumeMountSpec
-
-#ProbeSpec: workload.#ProbeSpec
-
-/////////////////////////////////////////////////////////////////
-//// Data Elements Re-exports
-/////////////////////////////////////////////////////////////////
-
-// Data - Primitive Resources
-#VolumeElement:       data.#VolumeElement
-#Volume:              data.#Volume
-#VolumeSpec:          data.#VolumeSpec
-#PersistentClaimSpec: data.#PersistentClaimSpec
-#ConfigMapElement:    data.#ConfigMapElement
-#ConfigMap:           data.#ConfigMap
-#ConfigMapSpec:       data.#ConfigMapSpec
-#SecretElement:       data.#SecretElement
-#Secret:              data.#Secret
-#SecretSpec:          data.#SecretSpec
-
-// Data - Composite Traits
-#SimpleDatabaseElement: data.#SimpleDatabaseElement
-#SimpleDatabase:        data.#SimpleDatabase
-
-#SimpleDatabaseSpec: data.#SimpleDatabaseSpec
-
-/////////////////////////////////////////////////////////////////
-//// Connectivity Elements Re-exports
-/////////////////////////////////////////////////////////////////
-
-// Connectivity - Primitive Traits
-#NetworkScopeElement: connectivity.#NetworkScopeElement
-#NetworkScope:        connectivity.#NetworkScope
-#NetworkScopeSpec:    connectivity.#NetworkScopeSpec
-
-// Connectivity - Modifier Traits
-#ExposeElement: connectivity.#ExposeElement
-#Expose:        connectivity.#Expose
-#ExposeSpec:    connectivity.#ExposeSpec
-
-#ExposePortSpec: connectivity.#ExposePortSpec
 
 /////////////////////////////////////////////////////////////////
 //// Core Element Registry
