@@ -499,7 +499,7 @@ Composite elements combine primitives and modifiers for common patterns. Each co
 | ✅ | **DaemonSetWorkload** | Trait | Containerized workload meant to run one instance per node for background or node-local services | Container, RestartPolicy, UpdateStrategy, HealthCheck, SidecarContainers, InitContainers | `daemonSet` | `daemonSet: #DaemonSetSpec` |
 | ✅ | **TaskWorkload** | Trait | Run-to-completion containerized workload that executes and then exits | Container, RestartPolicy, SidecarContainers, InitContainers | `task` | `task: #TaskWorkloadSpec` |
 | ✅ | **ScheduledTaskWorkload** | Trait | Task that is triggered repeatedly on a defined schedule | Container, RestartPolicy, SidecarContainers, InitContainers | `scheduled-task` | `scheduledTask: #ScheduledTaskWorkloadSpec` |
-| ✅ | **SimpleDatabase** | Trait | Simple containerized database (composes into StatefulWorkload pattern) | Volume | `stateful` | `database: #SimpleDatabaseSpec` |
+| ✅ | **SimpleDatabase** | Trait | Simple containerized database (composes into StatefulWorkload pattern) | StatefulWorkload, Volume | `stateful` | `database: #SimpleDatabaseSpec` |
 
 ## Component Validation
 
@@ -534,19 +534,6 @@ Components automatically validate modifier dependencies:
                 ]) | error("Modifier '\(mod.name)' requires one of \(mod.elem.modifies)")
             }
         ]
-        
-        // Validate workloadType matches the workload primitive
-        workloadValidation: {
-            if #metadata.workloadType == "stateless" {
-                hasStateless: list.Contains(primitives, "core.opm.dev/v1alpha1.StatelessWorkload") | 
-                             error("workloadType 'stateless' requires StatelessWorkload primitive")
-            }
-            if #metadata.workloadType == "stateful" {
-                hasStateful: list.Contains(primitives, "core.opm.dev/v1alpha1.StatefulWorkload") | 
-                            error("workloadType 'stateful' requires StatefulWorkload primitive")
-            }
-            // ... similar for other workload types
-        }
     }
 }
 ```
@@ -648,8 +635,9 @@ The #Provider interface from provider.cue defines how platform transformations a
         minVersion:  string // The minimum version of the provider
     }
 
-    // Transformer registry - maps platform resources to transformers
-    transformers: #TransformerMap
+    #registry: #ElementRegistry
+
+    // Transformer registry - maps traits to transformers
     // Example:
     // transformers: {
     //     "k8s.io/api/apps/v1.Deployment":            #DeploymentTransformer
@@ -660,25 +648,20 @@ The #Provider interface from provider.cue defines how platform transformations a
     //     "k8s.io/api/core/v1.PersistentVolumeClaim": #PersistentVolumeClaimTransformer
     //     "k8s.io/api/core/v1.Service":               #ServiceTransformer
     // }
+    transformers: #TransformerMap
 
-    // Auto-computed supported elements from all transformers
-    #supportedElements: #ElementMap
-    #supportedElements: {
-        if transformers != null {
-            for _, transformer in transformers {
-                for elementName, element in transformer.#supportedElements {
-                    if element != _|_ {
-                        (elementName): element
-                    }
-                }
-            }
-        }
-    }
+    // Flatten and sort supported elements from all transformers
+    #supportedElements: #ElementStringArray & list.FlattenN([
+        for _, transformer in transformers {
+            transformer.#supportedElements
+        },
+    ], 1)
 
     // Render function
     render: {
         module: #Module
         output: _ // Provider-specific output format. e.g., Kubernetes List object
+        ...
     }
 }
 
@@ -737,57 +720,55 @@ The #SelectTransformer provides generic logic for matching component elements to
 The #Transformer interface from provider.cue defines how individual transformers work:
 
 ```cue
+// Transformer interface - generic for all providers
 #Transformer: {
-    #kind:       string // e.g. "Deployment"
-    #apiVersion: string // e.g. "apps/v1"
-    #fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "apps/v1.Deployment"
+    #kind: string // e.g. "Deployment"
+
+    #apiVersion: string // e.g. "k8s.io/api/apps/v1"
+
+    #fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "k8s.io/api/apps/v1.Deployment"
 
     // Element registry - must be populated by provider implementation
-    _registry: #ElementRegistry
-
-    // Required OPM elements (primitives or composites) for this transformer to work
-    // Can match composites directly OR primitives contained within composites
-    required!: [...string] // e.g. ["core.opm.dev/v1alpha1.StatelessWorkload"] (composite)
-                           // or ["core.opm.dev/v1alpha1.Container"] (primitive)
-                           // or ["core.opm.dev/v1alpha1.Volume"] (primitive resource)
-
-    // Optional OPM elements (modifiers) that can enhance the resource
-    optional: [...string] | *[] // e.g. ["core.opm.dev/v1alpha1.SidecarContainers",
-                                 //      "core.opm.dev/v1alpha1.Replicas",
-                                 //      "core.opm.dev/v1alpha1.UpdateStrategy",
-                                 //      "core.opm.dev/v1alpha1.Expose",
-                                 //      "core.opm.dev/v1alpha1.HealthCheck"]
-
-
-    // All element names (required + optional)
-    #allElementNames: [...string] & list.Concat([required, optional])
-
-    // Auto-computed supported elements from registry
-    #supportedElements: #ElementMap
-    #supportedElements: {
-        for elementName in #allElementNames {
-            let resolvedElement = #ResolveElement & {
-                name:      elementName
-                _reg: _registry
-            }
-            if resolvedElement.element != _|_ {
-                (elementName): resolvedElement.element
-            }
-        }
+    _registry: #ElementMap
+    if _registry == _|_ {
+        error("Transformer must have an element registry")
     }
+
+    // Required OPM primitive elements for this transformer to work
+    required: #ElementStringArray // e.g. ["core.opm.dev/v1alpha1.StatelessWorkload", "core.opm.dev/v1alpha1.StatefulWorkload"]
+
+    // if len(required) == 0 {
+    //     error("Transformer must have at least one required element")
+    // }
+
+    // Optional OPM modifier elements that can enhance the resource
+    optional: #ElementStringArray | *[] // e.g. ["core.opm.dev/v1alpha1.SidecarContainers", "core.opm.dev/v1alpha1.Replicas", "core.opm.dev/v1alpha1.UpdateStrategy", "core.opm.dev/v1alpha1.Expose", "core.opm.dev/v1alpha1.HealthCheck"]
+
+    // All element fully qualified names (required + optional)
+    #allTransformerElements: #ElementStringArray & list.Concat([required, optional])
+
+    // Use map lookup instead of list.Contains for O(1) access
+    #supportedElements: #ElementStringArray & [
+        for element in #allTransformerElements
+        if _registry[element] != _|_ {
+            element
+        },
+    ]
 
     // Auto-generated defaults from optional element schemas
     defaults: {
-        // Resolve schemas from optional elements only
-        for elementName in (optional | *[]) {
-            let resolvedSchema = #ResolveElement & {
-                name:      elementName
-                _reg: _registry
-            }
-            if resolvedSchema.elementSchema != _|_ {
-                resolvedSchema.elementSchema
-            }
+        // Direct map lookup instead of Contains check
+        for elementFQN in optional
+        if _registry[elementFQN] != _|_
+        if _registry[elementFQN].kind == "modifier" {
+            let element = _registry[elementFQN]
+
+            // Only include modifier elements as defaults
+            // Composite elements are made up of other elements and should not be top-level defaults
+            // Primitive elements do not have defaults
+            (element.#nameCamel): element.schema
         }
+
         // Allow transformer-specific additional defaults
         ...
     }
