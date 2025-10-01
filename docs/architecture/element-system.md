@@ -1,0 +1,646 @@
+# Element System Architecture
+
+> **Deep dive into OPM's element type system, design patterns, and architectural decisions**
+
+This document explains the architectural foundations of the OPM element system - how elements work internally, why they're designed this way, and the patterns used to implement them.
+
+**Audience**: Core contributors, element authors, platform implementers wanting to understand or extend the element system.
+
+**For element catalog and usage**: See [Element Catalog](https://github.com/open-platform-model/elements/docs/element-catalog.md) in the elements repository.
+
+---
+
+## Table of Contents
+
+- [Element Foundation](#element-foundation)
+- [Element Type System](#element-type-system)
+- [WorkloadType Enforcement](#workloadtype-enforcement)
+- [The ElementBase Pattern](#the-elementbase-pattern)
+- [Element Implementation Patterns](#element-implementation-patterns)
+- [Component Composition](#component-composition)
+- [Component Validation](#component-validation)
+- [Design Decisions](#design-decisions)
+
+---
+
+## Element Foundation
+
+### Core Principle
+
+**Everything is an element.** Elements are the atomic building blocks of OPM. Primitive elements (Container, Volume, Network) combine into composite elements (Database, WebService), which compose into complete modules.
+
+### Element Structure
+
+Elements in OPM follow a unified pattern based on the `#Element` foundation defined in [element.cue](../element.cue):
+
+```cue
+#Element: {
+    name!:               string
+    #apiVersion:         string | *"core.opm.dev/v1alpha1"
+    #fullyQualifiedName: "\(#apiVersion).\(name)"
+
+    // What kind of element this is
+    kind!: #ElementKinds  // "primitive", "modifier", "composite", "custom"
+
+    // Where can element be applied
+    target!: ["component"] | ["scope"] | ["component", "scope"]
+
+    // MUST be an OpenAPIv3 compatible schema
+    schema!: _
+
+    // Optional workload type association
+    workloadType?: #WorkloadTypes
+
+    // Human-readable description
+    description?: string
+
+    // Optional labels for categorization
+    labels?: #LabelsAnnotationsType
+}
+```
+
+**Key Fields**:
+
+- **name**: Element identifier (e.g., "Container", "Replicas")
+- **kind**: How it composes - `primitive` (standalone), `modifier` (enhances others), `composite` (combines multiple), or `custom` (special handling)
+- **target**: Where it applies - `component`, `scope`, or both
+- **schema**: OpenAPIv3-compatible schema defining configuration structure
+- **workloadType**: Optional workload identity (stateless, stateful, etc.)
+- **labels**: Optional metadata for categorization and filtering (e.g., `{"core.opm.dev/category": "workload"}`)
+- **#fullyQualifiedName**: Global unique identifier (e.g., "core.opm.dev/v1alpha1.Container")
+
+---
+
+## Element Type System
+
+### Element Categorization with Labels
+
+OPM uses **labels** for element categorization and filtering instead of a fixed type system. This provides maximum flexibility and extensibility.
+
+**Common Label Patterns**:
+
+```cue
+labels: {
+    "core.opm.dev/category": "workload"      // Category: workload, data, connectivity, security, observability
+    "core.opm.dev/platform": "kubernetes,docker"     // Platform compatibility
+    "core.opm.dev/maturity": "stable"         // Maturity level: alpha, beta, stable
+    "core.opm.dev/compliance": "pci-dss"      // Compliance framework support
+    "custom.example.com/team": "platform"     // Custom organization labels
+}
+```
+
+**Benefits of Label-Based Categorization**:
+
+1. **Extensibility**: Add new categorization dimensions without schema changes
+2. **Filtering**: Query elements by any label combination
+3. **Multi-dimensional**: Elements can belong to multiple categories
+4. **Custom Labels**: Organizations can add their own categorization schemes
+5. **Future-Proof**: New use cases don't require core changes
+
+**Example Usage**:
+
+```cue
+// Filter by category
+workloadElements: [for name, elem in #CoreElementRegistry if elem.labels["core.opm.dev/category"] == "workload" {elem}]
+
+// Filter by multiple criteria
+stableK8sElements: [for name, elem in #CoreElementRegistry
+    if elem.labels["core.opm.dev/platform"] == "kubernetes" &&
+       elem.labels["core.opm.dev/maturity"] == "stable" {elem}]
+```
+
+**Planned Enhancement**: A comprehensive label-based filtering and query system is planned for future releases. See [ROADMAP.md](../../../opm/ROADMAP.md) for details.
+
+### Element Kinds
+
+Elements are categorized by how they compose:
+
+#### 1. Primitive (`kind: "primitive"`)
+
+**Definition**: Basic building blocks that create or represent standalone resources. Cannot be decomposed further.
+
+**Characteristics**:
+
+- Implemented directly by the platform
+- Can stand alone in a component
+- Create platform resources (Deployment, Volume, etc.)
+- Have no dependencies on other elements
+
+**Examples**:
+
+- `Container` - Creates containerized workload (category: workload)
+- `Volume` - Creates persistent storage (category: data)
+- `NetworkScope` - Creates network boundary (category: connectivity)
+
+**Implementation**:
+
+```cue
+#Primitive: #Element & {
+    kind: "primitive"
+}
+```
+
+#### 2. Modifier (`kind: "modifier"`)
+
+**Definition**: Elements that enhance primitives or composites without creating separate resources.
+
+**Characteristics**:
+
+- Cannot stand alone - must be used with compatible elements
+- Modify the output or behavior of primitives/composites
+- Declare which elements they can modify via `modifies` field
+- Don't create independent platform resources
+
+**Examples**:
+
+- `Replicas` - Adds scaling to workloads (category: workload)
+- `HealthCheck` - Adds health probes to containers (category: workload)
+- `Expose` - Adds service exposure to workloads (category: connectivity)
+
+**Implementation**:
+
+```cue
+#Modifier: #Element & {
+    kind: "modifier"
+
+    // Which elements this can modify
+    modifies!: #ElementStringArray
+}
+```
+
+#### 3. Composite (`kind: "composite"`)
+
+**Definition**: Combinations of primitives and modifiers for common patterns.
+
+**Characteristics**:
+
+- Bundles multiple elements together
+- Provides convenience and clear intent
+- Can sets fixed `workloadType` for validation
+- Maps directly to platform resources
+- Tracks which primitives it composes via `composes` field
+
+**Examples**:
+
+- `StatelessWorkload` - Container + Replicas + modifiers (category: workload)
+- `StatefulWorkload` - Container + Volume + modifiers (category: workload)
+- `SimpleDatabase` - Stateful workload pattern (category: data)
+
+**Implementation**:
+
+```cue
+#Composite: #Element & {
+    kind: "composite"
+
+    // Which primitives/elements this composes
+    composes!: #ElementArray
+
+    // Recursively extract all primitive elements
+    #primitiveElements: list.FlattenN([
+        for element in composes {
+            if element.kind == "primitive" {[element.#fullyQualifiedName]}
+            if element.kind == "composite" {element.#primitiveElements}
+            if element.kind != "primitive" && element.kind != "composite" {[]}
+        },
+    ], -1)
+
+    // Composites must declare workloadType
+    workloadType!: #WorkloadTypes
+}
+```
+
+#### 4. Custom (`kind: "custom"`)
+
+**Definition**: Platform-specific extensions with special handling outside OPM spec.
+
+**Use Case**: Last resort for capabilities that don't fit the standard element model.
+
+**Implementation**:
+
+```cue
+#Custom: #Element & {
+    kind: "custom"
+}
+```
+
+---
+
+## WorkloadType Enforcement
+
+### Purpose
+
+The `workloadType` field ensures each component has exactly one workload type, preventing ambiguous or conflicting workload definitions.
+
+### Workload Types
+
+```cue
+#WorkloadTypes:
+    *#WorkloadTypeNone |          // null - No workload (resource components)
+    #WorkloadTypeStateless |      // "stateless" - Deployment-like
+    #WorkloadTypeStateful |       // "stateful" - StatefulSet-like
+    #WorkloadTypeDaemon |         // "daemonSet" - DaemonSet-like
+    #WorkloadTypeTask |           // "task" - Job-like
+    #WorkloadTypeScheduledTask |  // "scheduled-task" - CronJob-like
+    #WorkloadTypeFunction         // "function" - Serverless function
+```
+
+### How It Works
+
+1. **Elements declare workloadType**: Any element (primitive or composite) can declare a `workloadType`
+2. **Components inherit workloadType**: Components automatically detect workloadType from included elements
+3. **Validation enforces uniqueness**: Components reject multiple elements with conflicting workloadTypes
+
+### Examples
+
+**✅ Flexible WorkloadType** (Container primitive):
+
+```cue
+#Container: {
+    workloadType: "stateless" | "stateful" | "daemonSet" | "task" | "scheduled-task"
+    // Can be any of these - platform decides based on usage
+}
+```
+
+**✅ Fixed WorkloadType** (StatelessWorkload composite):
+
+```cue
+#StatelessWorkload: {
+    workloadType: "stateless"  // Always stateless
+}
+```
+
+**❌ Invalid** (Conflicting workloadTypes):
+
+```cue
+myComponent: #Component & {
+    #StatelessWorkload  // workloadType: "stateless"
+    #StatefulWorkload   // workloadType: "stateful" - CONFLICT!
+}
+```
+
+### Benefits
+
+1. **Clear Intent**: Developers explicitly declare workload type
+2. **Direct Platform Mapping**: Each workloadType maps to specific platform resource
+3. **Type Safety**: Prevents mixing incompatible workload types
+4. **Simpler Providers**: Transformers know exactly what to create
+5. **Better Validation**: Catch errors at compile-time
+
+---
+
+## The ElementBase Pattern
+
+### Problem
+
+CUE requires structural compatibility for composition. Simply embedding `#Element` in multiple places creates type conflicts.
+
+### Solution: #ElementBase
+
+```cue
+#ElementBase: {
+    #elements: #ElementMap
+    ...  // Critical: enables CUE composition without type conflicts
+}
+```
+
+Every element definition uses this pattern:
+
+```cue
+#Container: #ElementBase & {
+    #elements: Container: #Primitive & {
+        name: "Container"
+        description: "Single container primitive"
+        target: ["component"]
+        labels: {"core.opm.dev/category": "workload"}
+        schema: #ContainerSpec
+    }
+
+    container: #ContainerSpec  // Actual configuration field
+}
+```
+
+### Why This Works
+
+1. **Automatic Element Registration**: `#elements` field contains element metadata
+2. **CUE Composition**: `...` allows unification with other `#ElementBase` instances
+3. **Type Safety**: Each element has its own configuration field (`container`, `replicas`, etc.)
+4. **Registry Integration**: Components can extract all `#elements` for validation and transformation
+
+### Usage in Components
+
+```cue
+myComponent: #Component & {
+    #Container  // Adds Container element to #elements
+    #Replicas   // Adds Replicas element to #elements
+    #HealthCheck  // Adds HealthCheck element to #elements
+
+    // Component automatically has:
+    // #elements: {
+    //     Container: #Primitive & {...}
+    //     Replicas: #Modifier & {...}
+    //     HealthCheck: #Modifier & {...}
+    // }
+}
+```
+
+---
+
+## Element Implementation Patterns
+
+### Primitive Element Pattern
+
+Primitives create standalone resources:
+
+```cue
+// Primitive Trait - Creates containerized workload
+#Container: #ElementBase & {
+    #elements: Container: #Primitive & {
+        name: "Container"
+        description: "Base container definition"
+        target: ["component"]
+        workloadType: "stateless" | "stateful" | "daemon Set" | "task" | "scheduled-task"
+        labels: {"core.opm.dev/category": "workload"}
+        schema: #ContainerSpec
+    }
+
+    container: #ContainerSpec
+}
+
+// Primitive Resource - Creates storage
+#Volume: #ElementBase & {
+    #elements: Volume: #Primitive & {
+        name: "Volume"
+        description: "Volume storage primitive"
+        target: ["component"]
+        labels: {"core.opm.dev/category": "data"}
+        schema: #VolumeSpec
+    }
+
+    volumes: [string]: #VolumeSpec
+}
+```
+
+### Modifier Element Pattern
+
+Modifiers enhance primitives/composites:
+
+```cue
+// Modifier Trait - Adds scaling
+#Replicas: #ElementBase & {
+    #elements: Replicas: #Modifier & {
+        name: "Replicas"
+        description: "Scale workload instances"
+        target: ["component"]
+        modifies: []  // Compatible with Container and scalable composites
+        labels: {"core.opm.dev/category": "workload"}
+        schema: #ReplicasSpec
+    }
+
+    replicas: #ReplicasSpec
+}
+```
+
+### Composite Element Pattern
+
+Composites combine multiple elements:
+
+```cue
+// Composite Trait - Container + modifiers for stateless workloads
+#StatelessWorkload: #ElementBase & {
+    #elements: StatelessWorkload: #Composite & {
+        name: "StatelessWorkload"
+        description: "Horizontally scalable containerized workload"
+        target: ["component"]
+        workloadType: "stateless"  // Fixed workload type
+        composes: [
+            #ContainerElement,
+            #ReplicasElement,
+            #RestartPolicyElement,
+            #UpdateStrategyElement,
+            #HealthCheckElement,
+            #SidecarContainersElement,
+            #InitContainersElement
+        ]
+        labels: {"core.opm.dev/category": "workload"}
+        schema: #StatelessSpec
+    }
+
+    stateless: #StatelessSpec
+}
+```
+
+---
+
+## Component Composition
+
+### Component Structure
+
+Components are element compositions defined in [component.cue](../component.cue):
+
+```cue
+#Component: {
+    #kind:       "Component"
+    #apiVersion: "core.opm.dev/v1alpha1"
+
+    #metadata: {
+        #id!: string
+        name!: string | *#id
+
+        // Workload type automatically derived from elements
+        workloadType: #WorkloadTypes
+        for _, elem in #elements {
+            if elem.workloadType != _|_ {
+                workloadType: elem.workloadType
+            }
+        }
+
+        labels?:      #LabelsAnnotationsType
+        annotations?: #LabelsAnnotationsType
+    }
+
+    #elements: #ElementMap  // All elements in this component
+
+    // Helper: Extract ALL primitive elements recursively
+    #primitiveElements: list.FlattenN([
+        for _, element in #elements {
+            if element.kind == "primitive" {[element.#fullyQualifiedName]}
+            if element.kind == "composite" {element.#primitiveElements}
+            if element.kind != "primitive" && element.kind != "composite" {[]}
+        },
+    ], -1)
+}
+```
+
+### Composition Examples
+
+**Using Composite (Recommended)**:
+
+```cue
+web: #Component & {
+    #metadata: #id: "web"
+
+    #StatelessWorkload  // Sets workloadType: "stateless"
+    #Expose            // Adds service exposure
+
+    stateless: {
+        container: {image: "nginx:latest", ports: http: {targetPort: 80}}
+        replicas: {count: 3}
+    }
+    expose: {type: "LoadBalancer"}
+}
+```
+
+**Using Primitive + Modifiers (Advanced)**:
+
+```cue
+custom: #Component & {
+    #metadata: #id: "custom"
+
+    #Container   // Primitive - flexible workloadType
+    #Replicas    // Modifier
+    #HealthCheck // Modifier
+
+    container: {image: "myapp:latest"}
+    replicas: {count: 2}
+    healthCheck: {liveness: {httpGet: {path: "/health", port: 8080}}}
+}
+```
+
+---
+
+## Component Validation
+
+Components automatically validate element compatibility and workloadType constraints.
+
+### Validation Logic
+
+```cue
+#Component: {
+    #validation: {
+        // Extract primitives and modifiers
+        primitives: [
+            for name, elem in #elements
+            if elem.kind == "primitive" {elem.#fullyQualifiedName}
+        ]
+
+        modifiers: [
+            for name, elem in #elements
+            if elem.kind == "modifier" {
+                name: elem.#fullyQualifiedName
+                elem: elem
+            }
+        ]
+
+        // Validate each modifier has a valid target primitive
+        modifierValidation: [
+            for mod in modifiers {
+                valid: or([
+                    for primitive in primitives {
+                        list.Contains(mod.elem.modifies, primitive)
+                    }
+                ]) | error("Modifier '\(mod.name)' requires one of \(mod.elem.modifies)")
+            }
+        ]
+
+        // Validate workloadType consistency
+        workloadValidation: {
+            // Ensure only one workloadType across all elements
+            // (Automatic via CUE unification)
+        }
+    }
+}
+```
+
+### Invalid Component Examples
+
+**Example 1: Conflicting WorkloadTypes**
+
+```cue
+invalid: #Component & {
+    #StatelessWorkload  // workloadType: "stateless"
+    #StatefulWorkload   // workloadType: "stateful" - CONFLICT!
+}
+```
+
+**Example 2: Modifier Without Compatible Workload**
+
+```cue
+invalid: #Component & {
+    #Volume             // Just a resource, no workload
+    #SidecarContainers  // ERROR: Requires Container or workload composite
+}
+```
+
+---
+
+## Design Decisions
+
+### Why Container as Single Workload Primitive?
+
+**Design**: OPM uses `Container` as the only workload primitive, then provides composite elements (StatelessWorkload, StatefulWorkload, etc.) for different patterns.
+
+**Rationale**:
+
+1. **Simplicity**: One primitive to implement in providers
+2. **Flexibility**: Composites provide convenience without limiting advanced use
+3. **Clear Mapping**: Each composite maps to specific platform resource
+4. **Extensibility**: New workload patterns = new composites, not new primitives
+
+### Why Composite Elements?
+
+**Benefits**:
+
+1. **Clear Intent**: `#StatelessWorkload` is more explicit than `#Container + #Replicas`
+2. **Direct Platform Mapping**: Certain composites map 1:1 to platform resources (Deployment, StatefulSet)
+3. **Type Safety**: Fixed workloadType prevents mixing incompatible patterns
+4. **Simpler Providers**: Transformers match composites, not combinations of primitives
+5. **Better Validation**: Catch configuration errors at compile-time
+6. **Reusability**: Modifiers shared across composites
+7. **Flexibility Preserved**: Advanced users can still use primitives directly
+
+### Why #ElementBase Pattern?
+
+**Alternatives Considered**:
+
+1. **Direct #Element embedding**: Fails due to CUE structural compatibility
+2. **Element registry separate from definitions**: Requires manual registration
+3. **Code generation**: Adds build complexity
+
+**Why #ElementBase Wins**:
+
+1. **Automatic Registration**: Elements self-register via `#elements` field
+2. **CUE Native**: Works with CUE's unification model
+3. **Type Safe**: Each element has distinct configuration field
+4. **No Boilerplate**: Single pattern for all elements
+
+### Why WorkloadType Field?
+
+**Alternatives Considered**:
+
+1. **Infer from element combinations**: Ambiguous and error-prone
+2. **Separate workload elements per type**: Lots of primitive elements
+3. **Provider decides workloadType**: Loses portability
+
+**Why WorkloadType Wins**:
+
+1. **Explicit**: No guessing what workload will be created
+2. **Validated**: CUE enforces single workloadType per component
+3. **Portable**: WorkloadType travels with component definition
+4. **Provider-Friendly**: Transformers know exactly what to create
+
+---
+
+## Related Documentation
+
+- **[Element Catalog](https://github.com/open-platform-model/elements/docs/element-catalog.md)** - Complete list of available elements
+- **[Element Patterns](https://github.com/open-platform-model/elements/docs/element-patterns.md)** - Common composition patterns
+- **[Creating Elements](https://github.com/open-platform-model/elements/docs/creating-elements.md)** - Guide for adding new elements
+- **[Component Model](component-model.md)** - Component architecture (future)
+- **[Provider Interface](provider-interface.md)** - Provider contract (future)
+- **[Transformer System](transformer-system.md)** - Transformer selection logic (future)
+
+---
+
+**Questions or Suggestions?**
+
+This is architectural documentation for core contributors. For usage questions, see the [Element Catalog](https://github.com/open-platform-model/elements/docs/element-catalog.md).

@@ -3,6 +3,9 @@
 ## Nearterm
 
 - [ ] Go through all "Specs" and add sane default to relevant values.
+- [ ] Reverse the modifier element pointers. Today each modifier specifies which primitive or composite element it can modify. However that would easily get very complicated. Now i would reverse it so that ALL other elements explicitly say which modifier elements it can have in the same component together.
+- [ ] Investigate in replacing workloadType with "hints" or "annotations" in element. Would function similarly to labels in #Element but would NOT be used for categorization or filtering. Would have workloadType, and could be expanded in the future with more fields.
+- [ ] Add a new element kind called patch. Would work similar to how patches are handled in for example kustomize today.
 - [ ] Figure out a better solution to "..." in Element base, etc. It needs to be typed but also allow for extending with fields. Maybe components are allowed to be loosy goosy but Elements are stricter
 - [ ] Investigate and fix the reason why "containers" is not balooned to #ContainerSpec when evaluating #WorkloadSchema "clear && cue eval catalog/traits/core/v2alpha2/workload/workload.cue -e "#WorkloadSchema" --all".
 - [ ] Implement standard status definition for component.
