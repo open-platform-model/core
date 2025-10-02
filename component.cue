@@ -7,6 +7,10 @@ import (
 /////////////////////////////////////////////////////////////////
 //// Component
 /////////////////////////////////////////////////////////////////
+
+// Workload type annotation key (imported from element.cue)
+#AnnotationWorkloadType: "core.opm.dev/workload-type"
+
 #Component: {
 	#kind:       "Component"
 	#apiVersion: "core.opm.dev/v1alpha1"
@@ -15,13 +19,13 @@ import (
 
 		name!: string | *#id
 
-		// Workload type is automatically derived from included elements
+		// Workload type is automatically derived from element annotations
 		// If multiple workload types are included, this will result in a validation error
-		// If workloadType is set to "", it means the component is not a workload (e.g., a configuration component)
-		workloadType: #WorkloadTypes
+		// If workloadType is "", it means the component is not a workload (e.g., a configuration component)
+		workloadType: string | *""
 		for _, elem in #elements {
-			if elem.workloadType != _|_ {
-				workloadType: elem.workloadType
+			if elem.annotations != _|_ && elem.annotations[#AnnotationWorkloadType] != _|_ {
+				workloadType: elem.annotations[#AnnotationWorkloadType]
 			}
 		}
 
@@ -41,6 +45,21 @@ import (
 			if element.kind != "primitive" && element.kind != "composite" {[]}
 		},
 	], -1)
+
+	// Validation: Ensure only one workload type per component
+	#workloadTypes: [
+		for _, elem in #elements
+		if elem.annotations != _|_ && elem.annotations[#AnnotationWorkloadType] != _|_ {
+			elem.annotations[#AnnotationWorkloadType]
+		},
+	]
+
+	// If multiple workload types exist, they must all be identical
+	if len(#workloadTypes) > 1 {
+		for wt in #workloadTypes {
+			wt == #workloadTypes[0]
+		}
+	}
 
 	// TODO add validation to ensure only traits/resources are added based on componentType
 	...

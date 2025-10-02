@@ -38,8 +38,10 @@ import (
 		#SidecarContainersElement,
 		#InitContainersElement,
 	]
-	workloadType: "task"
-	description:  "A task workload that runs to completion"
+	annotations: {
+		"core.opm.dev/workload-type": "task"
+	}
+	description: "A task workload that runs to completion"
 	labels: {"core.opm.dev/category": "workload"}
 }
 

@@ -4,11 +4,11 @@ import (
 	opm "github.com/open-platform-model/core"
 )
 
-// Core API Group - k8s.io/api/core/v1
+// Core API Group - elements.opm.dev/k8s/core/v1
 
 #PodElement: opm.#Primitive & {
 	name:        "Pod"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #PodSpec
 	description: "Kubernetes Pod - smallest deployable unit"
@@ -20,7 +20,7 @@ import (
 
 #ServiceElement: opm.#Primitive & {
 	name:        "Service"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #ServiceSpec
 	description: "Kubernetes Service - network service abstraction"
@@ -32,7 +32,7 @@ import (
 
 #PersistentVolumeClaimElement: opm.#Primitive & {
 	name:        "PersistentVolumeClaim"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #PersistentVolumeClaimSpec
 	description: "Kubernetes PersistentVolumeClaim - storage request"
@@ -44,7 +44,7 @@ import (
 
 #ConfigMapElement: opm.#Primitive & {
 	name:        "ConfigMap"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #ConfigMapSpec
 	description: "Kubernetes ConfigMap - configuration data"
@@ -56,7 +56,7 @@ import (
 
 #SecretElement: opm.#Primitive & {
 	name:        "Secret"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #SecretSpec
 	description: "Kubernetes Secret - sensitive data"
@@ -68,7 +68,7 @@ import (
 
 #ServiceAccountElement: opm.#Primitive & {
 	name:        "ServiceAccount"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #ServiceAccountSpec
 	description: "Kubernetes ServiceAccount - pod identity"
@@ -80,7 +80,7 @@ import (
 
 #NamespaceElement: opm.#Primitive & {
 	name:        "Namespace"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["scope"]
 	schema:      #NamespaceSpec
 	description: "Kubernetes Namespace - resource isolation"
@@ -92,7 +92,7 @@ import (
 
 #NodeElement: opm.#Primitive & {
 	name:        "Node"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #NodeSpec
 	description: "Kubernetes Node - cluster worker machine"
@@ -104,7 +104,7 @@ import (
 
 #EndpointsElement: opm.#Primitive & {
 	name:        "Endpoints"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #EndpointsSpec
 	description: "Kubernetes Endpoints - service backend addresses"
@@ -116,7 +116,7 @@ import (
 
 #EventElement: opm.#Primitive & {
 	name:        "Event"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["component"]
 	schema:      #EventSpec
 	description: "Kubernetes Event - cluster event record"
@@ -128,7 +128,7 @@ import (
 
 #LimitRangeElement: opm.#Primitive & {
 	name:        "LimitRange"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["scope"]
 	schema:      #LimitRangeSpec
 	description: "Kubernetes LimitRange - resource limit constraints"
@@ -140,7 +140,7 @@ import (
 
 #ResourceQuotaElement: opm.#Primitive & {
 	name:        "ResourceQuota"
-	#apiVersion: "k8s.io/api/core/v1"
+	#apiVersion: "elements.opm.dev/k8s/core/v1"
 	target: ["scope"]
 	schema:      #ResourceQuotaSpec
 	description: "Kubernetes ResourceQuota - namespace resource limits"

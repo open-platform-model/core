@@ -39,8 +39,10 @@ import (
 		#SidecarContainersElement,
 		#InitContainersElement,
 	]
-	workloadType: "stateful"
-	description:  "A stateful workload that requires stable identity and storage"
+	annotations: {
+		"core.opm.dev/workload-type": "stateful"
+	}
+	description: "A stateful workload that requires stable identity and storage"
 	labels: {"core.opm.dev/category": "workload"}
 }
 

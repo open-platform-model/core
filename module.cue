@@ -166,11 +166,10 @@ import (
 
 	// Find unsupported elements
 	unsupportedElements: [
-		for re in requiredElements {
-			if (re & string) == re
-			if !list.Contains(supportedElements, re) {
-				re
-			} // Only include concrete strings
+		for re in requiredElements
+		if (re & string) == re
+		if !list.Contains(supportedElements, re) {
+			re
 		},
 	]
 

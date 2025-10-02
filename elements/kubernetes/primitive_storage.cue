@@ -4,11 +4,11 @@ import (
 	opm "github.com/open-platform-model/core"
 )
 
-// Storage API Group - k8s.io/api/storage/v1
+// Storage API Group - elements.opm.dev/k8s/storage/v1
 
 #StorageClassElement: opm.#Primitive & {
 	name:        "StorageClass"
-	#apiVersion: "k8s.io/api/storage/v1"
+	#apiVersion: "elements.opm.dev/k8s/storage/v1"
 	target: ["scope"]
 	schema:      #StorageClassSpec
 	description: "Kubernetes StorageClass - dynamic storage provisioning"
@@ -20,7 +20,7 @@ import (
 
 #VolumeAttachmentElement: opm.#Primitive & {
 	name:        "VolumeAttachment"
-	#apiVersion: "k8s.io/api/storage/v1"
+	#apiVersion: "elements.opm.dev/k8s/storage/v1"
 	target: ["component"]
 	schema:      #VolumeAttachmentSpec
 	description: "Kubernetes VolumeAttachment - volume to node binding"
@@ -32,7 +32,7 @@ import (
 
 #CSIDriverElement: opm.#Primitive & {
 	name:        "CSIDriver"
-	#apiVersion: "k8s.io/api/storage/v1"
+	#apiVersion: "elements.opm.dev/k8s/storage/v1"
 	target: ["scope"]
 	schema:      #CSIDriverSpec
 	description: "Kubernetes CSIDriver - CSI driver specification"
@@ -44,7 +44,7 @@ import (
 
 #CSINodeElement: opm.#Primitive & {
 	name:        "CSINode"
-	#apiVersion: "k8s.io/api/storage/v1"
+	#apiVersion: "elements.opm.dev/k8s/storage/v1"
 	target: ["component"]
 	schema:      #CSINodeSpec
 	description: "Kubernetes CSINode - CSI node information"
@@ -56,7 +56,7 @@ import (
 
 #CSIStorageCapacityElement: opm.#Primitive & {
 	name:        "CSIStorageCapacity"
-	#apiVersion: "k8s.io/api/storage/v1"
+	#apiVersion: "elements.opm.dev/k8s/storage/v1"
 	target: ["scope"]
 	schema:      #CSIStorageCapacitySpec
 	description: "Kubernetes CSIStorageCapacity - storage capacity info"

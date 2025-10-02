@@ -36,8 +36,10 @@ import (
 		#SidecarContainersElement,
 		#InitContainersElement,
 	]
-	workloadType: "daemon"
-	description:  "A daemonSet workload that runs on all (or some) nodes in the cluster"
+	annotations: {
+		"core.opm.dev/workload-type": "daemon"
+	}
+	description: "A daemonSet workload that runs on all (or some) nodes in the cluster"
 	labels: {"core.opm.dev/category": "workload"}
 }
 

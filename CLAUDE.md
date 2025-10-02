@@ -30,18 +30,19 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 #### Components
 
 - Collections of elements that define a logical unit
-- Can have `workloadType`: stateless | stateful | daemon | task | scheduled-task | function
+- workloadType is derived from element `"core.opm.dev/workload-type"` annotation: stateless | stateful | daemon | task | scheduled-task | function
 - Contains `#primitiveElements` (recursively extracted from all elements)
+- Validates that only one workload type annotation value exists across all elements
 
 #### Transformers
 
 - Convert OPM components to platform-specific resources
 - Key fields:
   - `creates`: what native resource it produces
-  - `workloadTypes`: optional list of supported workload types
   - `required`: list of required element names
   - `optional`: list of optional element names
   - `transform`: function that does the conversion
+- Providers can filter components based on element annotations (e.g., workload-type)
 
 #### Providers
 
@@ -88,11 +89,19 @@ Elements (primitives) → Components (collections) → Modules (applications) �
    - Resolved circular import dependencies between element categories
    - All schema types now in separate package to enable cross-category references
 
+### 2025-10-02
+
+1. **Replaced workloadType with annotations**: Elements now use `annotations?: [string]: string` map (like Kubernetes annotations) instead of `workloadType` field
+   - Workload type is now specified via `"core.opm.dev/workload-type"` annotation
+   - Components derive workloadType from element annotations
+   - Validation ensures only one workload-type annotation value per component
+   - Providers can interpret annotations for decision-making (e.g., transformer selection)
+   - Separation: `labels` for categorization/filtering (OPM-level), `annotations` for behavior hints (provider-level)
+
 ### 2025-09-29
 
-1. Changed `workloadType` to `workloadTypes` (array) in #Transformer to support multiple types
-2. Added #status inheritance in #Module from moduleDefinition
-3. Exploring OSCAL-inspired assessment patterns for transformer selection
+1. Added #status inheritance in #Module from moduleDefinition
+2. Exploring OSCAL-inspired assessment patterns for transformer selection
 
 ## Development Guidelines
 

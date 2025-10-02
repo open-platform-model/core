@@ -4,15 +4,17 @@ import (
 	opm "github.com/open-platform-model/core"
 )
 
-// Batch API Group - k8s.io/api/batch/v1
+// Batch API Group - elements.opm.dev/k8s/batch/v1
 
 #JobElement: opm.#Primitive & {
 	name:        "Job"
-	#apiVersion: "k8s.io/api/batch/v1"
+	#apiVersion: "elements.opm.dev/k8s/batch/v1"
 	target: ["component"]
-	schema:       #JobSpec
-	workloadType: "task"
-	description:  "Kubernetes Job - run-to-completion workload"
+	schema: #JobSpec
+	annotations: {
+		"core.opm.dev/workload-type": "task"
+	}
+	description: "Kubernetes Job - run-to-completion workload"
 	labels: {
 		"core.opm.dev/category": "kubernetes"
 		"k8s.io/api-group":      "batch"
@@ -21,11 +23,13 @@ import (
 
 #CronJobElement: opm.#Primitive & {
 	name:        "CronJob"
-	#apiVersion: "k8s.io/api/batch/v1"
+	#apiVersion: "elements.opm.dev/k8s/batch/v1"
 	target: ["component"]
-	schema:       #CronJobSpec
-	workloadType: "scheduled-task"
-	description:  "Kubernetes CronJob - scheduled recurring workload"
+	schema: #CronJobSpec
+	annotations: {
+		"core.opm.dev/workload-type": "scheduled-task"
+	}
+	description: "Kubernetes CronJob - scheduled recurring workload"
 	labels: {
 		"core.opm.dev/category": "kubernetes"
 		"k8s.io/api-group":      "batch"

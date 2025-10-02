@@ -24,16 +24,16 @@ import (
 	// TODO: Add validation to only allow one named struct per trait
 	schema!: _
 
-	// Workload type (e.g., stateless, stateful, task, etc.) this element is associated with
-	// Only one workload type can be specified per component
-	// If null, it means the element is not associated with any specific workload type
-	workloadType?: #WorkloadTypes
-
 	// Human-readable description of the element
 	description?: string
 
 	// Optional metadata labels for categorization and filtering
 	labels?: #LabelsAnnotationsType
+
+	// Optional metadata annotations for element behavior hints (not used for categorization)
+	// Providers can use annotations for decision-making (e.g., workload type selection)
+	// Example: {"core.opm.dev/workload-type": "stateless"}
+	annotations?: [string]: string
 	...
 }
 
@@ -55,10 +55,11 @@ import (
 
 #ElementKinds: #ElementKindPrimitive | #ElementKindModifier | #ElementKindComposite | #ElementKindCustom
 
-// Workload types
-// No specific workload type
-#WorkloadTypeNone: null
+// Workload type annotation constants
+// Annotation key for workload type
+#AnnotationWorkloadType: "core.opm.dev/workload-type"
 
+// Workload type values (used in annotations)
 // e.g. Deployment, etc.
 #WorkloadTypeStateless: "stateless"
 
@@ -76,9 +77,6 @@ import (
 
 // e.g. Serverless function, etc.
 #WorkloadTypeFunction: "function"
-
-// All workload types
-#WorkloadTypes: *#WorkloadTypeNone | #WorkloadTypeStateless | #WorkloadTypeStateful | #WorkloadTypeDaemon | #WorkloadTypeTask | #WorkloadTypeScheduledTask | #WorkloadTypeFunction
 
 // Element map and list types
 #Elements: #Primitive | #Modifier | #Composite | #Custom
@@ -121,9 +119,6 @@ import (
 			if element.kind != "primitive" && element.kind != "composite" {[]}
 		},
 	], -1)
-
-	// Ensure workloadType is set if any composed element has it set
-	workloadType!: #WorkloadTypes
 }
 
 // Modifier element - modifies other elements

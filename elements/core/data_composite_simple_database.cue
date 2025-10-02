@@ -31,8 +31,10 @@ import (
 	target: ["component"]
 	schema: #SimpleDatabaseSpec
 	composes: [#VolumeElement]
-	workloadType: "stateful"
-	description:  "Composite trait to add a simple database to a component"
+	annotations: {
+		"core.opm.dev/workload-type": "stateful"
+	}
+	description: "Composite trait to add a simple database to a component"
 	labels: {"core.opm.dev/category": "data"}
 }
 

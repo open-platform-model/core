@@ -7,12 +7,9 @@ import (
 	elements "github.com/open-platform-model/core/elements"
 )
 
-/////////////////////////////////////////////////////////////////
-//// Example Transformer Implementations
-/////////////////////////////////////////////////////////////////
-// These are examples showing how platform-specific transformers
-// could be implemented. Actual implementations would be in
-// platform-specific provider packages.
+//////////////////////////////////////////////////////////////////
+// Example Provider
+//////////////////////////////////////////////////////////////////
 
 // Example: Kubernetes Provider Implementation
 #KubernetesProvider: opm.#Provider & {
@@ -23,17 +20,16 @@ import (
 		minVersion:  "1.27.0"
 	}
 
-	#registry: elements.#CoreElementRegistry
-
 	// Register all transformers
+	// No need to inject registry - transformers just declare requirements
 	transformers: {
-		"k8s.io/api/apps/v1.Deployment": #DeploymentTransformer & {_registry: #registry}
-		// "k8s.io/api/apps/v1.StatefulSet":           #StatefulSetTransformer & {_registry: #registry}
-		// "k8s.io/api/apps/v1.DaemonSet":             #DaemonTransformer & {_registry: #registry}
-		// "k8s.io/api/batch/v1.Job":                  #JobTransformer & {_registry: #registry}
-		// "k8s.io/api/batch/v1.CronJob":              #CronJobTransformer & {_registry: #registry}
-		"k8s.io/api/core/v1.PersistentVolumeClaim": #PersistentVolumeClaimTransformer & {_registry: #registry}
-		// "k8s.io/api/core/v1.Service":                    #ServiceTransformer & {_registry: #registry}
+		"k8s.io/api/apps/v1.Deployment": #DeploymentTransformer
+		// "k8s.io/api/apps/v1.StatefulSet":           #StatefulSetTransformer
+		// "k8s.io/api/apps/v1.DaemonSet":             #DaemonTransformer
+		// "k8s.io/api/batch/v1.Job":                  #JobTransformer
+		// "k8s.io/api/batch/v1.CronJob":              #CronJobTransformer
+		"k8s.io/api/core/v1.PersistentVolumeClaim": #PersistentVolumeClaimTransformer
+		// "k8s.io/api/core/v1.Service":                    #ServiceTransformer
 		// ... more transformers
 	}
 
@@ -86,37 +82,38 @@ import (
 	}
 }
 
+/////////////////////////////////////////////////////////////////
+//// Example Transformer Implementations
+/////////////////////////////////////////////////////////////////
+// These are examples showing how platform-specific transformers
+// could be implemented. Actual implementations would be in
+// platform-specific provider packages.
+
 // Example: Kubernetes Deployment Transformer
 #DeploymentTransformer: opm.#Transformer & {
 	#kind:       "Deployment"
 	#apiVersion: "k8s.io/api/apps/v1"
 
-	// This transformer specifically handles StatelessWorkload
-	required: ["elements.opm.dev/core/v1alpha1.StatelessWorkload"]
+	// This transformer specifically handles StatelessWorkload primitive
+	required: ["elements.opm.dev/core/v1alpha1.Container"]
 	optional: [
 		"elements.opm.dev/core/v1alpha1.SidecarContainers",
 		"elements.opm.dev/core/v1alpha1.InitContainers",
 		"elements.opm.dev/core/v1alpha1.Replicas",
+		"elements.opm.dev/core/v1alpha1.RestartPolicy",
 		"elements.opm.dev/core/v1alpha1.UpdateStrategy",
 		"elements.opm.dev/core/v1alpha1.HealthCheck",
 	]
-
-	// Default values for various traits.
-	// These are automatically included for optional traits if not specified in the component.
-	defaults: {...} // see #Transformer interface
 
 	transform: {
 		component: opm.#Component
 		context:   opm.#ProviderContext
 
-		// Extract elements with CUE defaults
+		// Extract elements (simplified example)
 		let _workload = component.stateless
-
 		let _sidecarContainers = component.sidecarContainers | *[]
 		let _initContainers = component.initContainers | *[]
-		let _replicas = component.replicas | *defaults.replicas
-		let _updateStrategy = component.updateStrategy | *defaults.updateStrategy
-		let _healthCheck = component.healthCheck | *defaults.healthCheck
+		let _replicas = component.replicas | *{count: 1}
 
 		output: {
 			#apiVersion: #apiVersion
@@ -129,14 +126,12 @@ import (
 			}
 			spec: {
 				replicas: _replicas.count
-				strategy: _updateStrategy
 				template: {
 					spec: {
-						_container: _workload.container & {
-							livenessProbe: _healthCheck.liveness
+						containers: list.Concat([[_workload.container], _sidecarContainers])
+						if len(_initContainers) > 0 {
+							initContainers: _initContainers
 						}
-						containers: list.Concat([_container, _sidecarContainers])
-						initContainers: _initContainers
 					}
 				}
 			}
@@ -151,23 +146,14 @@ import (
 
 	// This transformer specifically handles Volume primitive
 	required: ["elements.opm.dev/core/v1alpha1.Volume"]
-	optional: [
-		"elements.opm.dev/core/v1alpha1.BackupPolicy",
-		"elements.opm.dev/core/v1alpha1.ResourceQuota",
-	]
-
-	// Default values for various traits.
-	// These are automatically included for optional traits if not specified in the component.
-	defaults: {...} // see #Transformer interface
+	optional: []
 
 	transform: {
 		component: opm.#Component
 		context:   opm.#ProviderContext
 
-		// Extract elements with CUE defaults
+		// Extract volumes
 		let _volumes = component.volumes
-		// let _backupPolicy = component.backupPolicy | *defaults.backupPolicy
-		// let _resourceQuota = component.resourceQuota | *defaults.resourceQuota
 
 		output: [
 			for volumeName, volumeSpec in _volumes {
@@ -191,148 +177,77 @@ import (
 	}
 }
 
-// Test Module 1: Compatible module
-#TestCompatibleModule: opm.#Module & {
+//////////////////////////////////////////////////////////////////
+//// Platform Catalog Example
+//////////////////////////////////////////////////////////////////
+
+// Example Platform Catalog with Kubernetes provider
+examplePlatformCatalog: opm.#PlatformCatalog & {
 	#metadata: {
-		name:    "web-app"
-		version: "1.0.0"
+		name:        "example-k8s-platform"
+		version:     "1.0.0"
+		description: "Example Kubernetes platform with core elements"
+		labels: {
+			"platform.opm.dev/type": "kubernetes"
+			environment:             "production"
+		}
 	}
 
-	moduleDefinition: {
-		#apiVersion: "core.opm.dev/v1"
-		#kind:       "ModuleDefinition"
-		#metadata: {
-			name:    "web-app"
-			version: "1.0.0"
-		}
-		components: {
-			frontend: {
-				#metadata: {
-					#id:  "frontend"
-					name: "frontend"
-				}
+	// All available elements in this platform
+	#availableElements: elements.#CoreElementRegistry
 
-				// Add traits that are supported by the provider
-				elements.#Container
-				elements.#Replicas
-				elements.#UpdateStrategy
-				elements.#Expose
-
-				container: {
-					image: "nginx:latest"
-					name:  "frontend"
-					ports: http: {targetPort: 80}
-				}
-
-				replicas: {
-					count: 3
-				}
-
-				updateStrategy: {
-					type: "RollingUpdate"
-					rollingUpdate: {
-						maxUnavailable: 1
-						maxSurge:       1
-					}
-				}
-
-				expose: {
-					ports: http: {
-						targetPort: 80
-						name:       "http"
-					}
-					type: "LoadBalancer"
-				}
-			}
-		}
-		values: {}
+	// Available providers
+	providers: {
+		kubernetes: #KubernetesProvider
 	}
 
-	#context: {}
+	// Modules registered in catalog
+	modules: {
+		"my-app": {
+			module:         myApp
+			targetProvider: "kubernetes"
+		}
+
+		"ecommerce-app": {
+			module:         ecommerceApp
+			targetProvider: "kubernetes"
+		}
+
+		"monitoring-stack": {
+			module:         monitoringStack
+			targetProvider: "kubernetes"
+		}
+	}
 }
 
-// Test Module 2: Incompatible module (missing element support)
-#TestIncompatibleModule: opm.#Module & {
-	#metadata: {
-		name:    "data-pipeline"
-		version: "1.0.0"
-	}
+//////////////////////////////////////////////////////////////////
+//// Validation Examples
+//////////////////////////////////////////////////////////////////
 
-	moduleDefinition: {
-		#apiVersion: "core.opm.dev/v1"
-		#kind:       "ModuleDefinition"
-		#metadata: {
-			name:    "data-pipeline"
-			version: "1.0.0"
-		}
-		components: {
-			processor: {
-				#metadata: {
-					#id:  "processor"
-					name: "processor"
-				}
-
-				// Use some supported traits
-				elements.#Container
-				elements.#RestartPolicy
-
-				container: {
-					image: "data-processor:latest"
-					name:  "processor"
-				}
-
-				restartPolicy: {
-					policy: "OnFailure"
-				}
-			}
-			db: {
-				#metadata: {
-					#id:  "db"
-					name: "db"
-				}
-
-				// Add a custom trait that doesn't exist in the provider
-				// Define a custom element inline (simulating org.example.com/v1.SQLDatabase)
-				#elements: {
-					SQLDatabase: elements.#Primitive & {
-						name:        "SQLDatabase"
-						#apiVersion: "org.example.com/v1"
-						target: ["component"]
-						workloadType: "stateful"
-						schema: {
-							engine:  string
-							version: string
-							size:    string
-						}
-					}
-				}
-
-				// Custom database configuration
-				sqlDatabase: {
-					engine:  "postgres"
-					version: "14"
-					size:    "100Gi"
-				}
-			}
-		}
-		values: {}
-	}
-
-	#context: {}
+// Example 1: Validate compatible module admission
+validateCompatibleModule: opm.#ValidateModuleAdmission & {
+	module:   compatibleModule
+	catalog:  examplePlatformCatalog
+	provider: "kubernetes"
 }
 
-// Test dependency resolution
-// #TestResolution1: opm.#ModuleDependencyResolver & {
-// 	module: #TestCompatibleModule
-// 	provider: #KubernetesProvider & {render: module: myApp}
-// }
+// Example 2: Validate incompatible module with custom element
+validateIncompatibleCustomElement: opm.#ValidateModuleAdmission & {
+	module:   incompatibleModuleCustomElement
+	catalog:  examplePlatformCatalog
+	provider: "kubernetes"
+}
 
-// #TestResolution2: opm.#ModuleDependencyResolver & {
-// 	module: #TestIncompatibleModule
-// 	provider: #KubernetesProvider & {render: module: myApp}
-// }
+// Example 3: Validate incompatible module with unsupported workload
+validateIncompatibleUnsupportedWorkload: opm.#ValidateModuleAdmission & {
+	module:   incompatibleModuleUnsupportedWorkload
+	catalog:  examplePlatformCatalog
+	provider: "kubernetes"
+}
 
-// Expected results:
-// TestResolution1: Should be compatible - all required elements are supported
-// TestResolution2: Should be incompatible - missing support for:
-//   - org.example.com/v1.SQLDatabase (not registered in provider)
+// Example 4: Validate mixed compatibility module
+validateMixedCompatibility: opm.#ValidateModuleAdmission & {
+	module:   mixedCompatibilityModule
+	catalog:  examplePlatformCatalog
+	provider: "kubernetes"
+}

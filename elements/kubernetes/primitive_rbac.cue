@@ -4,11 +4,11 @@ import (
 	opm "github.com/open-platform-model/core"
 )
 
-// RBAC API Group - k8s.io/api/rbac/v1
+// RBAC API Group - elements.opm.dev/k8s/rbac/v1
 
 #RoleElement: opm.#Primitive & {
 	name:        "Role"
-	#apiVersion: "k8s.io/api/rbac/v1"
+	#apiVersion: "elements.opm.dev/k8s/rbac/v1"
 	target: ["scope"]
 	schema:      #RoleSpec
 	description: "Kubernetes Role - namespace-scoped permissions"
@@ -20,7 +20,7 @@ import (
 
 #RoleBindingElement: opm.#Primitive & {
 	name:        "RoleBinding"
-	#apiVersion: "k8s.io/api/rbac/v1"
+	#apiVersion: "elements.opm.dev/k8s/rbac/v1"
 	target: ["scope"]
 	schema:      #RoleBindingSpec
 	description: "Kubernetes RoleBinding - binds role to subjects"
@@ -32,7 +32,7 @@ import (
 
 #ClusterRoleElement: opm.#Primitive & {
 	name:        "ClusterRole"
-	#apiVersion: "k8s.io/api/rbac/v1"
+	#apiVersion: "elements.opm.dev/k8s/rbac/v1"
 	target: ["scope"]
 	schema:      #ClusterRoleSpec
 	description: "Kubernetes ClusterRole - cluster-scoped permissions"
@@ -44,7 +44,7 @@ import (
 
 #ClusterRoleBindingElement: opm.#Primitive & {
 	name:        "ClusterRoleBinding"
-	#apiVersion: "k8s.io/api/rbac/v1"
+	#apiVersion: "elements.opm.dev/k8s/rbac/v1"
 	target: ["scope"]
 	schema:      #ClusterRoleBindingSpec
 	description: "Kubernetes ClusterRoleBinding - binds cluster role to subjects"

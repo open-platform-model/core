@@ -4,15 +4,17 @@ import (
 	opm "github.com/open-platform-model/core"
 )
 
-// Apps API Group - k8s.io/api/apps/v1
+// Apps API Group - elements.opm.dev/k8s/apps/v1
 
 #DeploymentElement: opm.#Primitive & {
 	name:        "Deployment"
-	#apiVersion: "k8s.io/api/apps/v1"
+	#apiVersion: "elements.opm.dev/k8s/apps/v1"
 	target: ["component"]
-	schema:       #DeploymentSpec
-	workloadType: "stateless"
-	description:  "Kubernetes Deployment - stateless workload controller"
+	schema: #DeploymentSpec
+	annotations: {
+		"core.opm.dev/workload-type": "stateless"
+	}
+	description: "Kubernetes Deployment - stateless workload controller"
 	labels: {
 		"core.opm.dev/category": "kubernetes"
 		"k8s.io/api-group":      "apps"
@@ -21,11 +23,13 @@ import (
 
 #StatefulSetElement: opm.#Primitive & {
 	name:        "StatefulSet"
-	#apiVersion: "k8s.io/api/apps/v1"
+	#apiVersion: "elements.opm.dev/k8s/apps/v1"
 	target: ["component"]
-	schema:       #StatefulSetSpec
-	workloadType: "stateful"
-	description:  "Kubernetes StatefulSet - stateful workload controller"
+	schema: #StatefulSetSpec
+	annotations: {
+		"core.opm.dev/workload-type": "stateful"
+	}
+	description: "Kubernetes StatefulSet - stateful workload controller"
 	labels: {
 		"core.opm.dev/category": "kubernetes"
 		"k8s.io/api-group":      "apps"
@@ -34,11 +38,13 @@ import (
 
 #DaemonSetElement: opm.#Primitive & {
 	name:        "DaemonSet"
-	#apiVersion: "k8s.io/api/apps/v1"
+	#apiVersion: "elements.opm.dev/k8s/apps/v1"
 	target: ["component"]
-	schema:       #DaemonSetSpec
-	workloadType: "daemon"
-	description:  "Kubernetes DaemonSet - node-level workload controller"
+	schema: #DaemonSetSpec
+	annotations: {
+		"core.opm.dev/workload-type": "daemon"
+	}
+	description: "Kubernetes DaemonSet - node-level workload controller"
 	labels: {
 		"core.opm.dev/category": "kubernetes"
 		"k8s.io/api-group":      "apps"
@@ -47,11 +53,13 @@ import (
 
 #ReplicaSetElement: opm.#Primitive & {
 	name:        "ReplicaSet"
-	#apiVersion: "k8s.io/api/apps/v1"
+	#apiVersion: "elements.opm.dev/k8s/apps/v1"
 	target: ["component"]
-	schema:       #ReplicaSetSpec
-	workloadType: "stateless"
-	description:  "Kubernetes ReplicaSet - maintains replica pods"
+	schema: #ReplicaSetSpec
+	annotations: {
+		"core.opm.dev/workload-type": "stateless"
+	}
+	description: "Kubernetes ReplicaSet - maintains replica pods"
 	labels: {
 		"core.opm.dev/category": "kubernetes"
 		"k8s.io/api-group":      "apps"
@@ -60,7 +68,7 @@ import (
 
 #ControllerRevisionElement: opm.#Primitive & {
 	name:        "ControllerRevision"
-	#apiVersion: "k8s.io/api/apps/v1"
+	#apiVersion: "elements.opm.dev/k8s/apps/v1"
 	target: ["component"]
 	schema:      #ControllerRevisionSpec
 	description: "Kubernetes ControllerRevision - controller state snapshot"

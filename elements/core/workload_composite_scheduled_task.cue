@@ -38,8 +38,10 @@ import (
 		#SidecarContainersElement,
 		#InitContainersElement,
 	]
-	workloadType: "scheduled-task"
-	description:  "A scheduled task workload that runs on a schedule"
+	annotations: {
+		"core.opm.dev/workload-type": "scheduled-task"
+	}
+	description: "A scheduled task workload that runs on a schedule"
 	labels: {"core.opm.dev/category": "workload"}
 }
 

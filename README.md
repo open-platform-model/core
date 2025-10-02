@@ -128,7 +128,7 @@ cue vet ./elements/core/
 | File | Purpose |
 |------|---------|
 | [element.cue](element.cue) | Base element type system. Defines `#Element`, `#Primitive`, `#Composite`, `#Modifier`, `#Custom` and element kinds. |
-| [component.cue](component.cue) | Component definition. Components are element compositions with automatic workloadType detection. |
+| [component.cue](component.cue) | Component definition. Components are element compositions with workloadType derived from element annotations. |
 | [module.cue](module.cue) | Three-layer module architecture: `#ModuleDefinition` (developer), `#Module` (platform), `#ModuleRelease` (user). |
 | [scope.cue](scope.cue) | Scope system for cross-cutting concerns. `#PlatformScope` (immutable) vs `#ModuleScope` (mutable). |
 | [provider.cue](provider.cue) | Provider interface, transformer definitions, and selection logic for platform-specific rendering. |
@@ -245,6 +245,10 @@ import (
     schema: #MyFeatureSpec
     target: ["component"]
     labels: {"core.opm.dev/category": "workload"}
+    annotations?: {
+        // Optional behavior hints for providers
+        ...
+    }
 }
 
 // Usage pattern

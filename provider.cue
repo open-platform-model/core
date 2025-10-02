@@ -9,6 +9,8 @@ import (
 )
 
 // Provider interface
+// Providers declare transformers and rendering logic
+// Element validation happens at catalog level when provider is registered
 #Provider: {
 	#kind:       "Provider"
 	#apiVersion: "core.opm.dev/v1alpha1"
@@ -19,9 +21,7 @@ import (
 		minVersion:  string // The minimum version of the provider
 	}
 
-	#registry: #ElementRegistry
-
-	// Transformer registry - maps traits to transformers
+	// Transformer registry - maps platform resources to transformers
 	// Example:
 	// transformers: {
 	// 	"k8s.io/api/apps/v1.Deployment":            #DeploymentTransformer
@@ -34,10 +34,11 @@ import (
 	// }
 	transformers: #TransformerMap
 
-	// Flatten and sort supported elements from all transformers
-	#supportedElements: #ElementStringArray & list.FlattenN([
+	// All elements declared by transformers (required + optional)
+	// NOTE: This does NOT validate existence - validation happens at catalog level
+	#declaredElements: #ElementStringArray & list.FlattenN([
 		for _, transformer in transformers {
-			transformer.#supportedElements
+			list.Concat([transformer.required, transformer.optional])
 		},
 	], 1)
 
@@ -52,6 +53,8 @@ import (
 #TransformerMap: [string]: #Transformer
 
 // Transformer interface - generic for all providers
+// Transformers declare element requirements and transform logic
+// Element validation happens at catalog level, not transformer level
 #Transformer: {
 	#kind: string // e.g. "Deployment"
 
@@ -59,50 +62,14 @@ import (
 
 	#fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "k8s.io/api/apps/v1.Deployment"
 
-	// Element registry - must be populated by provider implementation
-	_registry: #ElementMap
-	if _registry == _|_ {
-		error("Transformer must have an element registry")
-	}
-
 	// Required OPM primitive elements for this transformer to work
-	required: #ElementStringArray // e.g. ["core.opm.dev/v1alpha1.StatelessWorkload", "core.opm.dev/v1alpha1.StatefulWorkload"]
-
-	// if len(required) == 0 {
-	// 	error("Transformer must have at least one required element")
-	// }
+	required: #ElementStringArray // e.g. ["elements.opm.dev/core/v1alpha1.Container"]
 
 	// Optional OPM modifier elements that can enhance the resource
-	optional: #ElementStringArray | *[] // e.g. ["core.opm.dev/v1alpha1.SidecarContainers", "core.opm.dev/v1alpha1.Replicas", "core.opm.dev/v1alpha1.UpdateStrategy", "core.opm.dev/v1alpha1.Expose", "core.opm.dev/v1alpha1.HealthCheck"]
+	optional: #ElementStringArray | *[] // e.g. ["elements.opm.dev/core/v1alpha1.Replicas", "elements.opm.dev/core/v1alpha1.HealthCheck"]
 
 	// All element fully qualified names (required + optional)
 	#allTransformerElements: #ElementStringArray & list.Concat([required, optional])
-
-	// Use map lookup instead of list.Contains for O(1) access
-	#supportedElements: #ElementStringArray & [
-		for element in #allTransformerElements
-		if _registry[element] != _|_ {
-			element
-		},
-	]
-
-	// Auto-generated defaults from optional element schemas
-	defaults: {
-		// Direct map lookup instead of Contains check
-		for elementFQN in optional
-		if _registry[elementFQN] != _|_
-		if _registry[elementFQN].kind == "modifier" {
-			let element = _registry[elementFQN]
-
-			// Only include modifier elements as defaults
-			// Composite elements are made up of other elements and should not be top-level defaults
-			// Primitive elements do not have defaults
-			(element.#nameCamel): element.schema
-		}
-
-		// Allow transformer-specific additional defaults
-		...
-	}
 
 	// Transform function
 	transform: {

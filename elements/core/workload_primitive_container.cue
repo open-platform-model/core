@@ -73,9 +73,12 @@ import (
 	name:        "Container"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
-	schema:       #ContainerSpec
-	workloadType: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
-	description:  "A container definition for workloads"
+	schema: #ContainerSpec
+	annotations?: {
+		"core.opm.dev/workload-type"?: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
+		...
+	}
+	description: "A container definition for workloads"
 	labels: {"core.opm.dev/category": "workload"}
 }
 

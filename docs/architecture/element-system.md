@@ -48,14 +48,16 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
     // MUST be an OpenAPIv3 compatible schema
     schema!: _
 
-    // Optional workload type association
-    workloadType?: #WorkloadTypes
-
     // Human-readable description
     description?: string
 
     // Optional labels for categorization
     labels?: #LabelsAnnotationsType
+
+    // Optional annotations for element behavior hints (not used for categorization)
+    // Providers can use annotations for decision-making (e.g., workload type selection)
+    // Example: {"core.opm.dev/workload-type": "stateless"}
+    annotations?: [string]: string
 }
 ```
 
@@ -65,8 +67,8 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
 - **kind**: How it composes - `primitive` (standalone), `modifier` (enhances others), `composite` (combines multiple), or `custom` (special handling)
 - **target**: Where it applies - `component`, `scope`, or both
 - **schema**: OpenAPIv3-compatible schema defining configuration structure
-- **workloadType**: Optional workload identity (stateless, stateful, etc.)
 - **labels**: Optional metadata for categorization and filtering (e.g., `{"core.opm.dev/category": "workload"}`)
+- **annotations**: Optional behavior hints for providers (e.g., `{"core.opm.dev/workload-type": "stateless"}`)
 - **#fullyQualifiedName**: Global unique identifier (e.g., "core.opm.dev/v1alpha1.Container")
 
 ---
@@ -176,7 +178,7 @@ Elements are categorized by how they compose:
 
 - Bundles multiple elements together
 - Provides convenience and clear intent
-- Can sets fixed `workloadType` for validation
+- Can set fixed workload type via annotations for validation
 - Maps directly to platform resources
 - Tracks which primitives it composes via `composes` field
 
@@ -204,8 +206,8 @@ Elements are categorized by how they compose:
         },
     ], -1)
 
-    // Composites must declare workloadType
-    workloadType!: #WorkloadTypes
+    // Composites should declare workload type via annotations if applicable
+    annotations?: [string]: string
 }
 ```
 
@@ -225,66 +227,82 @@ Elements are categorized by how they compose:
 
 ---
 
-## WorkloadType Enforcement
+## Element Annotations System
 
 ### Purpose
 
-The `workloadType` field ensures each component has exactly one workload type, preventing ambiguous or conflicting workload definitions.
+Element annotations provide behavior hints to providers without being used for categorization or filtering. The `"core.opm.dev/workload-type"` annotation ensures each component has exactly one workload type, preventing ambiguous or conflicting workload definitions.
 
-### Workload Types
+### Annotations vs Labels
 
-```cue
-#WorkloadTypes:
-    *#WorkloadTypeNone |          // null - No workload (resource components)
-    #WorkloadTypeStateless |      // "stateless" - Deployment-like
-    #WorkloadTypeStateful |       // "stateful" - StatefulSet-like
-    #WorkloadTypeDaemon |         // "daemon" - DaemonSet-like
-    #WorkloadTypeTask |           // "task" - Job-like
-    #WorkloadTypeScheduledTask |  // "scheduled-task" - CronJob-like
-    #WorkloadTypeFunction         // "function" - Serverless function
-```
+- **Labels** (`labels?: [string]: string`): For categorization and filtering at OPM level
+  - Example: `{"core.opm.dev/category": "workload"}`
+  - Used by OPM core for element organization and queries
+
+- **Annotations** (`annotations?: [string]: string`): For behavior hints at provider level
+  - Example: `{"core.opm.dev/workload-type": "stateless"}`
+  - Providers interpret annotations for decision-making (e.g., transformer selection)
+  - Kubernetes-style pattern for extensibility
+
+### Workload Type Annotation
+
+**Annotation Key**: `"core.opm.dev/workload-type"`
+
+**Valid Values**:
+- `"stateless"` - Deployment-like workloads
+- `"stateful"` - StatefulSet-like workloads
+- `"daemon"` - DaemonSet-like workloads
+- `"task"` - Job-like workloads
+- `"scheduled-task"` - CronJob-like workloads
+- `"function"` - Serverless functions
+- *Omit annotation* - For non-workload components (e.g., config-only)
 
 ### How It Works
 
-1. **Elements declare workloadType**: Any element (primitive or composite) can declare a `workloadType`
-2. **Components inherit workloadType**: Components automatically detect workloadType from included elements
-3. **Validation enforces uniqueness**: Components reject multiple elements with conflicting workloadTypes
+1. **Elements declare annotations**: Elements can include annotations map with workload type
+2. **Components derive workloadType**: Components automatically extract workloadType from `"core.opm.dev/workload-type"` annotation
+3. **Validation enforces uniqueness**: Components validate that all workload-type annotations have the same value
 
 ### Examples
 
 **✅ Flexible WorkloadType** (Container primitive):
 
 ```cue
-#Container: {
-    workloadType: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
-    // Can be any of these - platform decides based on usage
+#ContainerElement: {
+    annotations?: {
+        "core.opm.dev/workload-type"?: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
+        ...
+    }
 }
 ```
 
 **✅ Fixed WorkloadType** (StatelessWorkload composite):
 
 ```cue
-#StatelessWorkload: {
-    workloadType: "stateless"  // Always stateless
+#StatelessWorkloadElement: {
+    annotations: {
+        "core.opm.dev/workload-type": "stateless"  // Always stateless
+    }
 }
 ```
 
-**❌ Invalid** (Conflicting workloadTypes):
+**❌ Invalid** (Conflicting workload types):
 
 ```cue
 myComponent: #Component & {
-    #StatelessWorkload  // workloadType: "stateless"
-    #StatefulWorkload   // workloadType: "stateful" - CONFLICT!
+    #StatelessWorkload  // annotations: {"core.opm.dev/workload-type": "stateless"}
+    #StatefulWorkload   // annotations: {"core.opm.dev/workload-type": "stateful"} - CONFLICT!
 }
 ```
 
 ### Benefits
 
-1. **Clear Intent**: Developers explicitly declare workload type
-2. **Direct Platform Mapping**: Each workloadType maps to specific platform resource
-3. **Type Safety**: Prevents mixing incompatible workload types
-4. **Simpler Providers**: Transformers know exactly what to create
-5. **Better Validation**: Catch errors at compile-time
+1. **Kubernetes-aligned**: Same pattern as K8s annotations
+2. **Provider flexibility**: Providers interpret annotations as needed
+3. **Extensible**: Easy to add new annotations (scheduling hints, resource patterns, etc.)
+4. **Clear separation**: Labels for categorization (OPM-level), annotations for hints (provider-level)
+5. **Type Safety**: Components validate single workload type
+6. **Better Validation**: Catch errors at compile-time
 
 ---
 
@@ -446,11 +464,11 @@ Components are element compositions defined in [component.cue](../component.cue)
         #id!: string
         name!: string | *#id
 
-        // Workload type automatically derived from elements
-        workloadType: #WorkloadTypes
+        // Workload type automatically derived from element annotations
+        workloadType: string | *""
         for _, elem in #elements {
-            if elem.workloadType != _|_ {
-                workloadType: elem.workloadType
+            if elem.annotations != _|_ && elem.annotations[#AnnotationWorkloadType] != _|_ {
+                workloadType: elem.annotations[#AnnotationWorkloadType]
             }
         }
 
@@ -479,7 +497,7 @@ Components are element compositions defined in [component.cue](../component.cue)
 web: #Component & {
     #metadata: #id: "web"
 
-    #StatelessWorkload  // Sets workloadType: "stateless"
+    #StatelessWorkload  // Sets annotations: {"core.opm.dev/workload-type": "stateless"}
     #Expose            // Adds service exposure
 
     stateless: {
@@ -496,7 +514,7 @@ web: #Component & {
 custom: #Component & {
     #metadata: #id: "custom"
 
-    #Container   // Primitive - flexible workloadType
+    #Container   // Primitive - flexible workload type via annotations
     #Replicas    // Modifier
     #HealthCheck // Modifier
 
@@ -510,7 +528,7 @@ custom: #Component & {
 
 ## Component Validation
 
-Components automatically validate element compatibility and workloadType constraints.
+Components automatically validate element compatibility and workload type annotation constraints.
 
 ### Validation Logic
 
@@ -542,10 +560,18 @@ Components automatically validate element compatibility and workloadType constra
             }
         ]
 
-        // Validate workloadType consistency
-        workloadValidation: {
-            // Ensure only one workloadType across all elements
-            // (Automatic via CUE unification)
+        // Validate workload type annotation consistency
+        #workloadTypes: [
+            for _, elem in #elements
+            if elem.annotations != _|_ && elem.annotations[#AnnotationWorkloadType] != _|_
+            {elem.annotations[#AnnotationWorkloadType]}
+        ]
+
+        // All workload types must be identical
+        if len(#workloadTypes) > 1 {
+            for wt in #workloadTypes {
+                wt == #workloadTypes[0]  // Forces all to be equal
+            }
         }
     }
 }
@@ -553,12 +579,12 @@ Components automatically validate element compatibility and workloadType constra
 
 ### Invalid Component Examples
 
-**Example 1: Conflicting WorkloadTypes**:
+**Example 1: Conflicting Workload Types**:
 
 ```cue
 invalid: #Component & {
-    #StatelessWorkload  // workloadType: "stateless"
-    #StatefulWorkload   // workloadType: "stateful" - CONFLICT!
+    #StatelessWorkload  // annotations: {"core.opm.dev/workload-type": "stateless"}
+    #StatefulWorkload   // annotations: {"core.opm.dev/workload-type": "stateful"} - CONFLICT!
 }
 ```
 
@@ -592,7 +618,7 @@ invalid: #Component & {
 
 1. **Clear Intent**: `#StatelessWorkload` is more explicit than `#Container + #Replicas`
 2. **Direct Platform Mapping**: Certain composites map 1:1 to platform resources (Deployment, StatefulSet)
-3. **Type Safety**: Fixed workloadType prevents mixing incompatible patterns
+3. **Type Safety**: Fixed workload type annotation prevents mixing incompatible patterns
 4. **Simpler Providers**: Transformers match composites, not combinations of primitives
 5. **Better Validation**: Catch configuration errors at compile-time
 6. **Reusability**: Modifiers shared across composites
@@ -613,20 +639,24 @@ invalid: #Component & {
 3. **Type Safe**: Each element has distinct configuration field
 4. **No Boilerplate**: Single pattern for all elements
 
-### Why WorkloadType Field?
+### Why Annotations Instead of WorkloadType Field?
 
 **Alternatives Considered**:
 
-1. **Infer from element combinations**: Ambiguous and error-prone
-2. **Separate workload elements per type**: Lots of primitive elements
-3. **Provider decides workloadType**: Loses portability
+1. **Direct workloadType field**: Inflexible, hard to extend with new hints
+2. **Infer from element combinations**: Ambiguous and error-prone
+3. **Separate workload elements per type**: Lots of primitive elements
+4. **Provider decides workloadType**: Loses portability
 
-**Why WorkloadType Wins**:
+**Why Annotations Win**:
 
-1. **Explicit**: No guessing what workload will be created
-2. **Validated**: CUE enforces single workloadType per component
-3. **Portable**: WorkloadType travels with component definition
-4. **Provider-Friendly**: Transformers know exactly what to create
+1. **Kubernetes-aligned**: Same pattern as K8s annotations - familiar to users
+2. **Extensible**: Easy to add new behavior hints (scheduling, resources, deployment strategies)
+3. **Clear separation**: Labels for categorization (OPM-level), annotations for hints (provider-level)
+4. **Validated**: CUE enforces single workload-type annotation value per component
+5. **Portable**: Workload type annotation travels with component definition
+6. **Provider-Friendly**: Providers interpret annotations as needed for decision-making
+7. **Future-proof**: Can add new annotations without breaking changes
 
 ---
 

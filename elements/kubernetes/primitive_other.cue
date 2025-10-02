@@ -4,11 +4,11 @@ import (
 	opm "github.com/open-platform-model/core"
 )
 
-// Policy API Group - k8s.io/api/policy/v1
+// Policy API Group - elements.opm.dev/k8s/policy/v1
 
 #PodDisruptionBudgetElement: opm.#Primitive & {
 	name:        "PodDisruptionBudget"
-	#apiVersion: "k8s.io/api/policy/v1"
+	#apiVersion: "elements.opm.dev/k8s/policy/v1"
 	target: ["component"]
 	schema:      #PodDisruptionBudgetSpec
 	description: "Kubernetes PodDisruptionBudget - availability guarantees"
@@ -18,11 +18,11 @@ import (
 	}
 }
 
-// Autoscaling API Group - k8s.io/api/autoscaling/v2
+// Autoscaling API Group - elements.opm.dev/k8s/autoscaling/v2
 
 #HorizontalPodAutoscalerElement: opm.#Primitive & {
 	name:        "HorizontalPodAutoscaler"
-	#apiVersion: "k8s.io/api/autoscaling/v2"
+	#apiVersion: "elements.opm.dev/k8s/autoscaling/v2"
 	target: ["component"]
 	schema:      #HorizontalPodAutoscalerSpec
 	description: "Kubernetes HorizontalPodAutoscaler - automatic scaling"
@@ -32,11 +32,11 @@ import (
 	}
 }
 
-// Certificates API Group - k8s.io/api/certificates/v1
+// Certificates API Group - elements.opm.dev/k8s/certificates/v1
 
 #CertificateSigningRequestElement: opm.#Primitive & {
 	name:        "CertificateSigningRequest"
-	#apiVersion: "k8s.io/api/certificates/v1"
+	#apiVersion: "elements.opm.dev/k8s/certificates/v1"
 	target: ["component"]
 	schema:      #CertificateSigningRequestSpec
 	description: "Kubernetes CertificateSigningRequest - certificate request"
@@ -46,11 +46,11 @@ import (
 	}
 }
 
-// Coordination API Group - k8s.io/api/coordination/v1
+// Coordination API Group - elements.opm.dev/k8s/coordination/v1
 
 #LeaseElement: opm.#Primitive & {
 	name:        "Lease"
-	#apiVersion: "k8s.io/api/coordination/v1"
+	#apiVersion: "elements.opm.dev/k8s/coordination/v1"
 	target: ["component"]
 	schema:      #LeaseSpec
 	description: "Kubernetes Lease - distributed locking"
@@ -60,11 +60,11 @@ import (
 	}
 }
 
-// Discovery API Group - k8s.io/api/discovery/v1
+// Discovery API Group - elements.opm.dev/k8s/discovery/v1
 
 #EndpointSliceElement: opm.#Primitive & {
 	name:        "EndpointSlice"
-	#apiVersion: "k8s.io/api/discovery/v1"
+	#apiVersion: "elements.opm.dev/k8s/discovery/v1"
 	target: ["component"]
 	schema:      #EndpointSliceSpec
 	description: "Kubernetes EndpointSlice - scalable service endpoints"
@@ -74,11 +74,11 @@ import (
 	}
 }
 
-// Events API Group - k8s.io/api/events/v1
+// Events API Group - elements.opm.dev/k8s/events/v1
 
 #EventV1Element: opm.#Primitive & {
 	name:        "Event"
-	#apiVersion: "k8s.io/api/events/v1"
+	#apiVersion: "elements.opm.dev/k8s/events/v1"
 	target: ["component"]
 	schema:      #EventV1Spec
 	description: "Kubernetes Event (v1) - structured event record"
@@ -88,11 +88,11 @@ import (
 	}
 }
 
-// Node API Group - k8s.io/api/node/v1
+// Node API Group - elements.opm.dev/k8s/node/v1
 
 #RuntimeClassElement: opm.#Primitive & {
 	name:        "RuntimeClass"
-	#apiVersion: "k8s.io/api/node/v1"
+	#apiVersion: "elements.opm.dev/k8s/node/v1"
 	target: ["scope"]
 	schema:      #RuntimeClassSpec
 	description: "Kubernetes RuntimeClass - container runtime selection"
@@ -102,11 +102,11 @@ import (
 	}
 }
 
-// Admission Registration API Group - k8s.io/api/admissionregistration/v1
+// Admission Registration API Group - elements.opm.dev/k8s/admissionregistration/v1
 
 #MutatingWebhookConfigurationElement: opm.#Primitive & {
 	name:        "MutatingWebhookConfiguration"
-	#apiVersion: "k8s.io/api/admissionregistration/v1"
+	#apiVersion: "elements.opm.dev/k8s/admissionregistration/v1"
 	target: ["scope"]
 	schema:      #MutatingWebhookConfigurationSpec
 	description: "Kubernetes MutatingWebhookConfiguration - admission webhook"
@@ -118,7 +118,7 @@ import (
 
 #ValidatingWebhookConfigurationElement: opm.#Primitive & {
 	name:        "ValidatingWebhookConfiguration"
-	#apiVersion: "k8s.io/api/admissionregistration/v1"
+	#apiVersion: "elements.opm.dev/k8s/admissionregistration/v1"
 	target: ["scope"]
 	schema:      #ValidatingWebhookConfigurationSpec
 	description: "Kubernetes ValidatingWebhookConfiguration - validation webhook"
@@ -130,7 +130,7 @@ import (
 
 #ValidatingAdmissionPolicyElement: opm.#Primitive & {
 	name:        "ValidatingAdmissionPolicy"
-	#apiVersion: "k8s.io/api/admissionregistration/v1"
+	#apiVersion: "elements.opm.dev/k8s/admissionregistration/v1"
 	target: ["scope"]
 	schema:      #ValidatingAdmissionPolicySpec
 	description: "Kubernetes ValidatingAdmissionPolicy - CEL-based validation"
@@ -142,7 +142,7 @@ import (
 
 #ValidatingAdmissionPolicyBindingElement: opm.#Primitive & {
 	name:        "ValidatingAdmissionPolicyBinding"
-	#apiVersion: "k8s.io/api/admissionregistration/v1"
+	#apiVersion: "elements.opm.dev/k8s/admissionregistration/v1"
 	target: ["scope"]
 	schema:      #ValidatingAdmissionPolicyBindingSpec
 	description: "Kubernetes ValidatingAdmissionPolicyBinding - policy binding"
@@ -166,11 +166,11 @@ import (
 	}
 }
 
-// Flow Control API Group - k8s.io/api/flowcontrol/v1
+// Flow Control API Group - elements.opm.dev/k8s/flowcontrol/v1
 
 #FlowSchemaElement: opm.#Primitive & {
 	name:        "FlowSchema"
-	#apiVersion: "k8s.io/api/flowcontrol/v1"
+	#apiVersion: "elements.opm.dev/k8s/flowcontrol/v1"
 	target: ["scope"]
 	schema:      #FlowSchemaSpec
 	description: "Kubernetes FlowSchema - API priority and fairness"
@@ -182,7 +182,7 @@ import (
 
 #PriorityLevelConfigurationElement: opm.#Primitive & {
 	name:        "PriorityLevelConfiguration"
-	#apiVersion: "k8s.io/api/flowcontrol/v1"
+	#apiVersion: "elements.opm.dev/k8s/flowcontrol/v1"
 	target: ["scope"]
 	schema:      #PriorityLevelConfigurationSpec
 	description: "Kubernetes PriorityLevelConfiguration - request priority levels"
@@ -192,11 +192,11 @@ import (
 	}
 }
 
-// Scheduling API Group - k8s.io/api/scheduling/v1
+// Scheduling API Group - elements.opm.dev/k8s/scheduling/v1
 
 #PriorityClassElement: opm.#Primitive & {
 	name:        "PriorityClass"
-	#apiVersion: "k8s.io/api/scheduling/v1"
+	#apiVersion: "elements.opm.dev/k8s/scheduling/v1"
 	target: ["scope"]
 	schema:      #PriorityClassSpec
 	description: "Kubernetes PriorityClass - pod scheduling priority"
