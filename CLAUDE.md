@@ -689,7 +689,7 @@ core/
 │   │   ├── modifier_health_check.cue        # HealthCheck element
 │   │   ├── composite_stateless.cue          # StatelessWorkload element
 │   │   ├── composite_stateful.cue           # StatefulWorkload element
-│   │   ├── composite_daemonset.cue          # DaemonSetWorkload element
+│   │   ├── composite_daemonset.cue          # DaemonWorkload element
 │   │   ├── composite_task.cue               # TaskWorkload element
 │   │   └── composite_scheduled_task.cue     # ScheduledTaskWorkload element
 │   ├── data/                                # Data elements (3 primitives, 1 composite)
@@ -705,6 +705,7 @@ core/
 ```
 
 **File Naming Convention**: `{kind}_{element_name}.cue`
+
 - `primitive_*.cue` - Basic building blocks
 - `modifier_*.cue` - Elements that modify other elements
 - `composite_*.cue` - Compositions of multiple elements

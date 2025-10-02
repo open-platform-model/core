@@ -20,7 +20,7 @@ import (
 	#metadata: _
 	#elements: (#RestartPolicyElement.#fullyQualifiedName): #RestartPolicyElement
 	restartPolicy: #RestartPolicySpec
-	if #metadata.workloadType == "stateless" || #metadata.workloadType == "stateful" || #metadata.workloadType == "daemonSet" {
+	if #metadata.workloadType == "stateless" || #metadata.workloadType == "stateful" || #metadata.workloadType == "daemon" {
 		// Stateless workloads default to Always
 		restartPolicy: #RestartPolicySpec & {
 			policy: "Always"

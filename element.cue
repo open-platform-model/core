@@ -53,7 +53,7 @@ import (
 // e.g., raw Kubernetes manifests or custom operators that do not fit into the primitive/modifier/composite model
 #ElementKindCustom: "custom"
 
-#ElementKinds:      #ElementKindPrimitive | #ElementKindModifier | #ElementKindComposite | #ElementKindCustom
+#ElementKinds: #ElementKindPrimitive | #ElementKindModifier | #ElementKindComposite | #ElementKindCustom
 
 // Workload types
 // No specific workload type
@@ -66,7 +66,7 @@ import (
 #WorkloadTypeStateful: "stateful"
 
 // e.g. DaemonSet, etc.
-#WorkloadTypeDaemon: "daemonSet"
+#WorkloadTypeDaemon: "daemon"
 
 // e.g. Job, etc.
 #WorkloadTypeTask: "task"
@@ -82,13 +82,16 @@ import (
 
 // Element map and list types
 #Elements: #Primitive | #Modifier | #Composite | #Custom
+
 // Map of elements
 #ElementMap: [string]: #Elements
+
 // Array of elements
 #ElementArray: [...#Elements]
+
 // Array of element names (fully qualified)
 // TODO: Add validation for #fullyQualifiedName uniqueness
-#ElementStringArray: [...string] 
+#ElementStringArray: [...string]
 
 #ElementBase: {
 	#elements: #ElementMap

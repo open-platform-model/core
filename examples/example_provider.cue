@@ -29,7 +29,7 @@ import (
 	transformers: {
 		"k8s.io/api/apps/v1.Deployment": #DeploymentTransformer & {_registry: #registry}
 		// "k8s.io/api/apps/v1.StatefulSet":           #StatefulSetTransformer & {_registry: #registry}
-		// "k8s.io/api/apps/v1.DaemonSet":             #DaemonSetTransformer & {_registry: #registry}
+		// "k8s.io/api/apps/v1.DaemonSet":             #DaemonTransformer & {_registry: #registry}
 		// "k8s.io/api/batch/v1.Job":                  #JobTransformer & {_registry: #registry}
 		// "k8s.io/api/batch/v1.CronJob":              #CronJobTransformer & {_registry: #registry}
 		"k8s.io/api/core/v1.PersistentVolumeClaim": #PersistentVolumeClaimTransformer & {_registry: #registry}

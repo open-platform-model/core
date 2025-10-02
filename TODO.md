@@ -7,12 +7,9 @@
 - [ ] Investigate in replacing workloadType with "hints" or "annotations" in element. Would function similarly to labels in #Element but would NOT be used for categorization or filtering. Would have workloadType, and could be expanded in the future with more fields.
 - [ ] Add a new element kind called patch. Would work similar to how patches are handled in for example kustomize today.
 - [ ] Figure out a better solution to "..." in Element base, etc. It needs to be typed but also allow for extending with fields. Maybe components are allowed to be loosy goosy but Elements are stricter
-- [ ] Investigate and fix the reason why "containers" is not balooned to #ContainerSpec when evaluating #WorkloadSchema "clear && cue eval catalog/traits/core/v2alpha2/workload/workload.cue -e "#WorkloadSchema" --all".
 - [ ] Implement standard status definition for component.
 - [ ] Implement standard status definition for module, should inherit from components in some way.
-- [ ] Create a CLI helper tool. Responsible for bootstrapping a CUE module with an example, or for listing and viewing traits, components, modules, scopes, policies and bundles. Would also be able to handle deployment of the generated resources.
 - [ ] Find a better way to handle secrets. Maybe a way to generate. Maybe a way to inform the platform team of what the secrets should be and how they should look (an informed handoff).
-- [ ] Decide if ports should be a set or continue as a list. Pros of set is it would be easier to reference.
 
 ## Future
 

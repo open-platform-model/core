@@ -53,7 +53,7 @@ import (
 	// Workload - Composite Traits
 	(#StatelessWorkloadElement.#fullyQualifiedName):     workload.#StatelessWorkloadElement
 	(#StatefulWorkloadElement.#fullyQualifiedName):      workload.#StatefulWorkloadElement
-	(#DaemonSetWorkloadElement.#fullyQualifiedName):     workload.#DaemonSetWorkloadElement
+	(#DaemonWorkloadElement.#fullyQualifiedName):        workload.#DaemonWorkloadElement
 	(#TaskWorkloadElement.#fullyQualifiedName):          workload.#TaskWorkloadElement
 	(#ScheduledTaskWorkloadElement.#fullyQualifiedName): workload.#ScheduledTaskWorkloadElement
 

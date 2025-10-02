@@ -33,7 +33,7 @@ import (
 				partition: int | *0
 			}
 		}
-		if #metadata.workloadType == "daemonSet" {
+		if #metadata.workloadType == "daemon" {
 			type: "RollingUpdate" | "OnDelete" | *"RollingUpdate"
 			rollingUpdate: {
 				maxUnavailable: int | *1

@@ -5,12 +5,12 @@ import (
 	schema "github.com/open-platform-model/core/schema"
 )
 
-// DaemonSet workload - A containerized workload that runs on all (or some) nodes in the cluster
-#DaemonSetWorkloadElement: core.#Composite & {
-	name:        "DaemonSetWorkload"
+// Daemon workload - A containerized workload that runs on all (or some) nodes in the cluster
+#DaemonWorkloadElement: core.#Composite & {
+	name:        "DaemonWorkload"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
-	schema: #DaemonSetSpec
+	schema: #DaemonSpec
 	composes: [
 		#ContainerElement,
 		#RestartPolicyElement,
@@ -19,15 +19,15 @@ import (
 		#SidecarContainersElement,
 		#InitContainersElement,
 	]
-	workloadType: "daemonSet"
+	workloadType: "daemon"
 	description:  "A daemonSet workload that runs on all (or some) nodes in the cluster"
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#DaemonSetWorkload: close(core.#ElementBase & {
-	#elements: (#DaemonSetWorkloadElement.#fullyQualifiedName): #DaemonSetWorkloadElement
-	daemonSet: #DaemonSetSpec
+#DaemonWorkload: close(core.#ElementBase & {
+	#elements: (#DaemonWorkloadElement.#fullyQualifiedName): #DaemonWorkloadElement
+	daemon: #DaemonSpec
 })
 
 // Re-export schema types for convenience
-#DaemonSetSpec: schema.#DaemonSetSpec
+#DaemonSpec: schema.#DaemonSpec

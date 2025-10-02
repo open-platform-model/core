@@ -121,8 +121,8 @@ import (
 	volume: #VolumeSpec
 }
 
-// DaemonSet workload specification
-#DaemonSetSpec: {
+// Daemon workload specification
+#DaemonSpec: {
 	container:       #ContainerSpec
 	restartPolicy?:  #RestartPolicySpec
 	updateStrategy?: #UpdateStrategySpec

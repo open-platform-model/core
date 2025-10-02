@@ -238,7 +238,7 @@ The `workloadType` field ensures each component has exactly one workload type, p
     *#WorkloadTypeNone |          // null - No workload (resource components)
     #WorkloadTypeStateless |      // "stateless" - Deployment-like
     #WorkloadTypeStateful |       // "stateful" - StatefulSet-like
-    #WorkloadTypeDaemon |         // "daemonSet" - DaemonSet-like
+    #WorkloadTypeDaemon |         // "daemon" - DaemonSet-like
     #WorkloadTypeTask |           // "task" - Job-like
     #WorkloadTypeScheduledTask |  // "scheduled-task" - CronJob-like
     #WorkloadTypeFunction         // "function" - Serverless function
@@ -256,7 +256,7 @@ The `workloadType` field ensures each component has exactly one workload type, p
 
 ```cue
 #Container: {
-    workloadType: "stateless" | "stateful" | "daemonSet" | "task" | "scheduled-task"
+    workloadType: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
     // Can be any of these - platform decides based on usage
 }
 ```
