@@ -1,12 +1,24 @@
-package workload
+package core
 
 import (
-	core "github.com/open-platform-model/core"
-	schema "github.com/open-platform-model/core/schema"
+	opm "github.com/open-platform-model/core"
 )
 
+/////////////////////////////////////////////////////////////////
+//// Restart Policy Schema
+/////////////////////////////////////////////////////////////////
+
+// Restart policy specification
+#RestartPolicySpec: {
+	policy: "Always" | "OnFailure" | "Never" | *"Always"
+}
+
+/////////////////////////////////////////////////////////////////
+//// Restart Policy Element
+/////////////////////////////////////////////////////////////////
+
 // Add Restart Policy to component
-#RestartPolicyElement: core.#Modifier & {
+#RestartPolicyElement: opm.#Modifier & {
 	name:        "RestartPolicy"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
@@ -16,7 +28,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#RestartPolicy: close(core.#ElementBase & {
+#RestartPolicy: close(opm.#ElementBase & {
 	#metadata: _
 	#elements: (#RestartPolicyElement.#fullyQualifiedName): #RestartPolicyElement
 	restartPolicy: #RestartPolicySpec
@@ -33,6 +45,3 @@ import (
 		}
 	}
 })
-
-// Re-export schema types for convenience
-#RestartPolicySpec: schema.#RestartPolicySpec

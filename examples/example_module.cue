@@ -1,17 +1,14 @@
 package examples
 
 import (
-	core "github.com/open-platform-model/core"
-	schema "github.com/open-platform-model/core/schema"
-	workload "github.com/open-platform-model/core/elements/workload"
-	data "github.com/open-platform-model/core/elements/data"
-	connectivity "github.com/open-platform-model/core/elements/connectivity"
+	opm "github.com/open-platform-model/core"
+	elements "github.com/open-platform-model/core/elements/core"
 )
 
 //////////////////////////////////////////////////////////////////
 //// Example
 //////////////////////////////////////////////////////////////////
-myAppDefinition: core.#ModuleDefinition & {
+myAppDefinition: opm.#ModuleDefinition & {
 	#metadata: {
 		#id:     "my-app"
 		name:    "my-app"
@@ -31,10 +28,10 @@ myAppDefinition: core.#ModuleDefinition & {
 			}
 
 			// Add primitive elements
-			data.#Volume
+			elements.#Volume
 
 			// Add composite elements
-			workload.#StatelessWorkload
+			elements.#StatelessWorkload
 
 			// Define the container and volume details
 			stateless: {
@@ -62,7 +59,7 @@ myAppDefinition: core.#ModuleDefinition & {
 			}
 
 			// Add composite element
-			data.#SimpleDatabase
+			elements.#SimpleDatabase
 
 			database: {
 				engine:   "postgres"
@@ -95,13 +92,13 @@ myAppDefinition: core.#ModuleDefinition & {
 			// Example of overriding default image tag
 			image: _ | *"ghcr.io/example/web:2.0.0"
 		}
-		dbVolume: schema.#VolumeSpec & {
+		dbVolume: elements.#VolumeSpec & {
 			persistentClaim: _ | *{size: "10Gi"}
 		}
 	}
 }
 
-myApp: core.#Module & {
+myApp: opm.#Module & {
 	#metadata: {
 		#id:     "my-app-instance"
 		name:    "my-app-instance"
@@ -123,7 +120,7 @@ myApp: core.#Module & {
 			}
 
 			// Add primitive elements
-			workload.#StatelessWorkload
+			elements.#StatelessWorkload
 
 			// Define the container details
 			stateless: {

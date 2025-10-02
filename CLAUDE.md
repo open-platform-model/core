@@ -108,79 +108,83 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 
 #### Element Organization
 
-Elements are organized into category-based directories with separate schema definitions:
+Elements are organized in a flat directory structure with schemas co-located:
 
-- **Categories**: `workload/` | `data/` | `connectivity/` | (future: `security/` | `observability/` | `governance/`)
-- **File Naming**: `{kind}_{element_name}.cue`
-  - `primitive_*.cue` - Basic building blocks
-  - `modifier_*.cue` - Modifiers that extend primitives
-  - `composite_*.cue` - Combinations of primitives/modifiers
-- **Schema Package**: All `*Spec` definitions live in `schema/` package
+- **Categories**: `workload` | `data` | `connectivity` | (future: `security` | `observability` | `governance`)
+- **File Naming**: `{category}_{kind}_{element_name}.cue`
+  - `workload_primitive_*.cue` - Workload primitives with schemas
+  - `workload_modifier_*.cue` - Workload modifiers with schemas
+  - `workload_composite_*.cue` - Workload composites with schemas
+  - `data_primitive_*.cue`, `data_composite_*.cue` - Data elements with schemas
+  - `connectivity_primitive_*.cue`, `connectivity_modifier_*.cue` - Connectivity elements with schemas
+- **Schema Location**: All `*Spec` definitions are in the same file as the element (no separate schema package)
+- **Package**: All core elements are in `package core`
 
 #### Steps to Add a New Element
 
-1. **Define the schema** in appropriate `schema/{category}.cue` file:
+1. **Create the element file** in `elements/core/{category}_{kind}_{name}.cue`:
 
    ```cue
-   // In schema/security.cue
-   package schema
+   // In elements/core/security_primitive_pod_security.cue
+   package core
+
+   import (
+       opm "github.com/open-platform-model/core"
+   )
+
+   /////////////////////////////////////////////////////////////////
+   //// Pod Security Schema
+   /////////////////////////////////////////////////////////////////
 
    #PodSecuritySpec: {
        runAsNonRoot?: bool | *true
        readOnlyRootFilesystem?: bool | *false
    }
-   ```
 
-2. **Create the element** in `elements/{category}/{kind}_{name}.cue`:
+   /////////////////////////////////////////////////////////////////
+   //// Pod Security Element
+   /////////////////////////////////////////////////////////////////
 
-   ```cue
-   // In elements/security/primitive_pod_security.cue
-   package security
-
-   import (
-       core "github.com/open-platform-model/core"
-       schema "github.com/open-platform-model/core/schema"
-   )
-
-   #PodSecurityElement: core.#Primitive & {
+   #PodSecurityElement: opm.#Primitive & {
        name: "PodSecurity"
        #apiVersion: "elements.opm.dev/core/v1alpha1"
        target: ["component"]
-       schema: schema.#PodSecuritySpec
+       schema: #PodSecuritySpec
        labels: {"core.opm.dev/category": "security"}
    }
 
-   #PodSecurity: close(core.#ElementBase & {
+   #PodSecurity: close(opm.#ElementBase & {
        #elements: (#PodSecurityElement.#fullyQualifiedName): #PodSecurityElement
-       podSecurity: schema.#PodSecuritySpec
+       podSecurity: #PodSecuritySpec
    })
-
-   // Re-export schema
-   #PodSecuritySpec: schema.#PodSecuritySpec
    ```
 
-3. **Add to `elements/elements.cue` registry**:
+2. **Add to `elements/elements.cue` registry**:
 
    ```cue
+   // In elements/elements.cue
    import (
-       security "github.com/open-platform-model/core/elements/security"
+       core "github.com/open-platform-model/core/elements/core"
    )
 
-   // Add to registry
    #CoreElementRegistry: {
-       (#PodSecurityElement.#fullyQualifiedName): #PodSecurityElement
+       // ... existing elements
+
+       // Security elements
+       (opm.#PodSecurityElement.#fullyQualifiedName): opm.#PodSecurityElement
    }
    ```
 
-4. **Update transformer requirements** if creating a new primitive element that platforms need to support
+3. **Update transformer requirements** if creating a new primitive element that platforms need to support
 
-#### Why Schema Package?
+#### Why Co-located Schemas?
 
-The separate `schema/` package prevents circular import dependencies:
+Schemas are defined in the same file as elements for simplicity:
 
-- Element packages can safely import `schema` for type definitions
-- Elements in different categories (e.g., `workload` and `data`) can reference each other's specs through the shared `schema` package
-- No circular dependencies between element packages
+- No separate package imports needed - elements and schemas share the same `package core`
+- Elements can directly reference their schemas (e.g., `schema: #PodSecuritySpec`)
+- All elements can reference each other's schemas since they're in the same package
+- Simpler file structure - one file contains everything related to an element
 
 ### Lint and Type Checking
 
@@ -674,60 +678,66 @@ core/
 ├── module.cue                               # Module definitions
 ├── provider.cue                             # Provider interface
 ├── registry.cue                             # Element registry
-├── schema/                                  # Schema definitions (shared specs)
-│   ├── workload.cue                         # Workload specs (ContainerSpec, ReplicasSpec, etc.)
-│   ├── data.cue                             # Data specs (VolumeSpec, ConfigMapSpec, etc.)
-│   └── connectivity.cue                     # Connectivity specs (ExposeSpec, NetworkScopeSpec)
-├── elements/                                # Element catalog (organized by category)
-│   ├── elements.cue                         # Registry only (no re-exports)
-│   ├── workload/                            # Workload elements (1 primitive, 5 modifiers, 5 composites)
-│   │   ├── primitive_container.cue          # Container element
-│   │   ├── modifier_sidecars.cue            # SidecarContainers, InitContainers, EphemeralContainers
-│   │   ├── modifier_replicas.cue            # Replicas element
-│   │   ├── modifier_restart_policy.cue      # RestartPolicy element
-│   │   ├── modifier_update_strategy.cue     # UpdateStrategy element
-│   │   ├── modifier_health_check.cue        # HealthCheck element
-│   │   ├── composite_stateless.cue          # StatelessWorkload element
-│   │   ├── composite_stateful.cue           # StatefulWorkload element
-│   │   ├── composite_daemonset.cue          # DaemonWorkload element
-│   │   ├── composite_task.cue               # TaskWorkload element
-│   │   └── composite_scheduled_task.cue     # ScheduledTaskWorkload element
-│   ├── data/                                # Data elements (3 primitives, 1 composite)
-│   │   ├── primitive_volume.cue             # Volume element
-│   │   ├── primitive_configmap.cue          # ConfigMap element
-│   │   ├── primitive_secret.cue             # Secret element
-│   │   └── composite_simple_database.cue    # SimpleDatabase element
-│   └── connectivity/                        # Connectivity elements (2 primitives)
-│       ├── primitive_network_scope.cue      # NetworkScope element
-│       └── primitive_expose.cue             # Expose element
+├── elements/                                # Element catalog (flattened structure)
+│   ├── elements.cue                         # Main registry (imports from core and kubernetes)
+│   ├── core/                                # OPM core elements (all in flat structure)
+│   │   ├── workload_primitive_container.cue       # Container + schemas
+│   │   ├── workload_modifier_sidecars.cue         # Sidecar/Init/Ephemeral containers
+│   │   ├── workload_modifier_replicas.cue         # Replicas + schema
+│   │   ├── workload_modifier_restart_policy.cue   # RestartPolicy + schema
+│   │   ├── workload_modifier_update_strategy.cue  # UpdateStrategy + schema
+│   │   ├── workload_modifier_health_check.cue     # HealthCheck + schemas
+│   │   ├── workload_composite_stateless.cue       # StatelessWorkload + schema
+│   │   ├── workload_composite_stateful.cue        # StatefulWorkload + schema
+│   │   ├── workload_composite_daemonset.cue       # DaemonWorkload + schema
+│   │   ├── workload_composite_task.cue            # TaskWorkload + schema
+│   │   ├── workload_composite_scheduled_task.cue  # ScheduledTask + schema
+│   │   ├── data_primitive_volume.cue              # Volume + schemas
+│   │   ├── data_primitive_configmap.cue           # ConfigMap + schema
+│   │   ├── data_primitive_secret.cue              # Secret + schema
+│   │   ├── data_composite_simple_database.cue     # SimpleDatabase + schema
+│   │   ├── connectivity_primitive_network_scope.cue  # NetworkScope + schema
+│   │   └── connectivity_modifier_expose.cue       # Expose + schemas
+│   └── kubernetes/                          # Kubernetes native resources
+│       ├── kubernetes_schema.cue            # All K8s resource schemas
+│       ├── primitive_core.cue               # Core API resources
+│       ├── primitive_apps.cue               # Apps API resources
+│       ├── primitive_batch.cue              # Batch API resources
+│       ├── primitive_networking.cue         # Networking API resources
+│       ├── primitive_storage.cue            # Storage API resources
+│       ├── primitive_rbac.cue               # RBAC API resources
+│       └── primitive_other.cue              # Other API groups
 └── examples/                                # Usage examples
-    └── example_module.cue
+    ├── example_module.cue
+    └── example_provider.cue
 ```
 
-**File Naming Convention**: `{kind}_{element_name}.cue`
+**File Naming Convention**: `{category}_{kind}_{element_name}.cue`
 
-- `primitive_*.cue` - Basic building blocks
-- `modifier_*.cue` - Elements that modify other elements
-- `composite_*.cue` - Compositions of multiple elements
+- `workload_primitive_*.cue` - Workload primitives with schemas
+- `workload_modifier_*.cue` - Workload modifiers with schemas
+- `workload_composite_*.cue` - Workload composites with schemas
+- `data_primitive_*.cue` - Data primitives with schemas
+- `data_composite_*.cue` - Data composites with schemas
+- `connectivity_primitive_*.cue` - Connectivity primitives with schemas
+- `connectivity_modifier_*.cue` - Connectivity modifiers with schemas
+
+**Key Design**: Schemas are co-located with element definitions in the same file and package.
 
 **Important Imports:**
 
 ```cue
-// For using elements - import category packages directly
-import workload "github.com/open-platform-model/core/elements/workload"
-import data "github.com/open-platform-model/core/elements/data"
-
-// For using schema types directly
-import schema "github.com/open-platform-model/core/schema"
+// For using elements - import core elements package
+import elements "github.com/open-platform-model/core/elements/core"
 
 // For element development
 import (
-    core "github.com/open-platform-model/core"
-    schema "github.com/open-platform-model/core/schema"
+    opm "github.com/open-platform-model/core"
 )
 ```
 
-Elements are accessed through their category packages (workload, data, connectivity).
+Elements and their schemas are accessed through the core elements package.
+No separate schema package - all schemas are defined alongside their elements.
 
 ## OSCAL Integration Insights
 

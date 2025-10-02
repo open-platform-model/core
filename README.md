@@ -44,15 +44,19 @@ core/
 ├── provider.cue          # Provider interface and transformer system
 ├── registry.cue          # Element registry interface
 ├── common.cue            # Shared types (labels, annotations, etc.)
-├── schema/               # Shared spec definitions (prevents circular imports)
-│   ├── workload.cue      # ContainerSpec, ReplicasSpec, etc.
-│   ├── data.cue          # VolumeSpec, ConfigMapSpec, SecretSpec
-│   └── connectivity.cue  # ExposeSpec, NetworkScopeSpec
 ├── elements/             # Core element catalog
 │   ├── elements.cue      # Element registry and index (MAIN ENTRY POINT)
-│   ├── workload/         # Workload elements (Container, StatelessWorkload, etc.)
-│   ├── data/             # Data elements (Volume, ConfigMap, Secret)
-│   └── connectivity/     # Connectivity elements (Expose, NetworkScope)
+│   ├── core/             # OPM core elements (flat structure, co-located schemas)
+│   │   ├── workload_primitive_*.cue   # Container primitives with schemas
+│   │   ├── workload_modifier_*.cue    # Replicas, HealthCheck, etc.
+│   │   ├── workload_composite_*.cue   # StatelessWorkload, StatefulWorkload
+│   │   ├── data_primitive_*.cue       # Volume, ConfigMap, Secret with schemas
+│   │   ├── data_composite_*.cue       # SimpleDatabase
+│   │   ├── connectivity_primitive_*.cue  # NetworkScope with schemas
+│   │   └── connectivity_modifier_*.cue   # Expose
+│   └── kubernetes/       # Kubernetes native resource primitives
+│       ├── kubernetes_schema.cue      # All K8s resource schemas
+│       └── primitive_*.cue            # K8s resource elements
 ├── examples/             # Example modules and usage patterns
 ├── docs/                 # Architecture documentation
 ├── proposals/            # Design proposals and experiments
@@ -105,10 +109,10 @@ cue export ./examples/example_module.cue -e myAppDefinition --out json
 cue export ./elements/elements.cue -e '#CoreElementRegistry' --out json
 
 # Test a specific element
-cue eval ./elements/workload/primitive_traits.cue -e '#Container'
+cue eval ./elements/core/workload_primitive_container.cue -e '#Container'
 
-# Validate element against schema
-cue vet ./elements/workload/ ./schema/
+# Validate all core elements
+cue vet ./elements/core/
 ```
 
 ### Development Loop
@@ -131,24 +135,40 @@ cue vet ./elements/workload/ ./schema/
 | [registry.cue](registry.cue) | Element registry interface for element lookup and resolution. |
 | [common.cue](common.cue) | Shared types like labels, annotations, and common patterns. |
 
-### Schema Package
+### Elements Package Structure
 
-The `schema/` directory contains all `*Spec` definitions to prevent circular import issues:
+Elements are organized in a flat structure with co-located schemas:
 
-- **[schema/workload.cue](schema/workload.cue)**: ContainerSpec, ReplicasSpec, RestartPolicySpec, HealthCheckSpec, etc.
-- **[schema/data.cue](schema/data.cue)**: VolumeSpec, ConfigMapSpec, SecretSpec
-- **[schema/connectivity.cue](schema/connectivity.cue)**: ExposeSpec, NetworkScopeSpec
+- **[elements/core/](elements/core/)**: OPM core elements (flat structure, unified `package core`)
+  - File naming: `{category}_{kind}_{name}.cue` (e.g., `workload_primitive_container.cue`)
+  - `workload_primitive_*.cue`: Container and workload primitives with schemas
+  - `workload_modifier_*.cue`: Replicas, HealthCheck, RestartPolicy, etc. with schemas
+  - `workload_composite_*.cue`: StatelessWorkload, StatefulWorkload, etc. with schemas
+  - `data_primitive_*.cue`: Volume, ConfigMap, Secret with schemas
+  - `data_composite_*.cue`: SimpleDatabase with schemas
+  - `connectivity_primitive_*.cue`: NetworkScope with schemas
+  - `connectivity_modifier_*.cue`: Expose with schemas
 
-**Pattern**: Element definitions in `elements/` import specs from `schema/`.
+- **[elements/kubernetes/](elements/kubernetes/)**: Kubernetes native resource primitives (separate `package kubernetes`)
+  - `kubernetes_schema.cue`: All Kubernetes resource schemas
+  - `primitive_*.cue`: Kubernetes resource element definitions
 
-### Elements Package
+**Pattern**: Each element file contains both the element definition AND its schema definitions. All core elements use `package core` for unified imports.
+
+### Elements Catalog
 
 The `elements/` directory contains the official element catalog:
 
 - **[elements/elements.cue](elements/elements.cue)**: **MAIN ENTRY POINT** - Element registry and index
-- **[elements/workload/](elements/workload/)**: Container, StatelessWorkload, StatefulWorkload, Replicas, HealthCheck, etc.
-- **[elements/data/](elements/data/)**: Volume, ConfigMap, Secret, SimpleDatabase
-- **[elements/connectivity/](elements/connectivity/)**: Expose, NetworkScope
+- **[elements/core/](elements/core/)**: OPM core elements (user-facing abstractions) - all in flat structure
+  - `workload_primitive_container.cue`, `workload_modifier_*.cue`, `workload_composite_*.cue`
+  - `data_primitive_*.cue`, `data_composite_*.cue`
+  - `connectivity_primitive_*.cue`, `connectivity_modifier_*.cue`
+- **[elements/kubernetes/](elements/kubernetes/)**: Kubernetes native resources (platform-specific primitives)
+  - `kubernetes_schema.cue` - All K8s resource schemas
+  - `primitive_*.cue` - K8s resource element definitions
+
+**Import pattern**: `import elements "github.com/open-platform-model/core/elements/core"`
 
 **Critical**: All new elements MUST be added to `elements/elements.cue` registry to be accessible.
 
@@ -204,48 +224,50 @@ cue export -e '#Component' component.cue --out json
 
 ## Adding New Elements
 
-**Step 1**: Define schema in `schema/{category}.cue`
+**Step 1**: Create element file in `elements/core/{category}_{kind}_{name}.cue`
 
 ```cue
-package schema
+package core
 
+import (
+    opm "github.com/open-platform-model/core"
+)
+
+// Define schema in same file
 #MyFeatureSpec: {
     enabled?: bool | *true
     config?: string
 }
-```
 
-**Step 2**: Create element in `elements/{category}/{type}.cue`
-
-```cue
-package {category}
-
-import (
-    core "github.com/open-platform-model/core"
-    schema "github.com/open-platform-model/core/schema"
-)
-
-#MyFeatureElement: core.#Primitive & {
+// Define element
+#MyFeatureElement: opm.#Primitive & {
     name: "MyFeature"
-    schema: schema.#MyFeatureSpec
+    schema: #MyFeatureSpec
     target: ["component"]
-    labels: {"core.opm.dev/category": "{category}"}
+    labels: {"core.opm.dev/category": "workload"}
+}
+
+// Usage pattern
+#MyFeature: opm.#ElementBase & {
+    #elements: MyFeature: #MyFeatureElement
+    myFeature: #MyFeatureSpec
 }
 ```
 
-**Step 3**: Register in `elements/elements.cue`
+**Step 2**: Register in `elements/elements.cue`
 
 ```cue
-import mycategory "github.com/open-platform-model/core/elements/{category}"
+import core "github.com/open-platform-model/core/elements/core"
 
-#MyFeatureElement: mycategory.#MyFeatureElement
+#MyFeature: opm.#MyFeature
+#MyFeatureElement: opm.#MyFeatureElement
 
 #CoreElementRegistry: {
     (#MyFeatureElement.#fullyQualifiedName): #MyFeatureElement
 }
 ```
 
-**Step 4**: Validate
+**Step 3**: Validate
 
 ```bash
 cue vet ./...
@@ -314,12 +336,6 @@ cue export ./... --out json 2>&1 | grep "cannot"
 **Issue**: Elements not registered in `elements/elements.cue` won't be accessible.
 
 **Solution**: Always add new elements to the `#CoreElementRegistry` in `elements/elements.cue`.
-
-### Circular Imports
-
-**Issue**: Importing element definitions that import other element definitions can create circular dependencies.
-
-**Solution**: Use the `schema/` package for all `*Spec` definitions. Element definitions in `elements/` import from `schema/`, never from each other.
 
 ### Validation Warnings
 

@@ -1,28 +1,48 @@
-package data
+package core
 
 import (
-	core "github.com/open-platform-model/core"
-	schema "github.com/open-platform-model/core/schema"
+	opm "github.com/open-platform-model/core"
 )
 
-#SimpleDatabaseElement: core.#Composite & {
+/////////////////////////////////////////////////////////////////
+//// Simple Database Schema
+/////////////////////////////////////////////////////////////////
+
+// Simple database specification
+#SimpleDatabaseSpec: {
+	engine:   "postgres" | "mysql" | "mongodb" | "redis" | *"postgres"
+	version:  string | *"latest"
+	dbName:   string | *"appdb"
+	username: string | *"admin"
+	password: string | *"password"
+	persistence: {
+		enabled: bool | *true
+		size:    string | *"1Gi"
+	}
+}
+
+/////////////////////////////////////////////////////////////////
+//// Simple Database Element
+/////////////////////////////////////////////////////////////////
+
+#SimpleDatabaseElement: opm.#Composite & {
 	name:        "SimpleDatabase"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
-	schema: schema.#SimpleDatabaseSpec
+	schema: #SimpleDatabaseSpec
 	composes: [#VolumeElement]
 	workloadType: "stateful"
 	description:  "Composite trait to add a simple database to a component"
 	labels: {"core.opm.dev/category": "data"}
 }
 
-#SimpleDatabase: close(core.#ElementBase & {
+#SimpleDatabase: close(opm.#ElementBase & {
 	#elements: (#SimpleDatabaseElement.#fullyQualifiedName): #SimpleDatabaseElement
 
-	database: schema.#SimpleDatabaseSpec
+	database: #SimpleDatabaseSpec
 
-	stateful: schema.#StatefulWorkloadSpec & {
-		container: schema.#ContainerSpec & {
+	stateful: #StatefulWorkloadSpec & {
+		container: #ContainerSpec & {
 			if database.engine == "postgres" {
 				name:  "database"
 				image: "postgres:latest"
@@ -53,13 +73,13 @@ import (
 				}
 			}
 		}
-		restartPolicy: schema.#RestartPolicySpec & {
+		restartPolicy: #RestartPolicySpec & {
 			policy: "Always"
 		}
-		updateStrategy: schema.#UpdateStrategySpec & {
+		updateStrategy: #UpdateStrategySpec & {
 			type: "RollingUpdate"
 		}
-		healthCheck: schema.#HealthCheckSpec & {
+		healthCheck: #HealthCheckSpec & {
 			liveness: {
 				httpGet: {
 					path:   "/healthz"
@@ -68,9 +88,6 @@ import (
 				}
 			}
 		}
-		volume: schema.#VolumeSpec
+		volume: #VolumeSpec
 	}
 })
-
-// Re-export schema types for convenience
-#SimpleDatabaseSpec: schema.#SimpleDatabaseSpec

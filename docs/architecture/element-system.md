@@ -352,7 +352,7 @@ myComponent: #Component & {
 Primitives create standalone resources:
 
 ```cue
-// Primitive Trait - Creates containerized workload
+// Primitive element - Creates containerized workload
 #Container: #ElementBase & {
     #elements: Container: #Primitive & {
         name: "Container"
@@ -366,7 +366,7 @@ Primitives create standalone resources:
     container: #ContainerSpec
 }
 
-// Primitive Resource - Creates storage
+// Primitive element - Creates storage (map-based)
 #Volume: #ElementBase & {
     #elements: Volume: #Primitive & {
         name: "Volume"
@@ -385,7 +385,7 @@ Primitives create standalone resources:
 Modifiers enhance primitives/composites:
 
 ```cue
-// Modifier Trait - Adds scaling
+// Modifier element - Adds scaling
 #Replicas: #ElementBase & {
     #elements: Replicas: #Modifier & {
         name: "Replicas"
@@ -405,7 +405,7 @@ Modifiers enhance primitives/composites:
 Composites combine multiple elements:
 
 ```cue
-// Composite Trait - Container + modifiers for stateless workloads
+// Composite element - Container + modifiers for stateless workloads
 #StatelessWorkload: #ElementBase & {
     #elements: StatelessWorkload: #Composite & {
         name: "StatelessWorkload"
@@ -553,7 +553,7 @@ Components automatically validate element compatibility and workloadType constra
 
 ### Invalid Component Examples
 
-**Example 1: Conflicting WorkloadTypes**
+**Example 1: Conflicting WorkloadTypes**:
 
 ```cue
 invalid: #Component & {
@@ -562,7 +562,7 @@ invalid: #Component & {
 }
 ```
 
-**Example 2: Modifier Without Compatible Workload**
+**Example 2: Modifier Without Compatible Workload**:
 
 ```cue
 invalid: #Component & {

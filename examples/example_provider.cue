@@ -3,7 +3,7 @@ package examples
 import (
 	"list"
 
-	core "github.com/open-platform-model/core"
+	opm "github.com/open-platform-model/core"
 	elements "github.com/open-platform-model/core/elements"
 )
 
@@ -15,7 +15,7 @@ import (
 // platform-specific provider packages.
 
 // Example: Kubernetes Provider Implementation
-#KubernetesProvider: core.#Provider & {
+#KubernetesProvider: opm.#Provider & {
 	#metadata: {
 		name:        "kubernetes"
 		description: "Kubernetes platform provider"
@@ -40,7 +40,7 @@ import (
 	// Provider-specific render implementation
 	render: {
 		// module: myApp
-		module: core.#Module
+		module: opm.#Module
 
 		// Optimized: Build primitive->transformer index once for all components
 		_primitiveToTransformer: {
@@ -64,7 +64,7 @@ import (
 						(transformer & {
 							transform: {
 								component: component
-								context: core.#ProviderContext & {
+								context: opm.#ProviderContext & {
 									name:       module.#metadata.name
 									namespace:  module.#metadata.namespace
 									_module:    module
@@ -87,7 +87,7 @@ import (
 }
 
 // Example: Kubernetes Deployment Transformer
-#DeploymentTransformer: core.#Transformer & {
+#DeploymentTransformer: opm.#Transformer & {
 	#kind:       "Deployment"
 	#apiVersion: "k8s.io/api/apps/v1"
 
@@ -106,8 +106,8 @@ import (
 	defaults: {...} // see #Transformer interface
 
 	transform: {
-		component: core.#Component
-		context:   core.#ProviderContext
+		component: opm.#Component
+		context:   opm.#ProviderContext
 
 		// Extract elements with CUE defaults
 		let _workload = component.stateless
@@ -145,7 +145,7 @@ import (
 }
 
 // Example: Kubernetes PersistentVolumeClaim Transformer
-#PersistentVolumeClaimTransformer: core.#Transformer & {
+#PersistentVolumeClaimTransformer: opm.#Transformer & {
 	#kind:       "PersistentVolumeClaim"
 	#apiVersion: "k8s.io/api/core/v1"
 
@@ -161,8 +161,8 @@ import (
 	defaults: {...} // see #Transformer interface
 
 	transform: {
-		component: core.#Component
-		context:   core.#ProviderContext
+		component: opm.#Component
+		context:   opm.#ProviderContext
 
 		// Extract elements with CUE defaults
 		let _volumes = component.volumes
@@ -192,7 +192,7 @@ import (
 }
 
 // Test Module 1: Compatible module
-#TestCompatibleModule: core.#Module & {
+#TestCompatibleModule: opm.#Module & {
 	#metadata: {
 		name:    "web-app"
 		version: "1.0.0"
@@ -252,7 +252,7 @@ import (
 }
 
 // Test Module 2: Incompatible module (missing element support)
-#TestIncompatibleModule: core.#Module & {
+#TestIncompatibleModule: opm.#Module & {
 	#metadata: {
 		name:    "data-pipeline"
 		version: "1.0.0"
@@ -322,12 +322,12 @@ import (
 }
 
 // Test dependency resolution
-// #TestResolution1: core.#ModuleDependencyResolver & {
+// #TestResolution1: opm.#ModuleDependencyResolver & {
 // 	module: #TestCompatibleModule
 // 	provider: #KubernetesProvider & {render: module: myApp}
 // }
 
-// #TestResolution2: core.#ModuleDependencyResolver & {
+// #TestResolution2: opm.#ModuleDependencyResolver & {
 // 	module: #TestIncompatibleModule
 // 	provider: #KubernetesProvider & {render: module: myApp}
 // }

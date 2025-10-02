@@ -1,12 +1,15 @@
-package workload
+package core
 
 import (
-	core "github.com/open-platform-model/core"
-	schema "github.com/open-platform-model/core/schema"
+	opm "github.com/open-platform-model/core"
 )
 
+/////////////////////////////////////////////////////////////////
+//// Sidecar, Init, and Ephemeral Container Modifiers
+/////////////////////////////////////////////////////////////////
+
 // Add Sidecar Containers to component
-#SidecarContainersElement: core.#Modifier & {
+#SidecarContainersElement: opm.#Modifier & {
 	name:        "SidecarContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
@@ -16,13 +19,13 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#SidecarContainers: close(core.#ElementBase & {
+#SidecarContainers: close(opm.#ElementBase & {
 	#elements: (#SidecarContainersElement.#fullyQualifiedName): #SidecarContainersElement
 	sidecarContainers: [#ContainerSpec]
 })
 
 // Add Init Containers to component
-#InitContainersElement: core.#Modifier & {
+#InitContainersElement: opm.#Modifier & {
 	name:        "InitContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
@@ -32,13 +35,13 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#InitContainers: close(core.#ElementBase & {
-	#elements: InitContainers: #InitContainersElement
+#InitContainers: close(opm.#ElementBase & {
+	#elements: (#InitContainersElement.#fullyQualifiedName): #InitContainersElement
 	initContainers: [#ContainerSpec]
 })
 
 // Add Ephemeral Containers to component (for debugging)
-#EphemeralContainersElement: core.#Modifier & {
+#EphemeralContainersElement: opm.#Modifier & {
 	name:        "EphemeralContainers"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
@@ -48,10 +51,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#EphemeralContainers: close(core.#ElementBase & {
-	#elements: EphemeralContainers: #EphemeralContainersElement
+#EphemeralContainers: close(opm.#ElementBase & {
+	#elements: (#EphemeralContainersElement.#fullyQualifiedName): #EphemeralContainersElement
 	ephemeralContainers: [#ContainerSpec]
 })
-
-// Re-export schema types for convenience
-#ContainerSpec: schema.#ContainerSpec

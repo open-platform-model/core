@@ -1,12 +1,29 @@
-package workload
+package core
 
 import (
-	core "github.com/open-platform-model/core"
-	schema "github.com/open-platform-model/core/schema"
+	opm "github.com/open-platform-model/core"
 )
 
+/////////////////////////////////////////////////////////////////
+//// Update Strategy Schema
+/////////////////////////////////////////////////////////////////
+
+// Update strategy specification
+#UpdateStrategySpec: {
+	type: "RollingUpdate" | "Recreate" | "OnDelete" | *"RollingUpdate"
+	rollingUpdate?: {
+		maxUnavailable?: int | *1
+		maxSurge?:       int | *1
+		partition?:      int | *0
+	}
+}
+
+/////////////////////////////////////////////////////////////////
+//// Update Strategy Element
+/////////////////////////////////////////////////////////////////
+
 // Add Update Strategy to component
-#UpdateStrategyElement: core.#Modifier & {
+#UpdateStrategyElement: opm.#Modifier & {
 	name:        "UpdateStrategy"
 	#apiVersion: "elements.opm.dev/core/v1alpha1"
 	target: ["component"]
@@ -16,7 +33,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#UpdateStrategy: close(core.#ElementBase & {
+#UpdateStrategy: close(opm.#ElementBase & {
 	#metadata: _
 	#elements: (#UpdateStrategyElement.#fullyQualifiedName): #UpdateStrategyElement
 	updateStrategy: #UpdateStrategySpec & {
@@ -41,6 +58,3 @@ import (
 		}
 	}
 })
-
-// Re-export schema types for convenience
-#UpdateStrategySpec: schema.#UpdateStrategySpec
