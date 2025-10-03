@@ -1,10 +1,27 @@
 package core
 
+import (
+	"list"
+)
+
 /////////////////////////////////////////////////////////////////
 //// Module
 /////////////////////////////////////////////////////////////////
+#ModuleBase: {
+	#apiVersion: "core.opm.dev/v1"
+	#metadata: {
+		name!:    #NameType
+		version!: #VersionType
 
-#ModuleDefinition: {
+		labels?:      #LabelsAnnotationsType
+		annotations?: #LabelsAnnotationsType
+		...
+	}
+	#status: {...}
+	...
+}
+
+#ModuleDefinition: close(#ModuleBase & {
 	#apiVersion: "core.opm.dev/v1"
 	#kind:       "ModuleDefinition"
 	#metadata: {
@@ -36,15 +53,18 @@ package core
 	}
 
 	#status: {
-		componentCount: len(components)
-		scopeCount:     len(scopes)
+		componentCount: int | *0
+		scopeCount:     int | *0
+		componentCount: {if components != _|_ {len(components)}}
+		scopeCount: {if scopes != _|_ {len(scopes)}}
 	}
-}
+})
 
 // Module is a clustered resource that references a ModuleDefinition and adds platform-specific configuration'
 // Platform can add components and scopes but not remove
 // Platform can modify defaults in values but not structure
-#Module: {
+// It is a cluster-scoped resource
+#Module: close(#ModuleBase & {
 	#apiVersion: "core.opm.dev/v1"
 	#kind:       "Module"
 	#metadata: {
@@ -56,37 +76,118 @@ package core
 	}
 
 	// Platform context for this module instance
+	// Future plans for dynamic data.
+	// Queried from the platform at runtime
+	// e.g. current user, environment, region, cluster info, etc.
 	#context: {...}
 
-	#moduleDefinition: #ModuleDefinition
+	moduleDefinition: #ModuleDefinition
 
 	// Platform can add components but not remove
 	components?: [Id=string]: #Component & {#metadata: #id: Id}
 	#allComponents: {
-		if #moduleDefinition.components != _|_ {#moduleDefinition.components}
-		if components != _|_ {components}
+		for id, comp in moduleDefinition.components {
+			"\(id)": comp
+		}
+		if components != _|_ {
+			for id, comp in components {
+				"\(id)": comp
+			}
+		}
 	}
 
 	// Platform can add scopes but not remove
 	scopes?: [Id=string]: #Scope & {#metadata: #id: Id}
 	#allScopes: {
-		if #moduleDefinition.scopes != _|_ {#moduleDefinition.scopes}
-		if scopes != _|_ {scopes}
+		if moduleDefinition.scopes != _|_ {
+			for id, scope in moduleDefinition.scopes {
+				"\(id)": scope
+			}
+		}
+		if scopes != _|_ {
+			for id, scope in scopes {
+				"\(id)": scope
+			}
+		}
 	}
 
+	// Collect all primitive elements used by this module
+	// Optimized: Use list.Concat instead of FlattenN for single-level flattening
+	#allPrimitiveElements: #ElementStringArray & list.Concat([for _, comp in #allComponents {comp.#primitiveElements}])
+
 	// Platform can modify defaults but not structure
-	values?: #moduleDefinition.values & {
+	// TODO: Walk through moduleDefinition.values and replace with values from #Module.values
+	values?: moduleDefinition.values & {
 		...
 	}
 
-	#status: {
-		totalComponentCount: len(#allComponents)
-		platformScopes: [
-			for id, scope in scopes if scope.#metadata.immutable {id},
-		]
+	#status: moduleDefinition.#status & {
+		totalComponentCount:    len(#allComponents)
 		platformComponentCount: int | *0
 		platformComponentCount: {if components != _|_ {len(components)}}
 		platformScopeCount: int | *0
 		platformScopeCount: {if scopes != _|_ {len(scopes)}}
+		// platformScopes: [for id, scope in scopes if scope.#metadata.immutable {id}]
+	}
+})
+
+// Module Release - a specific deployment of a Module
+// Tracks the state of a Module deployment
+// Includes a reference to the Module and the resolved values
+// Includes status of the deployment
+#ModuleRelease: close(#ModuleBase & {
+	#apiVersion: "core.opm.dev/v1"
+	#kind:       "ModuleRelease"
+	#metadata: {
+		name!:    #NameType
+		version?: #VersionType
+	}
+
+	module: #Module
+
+	provider: #Provider
+
+	// Resolved values after merging moduleDefinition.values and module.values
+	values: module.moduleDefinition.values & module.values
+
+	#status: {}
+})
+
+// Module dependency resolution helper
+#ModuleDependencyResolver: {
+	module:   #Module
+	provider: #Provider
+
+	// Get all elements that need to be resolved
+	requiredElements: #ElementStringArray & module.#allPrimitiveElements
+
+	// Check which elements are supported by the provider
+	supportedElements: #ElementStringArray & provider.#supportedElements
+
+	// Find unsupported elements
+	unsupportedElements: [
+		for re in requiredElements
+		if (re & string) == re
+		if !list.Contains(supportedElements, re) {
+			re
+		},
+	]
+
+	// Resolution status
+	resolved: len(unsupportedElements) == 0
+
+	// Resolution report
+	report: {
+		totalElements:    len(requiredElements)
+		supported:        len(supportedElements)
+		unsupported:      len(unsupportedElements)
+		resolutionStatus: resolved
+
+		if len(unsupportedElements) > 0 {
+			missingElements: unsupportedElements
+			error:           "Module requires elements not supported by provider"
+		}
+
+		supportedElementsList: supportedElements
 	}
 }

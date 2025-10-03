@@ -16,6 +16,11 @@
 
 Enable composition of multiple OPM modules into deployable stacks, providing a way to bundle related modules that work together while maintaining OPM's three-layer separation of concerns.
 
+### Names
+
+- stack - Similar to devX. Maybe more reasonable for developers
+- bundle - Similar to Timoni. Fits better with Modules
+
 ## Background
 
 ### Current State

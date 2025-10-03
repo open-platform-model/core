@@ -7,6 +7,10 @@ import (
 /////////////////////////////////////////////////////////////////
 //// Component
 /////////////////////////////////////////////////////////////////
+
+// Workload type annotation key (imported from element.cue)
+#AnnotationWorkloadType: "core.opm.dev/workload-type"
+
 #Component: {
 	#kind:       "Component"
 	#apiVersion: "core.opm.dev/v1alpha1"
@@ -15,13 +19,14 @@ import (
 
 		name!: string | *#id
 
-		type!:         #ComponentType
-		workloadType?: string
-		if type == "workload" {
-			workloadType!: #WorkloadTypes
-		}
-		if type == "resource" {
-			if workloadType != _|_ {error("Resource components cannot have workloadType")}
+		// Workload type is automatically derived from element annotations
+		// If multiple workload types are included, this will result in a validation error
+		// If workloadType is "", it means the component is not a workload (e.g., a configuration component)
+		workloadType: string | *""
+		for _, elem in #elements {
+			if elem.annotations != _|_ && elem.annotations[#AnnotationWorkloadType] != _|_ {
+				workloadType: elem.annotations[#AnnotationWorkloadType]
+			}
 		}
 
 		// Component specific labels and annotations
@@ -30,30 +35,32 @@ import (
 		...
 	}
 
-	#elements: [elementName=string]: #Element & {#name!: elementName}
+	#elements: #ElementMap
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
-	#primitiveElements: [...string]
-	#primitiveElements: {
-		// Collect all primitive elements
-		let allElements = [
-			for _, e in #elements if e != _|_ {
-				// Primitive traits contribute themselves
-				if e.kind == "primitive" {
-					e.#fullyQualifiedName
-				}
-			},
-		]
+	#primitiveElements: list.FlattenN([
+		for _, element in #elements {
+			if element.kind == "primitive" {[element.#fullyQualifiedName]}
+			if element.kind == "composite" {element.#primitiveElements}
+			if element.kind != "primitive" && element.kind != "composite" {[]}
+		},
+	], -1)
 
-		// Deduplicate and sort
-		let set = {for cap in allElements {(cap): _}}
-		list.SortStrings([for k, _ in set {k}])
+	// Validation: Ensure only one workload type per component
+	#workloadTypes: [
+		for _, elem in #elements
+		if elem.annotations != _|_ && elem.annotations[#AnnotationWorkloadType] != _|_ {
+			elem.annotations[#AnnotationWorkloadType]
+		},
+	]
+
+	// If multiple workload types exist, they must all be identical
+	if len(#workloadTypes) > 1 {
+		for wt in #workloadTypes {
+			wt == #workloadTypes[0]
+		}
 	}
 
 	// TODO add validation to ensure only traits/resources are added based on componentType
 	...
 }
-
-#ComponentType: "resource" | "workload"
-
-#WorkloadTypes: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"

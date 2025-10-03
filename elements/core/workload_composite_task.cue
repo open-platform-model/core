@@ -1,0 +1,51 @@
+package core
+
+import (
+	opm "github.com/open-platform-model/core"
+)
+
+/////////////////////////////////////////////////////////////////
+//// Task Workload Schema
+/////////////////////////////////////////////////////////////////
+
+// Task workload specification
+#TaskWorkloadSpec: {
+	container:      #ContainerSpec
+	restartPolicy?: #RestartPolicySpec
+	sidecarContainers?: [#ContainerSpec]
+	initContainers?: [#ContainerSpec]
+
+	completions?:             int | *1
+	parallelism?:             int | *1
+	backoffLimit?:            int | *6
+	activeDeadlineSeconds?:   int | *300
+	ttlSecondsAfterFinished?: int | *100
+}
+
+/////////////////////////////////////////////////////////////////
+//// Task Workload Element
+/////////////////////////////////////////////////////////////////
+
+// Task workload - A containerized workload that runs to completion
+#TaskWorkloadElement: opm.#Composite & {
+	name:        "TaskWorkload"
+	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	target: ["component"]
+	schema: #TaskWorkloadSpec
+	composes: [
+		#ContainerElement,
+		#RestartPolicyElement,
+		#SidecarContainersElement,
+		#InitContainersElement,
+	]
+	annotations: {
+		"core.opm.dev/workload-type": "task"
+	}
+	description: "A task workload that runs to completion"
+	labels: {"core.opm.dev/category": "workload"}
+}
+
+#TaskWorkload: close(opm.#ElementBase & {
+	#elements: (#TaskWorkloadElement.#fullyQualifiedName): #TaskWorkloadElement
+	task: #TaskWorkloadSpec
+})
