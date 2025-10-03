@@ -67,11 +67,13 @@ core/
 
 **Quick reference** - See [docs/](docs/) for detailed architecture:
 
-- **[Elements](docs/elements.md)**: Building blocks with kind (primitive/composite/modifier/custom) categorized by labels
+- **[Elements](docs/architecture/element.md)**: Building blocks with kind (primitive/composite/modifier/custom) categorized by labels
 - **Components**: Element compositions representing workloads or resources
 - **Modules**: Complete application definitions with components and scopes
 - **Scopes**: Cross-cutting concerns (PlatformScopes are immutable, ModuleScopes are mutable)
-- **Providers**: Platform-specific transformers that convert OPM to native resources
+- **Providers**: The Provider Interface
+- **Transformer**: Platform-specific transformers that convert OPM to native resources
+- **Catalog**: The PlatformCatalog architecture
 
 **Key Innovation**: Everything is an element. Primitives compose into composites, modifiers enhance them, all unified under a common base.
 

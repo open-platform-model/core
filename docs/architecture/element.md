@@ -14,7 +14,6 @@ This document explains the architectural foundations of the OPM element system -
 
 - [Element Foundation](#element-foundation)
 - [Element Type System](#element-type-system)
-- [WorkloadType Enforcement](#workloadtype-enforcement)
 - [The ElementBase Pattern](#the-elementbase-pattern)
 - [Element Implementation Patterns](#element-implementation-patterns)
 - [Component Composition](#component-composition)
@@ -249,6 +248,7 @@ Element annotations provide behavior hints to providers without being used for c
 **Annotation Key**: `"core.opm.dev/workload-type"`
 
 **Valid Values**:
+
 - `"stateless"` - Deployment-like workloads
 - `"stateful"` - StatefulSet-like workloads
 - `"daemon"` - DaemonSet-like workloads
