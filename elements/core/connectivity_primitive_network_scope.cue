@@ -33,7 +33,7 @@ import (
 	schema: #NetworkScopeSpec
 }
 
-#NetworkScope: opm.#ElementBase & {
+#NetworkScope: opm.#Component & {
 	#elements: (#NetworkScopeElement.#fullyQualifiedName): #NetworkScopeElement
 
 	networkScope: #NetworkScopeSpec

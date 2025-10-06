@@ -41,7 +41,7 @@ import (
 	schema: #VolumeSpec
 }
 
-#Volume: close(opm.#ElementBase & {
+#Volume: close(opm.#Component & {
 	#elements: (#VolumeElement.#fullyQualifiedName): #VolumeElement
 
 	volumes: [string]: #VolumeSpec

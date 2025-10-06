@@ -38,7 +38,7 @@ import (
 	labels: {"core.opm.dev/category": "data"}
 }
 
-#SimpleDatabase: close(opm.#ElementBase & {
+#SimpleDatabase: close(opm.#Component & {
 	#elements: (#SimpleDatabaseElement.#fullyQualifiedName): #SimpleDatabaseElement
 
 	database: #SimpleDatabaseSpec

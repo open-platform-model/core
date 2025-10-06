@@ -28,7 +28,7 @@ import (
 	schema: #SecretSpec
 }
 
-#Secret: close(opm.#ElementBase & {
+#Secret: close(opm.#Component & {
 	#elements: (#SecretElement.#fullyQualifiedName): #SecretElement
 
 	secrets: [string]: #SecretSpec

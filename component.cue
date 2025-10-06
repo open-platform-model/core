@@ -36,6 +36,9 @@ import (
 	}
 
 	#elements: #ElementMap
+	for elemName, elem in #elements {
+		#elements: {"\(elemName)": elem & #Element}
+	}
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
 	#primitiveElements: list.FlattenN([
