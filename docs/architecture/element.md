@@ -14,7 +14,7 @@ This document explains the architectural foundations of the OPM element system -
 
 - [Element Foundation](#element-foundation)
 - [Element Type System](#element-type-system)
-- [The ElementBase Pattern](#the-elementbase-pattern)
+- [The Component Pattern for Elements](#the-component-pattern-for-elements)
 - [Element Implementation Patterns](#element-implementation-patterns)
 - [Component Composition](#component-composition)
 - [Component Validation](#component-validation)
@@ -306,16 +306,18 @@ myComponent: #Component & {
 
 ---
 
-## The ElementBase Pattern
+## The Component Pattern for Elements
 
 ### Problem
 
 CUE requires structural compatibility for composition. Simply embedding `#Element` in multiple places creates type conflicts.
 
-### Solution: #ElementBase
+### Solution: #Component
+
+Elements use `#Component` as their base, which provides the `#elements` map for element registration:
 
 ```cue
-#ElementBase: {
+#Component: {
     #elements: #ElementMap
     ...  // Critical: enables CUE composition without type conflicts
 }
@@ -324,7 +326,7 @@ CUE requires structural compatibility for composition. Simply embedding `#Elemen
 Every element definition uses this pattern:
 
 ```cue
-#Container: #ElementBase & {
+#Container: #Component & {
     #elements: Container: #Primitive & {
         name: "Container"
         description: "Single container primitive"
@@ -340,7 +342,7 @@ Every element definition uses this pattern:
 ### Why This Works
 
 1. **Automatic Element Registration**: `#elements` field contains element metadata
-2. **CUE Composition**: `...` allows unification with other `#ElementBase` instances
+2. **CUE Composition**: `...` allows unification with other `#Component` instances
 3. **Type Safety**: Each element has its own configuration field (`container`, `replicas`, etc.)
 4. **Registry Integration**: Components can extract all `#elements` for validation and transformation
 
@@ -371,7 +373,7 @@ Primitives create standalone resources:
 
 ```cue
 // Primitive element - Creates containerized workload
-#Container: #ElementBase & {
+#Container: #Component & {
     #elements: Container: #Primitive & {
         name: "Container"
         description: "Base container definition"
@@ -385,7 +387,7 @@ Primitives create standalone resources:
 }
 
 // Primitive element - Creates storage (map-based)
-#Volume: #ElementBase & {
+#Volume: #Component & {
     #elements: Volume: #Primitive & {
         name: "Volume"
         description: "Volume storage primitive"
@@ -404,7 +406,7 @@ Modifiers enhance primitives/composites:
 
 ```cue
 // Modifier element - Adds scaling
-#Replicas: #ElementBase & {
+#Replicas: #Component & {
     #elements: Replicas: #Modifier & {
         name: "Replicas"
         description: "Scale workload instances"
@@ -424,7 +426,7 @@ Composites combine multiple elements:
 
 ```cue
 // Composite element - Container + modifiers for stateless workloads
-#StatelessWorkload: #ElementBase & {
+#StatelessWorkload: #Component & {
     #elements: StatelessWorkload: #Composite & {
         name: "StatelessWorkload"
         description: "Horizontally scalable containerized workload"
@@ -624,7 +626,7 @@ invalid: #Component & {
 6. **Reusability**: Modifiers shared across composites
 7. **Flexibility Preserved**: Advanced users can still use primitives directly
 
-### Why #ElementBase Pattern?
+### Why #Component Pattern for Elements?
 
 **Alternatives Considered**:
 
@@ -632,7 +634,7 @@ invalid: #Component & {
 2. **Element registry separate from definitions**: Requires manual registration
 3. **Code generation**: Adds build complexity
 
-**Why #ElementBase Wins**:
+**Why #Component Pattern Wins**:
 
 1. **Automatic Registration**: Elements self-register via `#elements` field
 2. **CUE Native**: Works with CUE's unification model

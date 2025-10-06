@@ -162,7 +162,7 @@ Elements are organized in a flat directory structure with schemas co-located:
        labels: {"core.opm.dev/category": "security"}
    }
 
-   #PodSecurity: close(opm.#ElementBase & {
+   #PodSecurity: close(opm.#Component & {
        #elements: (#PodSecurityElement.#fullyQualifiedName): #PodSecurityElement
        podSecurity: #PodSecuritySpec
    })
@@ -433,7 +433,7 @@ cue eval . -e '#SelectTransformer'
 
   ```cue
   #Component: {...}
-  #ElementBase: {...}
+  #Element: {...}
   ```
 
 - **Private Definitions**: Start with `_#` and use PascalCase

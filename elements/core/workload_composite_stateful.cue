@@ -46,7 +46,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#StatefulWorkload: close(opm.#ElementBase & {
+#StatefulWorkload: close(opm.#Component & {
 	#elements: (#StatefulWorkloadElement.#fullyQualifiedName): #StatefulWorkloadElement
 	stateful: #StatefulWorkloadSpec
 })

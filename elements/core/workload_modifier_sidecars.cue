@@ -19,7 +19,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#SidecarContainers: close(opm.#ElementBase & {
+#SidecarContainers: close(opm.#Component & {
 	#elements: (#SidecarContainersElement.#fullyQualifiedName): #SidecarContainersElement
 	sidecarContainers: [#ContainerSpec]
 })
@@ -35,7 +35,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#InitContainers: close(opm.#ElementBase & {
+#InitContainers: close(opm.#Component & {
 	#elements: (#InitContainersElement.#fullyQualifiedName): #InitContainersElement
 	initContainers: [#ContainerSpec]
 })
@@ -51,7 +51,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#EphemeralContainers: close(opm.#ElementBase & {
+#EphemeralContainers: close(opm.#Component & {
 	#elements: (#EphemeralContainersElement.#fullyQualifiedName): #EphemeralContainersElement
 	ephemeralContainers: [#ContainerSpec]
 })

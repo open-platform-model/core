@@ -254,7 +254,7 @@ import (
 }
 
 // Usage pattern
-#MyFeature: opm.#ElementBase & {
+#MyFeature: opm.#Component & {
     #elements: MyFeature: #MyFeatureElement
     myFeature: #MyFeatureSpec
 }
@@ -299,7 +299,7 @@ See the [OPM Contributing Guide](https://github.com/open-platform-model/opm/blob
 **In this repository**:
 
 - [Architecture Documentation](docs/architecture/) - Deep technical architecture
-  - [Element System Architecture](docs/architecture/element-system.md) - Element type system, #ElementBase pattern, validation
+  - [Element System Architecture](docs/architecture/element.md) - Element type system, #Component pattern, validation
   - [Component Model](docs/architecture/component-model.md) - *(future)* Component architecture
   - [Module Lifecycle](docs/architecture/module-lifecycle.md) - *(future)* Three-layer model
 - [Element Documentation](docs/elements.md) - Navigation hub pointing to element docs

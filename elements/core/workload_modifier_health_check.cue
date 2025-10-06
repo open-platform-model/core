@@ -38,7 +38,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#HealthCheck: close(opm.#ElementBase & {
+#HealthCheck: close(opm.#Component & {
 	#elements: (#HealthCheckElement.#fullyQualifiedName): #HealthCheckElement
 	healthCheck: #HealthCheckSpec
 })

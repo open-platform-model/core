@@ -28,7 +28,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#RestartPolicy: close(opm.#ElementBase & {
+#RestartPolicy: close(opm.#Component & {
 	#metadata: _
 	#elements: (#RestartPolicyElement.#fullyQualifiedName): #RestartPolicyElement
 	restartPolicy: #RestartPolicySpec
