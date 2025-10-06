@@ -33,7 +33,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#UpdateStrategy: close(opm.#ElementBase & {
+#UpdateStrategy: close(opm.#Component & {
 	#metadata: _
 	#elements: (#UpdateStrategyElement.#fullyQualifiedName): #UpdateStrategyElement
 	updateStrategy: #UpdateStrategySpec & {

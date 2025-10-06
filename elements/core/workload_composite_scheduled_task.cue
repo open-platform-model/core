@@ -45,7 +45,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#ScheduledTaskWorkload: close(opm.#ElementBase & {
+#ScheduledTaskWorkload: close(opm.#Component & {
 	#elements: (#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
 	scheduledTask: #ScheduledTaskWorkloadSpec
 })

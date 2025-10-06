@@ -43,7 +43,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#DaemonWorkload: close(opm.#ElementBase & {
+#DaemonWorkload: close(opm.#Component & {
 	#elements: (#DaemonWorkloadElement.#fullyQualifiedName): #DaemonWorkloadElement
 	daemon: #DaemonSpec
 })

@@ -21,6 +21,12 @@ import (
 	}
 }
 
+#Job: close(opm.#Component & {
+	#elements: (#JobElement.#fullyQualifiedName): #JobElement
+
+	jobs: [string]: #JobSpec
+})
+
 #CronJobElement: opm.#Primitive & {
 	name:        "CronJob"
 	#apiVersion: "elements.opm.dev/k8s/batch/v1"
@@ -35,3 +41,9 @@ import (
 		"k8s.io/api-group":      "batch"
 	}
 }
+
+#CronJob: close(opm.#Component & {
+	#elements: (#CronJobElement.#fullyQualifiedName): #CronJobElement
+
+	cronJobs: [string]: #CronJobSpec
+})

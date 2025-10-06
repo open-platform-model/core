@@ -18,6 +18,12 @@ import (
 	}
 }
 
+#Pod: close(opm.#Component & {
+	#elements: (#PodElement.#fullyQualifiedName): #PodElement
+
+	pods: [string]: #PodSpec
+})
+
 #ServiceElement: opm.#Primitive & {
 	name:        "Service"
 	#apiVersion: "elements.opm.dev/k8s/core/v1"
@@ -29,6 +35,12 @@ import (
 		"k8s.io/api-group":      "core"
 	}
 }
+
+#Service: close(opm.#Component & {
+	#elements: (#ServiceElement.#fullyQualifiedName): #ServiceElement
+
+	services: [string]: #ServiceSpec
+})
 
 #PersistentVolumeClaimElement: opm.#Primitive & {
 	name:        "PersistentVolumeClaim"
@@ -42,6 +54,12 @@ import (
 	}
 }
 
+#PersistentVolumeClaim: close(opm.#Component & {
+	#elements: (#PersistentVolumeClaimElement.#fullyQualifiedName): #PersistentVolumeClaimElement
+
+	persistentVolumeClaims: [string]: #PersistentVolumeClaimSpec
+})
+
 #ConfigMapElement: opm.#Primitive & {
 	name:        "ConfigMap"
 	#apiVersion: "elements.opm.dev/k8s/core/v1"
@@ -53,6 +71,12 @@ import (
 		"k8s.io/api-group":      "core"
 	}
 }
+
+#ConfigMap: close(opm.#Component & {
+	#elements: (#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
+
+	configMaps: [string]: #ConfigMapSpec
+})
 
 #SecretElement: opm.#Primitive & {
 	name:        "Secret"
@@ -66,6 +90,12 @@ import (
 	}
 }
 
+#Secret: close(opm.#Component & {
+	#elements: (#SecretElement.#fullyQualifiedName): #SecretElement
+
+	secrets: [string]: #SecretSpec
+})
+
 #ServiceAccountElement: opm.#Primitive & {
 	name:        "ServiceAccount"
 	#apiVersion: "elements.opm.dev/k8s/core/v1"
@@ -77,6 +107,12 @@ import (
 		"k8s.io/api-group":      "core"
 	}
 }
+
+#ServiceAccount: close(opm.#Component & {
+	#elements: (#ServiceAccountElement.#fullyQualifiedName): #ServiceAccountElement
+
+	serviceAccounts: [string]: #ServiceAccountSpec
+})
 
 #NamespaceElement: opm.#Primitive & {
 	name:        "Namespace"
@@ -90,6 +126,12 @@ import (
 	}
 }
 
+#Namespace: close(opm.#Component & {
+	#elements: (#NamespaceElement.#fullyQualifiedName): #NamespaceElement
+
+	namespace: #NamespaceSpec
+})
+
 #NodeElement: opm.#Primitive & {
 	name:        "Node"
 	#apiVersion: "elements.opm.dev/k8s/core/v1"
@@ -101,6 +143,12 @@ import (
 		"k8s.io/api-group":      "core"
 	}
 }
+
+#Node: close(opm.#Component & {
+	#elements: (#NodeElement.#fullyQualifiedName): #NodeElement
+
+	nodes: [string]: #NodeSpec
+})
 
 #EndpointsElement: opm.#Primitive & {
 	name:        "Endpoints"
@@ -114,6 +162,12 @@ import (
 	}
 }
 
+#Endpoints: close(opm.#Component & {
+	#elements: (#EndpointsElement.#fullyQualifiedName): #EndpointsElement
+
+	endpoints: [string]: #EndpointsSpec
+})
+
 #EventElement: opm.#Primitive & {
 	name:        "Event"
 	#apiVersion: "elements.opm.dev/k8s/core/v1"
@@ -125,6 +179,12 @@ import (
 		"k8s.io/api-group":      "core"
 	}
 }
+
+#Event: close(opm.#Component & {
+	#elements: (#EventElement.#fullyQualifiedName): #EventElement
+
+	events: [string]: #EventSpec
+})
 
 #LimitRangeElement: opm.#Primitive & {
 	name:        "LimitRange"
@@ -138,6 +198,12 @@ import (
 	}
 }
 
+#LimitRange: close(opm.#Component & {
+	#elements: (#LimitRangeElement.#fullyQualifiedName): #LimitRangeElement
+
+	limitRange: #LimitRangeSpec
+})
+
 #ResourceQuotaElement: opm.#Primitive & {
 	name:        "ResourceQuota"
 	#apiVersion: "elements.opm.dev/k8s/core/v1"
@@ -149,3 +215,9 @@ import (
 		"k8s.io/api-group":      "core"
 	}
 }
+
+#ResourceQuota: close(opm.#Component & {
+	#elements: (#ResourceQuotaElement.#fullyQualifiedName): #ResourceQuotaElement
+
+	resourceQuota: #ResourceQuotaSpec
+})

@@ -21,6 +21,12 @@ import (
 	}
 }
 
+#Deployment: close(opm.#Component & {
+	#elements: (#DeploymentElement.#fullyQualifiedName): #DeploymentElement
+
+	deployments: [string]: #DeploymentSpec
+})
+
 #StatefulSetElement: opm.#Primitive & {
 	name:        "StatefulSet"
 	#apiVersion: "elements.opm.dev/k8s/apps/v1"
@@ -35,6 +41,12 @@ import (
 		"k8s.io/api-group":      "apps"
 	}
 }
+
+#StatefulSet: close(opm.#Component & {
+	#elements: (#StatefulSetElement.#fullyQualifiedName): #StatefulSetElement
+
+	statefulSets: [string]: #StatefulSetSpec
+})
 
 #DaemonSetElement: opm.#Primitive & {
 	name:        "DaemonSet"
@@ -51,6 +63,12 @@ import (
 	}
 }
 
+#DaemonSet: close(opm.#Component & {
+	#elements: (#DaemonSetElement.#fullyQualifiedName): #DaemonSetElement
+
+	daemonSets: [string]: #DaemonSetSpec
+})
+
 #ReplicaSetElement: opm.#Primitive & {
 	name:        "ReplicaSet"
 	#apiVersion: "elements.opm.dev/k8s/apps/v1"
@@ -66,6 +84,12 @@ import (
 	}
 }
 
+#ReplicaSet: close(opm.#Component & {
+	#elements: (#ReplicaSetElement.#fullyQualifiedName): #ReplicaSetElement
+
+	replicaSets: [string]: #ReplicaSetSpec
+})
+
 #ControllerRevisionElement: opm.#Primitive & {
 	name:        "ControllerRevision"
 	#apiVersion: "elements.opm.dev/k8s/apps/v1"
@@ -77,3 +101,9 @@ import (
 		"k8s.io/api-group":      "apps"
 	}
 }
+
+#ControllerRevision: close(opm.#Component & {
+	#elements: (#ControllerRevisionElement.#fullyQualifiedName): #ControllerRevisionElement
+
+	controllerRevisions: [string]: #ControllerRevisionSpec
+})

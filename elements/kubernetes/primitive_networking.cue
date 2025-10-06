@@ -18,6 +18,12 @@ import (
 	}
 }
 
+#Ingress: close(opm.#Component & {
+	#elements: (#IngressElement.#fullyQualifiedName): #IngressElement
+
+	ingresses: [string]: #IngressSpec
+})
+
 #IngressClassElement: opm.#Primitive & {
 	name:        "IngressClass"
 	#apiVersion: "elements.opm.dev/k8s/networking/v1"
@@ -30,6 +36,12 @@ import (
 	}
 }
 
+#IngressClass: close(opm.#Component & {
+	#elements: (#IngressClassElement.#fullyQualifiedName): #IngressClassElement
+
+	ingressClasses: [string]: #IngressClassSpec
+})
+
 #NetworkPolicyElement: opm.#Primitive & {
 	name:        "NetworkPolicy"
 	#apiVersion: "elements.opm.dev/k8s/networking/v1"
@@ -41,3 +53,9 @@ import (
 		"k8s.io/api-group":      "networking"
 	}
 }
+
+#NetworkPolicy: close(opm.#Component & {
+	#elements: (#NetworkPolicyElement.#fullyQualifiedName): #NetworkPolicyElement
+
+	networkPolicies: [string]: #NetworkPolicySpec
+})

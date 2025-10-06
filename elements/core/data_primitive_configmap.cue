@@ -27,7 +27,7 @@ import (
 	schema: #ConfigMapSpec
 }
 
-#ConfigMap: close(opm.#ElementBase & {
+#ConfigMap: close(opm.#Component & {
 	#elements: (#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
 
 	configMaps: [string]: #ConfigMapSpec

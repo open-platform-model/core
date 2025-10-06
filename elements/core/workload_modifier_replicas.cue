@@ -28,7 +28,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#Replicas: close(opm.#ElementBase & {
+#Replicas: close(opm.#Component & {
 	#elements: (#ReplicasElement.#fullyQualifiedName): #ReplicasElement
 	replicas: #ReplicasSpec
 })

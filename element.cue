@@ -91,13 +91,6 @@ import (
 // TODO: Add validation for #fullyQualifiedName uniqueness
 #ElementStringArray: [...string]
 
-#ElementBase: {
-	#elements: #ElementMap
-
-	// Allow additional fields for extensibility
-	...
-}
-
 // Primitive element - basic building block
 // Must be implemented by the provider for the target platform
 #Primitive: #Element & {

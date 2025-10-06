@@ -37,7 +37,7 @@ import (
 	labels: {"core.opm.dev/category": "connectivity"}
 }
 
-#Expose: close(opm.#ElementBase & {
+#Expose: close(opm.#Component & {
 	#elements: (#ExposeElement.#fullyQualifiedName): #ExposeElement
 	expose: #ExposeSpec
 })

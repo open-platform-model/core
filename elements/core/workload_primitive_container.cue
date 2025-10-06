@@ -82,7 +82,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#Container: close(opm.#ElementBase & {
+#Container: close(opm.#Component & {
 	#elements: (#ContainerElement.#fullyQualifiedName): #ContainerElement
 	container: #ContainerSpec
 })
