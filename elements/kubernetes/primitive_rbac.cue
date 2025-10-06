@@ -18,6 +18,12 @@ import (
 	}
 }
 
+#Role: close(opm.#Component & {
+	#elements: (#RoleElement.#fullyQualifiedName): #RoleElement
+
+	roles: [string]: #RoleSpec
+})
+
 #RoleBindingElement: opm.#Primitive & {
 	name:        "RoleBinding"
 	#apiVersion: "elements.opm.dev/k8s/rbac/v1"
@@ -29,6 +35,12 @@ import (
 		"k8s.io/api-group":      "rbac"
 	}
 }
+
+#RoleBinding: close(opm.#Component & {
+	#elements: (#RoleBindingElement.#fullyQualifiedName): #RoleBindingElement
+
+	roleBindings: [string]: #RoleBindingSpec
+})
 
 #ClusterRoleElement: opm.#Primitive & {
 	name:        "ClusterRole"
@@ -42,6 +54,12 @@ import (
 	}
 }
 
+#ClusterRole: close(opm.#Component & {
+	#elements: (#ClusterRoleElement.#fullyQualifiedName): #ClusterRoleElement
+
+	clusterRoles: [string]: #ClusterRoleSpec
+})
+
 #ClusterRoleBindingElement: opm.#Primitive & {
 	name:        "ClusterRoleBinding"
 	#apiVersion: "elements.opm.dev/k8s/rbac/v1"
@@ -53,3 +71,9 @@ import (
 		"k8s.io/api-group":      "rbac"
 	}
 }
+
+#ClusterRoleBinding: close(opm.#Component & {
+	#elements: (#ClusterRoleBindingElement.#fullyQualifiedName): #ClusterRoleBindingElement
+
+	clusterRoleBindings: [string]: #ClusterRoleBindingSpec
+})

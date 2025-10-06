@@ -18,6 +18,12 @@ import (
 	}
 }
 
+#StorageClass: close(opm.#Component & {
+	#elements: (#StorageClassElement.#fullyQualifiedName): #StorageClassElement
+
+	storageClasses: [string]: #StorageClassSpec
+})
+
 #VolumeAttachmentElement: opm.#Primitive & {
 	name:        "VolumeAttachment"
 	#apiVersion: "elements.opm.dev/k8s/storage/v1"
@@ -29,6 +35,12 @@ import (
 		"k8s.io/api-group":      "storage"
 	}
 }
+
+#VolumeAttachment: close(opm.#Component & {
+	#elements: (#VolumeAttachmentElement.#fullyQualifiedName): #VolumeAttachmentElement
+
+	volumeAttachments: [string]: #VolumeAttachmentSpec
+})
 
 #CSIDriverElement: opm.#Primitive & {
 	name:        "CSIDriver"
@@ -42,6 +54,12 @@ import (
 	}
 }
 
+#CSIDriver: close(opm.#Component & {
+	#elements: (#CSIDriverElement.#fullyQualifiedName): #CSIDriverElement
+
+	csiDrivers: [string]: #CSIDriverSpec
+})
+
 #CSINodeElement: opm.#Primitive & {
 	name:        "CSINode"
 	#apiVersion: "elements.opm.dev/k8s/storage/v1"
@@ -54,6 +72,12 @@ import (
 	}
 }
 
+#CSINode: close(opm.#Component & {
+	#elements: (#CSINodeElement.#fullyQualifiedName): #CSINodeElement
+
+	csiNodes: [string]: #CSINodeSpec
+})
+
 #CSIStorageCapacityElement: opm.#Primitive & {
 	name:        "CSIStorageCapacity"
 	#apiVersion: "elements.opm.dev/k8s/storage/v1"
@@ -65,3 +89,9 @@ import (
 		"k8s.io/api-group":      "storage"
 	}
 }
+
+#CSIStorageCapacity: close(opm.#Component & {
+	#elements: (#CSIStorageCapacityElement.#fullyQualifiedName): #CSIStorageCapacityElement
+
+	csiStorageCapacities: [string]: #CSIStorageCapacitySpec
+})
