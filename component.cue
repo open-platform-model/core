@@ -36,9 +36,6 @@ import (
 	}
 
 	#elements: #ElementMap
-	for elemName, elem in #elements {
-		#elements: {"\(elemName)": elem & #Element}
-	}
 
 	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
 	#primitiveElements: list.FlattenN([
@@ -62,6 +59,13 @@ import (
 		for wt in #workloadTypes {
 			wt == #workloadTypes[0]
 		}
+	}
+
+	// Add schema of all elements for validation purposes
+	// This will ensure that all fields from all elements are included and validated
+	// when a component is defined
+	for _, elem in #elements {
+		(elem.#nameCamel): elem.schema
 	}
 
 	// TODO add validation to ensure only traits/resources are added based on componentType
