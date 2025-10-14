@@ -256,57 +256,45 @@ package kubernetes
 //////////////////////////////////////////////////////////////////
 
 #DeploymentSpec: {
-	apiVersion: "apps/v1"
-	kind:       "Deployment"
-	metadata:   #ObjectMeta
-	spec: {
-		replicas?: int
-		selector:  #LabelSelector
-		template:  #PodTemplateSpec
-		strategy?: {
-			type?: "RollingUpdate" | "Recreate"
-			rollingUpdate?: {
-				maxUnavailable?: int | string
-				maxSurge?:       int | string
-			}
+	replicas?: int
+	selector:  #LabelSelector
+	template:  #PodTemplateSpec
+	strategy?: {
+		type?: "RollingUpdate" | "Recreate"
+		rollingUpdate?: {
+			maxUnavailable?: int | string
+			maxSurge?:       int | string
 		}
-		minReadySeconds?:         int
-		revisionHistoryLimit?:    int
-		progressDeadlineSeconds?: int
-		paused?:                  bool
 	}
-	status?: {...}
+	minReadySeconds?:         int
+	revisionHistoryLimit?:    int
+	progressDeadlineSeconds?: int
+	paused?:                  bool
 }
 
 #StatefulSetSpec: {
-	apiVersion: "apps/v1"
-	kind:       "StatefulSet"
-	metadata:   #ObjectMeta
-	spec: {
-		replicas?:   int
-		selector:    #LabelSelector
-		template:    #PodTemplateSpec
-		serviceName: string
-		updateStrategy?: {
-			type?: "RollingUpdate" | "OnDelete"
-			rollingUpdate?: {
-				partition?:      int
-				maxUnavailable?: int | string
-			}
-		}
-		volumeClaimTemplates?: [...#PersistentVolumeClaimSpec]
-		podManagementPolicy?:  "OrderedReady" | "Parallel"
-		revisionHistoryLimit?: int
-		minReadySeconds?:      int
-		persistentVolumeClaimRetentionPolicy?: {
-			whenDeleted?: "Retain" | "Delete"
-			whenScaled?:  "Retain" | "Delete"
-		}
-		ordinals?: {
-			start?: int
+	replicas?:   int
+	selector:    #LabelSelector
+	template:    #PodTemplateSpec
+	serviceName: string
+	updateStrategy?: {
+		type?: "RollingUpdate" | "OnDelete"
+		rollingUpdate?: {
+			partition?:      int
+			maxUnavailable?: int | string
 		}
 	}
-	status?: {...}
+	volumeClaimTemplates?: [...#PersistentVolumeClaimSpec]
+	podManagementPolicy?:  "OrderedReady" | "Parallel"
+	revisionHistoryLimit?: int
+	minReadySeconds?:      int
+	persistentVolumeClaimRetentionPolicy?: {
+		whenDeleted?: "Retain" | "Delete"
+		whenScaled?:  "Retain" | "Delete"
+	}
+	ordinals?: {
+		start?: int
+	}
 }
 
 #DaemonSetSpec: {

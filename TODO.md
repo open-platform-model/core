@@ -3,7 +3,9 @@
 ## Nearterm
 
 - [ ] Go through all "Specs" and add sane default to relevant values.
-- [ ] Reverse the modifier element pointers. Today each modifier specifies which primitive or composite element it can modify. However that would easily get very complicated. Now i would reverse it so that ALL other elements explicitly say which modifier elements it can have in the same component together.
+  - **Status**: PARTIALLY COMPLETE - Some defaults exist (e.g., `Replicas.count: int | *1`, `Container.protocol: *"TCP"`), needs comprehensive review
+- [ ] Refactor how Modifier elements points out what primitive elements they are compatible with.
+  - **Status**: PARTIALLY COMPLETE - `modifies: []` field exists, `matchLabels` added for label-based matching, but needs improvement
 - [x] ~~Investigate in replacing workloadType with "hints" or "annotations" in element. Would function similarly to labels in #Element but would NOT be used for categorization or filtering. Would have workloadType, and could be expanded in the future with more fields.~~
   - **Completed 2025-10-02**: Implemented annotations system
   - Replaced `workloadType?: #WorkloadTypes` field with `annotations?: [string]: string` map
@@ -14,7 +16,11 @@
 - [ ] Add a new element kind called patch. Would work similar to how patches are handled in for example kustomize today.
 - [ ] Figure out a better solution to "..." in Element base, etc. It needs to be typed but also allow for extending with fields. Maybe components are allowed to be loosy goosy but Elements are stricter
 - [ ] Implement standard status definition for component.
-- [ ] Implement standard status definition for module, should inherit from components in some way.
+- [x] ~~Implement standard status definition for module, should inherit from components in some way.~~
+  - **Completed**: Module status implemented in `module.cue`
+  - `#ModuleDefinition.#status`: Has `componentCount` and `scopeCount` fields
+  - `#Module.#status`: Extended with `#allComponents` aggregation and counts
+  - Note: Component-level status still pending (see above)
 - [ ] Find a better way to handle secrets. Maybe a way to generate. Maybe a way to inform the platform team of what the secrets should be and how they should look (an informed handoff).
 
 ## Future
