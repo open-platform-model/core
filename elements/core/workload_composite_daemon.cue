@@ -30,11 +30,11 @@ import (
 	schema: #DaemonSpec
 	composes: [
 		#ContainerElement,
+		#SidecarContainersElement,
+		#InitContainersElement,
 		#RestartPolicyElement,
 		#UpdateStrategyElement,
 		#HealthCheckElement,
-		#SidecarContainersElement,
-		#InitContainersElement,
 	]
 	annotations: {
 		"core.opm.dev/workload-type": "daemon"
@@ -45,5 +45,22 @@ import (
 
 #DaemonWorkload: close(opm.#Component & {
 	#elements: (#DaemonWorkloadElement.#fullyQualifiedName): #DaemonWorkloadElement
-	daemon: #DaemonSpec
+	daemonWorkload: #DaemonSpec
+
+	container: daemonWorkload.container
+	if daemonWorkload.sidecarContainers != _|_ {
+		sidecarContainers: daemonWorkload.sidecarContainers
+	}
+	if daemonWorkload.initContainers != _|_ {
+		initContainers: daemonWorkload.initContainers
+	}
+	if daemonWorkload.restartPolicy != _|_ {
+		restartPolicy: daemonWorkload.restartPolicy
+	}
+	if daemonWorkload.updateStrategy != _|_ {
+		updateStrategy: daemonWorkload.updateStrategy
+	}
+	if daemonWorkload.healthCheck != _|_ {
+		healthCheck: daemonWorkload.healthCheck
+	}
 })
