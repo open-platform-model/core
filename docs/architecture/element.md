@@ -335,9 +335,11 @@ Every element definition uses this pattern:
         schema: #ContainerSpec
     }
 
-    container: #ContainerSpec  // Actual configuration field
+    container: #ContainerSpec  // Field name MUST be camelCase of element name
 }
 ```
+
+**CRITICAL**: The configuration field name MUST be the camelCase version of the element name (computed via `strings.ToCamel(element.name)`). This enables automatic schema validation in `component.cue`.
 
 ### Why This Works
 
@@ -345,6 +347,7 @@ Every element definition uses this pattern:
 2. **CUE Composition**: `...` allows unification with other `#Component` instances
 3. **Type Safety**: Each element has its own configuration field (`container`, `replicas`, etc.)
 4. **Registry Integration**: Components can extract all `#elements` for validation and transformation
+5. **Automatic Schema Validation**: `component.cue` merges element schemas using `(elem.#nameCamel): elem.schema` pattern
 
 ### Usage in Components
 
@@ -396,7 +399,7 @@ Primitives create standalone resources:
         schema: #VolumeSpec
     }
 
-    volumes: [string]: #VolumeSpec
+    volume: [string]: #VolumeSpec
 }
 ```
 
@@ -431,7 +434,9 @@ Composites combine multiple elements:
         name: "StatelessWorkload"
         description: "Horizontally scalable containerized workload"
         target: ["component"]
-        workloadType: "stateless"  // Fixed workload type
+        annotations: {
+            "core.opm.dev/workload-type": "stateless"  // Fixed workload type
+        }
         composes: [
             #ContainerElement,
             #ReplicasElement,
@@ -445,7 +450,12 @@ Composites combine multiple elements:
         schema: #StatelessSpec
     }
 
-    stateless: #StatelessSpec
+    statelessWorkload: #StatelessSpec  // camelCase of "StatelessWorkload"
+
+    // Project fields from statelessWorkload to top level
+    container: statelessWorkload.container
+    replicas: statelessWorkload.replicas
+    // ... other projections
 }
 ```
 
@@ -502,11 +512,11 @@ web: #Component & {
     #StatelessWorkload  // Sets annotations: {"core.opm.dev/workload-type": "stateless"}
     #Expose            // Adds service exposure
 
-    stateless: {
+    statelessWorkload: {  // camelCase of "StatelessWorkload"
         container: {image: "nginx:latest", ports: http: {targetPort: 80}}
         replicas: {count: 3}
     }
-    expose: {type: "LoadBalancer"}
+    expose: {type: "LoadBalancer"}  // camelCase of "Expose"
 }
 ```
 
@@ -530,7 +540,44 @@ custom: #Component & {
 
 ## Component Validation
 
-Components automatically validate element compatibility and workload type annotation constraints.
+Components automatically validate element compatibility, workload type annotation constraints, and element schema conformance.
+
+### Automatic Schema Validation
+
+The `#Component` definition in [component.cue](../component.cue) automatically merges all element schemas for validation:
+
+```cue
+#Component: {
+    // ... other fields
+
+    // Automatic schema validation via dynamic field merging
+    for _, elem in #elements {
+        (elem.#nameCamel): elem.schema
+    }
+}
+```
+
+**How It Works**:
+
+1. For each element in `#elements`, CUE creates a field with the camelCase element name
+2. That field is constrained to the element's schema
+3. When you provide configuration, CUE validates it against the schema automatically
+
+**Example**:
+
+```cue
+web: #Component & {
+    #StatelessWorkload  // Adds StatelessWorkloadElement to #elements
+
+    // The for loop creates: statelessWorkload: #StatelessSpec
+    // Your configuration must satisfy this schema
+    statelessWorkload: {
+        container: {image: "nginx:latest"}  // Validated against #StatelessSpec
+    }
+}
+```
+
+**This is why element field names MUST be camelCase of element names** - it ensures the schema validation merges correctly with the configuration fields.
 
 ### Validation Logic
 
