@@ -95,14 +95,14 @@ import (
 	#apiVersion: "k8s.io/api/apps/v1"
 
 	// This transformer specifically handles StatelessWorkload primitive
-	required: ["elements.opm.dev/core/v1alpha1.Container"]
+	required: ["elements.opm.dev/core/v0alpha1.Container"]
 	optional: [
-		"elements.opm.dev/core/v1alpha1.SidecarContainers",
-		"elements.opm.dev/core/v1alpha1.InitContainers",
-		"elements.opm.dev/core/v1alpha1.Replicas",
-		"elements.opm.dev/core/v1alpha1.RestartPolicy",
-		"elements.opm.dev/core/v1alpha1.UpdateStrategy",
-		"elements.opm.dev/core/v1alpha1.HealthCheck",
+		"elements.opm.dev/core/v0alpha1.SidecarContainers",
+		"elements.opm.dev/core/v0alpha1.InitContainers",
+		"elements.opm.dev/core/v0alpha1.Replicas",
+		"elements.opm.dev/core/v0alpha1.RestartPolicy",
+		"elements.opm.dev/core/v0alpha1.UpdateStrategy",
+		"elements.opm.dev/core/v0alpha1.HealthCheck",
 	]
 
 	transform: {
@@ -110,7 +110,7 @@ import (
 		context:   opm.#ProviderContext
 
 		// Extract elements (simplified example)
-		let _workload = component.stateless
+		let _workload = component.statelessWorkload
 		let _sidecarContainers = component.sidecarContainers | *[]
 		let _initContainers = component.initContainers | *[]
 		let _replicas = component.replicas | *{count: 1}
@@ -145,7 +145,7 @@ import (
 	#apiVersion: "k8s.io/api/core/v1"
 
 	// This transformer specifically handles Volume primitive
-	required: ["elements.opm.dev/core/v1alpha1.Volume"]
+	required: ["elements.opm.dev/core/v0alpha1.Volume"]
 	optional: []
 
 	transform: {
@@ -153,7 +153,7 @@ import (
 		context:   opm.#ProviderContext
 
 		// Extract volumes
-		let _volumes = component.volumes
+		let _volumes = component.volume
 
 		output: [
 			for volumeName, volumeSpec in _volumes {
@@ -167,9 +167,9 @@ import (
 						annotations: context.unifiedAnnotations
 					}
 					spec: {
-						accessModes: volumeSpec.accessModes
-						resources: requests: storage: volumeSpec.size
-						storageClassName: volumeSpec.storageClass
+						accessModes: [volumeSpec.persistentClaim.accessMode]
+						resources: requests: storage: volumeSpec.persistentClaim.size
+						storageClassName: volumeSpec.persistentClaim.storageClass
 					}
 				}
 			},

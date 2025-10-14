@@ -60,7 +60,7 @@ StackDefinition → Stack → StackRelease
 ```cue
 // 1. Developer-owned blueprint
 #StackDefinition: {
-    #apiVersion: "core.opm.dev/v1alpha1"
+    #apiVersion: "core.opm.dev/v0alpha1"
     #kind: "StackDefinition"
     #metadata: {
         name: string
@@ -90,7 +90,7 @@ StackDefinition → Stack → StackRelease
 
 // 2. Platform-curated stack
 #Stack: {
-    #apiVersion: "core.opm.dev/v1alpha1"
+    #apiVersion: "core.opm.dev/v0alpha1"
     #kind: "Stack"
     #metadata: {
         name: string
@@ -116,7 +116,7 @@ StackDefinition → Stack → StackRelease
 
 // 3. End-user deployment
 #StackRelease: {
-    #apiVersion: "core.opm.dev/v1alpha1"
+    #apiVersion: "core.opm.dev/v0alpha1"
     #kind: "StackRelease"
     #metadata: {
         name: string

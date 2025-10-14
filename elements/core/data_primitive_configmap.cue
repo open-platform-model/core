@@ -20,14 +20,14 @@ import (
 // ConfigMaps as Resources
 #ConfigMapElement: opm.#Primitive & {
 	name:        "ConfigMap"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	description: "Key-value pairs for configuration data"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}
 	schema: #ConfigMapSpec
 }
 
-#ConfigMap: close(opm.#ElementBase & {
+#ConfigMap: close(opm.#Component & {
 	#elements: (#ConfigMapElement.#fullyQualifiedName): #ConfigMapElement
 
 	configMaps: [string]: #ConfigMapSpec

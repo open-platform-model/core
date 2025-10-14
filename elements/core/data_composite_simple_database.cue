@@ -11,13 +11,14 @@ import (
 // Simple database specification
 #SimpleDatabaseSpec: {
 	engine:   "postgres" | "mysql" | "mongodb" | "redis" | *"postgres"
-	version:  string | *"latest"
-	dbName:   string | *"appdb"
-	username: string | *"admin"
-	password: string | *"password"
+	version:  string
+	dbName:   string
+	username: string
+	password: string
 	persistence: {
-		enabled: bool | *true
-		size:    string | *"1Gi"
+		enabled:       bool | *true
+		size:          string
+		storageClass?: string
 	}
 }
 
@@ -27,10 +28,13 @@ import (
 
 #SimpleDatabaseElement: opm.#Composite & {
 	name:        "SimpleDatabase"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #SimpleDatabaseSpec
-	composes: [#VolumeElement]
+	composes: [
+		#StatefulWorkloadElement,
+		#VolumeElement,
+	]
 	annotations: {
 		"core.opm.dev/workload-type": "stateful"
 	}
@@ -38,14 +42,14 @@ import (
 	labels: {"core.opm.dev/category": "data"}
 }
 
-#SimpleDatabase: close(opm.#ElementBase & {
+#SimpleDatabase: close(opm.#Component & {
 	#elements: (#SimpleDatabaseElement.#fullyQualifiedName): #SimpleDatabaseElement
 
-	database: #SimpleDatabaseSpec
+	simpleDatabase: #SimpleDatabaseSpec
 
-	stateful: #StatefulWorkloadSpec & {
+	statefulWorkload: #StatefulWorkloadSpec & {
 		container: #ContainerSpec & {
-			if database.engine == "postgres" {
+			if simpleDatabase.engine == "postgres" {
 				name:  "database"
 				image: "postgres:latest"
 				ports: {
@@ -56,20 +60,20 @@ import (
 				env: {
 					DB_NAME: {
 						name:  "DB_NAME"
-						value: database.dbName
+						value: simpleDatabase.dbName
 					}
 					DB_USER: {
 						name:  "DB_USER"
-						value: database.username
+						value: simpleDatabase.username
 					}
 					DB_PASSWORD: {
 						name:  "DB_PASSWORD"
-						value: database.password
+						value: simpleDatabase.password
 					}
 				}
-				volumeMounts: {
-					data: {
-						name:      "data"
+				if simpleDatabase.persistence.enabled {
+					volumeMounts: dbData: #VolumeMountSpec & {
+						name:      "dbData"
 						mountPath: "/var/lib/postgresql/data"
 					}
 				}
@@ -90,6 +94,18 @@ import (
 				}
 			}
 		}
-		volume: #VolumeSpec
+	}
+	volume: [string]: #VolumeSpec
+	if simpleDatabase.persistence.enabled {
+		volume: dbData: {
+			name: "db-data"
+			persistentClaim: {
+				accessMode: "ReadWriteOnce"
+				size:       simpleDatabase.persistence.size
+				if simpleDatabase.persistence.storageClass != _|_ {
+					storageClass: simpleDatabase.persistence.storageClass
+				}
+			}
+		}
 	}
 })

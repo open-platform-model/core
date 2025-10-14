@@ -14,8 +14,7 @@ This document explains the architectural foundations of the OPM element system -
 
 - [Element Foundation](#element-foundation)
 - [Element Type System](#element-type-system)
-- [WorkloadType Enforcement](#workloadtype-enforcement)
-- [The ElementBase Pattern](#the-elementbase-pattern)
+- [The Component Pattern for Elements](#the-component-pattern-for-elements)
 - [Element Implementation Patterns](#element-implementation-patterns)
 - [Component Composition](#component-composition)
 - [Component Validation](#component-validation)
@@ -36,7 +35,7 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
 ```cue
 #Element: {
     name!:               string
-    #apiVersion:         string | *"core.opm.dev/v1alpha1"
+    #apiVersion:         string | *"core.opm.dev/v0alpha1"
     #fullyQualifiedName: "\(#apiVersion).\(name)"
 
     // What kind of element this is
@@ -69,7 +68,7 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
 - **schema**: OpenAPIv3-compatible schema defining configuration structure
 - **labels**: Optional metadata for categorization and filtering (e.g., `{"core.opm.dev/category": "workload"}`)
 - **annotations**: Optional behavior hints for providers (e.g., `{"core.opm.dev/workload-type": "stateless"}`)
-- **#fullyQualifiedName**: Global unique identifier (e.g., "core.opm.dev/v1alpha1.Container")
+- **#fullyQualifiedName**: Global unique identifier (e.g., "core.opm.dev/v0alpha1.Container")
 
 ---
 
@@ -249,6 +248,7 @@ Element annotations provide behavior hints to providers without being used for c
 **Annotation Key**: `"core.opm.dev/workload-type"`
 
 **Valid Values**:
+
 - `"stateless"` - Deployment-like workloads
 - `"stateful"` - StatefulSet-like workloads
 - `"daemon"` - DaemonSet-like workloads
@@ -306,16 +306,18 @@ myComponent: #Component & {
 
 ---
 
-## The ElementBase Pattern
+## The Component Pattern for Elements
 
 ### Problem
 
 CUE requires structural compatibility for composition. Simply embedding `#Element` in multiple places creates type conflicts.
 
-### Solution: #ElementBase
+### Solution: #Component
+
+Elements use `#Component` as their base, which provides the `#elements` map for element registration:
 
 ```cue
-#ElementBase: {
+#Component: {
     #elements: #ElementMap
     ...  // Critical: enables CUE composition without type conflicts
 }
@@ -324,7 +326,7 @@ CUE requires structural compatibility for composition. Simply embedding `#Elemen
 Every element definition uses this pattern:
 
 ```cue
-#Container: #ElementBase & {
+#Container: #Component & {
     #elements: Container: #Primitive & {
         name: "Container"
         description: "Single container primitive"
@@ -333,16 +335,19 @@ Every element definition uses this pattern:
         schema: #ContainerSpec
     }
 
-    container: #ContainerSpec  // Actual configuration field
+    container: #ContainerSpec  // Field name MUST be camelCase of element name
 }
 ```
+
+**CRITICAL**: The configuration field name MUST be the camelCase version of the element name (computed via `strings.ToCamel(element.name)`). This enables automatic schema validation in `component.cue`.
 
 ### Why This Works
 
 1. **Automatic Element Registration**: `#elements` field contains element metadata
-2. **CUE Composition**: `...` allows unification with other `#ElementBase` instances
+2. **CUE Composition**: `...` allows unification with other `#Component` instances
 3. **Type Safety**: Each element has its own configuration field (`container`, `replicas`, etc.)
 4. **Registry Integration**: Components can extract all `#elements` for validation and transformation
+5. **Automatic Schema Validation**: `component.cue` merges element schemas using `(elem.#nameCamel): elem.schema` pattern
 
 ### Usage in Components
 
@@ -371,7 +376,7 @@ Primitives create standalone resources:
 
 ```cue
 // Primitive element - Creates containerized workload
-#Container: #ElementBase & {
+#Container: #Component & {
     #elements: Container: #Primitive & {
         name: "Container"
         description: "Base container definition"
@@ -385,7 +390,7 @@ Primitives create standalone resources:
 }
 
 // Primitive element - Creates storage (map-based)
-#Volume: #ElementBase & {
+#Volume: #Component & {
     #elements: Volume: #Primitive & {
         name: "Volume"
         description: "Volume storage primitive"
@@ -394,7 +399,7 @@ Primitives create standalone resources:
         schema: #VolumeSpec
     }
 
-    volumes: [string]: #VolumeSpec
+    volume: [string]: #VolumeSpec
 }
 ```
 
@@ -404,7 +409,7 @@ Modifiers enhance primitives/composites:
 
 ```cue
 // Modifier element - Adds scaling
-#Replicas: #ElementBase & {
+#Replicas: #Component & {
     #elements: Replicas: #Modifier & {
         name: "Replicas"
         description: "Scale workload instances"
@@ -424,12 +429,14 @@ Composites combine multiple elements:
 
 ```cue
 // Composite element - Container + modifiers for stateless workloads
-#StatelessWorkload: #ElementBase & {
+#StatelessWorkload: #Component & {
     #elements: StatelessWorkload: #Composite & {
         name: "StatelessWorkload"
         description: "Horizontally scalable containerized workload"
         target: ["component"]
-        workloadType: "stateless"  // Fixed workload type
+        annotations: {
+            "core.opm.dev/workload-type": "stateless"  // Fixed workload type
+        }
         composes: [
             #ContainerElement,
             #ReplicasElement,
@@ -443,7 +450,12 @@ Composites combine multiple elements:
         schema: #StatelessSpec
     }
 
-    stateless: #StatelessSpec
+    statelessWorkload: #StatelessSpec  // camelCase of "StatelessWorkload"
+
+    // Project fields from statelessWorkload to top level
+    container: statelessWorkload.container
+    replicas: statelessWorkload.replicas
+    // ... other projections
 }
 ```
 
@@ -458,7 +470,7 @@ Components are element compositions defined in [component.cue](../component.cue)
 ```cue
 #Component: {
     #kind:       "Component"
-    #apiVersion: "core.opm.dev/v1alpha1"
+    #apiVersion: "core.opm.dev/v0alpha1"
 
     #metadata: {
         #id!: string
@@ -500,11 +512,11 @@ web: #Component & {
     #StatelessWorkload  // Sets annotations: {"core.opm.dev/workload-type": "stateless"}
     #Expose            // Adds service exposure
 
-    stateless: {
+    statelessWorkload: {  // camelCase of "StatelessWorkload"
         container: {image: "nginx:latest", ports: http: {targetPort: 80}}
         replicas: {count: 3}
     }
-    expose: {type: "LoadBalancer"}
+    expose: {type: "LoadBalancer"}  // camelCase of "Expose"
 }
 ```
 
@@ -528,7 +540,44 @@ custom: #Component & {
 
 ## Component Validation
 
-Components automatically validate element compatibility and workload type annotation constraints.
+Components automatically validate element compatibility, workload type annotation constraints, and element schema conformance.
+
+### Automatic Schema Validation
+
+The `#Component` definition in [component.cue](../component.cue) automatically merges all element schemas for validation:
+
+```cue
+#Component: {
+    // ... other fields
+
+    // Automatic schema validation via dynamic field merging
+    for _, elem in #elements {
+        (elem.#nameCamel): elem.schema
+    }
+}
+```
+
+**How It Works**:
+
+1. For each element in `#elements`, CUE creates a field with the camelCase element name
+2. That field is constrained to the element's schema
+3. When you provide configuration, CUE validates it against the schema automatically
+
+**Example**:
+
+```cue
+web: #Component & {
+    #StatelessWorkload  // Adds StatelessWorkloadElement to #elements
+
+    // The for loop creates: statelessWorkload: #StatelessSpec
+    // Your configuration must satisfy this schema
+    statelessWorkload: {
+        container: {image: "nginx:latest"}  // Validated against #StatelessSpec
+    }
+}
+```
+
+**This is why element field names MUST be camelCase of element names** - it ensures the schema validation merges correctly with the configuration fields.
 
 ### Validation Logic
 
@@ -624,7 +673,7 @@ invalid: #Component & {
 6. **Reusability**: Modifiers shared across composites
 7. **Flexibility Preserved**: Advanced users can still use primitives directly
 
-### Why #ElementBase Pattern?
+### Why #Component Pattern for Elements?
 
 **Alternatives Considered**:
 
@@ -632,7 +681,7 @@ invalid: #Component & {
 2. **Element registry separate from definitions**: Requires manual registration
 3. **Code generation**: Adds build complexity
 
-**Why #ElementBase Wins**:
+**Why #Component Pattern Wins**:
 
 1. **Automatic Registration**: Elements self-register via `#elements` field
 2. **CUE Native**: Works with CUE's unification model

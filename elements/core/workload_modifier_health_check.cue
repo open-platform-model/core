@@ -15,6 +15,14 @@ import (
 		port:   uint & >=1 & <=65535
 		scheme: "HTTP" | "HTTPS"
 	}
+	exec?: {
+		command: [...string]
+	}
+	initialDelaySeconds?: int | *0
+	periodSeconds?:       int | *10
+	timeoutSeconds?:      int | *1
+	successThreshold?:    int | *1
+	failureThreshold?:    int | *3
 }
 
 // Health check specification
@@ -30,7 +38,7 @@ import (
 // Add Health Check to component
 #HealthCheckElement: opm.#Modifier & {
 	name:        "HealthCheck"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #HealthCheckSpec
 	modifies: []
@@ -38,7 +46,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#HealthCheck: close(opm.#ElementBase & {
+#HealthCheck: close(opm.#Component & {
 	#elements: (#HealthCheckElement.#fullyQualifiedName): #HealthCheckElement
 	healthCheck: #HealthCheckSpec
 })

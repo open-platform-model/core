@@ -67,11 +67,13 @@ core/
 
 **Quick reference** - See [docs/](docs/) for detailed architecture:
 
-- **[Elements](docs/elements.md)**: Building blocks with kind (primitive/composite/modifier/custom) categorized by labels
+- **[Elements](docs/architecture/element.md)**: Building blocks with kind (primitive/composite/modifier/custom) categorized by labels
 - **Components**: Element compositions representing workloads or resources
 - **Modules**: Complete application definitions with components and scopes
 - **Scopes**: Cross-cutting concerns (PlatformScopes are immutable, ModuleScopes are mutable)
-- **Providers**: Platform-specific transformers that convert OPM to native resources
+- **Providers**: The Provider Interface
+- **Transformer**: Platform-specific transformers that convert OPM to native resources
+- **Catalog**: The PlatformCatalog architecture
 
 **Key Innovation**: Everything is an element. Primitives compose into composites, modifiers enhance them, all unified under a common base.
 
@@ -252,7 +254,7 @@ import (
 }
 
 // Usage pattern
-#MyFeature: opm.#ElementBase & {
+#MyFeature: opm.#Component & {
     #elements: MyFeature: #MyFeatureElement
     myFeature: #MyFeatureSpec
 }
@@ -297,7 +299,7 @@ See the [OPM Contributing Guide](https://github.com/open-platform-model/opm/blob
 **In this repository**:
 
 - [Architecture Documentation](docs/architecture/) - Deep technical architecture
-  - [Element System Architecture](docs/architecture/element-system.md) - Element type system, #ElementBase pattern, validation
+  - [Element System Architecture](docs/architecture/element.md) - Element type system, #Component pattern, validation
   - [Component Model](docs/architecture/component-model.md) - *(future)* Component architecture
   - [Module Lifecycle](docs/architecture/module-lifecycle.md) - *(future)* Three-layer model
 - [Element Documentation](docs/elements.md) - Navigation hub pointing to element docs

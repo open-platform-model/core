@@ -26,14 +26,14 @@ import (
 // Network Scope as Trait
 #NetworkScopeElement: opm.#Primitive & {
 	name:        "NetworkScope"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	description: "Primitive scope to define a shared network boundary"
 	target: ["scope"]
 	labels: {"core.opm.dev/category": "connectivity"}
 	schema: #NetworkScopeSpec
 }
 
-#NetworkScope: opm.#ElementBase & {
+#NetworkScope: opm.#Component & {
 	#elements: (#NetworkScopeElement.#fullyQualifiedName): #NetworkScopeElement
 
 	networkScope: #NetworkScopeSpec

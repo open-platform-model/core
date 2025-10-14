@@ -21,14 +21,14 @@ import (
 // Secrets as Resources
 #SecretElement: opm.#Primitive & {
 	name:        "Secret"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	description: "Sensitive data such as passwords, tokens, or keys"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}
 	schema: #SecretSpec
 }
 
-#Secret: close(opm.#ElementBase & {
+#Secret: close(opm.#Component & {
 	#elements: (#SecretElement.#fullyQualifiedName): #SecretElement
 
 	secrets: [string]: #SecretSpec

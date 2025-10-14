@@ -11,7 +11,7 @@ import (
 // Add Sidecar Containers to component
 #SidecarContainersElement: opm.#Modifier & {
 	name:        "SidecarContainers"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: [#ContainerSpec]
 	modifies: []
@@ -19,7 +19,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#SidecarContainers: close(opm.#ElementBase & {
+#SidecarContainers: close(opm.#Component & {
 	#elements: (#SidecarContainersElement.#fullyQualifiedName): #SidecarContainersElement
 	sidecarContainers: [#ContainerSpec]
 })
@@ -27,7 +27,7 @@ import (
 // Add Init Containers to component
 #InitContainersElement: opm.#Modifier & {
 	name:        "InitContainers"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: [#ContainerSpec]
 	modifies: []
@@ -35,7 +35,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#InitContainers: close(opm.#ElementBase & {
+#InitContainers: close(opm.#Component & {
 	#elements: (#InitContainersElement.#fullyQualifiedName): #InitContainersElement
 	initContainers: [#ContainerSpec]
 })
@@ -43,7 +43,7 @@ import (
 // Add Ephemeral Containers to component (for debugging)
 #EphemeralContainersElement: opm.#Modifier & {
 	name:        "EphemeralContainers"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: [#ContainerSpec]
 	modifies: []
@@ -51,7 +51,7 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#EphemeralContainers: close(opm.#ElementBase & {
+#EphemeralContainers: close(opm.#Component & {
 	#elements: (#EphemeralContainersElement.#fullyQualifiedName): #EphemeralContainersElement
 	ephemeralContainers: [#ContainerSpec]
 })

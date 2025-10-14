@@ -11,7 +11,7 @@ import (
 // Scheduled task workload specification
 #ScheduledTaskWorkloadSpec: {
 	container:      #ContainerSpec
-	restartPolicy?: #RestartPolicySpec
+	restartPolicy?: "OnFailure" | "Never" | *"Never"
 	sidecarContainers?: [#ContainerSpec]
 	initContainers?: [#ContainerSpec]
 
@@ -29,14 +29,14 @@ import (
 // ScheduledTask workload - A containerized workload that runs on a schedule
 #ScheduledTaskWorkloadElement: opm.#Composite & {
 	name:        "ScheduledTaskWorkload"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #ScheduledTaskWorkloadSpec
 	composes: [
 		#ContainerElement,
-		#RestartPolicyElement,
 		#SidecarContainersElement,
 		#InitContainersElement,
+		#RestartPolicyElement,
 	]
 	annotations: {
 		"core.opm.dev/workload-type": "scheduled-task"
@@ -45,7 +45,18 @@ import (
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#ScheduledTaskWorkload: close(opm.#ElementBase & {
+#ScheduledTaskWorkload: close(opm.#Component & {
 	#elements: (#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
-	scheduledTask: #ScheduledTaskWorkloadSpec
+	scheduledTaskWorkload: #ScheduledTaskWorkloadSpec
+
+	container: scheduledTaskWorkload.container
+	if scheduledTaskWorkload.sidecarContainers != _|_ {
+		sidecarContainers: scheduledTaskWorkload.sidecarContainers
+	}
+	if scheduledTaskWorkload.initContainers != _|_ {
+		initContainers: scheduledTaskWorkload.initContainers
+	}
+	if scheduledTaskWorkload.restartPolicy != _|_ {
+		restartPolicy: scheduledTaskWorkload.restartPolicy
+	}
 })

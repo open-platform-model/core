@@ -20,15 +20,18 @@ import (
 // Add Replicas to component
 #ReplicasElement: opm.#Modifier & {
 	name:        "Replicas"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #ReplicasSpec
-	modifies: []
+	modifies: [#Container]
 	description: "Number of desired replicas"
 	labels: {"core.opm.dev/category": "workload"}
+	matchLabels: {
+		"core.opm.dev/fully-qualified-name": "elements.opm.dev/core/v0alpha1.Container"
+	}
 }
 
-#Replicas: close(opm.#ElementBase & {
+#Replicas: close(opm.#Component & {
 	#elements: (#ReplicasElement.#fullyQualifiedName): #ReplicasElement
 	replicas: #ReplicasSpec
 })

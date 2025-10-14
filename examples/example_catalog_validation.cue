@@ -39,7 +39,7 @@ compatibleModule: opm.#Module & {
 				elements.#Replicas
 				elements.#HealthCheck
 
-				stateless: {
+				statelessWorkload: {
 					container: {
 						name:  "nginx"
 						image: "nginx:alpine"
@@ -110,7 +110,9 @@ incompatibleModuleCustomElement: opm.#Module & {
 						#apiVersion: "custom.example.com/v1"
 						kind:        "primitive"
 						target: ["component"]
-						workloadType: "stateful"
+						annotations: {
+							"core.opm.dev/workload-type": "stateful"
+						}
 						schema: {
 							version:     string
 							replicaSet:  string
@@ -165,12 +167,12 @@ incompatibleModuleUnsupportedWorkload: opm.#Module & {
 				// Use ScheduledTaskWorkload - provider may not support it
 				elements.#ScheduledTaskWorkload
 
-				scheduledTask: {
+				scheduledTaskWorkload: {
 					container: {
 						name:  "backup"
 						image: "backup-tool:1.0"
 					}
-					schedule: "0 2 * * *"
+					scheduleCron: "0 2 * * *"
 				}
 			}
 		}
@@ -213,7 +215,7 @@ mixedCompatibilityModule: opm.#Module & {
 
 				elements.#StatelessWorkload
 
-				stateless: {
+				statelessWorkload: {
 					container: {
 						name:  "web"
 						image: "web:1.0"
@@ -241,7 +243,9 @@ mixedCompatibilityModule: opm.#Module & {
 						#apiVersion: "redis.example.com/v1"
 						kind:        "primitive"
 						target: ["component"]
-						workloadType: "stateful"
+						annotations: {
+							"core.opm.dev/workload-type": "stateful"
+						}
 						schema: {
 							nodes:          int
 							memory:         string

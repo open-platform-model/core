@@ -29,23 +29,34 @@ import (
 // Task workload - A containerized workload that runs to completion
 #TaskWorkloadElement: opm.#Composite & {
 	name:        "TaskWorkload"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #TaskWorkloadSpec
 	composes: [
 		#ContainerElement,
-		#RestartPolicyElement,
 		#SidecarContainersElement,
 		#InitContainersElement,
+		#RestartPolicyElement,
 	]
+	description: "A task workload that runs to completion"
 	annotations: {
 		"core.opm.dev/workload-type": "task"
 	}
-	description: "A task workload that runs to completion"
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#TaskWorkload: close(opm.#ElementBase & {
+#TaskWorkload: close(opm.#Component & {
 	#elements: (#TaskWorkloadElement.#fullyQualifiedName): #TaskWorkloadElement
-	task: #TaskWorkloadSpec
+	taskWorkload: #TaskWorkloadSpec
+
+	container: taskWorkload.container
+	if taskWorkload.sidecarContainers != _|_ {
+		sidecarContainers: taskWorkload.sidecarContainers
+	}
+	if taskWorkload.initContainers != _|_ {
+		initContainers: taskWorkload.initContainers
+	}
+	if taskWorkload.restartPolicy != _|_ {
+		restartPolicy: taskWorkload.restartPolicy
+	}
 })

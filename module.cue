@@ -39,15 +39,19 @@ import (
 	// Developer-defined module scopes
 	scopes?: [Id=string]: #Scope & {#metadata: #id: Id}
 
-	// User-configurable values (like Helm values)
-	// ALL fields MUST be optional to allow override
-	// MUST be OpenAPIv3 compliant
+	// Schema/constraints for configurable values
+	// Developers define the configuration contract - NO defaults, NO templating
+	// Platform teams will add defaults and refine constraints in Module
+	// MUST be OpenAPIv3 compliant (no CUE templating - for/if statements)
 	values: {
-		// Example structure (all optional with defaults):
-		// replicas?:     uint | *3
-		// image?: {
-		//     repository?: string | *"nginx"
-		//     tag?:        string | *"1.0.0"
+		// Example patterns (constraints only):
+		// replicas: uint                             // Type constraint
+		// domain!: string                            // Required field
+		// environment: "dev" | "staging" | "prod"    // Enum constraint
+		// port: >0 & <65536                          // Range constraint
+		// config: {
+		//     timeout: int
+		//     retries: uint
 		// }
 		...
 	}
@@ -115,9 +119,29 @@ import (
 	// Optimized: Use list.Concat instead of FlattenN for single-level flattening
 	#allPrimitiveElements: #ElementStringArray & list.Concat([for _, comp in #allComponents {comp.#primitiveElements}])
 
-	// Platform can modify defaults but not structure
-	// TODO: Walk through moduleDefinition.values and replace with values from #Module.values
-	values?: moduleDefinition.values & {
+	// CUE CONSTRAINT REFINEMENT STRATEGY:
+	// Platform refines Definition constraints using CUE's unification
+	// Platform can:
+	//   - Add defaults: replicas: uint | *3
+	//   - Refine constraints: domain: string & =~".*\\.myplatform\\.com$"
+	//   - Add new fields: region: string | *"us-west"
+	//   - Template values: Use for/if to populate from Definition (makes concrete)
+	//
+	// Note: Module.values does NOT need to be OpenAPIv3 compliant
+	//       (can use CUE templating with for/if statements)
+
+	// Platform team refines constraints and adds defaults
+	values: moduleDefinition.values & {
+		// Examples:
+		// replicas: uint | *3                              // Add default to Definition constraint
+		// domain: string & =~".*\\.myplatform\\.com$"     // Refine with regex pattern
+		// environment: ("dev" | "staging" | "prod") | *"dev"  // Add default to enum
+		// region: string | *"us-west"                      // New platform-specific field
+		//
+		// Templating example (makes values concrete):
+		// for name, comp in moduleDefinition.components {
+		//     "\(name)Image": string | *"default-\(name):latest"
+		// }
 		...
 	}
 
@@ -147,8 +171,12 @@ import (
 
 	provider: #Provider
 
-	// Resolved values after merging moduleDefinition.values and module.values
-	values: module.moduleDefinition.values & module.values
+	// User provides final concrete values
+	// Unifies with Module's refined constraints
+	// Single-level inheritance: only sees Module's constraints, not Definition's
+	values: module.values & {
+		...
+	}
 
 	#status: {}
 })

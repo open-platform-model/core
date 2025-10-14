@@ -26,10 +26,7 @@ import (
 // Stateless workload - A horizontally scalable containerized workload with no requirement for stable identity or storage
 #StatelessWorkloadElement: opm.#Composite & {
 	name:        "StatelessWorkload"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
-	annotations: {
-		"core.opm.dev/workload-type": "stateless"
-	}
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #StatelessSpec
 	composes: [
@@ -42,10 +39,33 @@ import (
 		#HealthCheckElement,
 	]
 	description: "A stateless workload with no requirement for stable identity or storage"
+	annotations: {
+		"core.opm.dev/workload-type": "stateless"
+	}
 	labels: {"core.opm.dev/category": "workload"}
 }
 
-#StatelessWorkload: close(opm.#ElementBase & {
+#StatelessWorkload: close(opm.#Component & {
 	#elements: (#StatelessWorkloadElement.#fullyQualifiedName): #StatelessWorkloadElement
-	stateless: #StatelessSpec
+	statelessWorkload: #StatelessSpec
+
+	container: statelessWorkload.container
+	if statelessWorkload.sidecarContainers != _|_ {
+		sidecarContainers: statelessWorkload.sidecarContainers
+	}
+	if statelessWorkload.initContainers != _|_ {
+		initContainers: statelessWorkload.initContainers
+	}
+	if statelessWorkload.replicas != _|_ {
+		replicas: statelessWorkload.replicas
+	}
+	if statelessWorkload.restartPolicy != _|_ {
+		restartPolicy: statelessWorkload.restartPolicy
+	}
+	if statelessWorkload.updateStrategy != _|_ {
+		updateStrategy: statelessWorkload.updateStrategy
+	}
+	if statelessWorkload.healthCheck != _|_ {
+		healthCheck: statelessWorkload.healthCheck
+	}
 })

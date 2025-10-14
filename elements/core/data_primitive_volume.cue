@@ -17,6 +17,7 @@ import (
 
 // Volume specification
 #VolumeSpec: {
+	name!: string
 	emptyDir?: {
 		medium?:    *"node" | "memory"
 		sizeLimit?: string
@@ -34,15 +35,16 @@ import (
 // Volumes as Resources (claims, ephemeral, projected)
 #VolumeElement: opm.#Primitive & {
 	name:        "Volume"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	description: "A set of volume types for data storage and sharing"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}
-	schema: #VolumeSpec
+	schema: [volumeName=string]: #VolumeSpec & {name: string | *volumeName}
 }
 
-#Volume: close(opm.#ElementBase & {
+#Volume: close(opm.#Component & {
 	#elements: (#VolumeElement.#fullyQualifiedName): #VolumeElement
 
-	volumes: [string]: #VolumeSpec
+	// Volume field matches the element name's camelCase (volume)
+	volume: [volumeName=string]: #VolumeSpec & {name: string | *volumeName}
 })
