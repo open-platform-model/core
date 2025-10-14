@@ -34,18 +34,29 @@ import (
 	schema: #TaskWorkloadSpec
 	composes: [
 		#ContainerElement,
-		#RestartPolicyElement,
 		#SidecarContainersElement,
 		#InitContainersElement,
+		#RestartPolicyElement,
 	]
+	description: "A task workload that runs to completion"
 	annotations: {
 		"core.opm.dev/workload-type": "task"
 	}
-	description: "A task workload that runs to completion"
 	labels: {"core.opm.dev/category": "workload"}
 }
 
 #TaskWorkload: close(opm.#Component & {
 	#elements: (#TaskWorkloadElement.#fullyQualifiedName): #TaskWorkloadElement
-	task: #TaskWorkloadSpec
+	taskWorkload: #TaskWorkloadSpec
+
+	container: taskWorkload.container
+	if taskWorkload.sidecarContainers != _|_ {
+		sidecarContainers: taskWorkload.sidecarContainers
+	}
+	if taskWorkload.initContainers != _|_ {
+		initContainers: taskWorkload.initContainers
+	}
+	if taskWorkload.restartPolicy != _|_ {
+		restartPolicy: taskWorkload.restartPolicy
+	}
 })

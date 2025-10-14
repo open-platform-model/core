@@ -33,7 +33,7 @@ import (
 	// Optional metadata annotations for element behavior hints (not used for categorization)
 	// Providers can use annotations for decision-making (e.g., workload type selection)
 	// Example: {"core.opm.dev/workload-type": "stateless"}
-	annotations?: [string]: string
+	annotations?: #LabelsAnnotationsType
 	...
 }
 
@@ -120,8 +120,8 @@ import (
 #Modifier: #Element & {
 	kind: "modifier"
 
-	// Which elements this can modify
-	modifies!: #ElementArray
+	// Which primitive elements this modifies
+	modifies!: [...#Primitive]
 }
 
 // Custom element - special handling outside of OPM spec

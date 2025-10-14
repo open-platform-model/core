@@ -17,7 +17,8 @@ import (
 	healthCheck?:    #HealthCheckSpec
 	sidecarContainers?: [#ContainerSpec]
 	initContainers?: [#ContainerSpec]
-	volume: #VolumeSpec
+
+	serviceName?: string // Optional name of the service governing this stateful workload
 }
 
 /////////////////////////////////////////////////////////////////
@@ -32,12 +33,12 @@ import (
 	schema: #StatefulWorkloadSpec
 	composes: [
 		#ContainerElement,
+		#SidecarContainersElement,
+		#InitContainersElement,
 		#ReplicasElement,
 		#RestartPolicyElement,
 		#UpdateStrategyElement,
 		#HealthCheckElement,
-		#SidecarContainersElement,
-		#InitContainersElement,
 	]
 	annotations: {
 		"core.opm.dev/workload-type": "stateful"
@@ -48,5 +49,25 @@ import (
 
 #StatefulWorkload: close(opm.#Component & {
 	#elements: (#StatefulWorkloadElement.#fullyQualifiedName): #StatefulWorkloadElement
-	stateful: #StatefulWorkloadSpec
+	statefulWorkload: #StatefulWorkloadSpec
+
+	container: statefulWorkload.container
+	if statefulWorkload.sidecarContainers != _|_ {
+		sidecarContainers: statefulWorkload.sidecarContainers
+	}
+	if statefulWorkload.initContainers != _|_ {
+		initContainers: statefulWorkload.initContainers
+	}
+	if statefulWorkload.replicas != _|_ {
+		replicas: statefulWorkload.replicas
+	}
+	if statefulWorkload.restartPolicy != _|_ {
+		restartPolicy: statefulWorkload.restartPolicy
+	}
+	if statefulWorkload.updateStrategy != _|_ {
+		updateStrategy: statefulWorkload.updateStrategy
+	}
+	if statefulWorkload.healthCheck != _|_ {
+		healthCheck: statefulWorkload.healthCheck
+	}
 })

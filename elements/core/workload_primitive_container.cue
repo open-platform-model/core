@@ -35,7 +35,6 @@ import (
 
 // Volume mount specification
 #VolumeMountSpec: close(#VolumeSpec & {
-	name!:      string
 	mountPath!: string
 	subPath?:   string
 	readOnly?:  bool | *false
@@ -79,7 +78,10 @@ import (
 		...
 	}
 	description: "A container definition for workloads"
-	labels: {"core.opm.dev/category": "workload"}
+	labels: {
+		"core.opm.dev/category":             "workload"
+		"core.opm.dev/fully-qualified-name": "elements.opm.dev/core/v1alpha1.Container"
+	}
 }
 
 #Container: close(opm.#Component & {

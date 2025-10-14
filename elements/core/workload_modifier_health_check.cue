@@ -15,6 +15,14 @@ import (
 		port:   uint & >=1 & <=65535
 		scheme: "HTTP" | "HTTPS"
 	}
+	exec?: {
+		command: [...string]
+	}
+	initialDelaySeconds?: int | *0
+	periodSeconds?:       int | *10
+	timeoutSeconds?:      int | *1
+	successThreshold?:    int | *1
+	failureThreshold?:    int | *3
 }
 
 // Health check specification
