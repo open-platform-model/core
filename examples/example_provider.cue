@@ -110,7 +110,7 @@ import (
 		context:   opm.#ProviderContext
 
 		// Extract elements (simplified example)
-		let _workload = component.stateless
+		let _workload = component.statelessWorkload
 		let _sidecarContainers = component.sidecarContainers | *[]
 		let _initContainers = component.initContainers | *[]
 		let _replicas = component.replicas | *{count: 1}
@@ -153,7 +153,7 @@ import (
 		context:   opm.#ProviderContext
 
 		// Extract volumes
-		let _volumes = component.volumes
+		let _volumes = component.volume
 
 		output: [
 			for volumeName, volumeSpec in _volumes {
@@ -167,9 +167,9 @@ import (
 						annotations: context.unifiedAnnotations
 					}
 					spec: {
-						accessModes: volumeSpec.accessModes
-						resources: requests: storage: volumeSpec.size
-						storageClassName: volumeSpec.storageClass
+						accessModes: [volumeSpec.persistentClaim.accessMode]
+						resources: requests: storage: volumeSpec.persistentClaim.size
+						storageClassName: volumeSpec.persistentClaim.storageClass
 					}
 				}
 			},
