@@ -13,7 +13,7 @@ import (
 
 #Component: {
 	#kind:       "Component"
-	#apiVersion: "core.opm.dev/v1alpha1"
+	#apiVersion: "core.opm.dev/v0alpha1"
 	#metadata: {
 		#id!: string
 

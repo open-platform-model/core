@@ -25,7 +25,7 @@ import (
 // Add Update Strategy to component
 #UpdateStrategyElement: opm.#Modifier & {
 	name:        "UpdateStrategy"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #UpdateStrategySpec
 	modifies: []

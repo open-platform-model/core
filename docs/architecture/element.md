@@ -35,7 +35,7 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
 ```cue
 #Element: {
     name!:               string
-    #apiVersion:         string | *"core.opm.dev/v1alpha1"
+    #apiVersion:         string | *"core.opm.dev/v0alpha1"
     #fullyQualifiedName: "\(#apiVersion).\(name)"
 
     // What kind of element this is
@@ -68,7 +68,7 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
 - **schema**: OpenAPIv3-compatible schema defining configuration structure
 - **labels**: Optional metadata for categorization and filtering (e.g., `{"core.opm.dev/category": "workload"}`)
 - **annotations**: Optional behavior hints for providers (e.g., `{"core.opm.dev/workload-type": "stateless"}`)
-- **#fullyQualifiedName**: Global unique identifier (e.g., "core.opm.dev/v1alpha1.Container")
+- **#fullyQualifiedName**: Global unique identifier (e.g., "core.opm.dev/v0alpha1.Container")
 
 ---
 
@@ -470,7 +470,7 @@ Components are element compositions defined in [component.cue](../component.cue)
 ```cue
 #Component: {
     #kind:       "Component"
-    #apiVersion: "core.opm.dev/v1alpha1"
+    #apiVersion: "core.opm.dev/v0alpha1"
 
     #metadata: {
         #id!: string

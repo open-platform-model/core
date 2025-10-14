@@ -13,7 +13,7 @@ import (
 // Element validation happens at catalog level when provider is registered
 #Provider: {
 	#kind:       "Provider"
-	#apiVersion: "core.opm.dev/v1alpha1"
+	#apiVersion: "core.opm.dev/v0alpha1"
 	#metadata: {
 		name:        string // The name of the provider
 		description: string // A brief description of the provider
@@ -63,10 +63,10 @@ import (
 	#fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "k8s.io/api/apps/v1.Deployment"
 
 	// Required OPM primitive elements for this transformer to work
-	required: #ElementStringArray // e.g. ["elements.opm.dev/core/v1alpha1.Container"]
+	required: #ElementStringArray // e.g. ["elements.opm.dev/core/v0alpha1.Container"]
 
 	// Optional OPM modifier elements that can enhance the resource
-	optional: #ElementStringArray | *[] // e.g. ["elements.opm.dev/core/v1alpha1.Replicas", "elements.opm.dev/core/v1alpha1.HealthCheck"]
+	optional: #ElementStringArray | *[] // e.g. ["elements.opm.dev/core/v0alpha1.Replicas", "elements.opm.dev/core/v0alpha1.HealthCheck"]
 
 	// All element fully qualified names (required + optional)
 	#allTransformerElements: #ElementStringArray & list.Concat([required, optional])

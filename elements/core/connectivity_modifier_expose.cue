@@ -30,7 +30,7 @@ import (
 // TODO: Investigate if this should be a modifier or primitive or split into two elements
 #ExposeElement: opm.#Primitive & {
 	name:        "Expose"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema:      #ExposeSpec
 	description: "Expose component as a service"

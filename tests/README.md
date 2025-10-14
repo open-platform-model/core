@@ -70,11 +70,11 @@ Tests deterministic computations performed by CUE:
 ```cue
 test: {
     subject: #Element & {
-        #apiVersion: "v1alpha1"
+        #apiVersion: "v0alpha1"
         name: "Container"
     }
     // Test computed FQN
-    subject.#fullyQualifiedName: "core.opm.dev/v1alpha1.Container"
+    subject.#fullyQualifiedName: "core.opm.dev/v0alpha1.Container"
 }
 ```
 

@@ -200,7 +200,7 @@ templatingTests: {
 			moduleDefinition: _definition
 			values: {
 				for name, comp in moduleDefinition.components
-				if comp.#elements["core.opm.dev/v1alpha1.StatefulWorkload"] != _|_ {
+				if comp.#elements["core.opm.dev/v0alpha1.StatefulWorkload"] != _|_ {
 					"\(name)Storage": string | *"10Gi"
 				}
 			}

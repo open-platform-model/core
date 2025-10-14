@@ -35,7 +35,7 @@ import (
 // Volumes as Resources (claims, ephemeral, projected)
 #VolumeElement: opm.#Primitive & {
 	name:        "Volume"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	description: "A set of volume types for data storage and sharing"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}

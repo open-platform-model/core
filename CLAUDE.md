@@ -156,7 +156,7 @@ Elements are organized in a flat directory structure with schemas co-located:
 
    #PodSecurityElement: opm.#Primitive & {
        name: "PodSecurity"
-       #apiVersion: "elements.opm.dev/core/v1alpha1"
+       #apiVersion: "elements.opm.dev/core/v0alpha1"
        target: ["component"]
        schema: #PodSecuritySpec
        labels: {"core.opm.dev/category": "security"}
@@ -461,7 +461,7 @@ cue eval . -e '#SelectTransformer'
 
   ```cue
   #kind: "Provider"
-  #apiVersion: "core.opm.dev/v1alpha1"
+  #apiVersion: "core.opm.dev/v0alpha1"
   ```
 
 #### Constants and Types

@@ -28,7 +28,7 @@ import (
 
 #SimpleDatabaseElement: opm.#Composite & {
 	name:        "SimpleDatabase"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #SimpleDatabaseSpec
 	composes: [

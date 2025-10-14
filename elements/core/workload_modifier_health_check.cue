@@ -38,7 +38,7 @@ import (
 // Add Health Check to component
 #HealthCheckElement: opm.#Modifier & {
 	name:        "HealthCheck"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #HealthCheckSpec
 	modifies: []

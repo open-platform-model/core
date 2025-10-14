@@ -86,7 +86,7 @@ componentTests: {
 
 		// Should extract all primitives from StatelessWorkload
 		#primitiveElements: [
-			"elements.opm.dev/core/v1alpha1.Container",
+			"elements.opm.dev/core/v0alpha1.Container",
 		]
 	}
 
@@ -105,8 +105,8 @@ componentTests: {
 
 		// Should extract primitives from StatelessWorkload + Expose
 		#primitiveElements: [
-			"elements.opm.dev/core/v1alpha1.Container",
-			"elements.opm.dev/core/v1alpha1.Expose",
+			"elements.opm.dev/core/v0alpha1.Container",
+			"elements.opm.dev/core/v0alpha1.Expose",
 		]
 	}
 
@@ -123,7 +123,7 @@ componentTests: {
 
 		// Should extract just the primitive
 		#primitiveElements: [
-			"elements.opm.dev/core/v1alpha1.Container",
+			"elements.opm.dev/core/v0alpha1.Container",
 		]
 	}
 

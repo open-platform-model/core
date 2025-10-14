@@ -20,7 +20,7 @@ import (
 // Add Restart Policy to component
 #RestartPolicyElement: opm.#Modifier & {
 	name:        "RestartPolicy"
-	#apiVersion: "elements.opm.dev/core/v1alpha1"
+	#apiVersion: "elements.opm.dev/core/v0alpha1"
 	target: ["component"]
 	schema: #RestartPolicySpec
 	modifies: []
