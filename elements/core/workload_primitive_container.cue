@@ -75,12 +75,10 @@ import (
 	schema: #ContainerSpec
 	annotations?: {
 		"core.opm.dev/workload-type"?: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
-		...
 	}
 	description: "A container definition for workloads"
 	labels: {
 		"core.opm.dev/category":             "workload"
-		"core.opm.dev/fully-qualified-name": "elements.opm.dev/core/v0alpha1.Container"
 	}
 }
 
