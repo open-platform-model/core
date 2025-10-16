@@ -11,7 +11,7 @@ import (
 #Element: {
 	name!:               string & strings.MinRunes(1) & strings.MaxRunes(254)
 	#nameCamel:          strings.ToCamel(name)
-	#apiVersion:         string | *"core.opm.dev/v0alpha1"
+	#apiVersion:         string | *"core.opm.dev/v0"
 	#fullyQualifiedName: "\(#apiVersion).\(name)"
 
 	// What kind of element this is

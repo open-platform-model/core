@@ -6,7 +6,7 @@ package core
 
 #Scope: {
 	#kind:       "Scope"
-	#apiVersion: "core.opm.dev/v0alpha1"
+	#apiVersion: "core.opm.dev/v0"
 	#metadata: {
 		#id!: string
 

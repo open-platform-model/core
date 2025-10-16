@@ -28,7 +28,7 @@ import (
 // Stateful workload - A containerized workload that requires stable identity and storage
 #StatefulWorkloadElement: opm.#Composite & {
 	name:        "StatefulWorkload"
-	#apiVersion: "elements.opm.dev/core/v0alpha1"
+	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
 	schema: #StatefulWorkloadSpec
 	composes: [

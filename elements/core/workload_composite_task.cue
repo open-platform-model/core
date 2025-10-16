@@ -29,7 +29,7 @@ import (
 // Task workload - A containerized workload that runs to completion
 #TaskWorkloadElement: opm.#Composite & {
 	name:        "TaskWorkload"
-	#apiVersion: "elements.opm.dev/core/v0alpha1"
+	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
 	schema: #TaskWorkloadSpec
 	composes: [

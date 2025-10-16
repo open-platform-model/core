@@ -232,7 +232,7 @@ values: {
     }
 
     for name, comp in moduleDefinition.components
-    if comp.#elements["core.opm.dev/v0alpha1.StatefulWorkload"] != _|_ {
+    if comp.#elements["core.opm.dev/v0.StatefulWorkload"] != _|_ {
         "\(name)StorageSize": string | *"10Gi"
     }
 }

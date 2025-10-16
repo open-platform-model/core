@@ -20,7 +20,7 @@ import (
 // ConfigMaps as Resources
 #ConfigMapElement: opm.#Primitive & {
 	name:        "ConfigMap"
-	#apiVersion: "elements.opm.dev/core/v0alpha1"
+	#apiVersion: "elements.opm.dev/core/v0"
 	description: "Key-value pairs for configuration data"
 	target: ["component"]
 	labels: {"core.opm.dev/category": "data"}

@@ -95,14 +95,14 @@ import (
 	#apiVersion: "k8s.io/api/apps/v1"
 
 	// This transformer specifically handles StatelessWorkload primitive
-	required: ["elements.opm.dev/core/v0alpha1.Container"]
+	required: ["elements.opm.dev/core/v0.Container"]
 	optional: [
-		"elements.opm.dev/core/v0alpha1.SidecarContainers",
-		"elements.opm.dev/core/v0alpha1.InitContainers",
-		"elements.opm.dev/core/v0alpha1.Replicas",
-		"elements.opm.dev/core/v0alpha1.RestartPolicy",
-		"elements.opm.dev/core/v0alpha1.UpdateStrategy",
-		"elements.opm.dev/core/v0alpha1.HealthCheck",
+		"elements.opm.dev/core/v0.SidecarContainers",
+		"elements.opm.dev/core/v0.InitContainers",
+		"elements.opm.dev/core/v0.Replicas",
+		"elements.opm.dev/core/v0.RestartPolicy",
+		"elements.opm.dev/core/v0.UpdateStrategy",
+		"elements.opm.dev/core/v0.HealthCheck",
 	]
 
 	transform: {
@@ -145,7 +145,7 @@ import (
 	#apiVersion: "k8s.io/api/core/v1"
 
 	// This transformer specifically handles Volume primitive
-	required: ["elements.opm.dev/core/v0alpha1.Volume"]
+	required: ["elements.opm.dev/core/v0.Volume"]
 	optional: []
 
 	transform: {

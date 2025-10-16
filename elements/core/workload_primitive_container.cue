@@ -70,7 +70,7 @@ import (
 // Container - Defines a container within a workload
 #ContainerElement: opm.#Primitive & {
 	name:        "Container"
-	#apiVersion: "elements.opm.dev/core/v0alpha1"
+	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
 	schema: #ContainerSpec
 	annotations?: {

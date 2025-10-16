@@ -26,7 +26,7 @@ import (
 // Stateless workload - A horizontally scalable containerized workload with no requirement for stable identity or storage
 #StatelessWorkloadElement: opm.#Composite & {
 	name:        "StatelessWorkload"
-	#apiVersion: "elements.opm.dev/core/v0alpha1"
+	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
 	schema: #StatelessSpec
 	composes: [

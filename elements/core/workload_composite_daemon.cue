@@ -25,7 +25,7 @@ import (
 // Daemon workload - A containerized workload that runs on all (or some) nodes in the cluster
 #DaemonWorkloadElement: opm.#Composite & {
 	name:        "DaemonWorkload"
-	#apiVersion: "elements.opm.dev/core/v0alpha1"
+	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
 	schema: #DaemonSpec
 	composes: [

@@ -29,7 +29,7 @@ import (
 // ScheduledTask workload - A containerized workload that runs on a schedule
 #ScheduledTaskWorkloadElement: opm.#Composite & {
 	name:        "ScheduledTaskWorkload"
-	#apiVersion: "elements.opm.dev/core/v0alpha1"
+	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
 	schema: #ScheduledTaskWorkloadSpec
 	composes: [

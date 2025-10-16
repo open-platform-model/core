@@ -14,25 +14,25 @@ elementTests: {
 	// Test: Container element fullyQualifiedName
 	"element/container-fqn": {
 		result: core.#ContainerElement.#fullyQualifiedName
-		result: "elements.opm.dev/core/v0alpha1.Container"
+		result: "elements.opm.dev/core/v0.Container"
 	}
 
 	// Test: StatelessWorkload element fullyQualifiedName
 	"element/stateless-fqn": {
 		result: core.#StatelessWorkloadElement.#fullyQualifiedName
-		result: "elements.opm.dev/core/v0alpha1.StatelessWorkload"
+		result: "elements.opm.dev/core/v0.StatelessWorkload"
 	}
 
 	// Test: StatefulWorkload element fullyQualifiedName
 	"element/stateful-fqn": {
 		result: core.#StatefulWorkloadElement.#fullyQualifiedName
-		result: "elements.opm.dev/core/v0alpha1.StatefulWorkload"
+		result: "elements.opm.dev/core/v0.StatefulWorkload"
 	}
 
 	// Test: SimpleDatabase element fullyQualifiedName
 	"element/simple-database-fqn": {
 		result: core.#SimpleDatabaseElement.#fullyQualifiedName
-		result: "elements.opm.dev/core/v0alpha1.SimpleDatabase"
+		result: "elements.opm.dev/core/v0.SimpleDatabase"
 	}
 
 	// Test: Container element camelCase name
@@ -67,7 +67,7 @@ elementTests: {
 	"composite/stateless-primitives": {
 		result: core.#StatelessWorkloadElement.#primitiveElements
 		result: [
-			"elements.opm.dev/core/v0alpha1.Container",
+			"elements.opm.dev/core/v0.Container",
 		]
 	}
 
@@ -75,7 +75,7 @@ elementTests: {
 	"composite/stateful-primitives": {
 		result: core.#StatefulWorkloadElement.#primitiveElements
 		result: [
-			"elements.opm.dev/core/v0alpha1.Container",
+			"elements.opm.dev/core/v0.Container",
 		]
 	}
 
@@ -83,8 +83,8 @@ elementTests: {
 	"composite/simple-database-primitives": {
 		result: core.#SimpleDatabaseElement.#primitiveElements
 		result: [
-			"elements.opm.dev/core/v0alpha1.Container",
-			"elements.opm.dev/core/v0alpha1.Volume",
+			"elements.opm.dev/core/v0.Container",
+			"elements.opm.dev/core/v0.Volume",
 		]
 	}
 
@@ -92,7 +92,7 @@ elementTests: {
 	"composite/daemon-primitives": {
 		result: core.#DaemonWorkloadElement.#primitiveElements
 		result: [
-			"elements.opm.dev/core/v0alpha1.Container",
+			"elements.opm.dev/core/v0.Container",
 		]
 	}
 
@@ -100,7 +100,7 @@ elementTests: {
 	"composite/task-primitives": {
 		result: core.#TaskWorkloadElement.#primitiveElements
 		result: [
-			"elements.opm.dev/core/v0alpha1.Container",
+			"elements.opm.dev/core/v0.Container",
 		]
 	}
 
@@ -108,7 +108,7 @@ elementTests: {
 	"composite/scheduled-task-primitives": {
 		result: core.#ScheduledTaskWorkloadElement.#primitiveElements
 		result: [
-			"elements.opm.dev/core/v0alpha1.Container",
+			"elements.opm.dev/core/v0.Container",
 		]
 	}
 
