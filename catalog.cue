@@ -5,8 +5,16 @@ import (
 )
 
 /////////////////////////////////////////////////////////////////
+//// Element Registry
+/////////////////////////////////////////////////////////////////
+
+#ElementRegistry: #ElementMap
+
+/////////////////////////////////////////////////////////////////
 //// Platform Catalog
 /////////////////////////////////////////////////////////////////
+
+#ProviderMap: [string]: #Provider
 
 // PlatformCatalog represents a platform's capability registry
 // It tracks available elements, providers, and registered modules
@@ -29,7 +37,7 @@ import (
 	// Available providers for this platform
 	// Maps provider name to provider definition
 	// Providers are validated against availableElements when registered
-	providers!: [string]: #Provider
+	providers!: #ProviderMap
 
 	// Compute supported elements for each provider based on catalog
 	#providerCapabilities: {
