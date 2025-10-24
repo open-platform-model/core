@@ -107,36 +107,15 @@ command: render: {
 		text: "🚀 Rendering module '\(module)'..."
 	}
 
-	// Handle RAW output
-	raw: {
-		if _output.raw != _|_ {
-			$after: start
-
-			print: cli.Print & {
-				text: "  Raw output available (use 'cue cmd show' to view)"
-			}
-		}
-	}
-
-	// Handle FILES output
-	files: {
-		if _output.files != _|_ {
-			$after: start
-
-			print: cli.Print & {
-				text: "  Files output available (use 'cue cmd show' to view)"
-			}
-		}
-	}
-
 	// Final summary
 	summary: cli.Print & {
-		$after: [raw, files, start]
+		$after: start
 		text: """
 
 			✅ Rendering complete!
 			Module: \(module)
-			Output: \(outdir)/
+
+			Use 'cue cmd show -t module=\(module)' to view the output.
 			"""
 	}
 }
