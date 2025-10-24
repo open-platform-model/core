@@ -51,7 +51,7 @@ cue vet -c=false .
 cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp --out yaml
 
 # Export just components
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.#allComponents --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.components --out yaml
 
 # Evaluate (shows structure with incomplete values)
 cue eval ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp
@@ -128,10 +128,10 @@ Complete e-commerce platform with multiple tiers:
 
 ```bash
 # View frontend component
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e ecommerceApp.#allComponents.frontend --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e ecommerceApp.components.frontend --out yaml
 
 # View database component
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e ecommerceApp.#allComponents.database --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e ecommerceApp.components.database --out yaml
 
 # See production overrides
 cue cmd values -t name=ecommerceApp
@@ -168,10 +168,10 @@ Observability stack with metrics and logging:
 
 ```bash
 # View metrics server
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e monitoringStack.#allComponents.metricsServer --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e monitoringStack.components.metricsServer --out yaml
 
 # View log collector (daemon)
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e monitoringStack.#allComponents.logCollector --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e monitoringStack.components.logCollector --out yaml
 
 # See production configuration
 cue cmd values -t name=monitoringStack
@@ -301,13 +301,13 @@ myAppRelease: opm.#ModuleRelease & {
 
 ```bash
 # See all components in a module
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.#allComponents --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.components --out yaml
 
 # See specific component
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.#allComponents.web --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.components.web --out yaml
 
 # See component metadata
-cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.#allComponents.web.#metadata --out yaml
+cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.components.web.#metadata --out yaml
 
 # See primitive elements used
 cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e myApp.#allPrimitiveElements
@@ -335,7 +335,7 @@ cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitori
 
 # Export all components separately
 for comp in web db auditLogging; do
-  cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e "myApp.#allComponents.$comp" --out yaml > "deploy/$comp.yaml"
+  cue export ./example_simple_app.cue, example_ecommerce_app.cue, example_monitoring_stack.cue -e "myApp.components.$comp" --out yaml > "deploy/$comp.yaml"
 done
 
 # Export as JSON for API consumption
