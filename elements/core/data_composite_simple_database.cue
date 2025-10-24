@@ -35,15 +35,18 @@ import (
 		#StatefulWorkloadElement,
 		#VolumeElement,
 	]
-	annotations: {
+	description: "Composite trait to add a simple database to a component"
+	labels: {
+		"core.opm.dev/category":      "data"
 		"core.opm.dev/workload-type": "stateful"
 	}
-	description: "Composite trait to add a simple database to a component"
-	labels: {"core.opm.dev/category": "data"}
 }
 
 #SimpleDatabase: close(opm.#Component & {
 	#elements: (#SimpleDatabaseElement.#fullyQualifiedName): #SimpleDatabaseElement
+
+	#StatefulWorkload
+	#Volume
 
 	simpleDatabase: #SimpleDatabaseSpec
 

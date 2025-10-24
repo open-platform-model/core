@@ -32,13 +32,13 @@ import (
 	#metadata: _
 	#elements: (#RestartPolicyElement.#fullyQualifiedName): #RestartPolicyElement
 	restartPolicy: #RestartPolicySpec
-	if #metadata.workloadType == "stateless" || #metadata.workloadType == "stateful" || #metadata.workloadType == "daemon" {
+	if #metadata.labels["core.opm.dev/workload-type"] == "stateless" || #metadata.labels["core.opm.dev/workload-type"] == "stateful" || #metadata.labels["core.opm.dev/workload-type"] == "daemon" {
 		// Stateless workloads default to Always
 		restartPolicy: #RestartPolicySpec & {
 			policy: "Always"
 		}
 	}
-	if #metadata.workloadType == "task" || #metadata.workloadType == "scheduled-task" {
+	if #metadata.labels["core.opm.dev/workload-type"] == "task" || #metadata.labels["core.opm.dev/workload-type"] == "scheduled-task" {
 		// Task workloads default to OnFailure
 		restartPolicy: #RestartPolicySpec & {
 			policy: "OnFailure" | "Never" | *"Never"

@@ -72,13 +72,11 @@ import (
 	name:        "Container"
 	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
-	schema: #ContainerSpec
-	annotations?: {
-		"core.opm.dev/workload-type"?: "stateless" | "stateful" | "daemon" | "task" | "scheduled-task"
-	}
+	schema:      #ContainerSpec
 	description: "A container definition for workloads"
 	labels: {
-		"core.opm.dev/category":             "workload"
+		"core.opm.dev/category": "workload"
+		// Note: workload-type is determined by the composite element that includes this primitive
 	}
 }
 

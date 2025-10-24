@@ -37,20 +37,20 @@ import (
 	#metadata: _
 	#elements: (#UpdateStrategyElement.#fullyQualifiedName): #UpdateStrategyElement
 	updateStrategy: #UpdateStrategySpec & {
-		if #metadata.workloadType == "stateless" {
+		if #metadata.labels["core.opm.dev/workload-type"] == "stateless" {
 			type: "RollingUpdate" | "Recreate" | *"RollingUpdate"
 			rollingUpdate?: {
 				maxUnavailable: int | *1
 				maxSurge:       int | *1
 			}
 		}
-		if #metadata.workloadType == "stateful" {
+		if #metadata.labels["core.opm.dev/workload-type"] == "stateful" {
 			type: "RollingUpdate" | "OnDelete" | *"RollingUpdate"
 			rollingUpdate?: {
 				partition: int | *0
 			}
 		}
-		if #metadata.workloadType == "daemon" {
+		if #metadata.labels["core.opm.dev/workload-type"] == "daemon" {
 			type: "RollingUpdate" | "OnDelete" | *"RollingUpdate"
 			rollingUpdate: {
 				maxUnavailable: int | *1

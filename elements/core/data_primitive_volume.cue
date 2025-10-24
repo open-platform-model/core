@@ -10,9 +10,9 @@ import (
 
 // Persistent claim specification
 #PersistentClaimSpec: {
-	size:          string
-	accessMode:    "ReadWriteOnce" | "ReadOnlyMany" | "ReadWriteMany" | *"ReadWriteOnce"
-	storageClass?: string | *"standard"
+	size:         string
+	accessMode:   "ReadWriteOnce" | "ReadOnlyMany" | "ReadWriteMany" | *"ReadWriteOnce"
+	storageClass: string | *"standard"
 }
 
 // Volume specification

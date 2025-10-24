@@ -38,15 +38,22 @@ import (
 		#InitContainersElement,
 		#RestartPolicyElement,
 	]
-	annotations: {
+	description: "A scheduled task workload that runs on a schedule"
+	labels: {
+		"core.opm.dev/category":      "workload"
 		"core.opm.dev/workload-type": "scheduled-task"
 	}
-	description: "A scheduled task workload that runs on a schedule"
-	labels: {"core.opm.dev/category": "workload"}
 }
 
 #ScheduledTaskWorkload: close(opm.#Component & {
 	#elements: (#ScheduledTaskWorkloadElement.#fullyQualifiedName): #ScheduledTaskWorkloadElement
+
+	// Add composed elements
+	#Container
+	#SidecarContainers
+	#InitContainers
+	#RestartPolicy
+
 	scheduledTaskWorkload: #ScheduledTaskWorkloadSpec
 
 	container: scheduledTaskWorkload.container

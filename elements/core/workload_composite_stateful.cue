@@ -40,15 +40,25 @@ import (
 		#UpdateStrategyElement,
 		#HealthCheckElement,
 	]
-	annotations: {
+	description: "A stateful workload that requires stable identity and storage"
+	labels: {
+		"core.opm.dev/category":      "workload"
 		"core.opm.dev/workload-type": "stateful"
 	}
-	description: "A stateful workload that requires stable identity and storage"
-	labels: {"core.opm.dev/category": "workload"}
 }
 
 #StatefulWorkload: close(opm.#Component & {
 	#elements: (#StatefulWorkloadElement.#fullyQualifiedName): #StatefulWorkloadElement
+
+	// Add composed elements
+	#Container
+	#SidecarContainers
+	#InitContainers
+	#Replicas
+	#RestartPolicy
+	#UpdateStrategy
+	#HealthCheck
+
 	statefulWorkload: #StatefulWorkloadSpec
 
 	container: statefulWorkload.container

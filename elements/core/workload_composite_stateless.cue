@@ -39,14 +39,24 @@ import (
 		#HealthCheckElement,
 	]
 	description: "A stateless workload with no requirement for stable identity or storage"
-	annotations: {
+	labels: {
+		"core.opm.dev/category":      "workload"
 		"core.opm.dev/workload-type": "stateless"
 	}
-	labels: {"core.opm.dev/category": "workload"}
 }
 
 #StatelessWorkload: close(opm.#Component & {
 	#elements: (#StatelessWorkloadElement.#fullyQualifiedName): #StatelessWorkloadElement
+
+	// Add composed elements
+	#Container
+	#SidecarContainers
+	#InitContainers
+	#Replicas
+	#RestartPolicy
+	#UpdateStrategy
+	#HealthCheck
+
 	statelessWorkload: #StatelessSpec
 
 	container: statelessWorkload.container

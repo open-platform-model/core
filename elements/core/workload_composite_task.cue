@@ -39,14 +39,21 @@ import (
 		#RestartPolicyElement,
 	]
 	description: "A task workload that runs to completion"
-	annotations: {
+	labels: {
+		"core.opm.dev/category":      "workload"
 		"core.opm.dev/workload-type": "task"
 	}
-	labels: {"core.opm.dev/category": "workload"}
 }
 
 #TaskWorkload: close(opm.#Component & {
 	#elements: (#TaskWorkloadElement.#fullyQualifiedName): #TaskWorkloadElement
+
+	// Add composed elements
+	#Container
+	#SidecarContainers
+	#InitContainers
+	#RestartPolicy
+
 	taskWorkload: #TaskWorkloadSpec
 
 	container: taskWorkload.container

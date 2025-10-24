@@ -36,15 +36,24 @@ import (
 		#UpdateStrategyElement,
 		#HealthCheckElement,
 	]
-	annotations: {
+	description: "A daemonSet workload that runs on all (or some) nodes in the cluster"
+	labels: {
+		"core.opm.dev/category":      "workload"
 		"core.opm.dev/workload-type": "daemon"
 	}
-	description: "A daemonSet workload that runs on all (or some) nodes in the cluster"
-	labels: {"core.opm.dev/category": "workload"}
 }
 
 #DaemonWorkload: close(opm.#Component & {
 	#elements: (#DaemonWorkloadElement.#fullyQualifiedName): #DaemonWorkloadElement
+
+	// Add composed elements
+	#Container
+	#SidecarContainers
+	#InitContainers
+	#RestartPolicy
+	#UpdateStrategy
+	#HealthCheck
+
 	daemonWorkload: #DaemonSpec
 
 	container: daemonWorkload.container
