@@ -75,23 +75,23 @@ scenarioTests: {
 		}
 
 		// Validate platform default applied to web component
-		result: _release.module.#allComponents.web.container.image
+		result: _release.module.components.web.container.image
 		result: "nginx:1.25"
 
 		// Validate platform default for replicas
-		result2: _release.module.#allComponents.web.replicas.count
+		result2: _release.module.components.web.replicas.count
 		result2: 10
 
 		// Validate original definition component preserved
-		result3: _release.module.#allComponents.api.container.image
+		result3: _release.module.components.api.container.image
 		result3: "api:v1"
 
 		// Validate original definition component preserved
-		result4: _release.module.#allComponents.db.container.image
+		result4: _release.module.components.db.container.image
 		result4: "postgres:15"
 
 		// Validate platform-added monitoring component
-		result5: _release.module.#allComponents.monitoring.container.image
+		result5: _release.module.components.monitoring.container.image
 		result5: "prometheus:latest"
 
 		// Validate total includes both definition (3) and platform (1) components
@@ -163,19 +163,19 @@ scenarioTests: {
 		}
 
 		// Validate user value override for database name
-		result: _release.module.#allComponents.db.statefulWorkload.container.env.DB_NAME.value
+		result: _release.module.components.db.statefulWorkload.container.env.DB_NAME.value
 		result: "production-db"
 
 		// Validate user value override for database user
-		result2: _release.module.#allComponents.db.statefulWorkload.container.env.DB_USER.value
+		result2: _release.module.components.db.statefulWorkload.container.env.DB_USER.value
 		result2: "produser"
 
 		// Validate user override for volume size (100Gi instead of default 10Gi)
-		result3: _release.module.#allComponents.db.volume.dbData.persistentClaim.size
+		result3: _release.module.components.db.volume.dbData.persistentClaim.size
 		result3: "100Gi"
 
 		// Validate user override for storage class (fast-ssd instead of default standard)
-		result4: _release.module.#allComponents.db.volume.dbData.persistentClaim.storageClass
+		result4: _release.module.components.db.volume.dbData.persistentClaim.storageClass
 		result4: "fast-ssd"
 	}
 
@@ -258,19 +258,19 @@ scenarioTests: {
 		}
 
 		// Validate platform default for image applied
-		result: _release.module.#allComponents.frontend.container.image
+		result: _release.module.components.frontend.container.image
 		result: "nginx:1.25"
 
 		// Validate platform default for replicas applied (overrides element default of 1)
-		result2: _release.module.#allComponents.frontend.replicas.count
+		result2: _release.module.components.frontend.replicas.count
 		result2: 5
 
 		// Validate platform default for expose type applied (LoadBalancer overrides element default ClusterIP)
-		result3: _release.module.#allComponents.frontend.expose.type
+		result3: _release.module.components.frontend.expose.type
 		result3: "LoadBalancer"
 
 		// Validate health check configuration from definition
-		result4: _release.module.#allComponents.frontend.healthCheck.liveness.httpGet.path
+		result4: _release.module.components.frontend.healthCheck.liveness.httpGet.path
 		result4: "/"
 	}
 
@@ -341,11 +341,11 @@ scenarioTests: {
 		}
 
 		// Validate api component configuration preserved
-		result: _release.module.#allComponents.api.container.image
+		result: _release.module.components.api.container.image
 		result: "api:v1"
 
 		// Validate worker component configuration preserved
-		result2: _release.module.#allComponents.worker.container.image
+		result2: _release.module.components.worker.container.image
 		result2: "worker:v1"
 
 		// Validate both components counted

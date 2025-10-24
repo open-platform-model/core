@@ -52,11 +52,11 @@ compositionTests: {
 		}
 
 		// Validate definition component preserved in unified view
-		result: _module.#allComponents.web.container.image
+		result: _module.components.web.container.image
 		result: "nginx:latest"
 
 		// Validate platform-added component in unified view
-		result2: _module.#allComponents.monitoring.container.image
+		result2: _module.components.monitoring.container.image
 		result2: "prometheus:latest"
 
 		// Validate total count includes both definition and platform components

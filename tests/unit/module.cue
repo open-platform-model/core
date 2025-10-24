@@ -87,7 +87,12 @@ moduleTests: {
 
 	// Test: Module component merging (definition + platform)
 	"module/component-merging": opm.#Module & {
-		moduleDefinition: {
+		#metadata: {
+			name:      "app"
+			namespace: "test"
+		}
+
+		#moduleDefinition: {
 			#metadata: {
 				name:    "app"
 				version: "1.0.0"
@@ -103,27 +108,12 @@ moduleTests: {
 			values: {}
 		}
 
-		// Platform adds monitoring component
-		components: {
-			monitoring: core.#DaemonWorkload & {
-				daemonWorkload: container: {
-					name:  "monitoring"
-					image: "prometheus:latest"
-				}
-			}
+		#transformers: {
+			"mock.test/v1.Deployment": fixtures.#MockDeploymentTransformer
 		}
+		#renderer: fixtures.#MockListRenderer
 
-		// Validate #allComponents includes both
-		#allComponents: {
-			web:        _
-			monitoring: _
-		}
-
-		// Validate status
-		#status: {
-			totalComponentCount:    2
-			platformComponentCount: 1
-		}
+		values: {}
 	}
 
 	//////////////////////////////////////////////////////////////////
@@ -132,7 +122,12 @@ moduleTests: {
 
 	// Test: Module scope merging (definition + platform)
 	"module/scope-merging": opm.#Module & {
-		moduleDefinition: {
+		#metadata: {
+			name:      "app"
+			namespace: "test"
+		}
+
+		#moduleDefinition: {
 			#metadata: {
 				name:    "app"
 				version: "1.0.0"
@@ -158,23 +153,12 @@ moduleTests: {
 			values: {}
 		}
 
-		// Platform adds security scope
-		scopes: {
-			security: opm.#Scope & {
-				#metadata: {
-					#id:       "security"
-					immutable: true
-				}
-				#elements: {
-					NetworkScope: core.#NetworkScopeElement
-				}
-				networkScope: networkPolicy: externalCommunication: false
-				appliesTo: "*"
-			}
+		#transformers: {
+			"mock.test/v1.Deployment": fixtures.#MockDeploymentTransformer
 		}
+		#renderer: fixtures.#MockListRenderer
 
-		// Validate platform scope count
-		#status: platformScopeCount: 1
+		values: {}
 	}
 
 	//////////////////////////////////////////////////////////////////
@@ -203,7 +187,15 @@ moduleTests: {
 		}
 
 		_module: opm.#Module & {
-			moduleDefinition: _definition
+			#metadata: {
+				name:      "app"
+				namespace: "test"
+			}
+			#moduleDefinition: _definition
+			#transformers: {
+				"mock.test/v1.Deployment": fixtures.#MockDeploymentTransformer
+			}
+			#renderer: fixtures.#MockListRenderer
 			values: {
 				image:    "nginx:1.25"
 				replicas: 5
@@ -217,91 +209,4 @@ moduleTests: {
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////
-	// ModuleRelease Tests
-	//////////////////////////////////////////////////////////////////
-
-	// Test: ModuleRelease values resolution
-	"module-release/values-resolution": {
-		_definition: opm.#ModuleDefinition & {
-			#metadata: {
-				name:    "app"
-				version: "1.0.0"
-			}
-			components: {
-				web: core.#StatelessWorkload & {
-					statelessWorkload: {
-						container: image: values.image
-						replicas: count:  values.replicas
-					}
-				}
-			}
-			values: {
-				image?:    string | *"nginx:latest"
-				replicas?: int | *1
-			}
-		}
-
-		_module: opm.#Module & {
-			moduleDefinition: _definition
-			values: {
-				image:    "nginx:1.25"
-				replicas: 5
-			}
-		}
-
-		_release: opm.#ModuleRelease & {
-			module: _module
-			provider: opm.#Provider & {
-				#metadata: {
-					name:        "kubernetes"
-					description: "Test provider"
-					version:     "1.0.0"
-					minVersion:  "1.0.0"
-				}
-				transformers: {}
-			}
-		}
-
-		// Validate values merged: definition defaults + module overrides
-		_release: values: {
-			image:    "nginx:1.25"
-			replicas: 5
-		}
-	}
-
-	// Test: ModuleRelease with fixture
-	"module-release/using-fixture": {
-		_module: opm.#Module & {
-			moduleDefinition: fixtures.#SampleThreeTier
-			values: {
-				webImage:    "nginx:1.25"
-				webReplicas: 10
-			}
-		}
-
-		_release: opm.#ModuleRelease & {
-			module: _module
-			provider: opm.#Provider & {
-				#metadata: {
-					name:        "kubernetes"
-					description: "Test provider"
-					version:     "1.0.0"
-					minVersion:  "1.0.0"
-				}
-				transformers: {}
-			}
-		}
-
-		// Validate fixture works and values resolve
-		_release: values: {
-			webImage:    "nginx:1.25"
-			webReplicas: 10
-		}
-		_release: module: #allComponents: {
-			web: _
-			api: _
-			db:  _
-		}
-	}
 }

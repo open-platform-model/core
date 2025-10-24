@@ -146,3 +146,116 @@ import (
 		webReplicas: int
 	}
 }
+
+/////////////////////////////////////////////////////////////////
+//// Mock Transformers
+/////////////////////////////////////////////////////////////////
+
+// Mock Deployment transformer for testing
+#MockDeploymentTransformer: opm.#Transformer & {
+	#kind:       "Deployment"
+	#apiVersion: "mock.test/v1"
+	required: ["elements.opm.dev/core/v0.Container"]
+	optional: ["elements.opm.dev/core/v0.Replicas"]
+
+	transform: {
+		#component: opm.#Component
+		#context:   opm.#TransformerContext
+
+		// Returns a list with a single Deployment
+		output: [{
+			apiVersion: "apps/v1"
+			kind:       "Deployment"
+			metadata: {
+				name:      #context.componentMetadata.name
+				namespace: #context.namespace
+			}
+			spec: {
+				replicas: (#component.replicas | *{count: 1}).count
+				template: spec: containers: [#component.container]
+			}
+		}]
+	}
+}
+
+// Mock Service transformer for testing
+#MockServiceTransformer: opm.#Transformer & {
+	#kind:       "Service"
+	#apiVersion: "mock.test/v1"
+	required: ["elements.opm.dev/core/v0.Container"]
+	optional: []
+
+	transform: {
+		#component: opm.#Component
+		#context:   opm.#TransformerContext
+
+		// Returns a list with a single Service
+		output: [{
+			apiVersion: "v1"
+			kind:       "Service"
+			metadata: {
+				name:      #context.componentMetadata.name
+				namespace: #context.namespace
+			}
+			spec: {
+				selector: app: #context.componentMetadata.name
+				ports: [{
+					port:       80
+					targetPort: 8080
+				}]
+			}
+		}]
+	}
+}
+
+/////////////////////////////////////////////////////////////////
+//// Mock Renderers
+/////////////////////////////////////////////////////////////////
+
+// Mock List renderer for testing
+#MockListRenderer: opm.#Renderer & {
+	#metadata: {
+		name:        "mock-list"
+		description: "Mock list renderer for tests"
+		version:     "1.0.0"
+	}
+	targetPlatform: "mock"
+
+	// New renderer pattern - function-style
+	render: {
+		resources: [...{...}]
+		output: {
+			manifest: {
+				kind:  "MockList"
+				items: resources
+			}
+			metadata: {
+				format: "yaml"
+			}
+		}
+	}
+}
+
+// Mock Files renderer for testing
+#MockFilesRenderer: opm.#Renderer & {
+	#metadata: {
+		name:        "mock-files"
+		description: "Mock files renderer for tests"
+		version:     "1.0.0"
+	}
+	targetPlatform: "mock"
+
+	// New renderer pattern - function-style
+	render: {
+		resources: [...{...}]
+		output: {
+			files: {
+				"resources.yaml": resources
+			}
+			metadata: {
+				format:     "yaml"
+				entrypoint: "resources.yaml"
+			}
+		}
+	}
+}

@@ -123,7 +123,7 @@ test: {
         components: monitoring: #DaemonWorkload
     }
     // Test aggregation
-    subject.#allComponents: {web: _, monitoring: _}
+    subject.components: {web: _, monitoring: _}
     subject.#status.totalComponentCount: 2
 }
 ```

@@ -12,11 +12,15 @@ componentTests: {
 	// Workload Type Derivation
 	//////////////////////////////////////////////////////////////////
 
-	// Test: Stateless workload type derivation
+	// Test: Stateless workload type label (derived from element)
 	"component/workload-type-stateless": opm.#Component & {
 		#metadata: {
-			#id:          "web"
-			workloadType: "stateless"
+			#id: "web"
+
+			// workload-type label is automatically derived from StatelessWorkloadElement
+			labels: {
+				"core.opm.dev/workload-type": "stateless"
+			}
 		}
 		#elements: {
 			StatelessWorkload: core.#StatelessWorkloadElement
@@ -27,11 +31,15 @@ componentTests: {
 		}
 	}
 
-	// Test: Stateful workload type derivation
+	// Test: Stateful workload type label (derived from element)
 	"component/workload-type-stateful": opm.#Component & {
 		#metadata: {
-			#id:          "db"
-			workloadType: "stateful"
+			#id: "db"
+
+			// workload-type label is automatically derived from StatefulWorkloadElement
+			labels: {
+				"core.opm.dev/workload-type": "stateful"
+			}
 		}
 		#elements: {
 			StatefulWorkload: core.#StatefulWorkloadElement
@@ -42,11 +50,15 @@ componentTests: {
 		}
 	}
 
-	// Test: Daemon workload type derivation
+	// Test: Daemon workload type label (derived from element)
 	"component/workload-type-daemon": opm.#Component & {
 		#metadata: {
-			#id:          "logger"
-			workloadType: "daemon"
+			#id: "logger"
+
+			// workload-type label is automatically derived from DaemonWorkloadElement
+			labels: {
+				"core.opm.dev/workload-type": "daemon"
+			}
 		}
 		#elements: {
 			DaemonWorkload: core.#DaemonWorkloadElement
@@ -57,11 +69,11 @@ componentTests: {
 		}
 	}
 
-	// Test: Empty workload type for non-workload components
+	// Test: No workload type for non-workload components
 	"component/workload-type-empty": opm.#Component & {
 		#metadata: {
-			#id:          "config"
-			workloadType: ""
+			#id: "config"
+			// No workload-type label for non-workload components
 		}
 		#elements: {
 			ConfigMap: core.#ConfigMapElement
@@ -134,9 +146,12 @@ componentTests: {
 	// Test: Using #StatelessWorkload composition pattern
 	"component/usage-stateless-composition": core.#StatelessWorkload & {
 		#metadata: {
-			#id:          "web"
-			name:         "web"
-			workloadType: "stateless"
+			#id:  "web"
+			name: "web"
+			// workload-type label is automatically derived from StatelessWorkloadElement
+			labels: {
+				"core.opm.dev/workload-type": "stateless"
+			}
 		}
 
 		statelessWorkload: container: {
@@ -152,9 +167,12 @@ componentTests: {
 	// Test: Using #SimpleDatabase composition pattern
 	"component/usage-simple-database-composition": core.#SimpleDatabase & {
 		#metadata: {
-			#id:          "db"
-			name:         "database"
-			workloadType: "stateful"
+			#id:  "db"
+			name: "database"
+			// workload-type label is automatically derived from SimpleDatabaseElement
+			labels: {
+				"core.opm.dev/workload-type": "stateful"
+			}
 		}
 
 		simpleDatabase: {
