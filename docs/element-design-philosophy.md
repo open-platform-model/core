@@ -116,10 +116,10 @@ OPM's element system provides three distinct tiers, each serving a specific purp
         policy: "Always" | "OnFailure" | "Never"
 
         // Adapts to workload type!
-        if #metadata.workloadType == "stateless" {
+        if #metadata.labels["core.opm.dev/workload-type"] == "stateless" {
             policy: "Always"  // Stateless defaults to Always
         }
-        if #metadata.workloadType == "task" {
+        if #metadata.labels["core.opm.dev/workload-type"] == "task" {
             policy: "OnFailure" | "Never" | *"Never"  // Tasks default to Never
         }
     }
@@ -337,10 +337,10 @@ OPM's constraint modifiers are **context-aware** - they adapt based on component
 
     restartPolicy: {
         // Constraints adapt to workload type!
-        if #metadata.workloadType == "stateless" {
+        if #metadata.labels["core.opm.dev/workload-type"] == "stateless" {
             policy: "Always"  // Stateless always restart
         }
-        if #metadata.workloadType == "task" {
+        if #metadata.labels["core.opm.dev/workload-type"] == "task" {
             policy: "OnFailure" | "Never" | *"Never"  // Tasks don't loop
         }
     }
@@ -351,11 +351,11 @@ OPM's constraint modifiers are **context-aware** - they adapt based on component
 
     updateStrategy: {
         // Different strategies for different workloads
-        if #metadata.workloadType == "stateless" {
+        if #metadata.labels["core.opm.dev/workload-type"] == "stateless" {
             type: "RollingUpdate" | "Recreate" | *"RollingUpdate"
             rollingUpdate?: {maxUnavailable: int, maxSurge: int}
         }
-        if #metadata.workloadType == "stateful" {
+        if #metadata.labels["core.opm.dev/workload-type"] == "stateful" {
             type: "RollingUpdate" | "OnDelete" | *"RollingUpdate"
             rollingUpdate?: {partition: int}  // Different fields!
         }
@@ -516,7 +516,7 @@ Kubernetes Provider implements:
 
 ```cue
 #RestartPolicy: {
-    if #metadata.workloadType == "task" {
+    if #metadata.labels["core.opm.dev/workload-type"] == "task" {
         policy: "OnFailure" | "Never" | *"Never"  // Tasks don't loop
     }
 }

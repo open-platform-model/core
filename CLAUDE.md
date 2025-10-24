@@ -13,7 +13,7 @@ Year: 2025
 ### Layered Model Structure
 
 ```shell
-Elements (primitives) → Components (collections) → Modules (applications) → Providers (renderers)
+Elements (primitives) → Components (collections) → ModuleDefinitions (blueprints) → Modules (deployments) → Renderers (output)
 ```
 
 ### Key Concepts
@@ -30,9 +30,10 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 #### Components
 
 - Collections of elements that define a logical unit
-- workloadType is derived from element `"core.opm.dev/workload-type"` annotation: stateless | stateful | daemon | task | scheduled-task | function
+- Workload type is derived from element `"core.opm.dev/workload-type"` label: stateless | stateful | daemon | task | scheduled-task | function
+- Element labels are automatically merged into `#metadata.labels`
 - Contains `#primitiveElements` (recursively extracted from all elements)
-- Validates that only one workload type annotation value exists across all elements
+- CUE unification validates that element labels don't conflict
 
 #### Transformers
 
@@ -70,7 +71,138 @@ Elements (primitives) → Components (collections) → Modules (applications) �
 }
 ```
 
+### Module Architecture
+
+#### Two-Concept System
+
+OPM uses a two-concept module system:
+
+1. **#ModuleDefinition** - Application blueprint
+   - Created by developers
+   - Contains components and value schema (constraints only)
+   - Platform-agnostic and portable
+   - NO transformers or renderers attached
+
+2. **#Module** - Deployment instance
+   - References a `#ModuleDefinition`
+   - Attaches `#transformers` (selected from providers)
+   - Attaches `#renderer` (selected from catalog)
+   - Provides concrete values
+   - Embedded rendering logic generates output
+
+#### Key Structure
+
+```cue
+#ModuleDefinition: {
+    #metadata: {...}
+    components: [string]: #Component
+    values: {...}  // Constraints only, NO defaults
+}
+
+#Module: {
+    #metadata: {...}
+    #moduleDefinition!: #ModuleDefinition  // Reference to blueprint
+
+    // Explicit transformer-to-component mapping
+    #transformersToComponents!: [string]: {
+        transformer: #Transformer
+        components: [...string]  // Component IDs
+    }
+
+    #renderer!: #Renderer  // Selected renderer
+    values: #moduleDefinition.values & {...}  // Concrete values
+
+    output: {
+        manifest?: _   // Single manifest output
+        files?: [string]: _  // Multi-file output
+        metadata?: {   // Rendering metadata
+            format: string
+            entrypoint?: string
+        }
+    }
+}
+```
+
+#### Catalog Structure
+
+```cue
+#PlatformCatalog: {
+    providers!: #ProviderMap          // Available transformers by provider
+    renderers!: #RendererMap          // Available renderers
+    moduleDefinitions: [string]: #ModuleDefinition  // Bare definitions (no transformers)
+}
+```
+
+#### Workflow
+
+1. **Developer**: Creates `#ModuleDefinition` with components and value constraints
+2. **Platform Team**: Adds definition to catalog's `moduleDefinitions`
+3. **End User**: Creates `#Module` instance
+   - References definition from catalog
+   - Selects transformers from catalog's providers
+   - Selects renderer from catalog's renderers
+   - Provides concrete values
+   - Output automatically generated
+
+#### Developer Testing Flow
+
+Developers can test locally before submitting to platform:
+
+```cue
+// 1. Create definition
+myAppDef: #ModuleDefinition & {
+    components: {
+        web: #StatelessWorkload & {...}
+    }
+    values: {
+        image!: string
+    }
+}
+
+// 2. Test locally with mock transformers
+myAppTest: #Module & {
+    #moduleDefinition: myAppDef
+    #transformersToComponents: {
+        "k8s.io/api/apps/v1.Deployment": {
+            transformer: mockTransformer
+            components: ["web"]  // Component IDs to transform
+        }
+    }
+    #renderer: #KubernetesListRenderer
+    values: {
+        image: "test:latest"
+    }
+}
+```
+
+See [examples/developer](examples/developer) for complete examples.
+
 ## Recent Changes
+
+### 2025-10-23
+
+1. **#transformersToComponents Architecture**: Replaced `#transformers` with explicit transformer-to-component mapping
+   - Module now uses `#transformersToComponents` with explicit `{transformer, components}` structure
+   - Enables expression-based component selection using component labels and primitives
+   - Users can reference `#moduleDefinition.components` and `transformer.#metadata.labels` in expressions
+   - Simplified Module rendering logic from ~60 lines to ~20 lines
+   - Transformer-first iteration pattern for better performance
+   - Documented CUE iteration limitation workaround (see BUG_CUE_ITERATION.md)
+
+2. **Removed #metadata.workloadType computed field**: Workload type now accessed via labels only
+   - Changed from `comp.#metadata.workloadType` to `comp.#metadata.labels["core.opm.dev/workload-type"]`
+   - Element labels automatically merged into component `#metadata.labels`
+   - Updated all element references (RestartPolicy, UpdateStrategy, developer tools, unit tests)
+   - Automatic conflict detection via CUE unification when element labels conflict
+   - Cleaner separation: labels for categorization, annotations for hints
+
+### 2025-10-21
+
+1. **Documentation Update**: Updated CLAUDE.md to accurately reflect current implementation
+   - Documented two-concept system (#ModuleDefinition + #Module)
+   - Clarified that transformers/renderers attach at Module instantiation, not pre-baked in catalog
+   - Added developer testing workflow
+   - Updated output structure (manifest/files/metadata)
 
 ### 2025-10-01
 
@@ -561,7 +693,7 @@ import (
 ```cue
 #Component: {
     #kind:       "Component"        // Aligned
-    #apiVersion: "core.opm.dev/v1"   // Aligned
+    #apiVersion: "core.opm.dev/v0"   // Aligned
 
     name:        string
     description: string

@@ -2,6 +2,7 @@
 
 ## Nearterm
 
+- [ ] Add deteremistic UUID to all components and module definitions.
 - [ ] Go through all "Specs" and add sane default to relevant values.
   - **Status**: PARTIALLY COMPLETE - Some defaults exist (e.g., `Replicas.count: int | *1`, `Container.protocol: *"TCP"`), needs comprehensive review
 - [ ] Refactor how Modifier elements points out what primitive elements they are compatible with.

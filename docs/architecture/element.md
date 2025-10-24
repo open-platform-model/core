@@ -50,12 +50,14 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
     // Human-readable description
     description?: string
 
-    // Optional labels for categorization
+    // Optional labels for categorization and filtering
+    // Labels are automatically merged into component #metadata.labels
+    // Example: {"core.opm.dev/category": "workload", "core.opm.dev/workload-type": "stateless"}
     labels?: #LabelsAnnotationsType
 
     // Optional annotations for element behavior hints (not used for categorization)
-    // Providers can use annotations for decision-making (e.g., workload type selection)
-    // Example: {"core.opm.dev/workload-type": "stateless"}
+    // Providers can use annotations for runtime behavior hints
+    // Example: {"cache.enabled": "true"}
     annotations?: [string]: string
 }
 ```
@@ -66,8 +68,10 @@ Elements in OPM follow a unified pattern based on the `#Element` foundation defi
 - **kind**: How it composes - `primitive` (standalone), `modifier` (enhances others), `composite` (combines multiple), or `custom` (special handling)
 - **target**: Where it applies - `component`, `scope`, or both
 - **schema**: OpenAPIv3-compatible schema defining configuration structure
-- **labels**: Optional metadata for categorization and filtering (e.g., `{"core.opm.dev/category": "workload"}`)
-- **annotations**: Optional behavior hints for providers (e.g., `{"core.opm.dev/workload-type": "stateless"}`)
+- **labels**: Optional metadata for categorization and filtering - automatically merged into component `#metadata.labels`
+  - Used for categorization: `{"core.opm.dev/category": "workload"}`
+  - Used for selection: `{"core.opm.dev/workload-type": "stateless"}`
+- **annotations**: Optional behavior hints for runtime/providers (e.g., `{"cache.enabled": "true"}`)
 - **#fullyQualifiedName**: Global unique identifier (e.g., "core.opm.dev/v0.Container")
 
 ---
@@ -82,13 +86,19 @@ OPM uses **labels** for element categorization and filtering instead of a fixed 
 
 ```cue
 labels: {
-    "core.opm.dev/category": "workload"      // Category: workload, data, connectivity, security, observability
-    "core.opm.dev/platform": "kubernetes,docker"     // Platform compatibility
-    "core.opm.dev/maturity": "stable"         // Maturity level: alpha, beta, stable
-    "core.opm.dev/compliance": "pci-dss"      // Compliance framework support
-    "custom.example.com/team": "platform"     // Custom organization labels
+    "core.opm.dev/category":      "workload"           // Category: workload, data, connectivity, security, observability
+    "core.opm.dev/workload-type": "stateless"          // Workload type: stateless, stateful, daemon, task, etc.
+    "core.opm.dev/platform":      "kubernetes,docker"  // Platform compatibility
+    "core.opm.dev/maturity":      "stable"             // Maturity level: alpha, beta, stable
+    "core.opm.dev/compliance":    "pci-dss"            // Compliance framework support
+    "custom.example.com/team":    "platform"           // Custom organization labels
 }
 ```
+
+**Important**: The `core.opm.dev/workload-type` label is automatically merged from elements into component `#metadata.labels`. This enables:
+- Transformer selection based on workload type
+- Component categorization and filtering
+- Automatic validation (CUE unification fails if elements have conflicting workload-type labels)
 
 **Benefits of Label-Based Categorization**:
 

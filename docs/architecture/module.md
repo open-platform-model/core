@@ -1,34 +1,35 @@
 # Module Architecture
 
-> **Technical Reference**: Deep dive into OPM's three-layer module architecture
+> **Technical Reference**: Deep dive into OPM's two-concept module system
 > **Audience**: Core contributors, platform implementers, advanced users
-> **Related**: [Concepts: Modules](../../../opm/docs/concepts/modules.md), [Values Guide](../../../opm/docs/guides/platform-team/configuring-values.md)
+> **Related**: [Component Model](./component.md), [Provider System](./provider.md)
 
 ## Overview
 
-The Module architecture is the cornerstone of OPM's separation of concerns. It defines how applications flow from developer intent to platform policy to user deployment through three distinct layers: **ModuleDefinition**, **Module**, and **ModuleRelease**.
+The Module architecture defines how applications flow from developer blueprints to deployed instances. OPM uses a **two-concept system** that separates blueprint definition from deployment instantiation.
 
-**Key Innovation**: CUE's constraint refinement (not override inheritance) enables each layer to progressively refine configurations without violating parent contracts.
+**Key Innovation**: Transformers and renderers are selected at deployment time, not pre-baked into definitions. This enables flexible platform targeting while maintaining portable application blueprints.
 
-## Three-Layer Architecture
+---
+
+## Two-Concept System
 
 ### Design Philosophy
 
-Traditional systems use override inheritance (child values replace parent values). OPM uses **CUE constraint refinement**: each layer adds constraints that narrow possibilities, never violate parent rules.
+OPM separates concerns between application structure (what to deploy) and platform adaptation (how to deploy):
 
-```shell
-Developer: "replicas must be uint"
-Platform:  "replicas must be uint AND defaults to 3"
-User:      "replicas is 5" (satisfies both constraints)
+```text
+ModuleDefinition (portable blueprint) → Module (platform-specific deployment)
 ```
 
-### Layer Responsibilities
+### Concept Responsibilities
 
-| Layer | Owner | Purpose | Values Role |
-|-------|-------|---------|-------------|
-| **ModuleDefinition** | Developer | Portable blueprint | Schema/constraints only |
-| **Module** | Platform | Curated with policies | Add defaults, refine constraints |
-| **ModuleRelease** | End User | Deployed instance | Provide concrete values |
+| Concept | Owner | Purpose | Contains |
+|---------|-------|---------|----------|
+| **#ModuleDefinition** | Developer | Portable application blueprint | Components, value schema (constraints only) |
+| **#Module** | End User/Platform | Deployed instance | Definition reference, transformers, renderer, concrete values |
+
+**No Inheritance Chain**: Module directly references ModuleDefinition. There is no intermediate curation layer.
 
 ---
 
@@ -42,10 +43,16 @@ Defines the **application contract**: what components exist, what values are con
 
 ```cue
 #ModuleDefinition: {
+    #kind:       "ModuleDefinition"
+    #apiVersion: "core.opm.dev/v0"
+
     #metadata: {
-        name!:    string
-        version!: string
-        description?: string
+        name!:              string
+        version!:           string
+        description?:       string
+        defaultNamespace?:  string | *"default"
+        labels?:            [string]: string
+        annotations?:       [string]: string
     }
 
     // Application components
@@ -54,32 +61,38 @@ Defines the **application contract**: what components exist, what values are con
     // Developer-defined scopes (optional)
     scopes?: [ID=string]: #Scope & {#metadata: #id: ID}
 
-    // Configuration schema - CONSTRAINTS ONLY
-    values: {
-        // No defaults! Platform adds them.
-        ...
+    // Configuration schema - CONSTRAINTS ONLY, NO DEFAULTS
+    values: {...}
+
+    // Computed: all scopes
+    #allScopes: {...}
+
+    // Computed: all primitive elements across components
+    #allPrimitiveElements: [string]
+
+    #status: {
+        componentCount: len(components)
+        scopeCount:     int
     }
 }
 ```
 
 ### Values: Schema/Constraints Only
 
-**Critical**: ModuleDefinition.values defines the **contract**, not defaults.
-
-**Must be OpenAPIv3 compliant**: No CUE templating (for/if statements) allowed in ModuleDefinition.values.
+**Critical**: ModuleDefinition.values defines the **contract**, not defaults or concrete values.
 
 ```cue
 // ✅ Correct - Define constraints
 values: {
-    replicas: uint                          // Type constraint
-    domain!: string                         // Required field
+    image!:      string                    // Required field
+    replicas:    uint                      // Type constraint
     environment: "dev" | "staging" | "prod" // Enum constraint
-    port: >0 & <65536                       // Range constraint
+    port:        >0 & <65536               // Range constraint
 }
 
 // ❌ Incorrect - Don't add defaults
 values: {
-    replicas: uint | *3  // Platform's job, not developer's
+    replicas: uint | *3  // Defaults belong in Module or deployment config
 }
 
 // ❌ Incorrect - Don't use templating
@@ -93,36 +106,92 @@ values: {
 **Rationale**:
 
 - Developers define what's configurable and valid
-- Platform teams decide defaults for their environment
-- OpenAPIv3 compliance ensures portability and tooling compatibility
+- Deployment-time configuration provides defaults and concrete values
+- Portability: Same definition works across different platforms and environments
 
 ### Example
 
 ```cue
-#MyAppDefinition: #ModuleDefinition & {
+webAppDefinition: #ModuleDefinition & {
     #metadata: {
         name:    "web-application"
         version: "1.0.0"
+        labels: {
+            "app.type": "web"
+            team:       "frontend"
+        }
     }
 
     components: {
-        web: #StatelessWorkload & {
+        frontend: {
+            #metadata: {
+                name: "frontend"
+                labels: {
+                    component: "frontend"
+                    tier:      "web"
+                }
+            }
+
+            elements.#StatelessWorkload
+
             statelessWorkload: {
                 container: {
-                    image: values.image
-                    ports: http: {targetPort: values.port}
+                    name:  "web"
+                    image: values.frontend.image
+                    ports: {
+                        http: {
+                            targetPort: 3000
+                            protocol:   "TCP"
+                        }
+                    }
                 }
-                replicas: count: values.replicas
+            }
+        }
+
+        database: {
+            #metadata: {
+                name: "database"
+                labels: {
+                    component: "database"
+                    tier:      "data"
+                }
+            }
+
+            elements.#SimpleDatabase
+
+            simpleDatabase: {
+                engine:   "postgres"
+                version:  "15"
+                persistence: {
+                    enabled: true
+                    size:    values.database.storageSize
+                }
             }
         }
     }
 
+    // Value contract - constraints only
     values: {
-        image!:   string  // Required - no default possible
-        port:     >0 & <65536
-        replicas: uint
+        frontend: {
+            image!: string  // Required
+        }
+        database: {
+            storageSize!: string  // Required
+        }
+        environment!: string  // Required
     }
 }
+```
+
+### Computed Fields
+
+```cue
+// #allPrimitiveElements: Extracted from all components
+#allPrimitiveElements: [
+    "elements.opm.dev/core/v0.Container",
+    "elements.opm.dev/core/v0.SimpleDatabase",
+    // ... unique list
+]
 ```
 
 ---
@@ -131,291 +200,634 @@ values: {
 
 ### Purpose
 
-Platform-curated version of a ModuleDefinition. Platform teams:
+Deployed instance of a ModuleDefinition. Users:
 
-- Add sensible defaults
-- Refine constraints (regex patterns, tighter ranges)
-- Add platform-specific components (monitoring, logging)
-- Add immutable PlatformScopes (security policies)
+- Reference a ModuleDefinition
+- Select transformers (from providers)
+- Select a renderer
+- Provide concrete values
+- Get rendered output automatically
 
 ### Structure
 
 ```cue
 #Module: {
+    #kind:       "Module"
+    #apiVersion: "core.opm.dev/v0"
+
     #metadata: {
-        name:     string
-        version?: string
+        name!:        string
+        namespace:    string | *"default"
+        version?:     string
+        labels?:      [string]: string
+        annotations?: [string]: string
     }
 
-    // Reference to base definition
-    moduleDefinition: #ModuleDefinition
+    // Reference to ModuleDefinition
+    #moduleDefinition!: #ModuleDefinition
 
-    // Platform adds components (optional)
-    components?: [ID=string]: #Component
-
-    // Platform adds scopes (optional)
-    scopes?: [ID=string]: #Scope
-
-    // CUE constraint refinement
-    values: moduleDefinition.values & {
-        // Platform refines constraints, adds defaults
-        ...
+    // Explicit transformer-to-component mapping - REQUIRED
+    // Maps transformer FQN to {transformer, components list}
+    #transformersToComponents!: [string]: {
+        transformer: #Transformer
+        components: [...string]  // List of component IDs
     }
 
-    // Computed: all components (definition + platform)
-    #allComponents: {...}
+    // Renderer selected from catalog - REQUIRED
+    #renderer!: #Renderer
 
-    // Computed: all scopes (definition + platform)
-    #allScopes: {...}
-}
-```
+    // User provides concrete values
+    values: #moduleDefinition.values & {...}
 
-### Values: Constraint Refinement
+    // Embedded rendering logic - automatically computed
+    output: {
+        // Single manifest output (e.g., Kubernetes List)
+        manifest?: _
 
-Platform teams **refine** Definition constraints using CUE unification:
+        // Multi-file output (e.g., Kustomize)
+        files?: [string]: _
 
-```cue
-// Definition provided
-values: {
-    domain!: string
-    port: >0 & <65536
-}
-
-// Module refines
-values: {
-    domain: string & =~".*\\.myplatform\\.com$"  // Add regex
-    port:   >0 & <65536 | *8080                  // Add default
-    region: string | *"us-west"                   // New field
-}
-```
-
-**Capabilities**:
-
-1. **Add defaults**: `replicas: uint | *3`
-2. **Refine with regex**: `domain: string & =~"pattern"`
-3. **Narrow ranges**: `port: >8000 & <9000` (within Definition's `>0 & <65536`)
-4. **Add new fields**: For platform components/scopes
-5. **Template values**: Use for/if statements to generate values dynamically
-
-### Templating Values
-
-**Unlike ModuleDefinition**, Module.values does NOT need to be OpenAPIv3 compliant. Platform teams can use CUE templating (for/if statements) to dynamically generate values:
-
-```cue
-// ModuleDefinition provides components
-components: {
-    api: {...}
-    web: {...}
-    worker: {...}
-}
-
-// Module templates image values from components
-values: {
-    for name, comp in moduleDefinition.components {
-        "\(name)Image": string | *"registry.platform.com/\(name):latest"
-    }
-
-    // Results in:
-    // apiImage: string | *"registry.platform.com/api:latest"
-    // webImage: string | *"registry.platform.com/web:latest"
-    // workerImage: string | *"registry.platform.com/worker:latest"
-}
-```
-
-**Important**: Templating makes fields concrete at the Module layer. This gives platform teams control over generated defaults while still allowing user overrides at ModuleRelease.
-
-```cue
-// Conditional templating
-values: {
-    if len(moduleDefinition.components) > 1 {
-        loadBalancerEnabled: bool | *true
-    }
-
-    for name, comp in moduleDefinition.components
-    if comp.#elements["core.opm.dev/v0.StatefulWorkload"] != _|_ {
-        "\(name)StorageSize": string | *"10Gi"
-    }
-}
-```
-
-### Platform Components
-
-Platform can add infrastructure components:
-
-```cue
-_module: #Module & {
-    moduleDefinition: _myAppDef
-
-    // Add monitoring
-    components: {
-        monitoring: #DaemonWorkload & {
-            daemonWorkload: container: {
-                image: "prometheus:latest"
-            }
+        // Rendering metadata
+        metadata?: {
+            format:      string  // "yaml", "json", etc.
+            entrypoint?: string  // Main file for multi-file outputs
         }
     }
 
-    values: {
-        enableMetrics: bool | *true  // New field for platform component
+    #status: {
+        definitionName: #moduleDefinition.#metadata.name
     }
 }
 ```
 
-### Platform Scopes
+### Transformer-to-Component Mapping
 
-Platform adds **immutable** governance policies:
+The `#transformersToComponents` field explicitly maps transformers to the components they should process. This enables flexible, expression-based component selection.
 
 ```cue
-scopes: {
-    security: #Scope & {
-        #metadata: {immutable: true}
-        #elements: {NetworkScope: #NetworkScopeElement}
-        networkScope: networkPolicy: externalCommunication: false
-        appliesTo: "*"
+// Provider offers transformers
+kubernetesProvider: #Provider & {
+    transformers: {
+        "k8s.io/api/apps/v1.Deployment":            #DeploymentTransformer
+        "k8s.io/api/apps/v1.StatefulSet":           #StatefulSetTransformer
+        "k8s.io/api/core/v1.PersistentVolumeClaim": #PVCTransformer
+        // ...
+    }
+}
+
+// Module creates explicit mapping with expressions
+myApp: #Module & {
+    #transformersToComponents: {
+        "k8s.io/api/apps/v1.Deployment": {
+            transformer: kubernetesProvider.transformers["k8s.io/api/apps/v1.Deployment"]
+            // Select components using expressions
+            components: [
+                for id, comp in #moduleDefinition.components
+                if comp.#metadata.labels["core.opm.dev/workload-type"] == "stateless" &&
+                   list.Contains(comp.#primitiveElements, "elements.opm.dev/core/v0.Container") {
+                    id
+                },
+            ]
+        }
+        "k8s.io/api/apps/v1.StatefulSet": {
+            transformer: kubernetesProvider.transformers["k8s.io/api/apps/v1.StatefulSet"]
+            components: [
+                for id, comp in #moduleDefinition.components
+                if comp.#metadata.labels["core.opm.dev/workload-type"] == "stateful" {
+                    id
+                },
+            ]
+        }
+        "k8s.io/api/core/v1.PersistentVolumeClaim": {
+            transformer: kubernetesProvider.transformers["k8s.io/api/core/v1.PersistentVolumeClaim"]
+            components: [
+                for id, comp in #moduleDefinition.components
+                if list.Contains(comp.#primitiveElements, "elements.opm.dev/core/v0.Volume") {
+                    id
+                },
+            ]
+        }
     }
 }
 ```
 
-Users cannot override immutable scopes (enforced platform policy).
+**Key Benefits**:
 
----
+1. **Explicit & Inspectable**: Can see exactly which transformers apply to which components
+2. **Expression-Based**: Use CUE expressions to dynamically select components
+3. **DRY Pattern**: Reference `transformer.#metadata.labels` to avoid duplication
+4. **Zero Hardcoding**: Module rendering logic just iterates the explicit mapping
+5. **Future-Ready**: Clear path to transformer selectors for automation
 
-## ModuleRelease
+**Note**: Due to a CUE limitation, transformers cannot use `if #component.field != _|_` guards before iterating over optional fields. See `BUG_CUE_ITERATION.md` for details. The workaround is to iterate directly without the existence check.
 
-### Purpose
+### Renderer Selection
 
-Deployed instance of a Module. End users provide concrete values satisfying Module's refined constraints.
-
-### Structure
+Renderers format transformed resources into output:
 
 ```cue
-#ModuleRelease: {
-    #metadata: {
-        name!:    string
-        version?: string
+// Catalog provides renderers
+catalog: #PlatformCatalog & {
+    renderers: {
+        "kubernetes-list":      #KubernetesListRenderer
+        "kubernetes-kustomize": #KubernetesKustomizeRenderer
+        "docker-compose":       #DockerComposeRenderer
     }
+}
 
-    // Reference to platform module
-    module: #Module
-
-    // Provider for transformation
-    provider: #Provider
-
-    // User provides concrete values
-    values: module.values & {
-        ...
-    }
+// Module selects one
+myApp: #Module & {
+    #renderer: catalog.renderers["kubernetes-list"]
 }
 ```
 
 ### Values: Concrete Implementation
 
-Users see Module's refined constraints (NOT Definition's original constraints):
+Users provide concrete values that satisfy ModuleDefinition constraints:
 
 ```cue
-// Module provides
+// Definition provides
 values: {
-    domain: string & =~".*\\.myplatform\\.com$"
-    port:   >0 & <65536 | *8080
-    region: string | *"us-west"
+    frontend: {
+        image!: string
+    }
+    database: {
+        storageSize!: string
+    }
+    environment!: string
 }
 
-// User provides concrete values
+// Module provides concrete values
 values: {
-    domain: "myapp.myplatform.com"  // Satisfies regex
-    port:   8080                     // Use default
-    region: "eu-west"                // Override default
+    frontend: {
+        image: "myapp-frontend:1.2.3"
+    }
+    database: {
+        storageSize: "20Gi"
+    }
+    environment: "production"
 }
 ```
 
-**Single-Level Inheritance**: Users only see Module's constraints. Definition's original constraints are hidden (already incorporated into Module).
+### Embedded Rendering
+
+The Module automatically renders output:
+
+1. **Transform**: Applies selected transformers to components based on primitive elements
+2. **Render**: Applies selected renderer to transformed resources
+3. **Output**: Exposes via `output.manifest`, `output.files`, or both
+
+```text
+#Module
+  └─> #moduleDefinition.components
+        └─> for each component
+              └─> for each primitive element
+                    └─> #transformers[primitive]
+                          └─> transform(component, context)
+                                └─> resources
+  └─> resources[]
+        └─> #renderer.render(resources)
+              └─> output.manifest OR output.files
+```
+
+### Example
+
+```cue
+// End-user creates deployment
+productionApp: #Module & {
+    #metadata: {
+        name:      "web-app-prod"
+        namespace: "production"
+        labels: {
+            environment: "production"
+        }
+        annotations: {
+            "deployed.by": "platform-team"
+            "git.commit":  "abc123def"
+        }
+    }
+
+    // Reference definition from catalog
+    #moduleDefinition: catalog.moduleDefinitions["web-application"]
+
+    // Map transformers to components
+    #transformersToComponents: {
+        "k8s.io/api/apps/v1.Deployment": {
+            transformer: kubernetesProvider.transformers["k8s.io/api/apps/v1.Deployment"]
+            components: ["frontend"]  // Explicit component IDs
+        }
+        "k8s.io/api/core/v1.PersistentVolumeClaim": {
+            transformer: kubernetesProvider.transformers["k8s.io/api/core/v1.PersistentVolumeClaim"]
+            components: ["database"]
+        }
+    }
+
+    // Select renderer
+    #renderer: catalog.renderers["kubernetes-list"]
+
+    // Provide concrete values
+    values: {
+        frontend: {
+            image: "registry.example.com/web-app:v1.2.3"
+        }
+        database: {
+            storageSize: "50Gi"
+        }
+        environment: "production"
+    }
+
+    // output.manifest automatically populated with Kubernetes List
+}
+```
 
 ---
 
-## Value Flow Example
+## Platform Catalog
 
-Complete three-layer example:
+### Structure
+
+The Platform Catalog provides the registry of available definitions, providers, and renderers:
 
 ```cue
-// 1. Developer: ModuleDefinition (constraints)
-_definition: #ModuleDefinition & {
-    values: {
-        replicas: uint
-        domain!:  string
-        tier:     "free" | "standard" | "premium"
+#PlatformCatalog: {
+    #kind:       "PlatformCatalog"
+    #apiVersion: "core.opm.dev/v0"
+
+    #metadata: {
+        name!:        string
+        version!:     string
+        description?: string
+        labels?:      [string]: string
+        annotations?: [string]: string
+    }
+
+    // Available providers (with transformers)
+    providers!: #ProviderMap
+
+    // Available renderers
+    renderers!: #RendererMap
+
+    // Registered module definitions (NO transformers attached here)
+    moduleDefinitions: [string]: #ModuleDefinition
+
+    // Available element registry
+    #availableElements!: #ElementRegistry
+
+    // Validation and status
+    #providerCapabilities: {...}
+    #status: {
+        elementCount:  int
+        providerCount: int
+        rendererCount: int
+        moduleCount:   int
     }
 }
+```
 
-// 2. Platform: Module (add defaults, refine)
-_module: #Module & {
-    moduleDefinition: _definition
-    values: {
-        replicas: uint | *3                           // Add default
-        domain:   string & =~".*\\.platform\\.com$"  // Refine with regex
-        tier:     ("free" | "standard" | "premium") | *"free"
-        region:   string | *"us-west"                 // New field
+**Key Point**: `moduleDefinitions` contains bare ModuleDefinition instances. Transformers and renderers are NOT attached at catalog level.
+
+### Example
+
+```cue
+platformCatalog: #PlatformCatalog & {
+    #metadata: {
+        name:    "example-kubernetes-platform"
+        version: "1.0.0"
     }
-}
 
-// 3. User: ModuleRelease (concrete values)
-_release: #ModuleRelease & {
-    module: _module
-    values: {
-        replicas: 5                      // Override default
-        domain:   "app.platform.com"     // Satisfies regex
-        tier:     "premium"              // Override default
-        region:   "us-west"              // Use default
+    #availableElements: elements.#CoreElementRegistry
+
+    providers: {
+        kubernetes: kubernetesProvider  // Contains transformers
+    }
+
+    renderers: {
+        "kubernetes-list":      #KubernetesListRenderer
+        "kubernetes-kustomize": #KubernetesKustomizeRenderer
+    }
+
+    moduleDefinitions: {
+        "web-application": webAppDefinition  // Just the definition
+        "blog-app":        blogAppDefinition
+        "api-service":     apiServiceDefinition
     }
 }
 ```
 
 ---
 
-## Implementation Details
+## Complete Workflow Example
 
-### Component Aggregation
+### 1. Developer Creates Definition
 
 ```cue
-#allComponents: {
-    // Definition components
-    for id, comp in moduleDefinition.components {
-        "\(id)": comp
+package myapp
+
+import (
+    opm "github.com/open-platform-model/core"
+    elements "github.com/open-platform-model/core/elements/core"
+)
+
+blogAppDefinition: opm.#ModuleDefinition & {
+    #metadata: {
+        name:    "blog-app"
+        version: "1.0.0"
     }
-    // Platform components
-    if components != _|_ {
-        for id, comp in components {
-            "\(id)": comp
+
+    components: {
+        frontend: {
+            elements.#StatelessWorkload
+            statelessWorkload: {
+                container: {
+                    image: values.frontend.image
+                    ports: {http: {targetPort: 3000}}
+                }
+            }
+        }
+
+        database: {
+            elements.#SimpleDatabase
+            simpleDatabase: {
+                engine:  "postgres"
+                version: "15"
+                persistence: {
+                    enabled: true
+                    size:    values.database.storageSize
+                }
+            }
+        }
+    }
+
+    values: {
+        frontend: {image!: string}
+        database: {storageSize!: string}
+        environment!: string
+    }
+}
+```
+
+### 2. Developer Tests Locally
+
+```cue
+// Mock transformers for local testing
+_mockDeploymentTransformer: opm.#Transformer & {
+    #kind:       "Deployment"
+    #apiVersion: "k8s.io/api/apps/v1"
+    required:    ["elements.opm.dev/core/v0.Container"]
+    optional:    []
+    transform: {/* simplified logic */}
+}
+
+// Local test module
+blogAppLocal: opm.#Module & {
+    #metadata: {
+        name:      "blog-app-test"
+        namespace: "development"
+    }
+
+    #moduleDefinition: blogAppDefinition
+
+    // Map transformers to components
+    #transformersToComponents: {
+        "k8s.io/api/apps/v1.Deployment": {
+            transformer: _mockDeploymentTransformer
+            components: ["frontend"]
+        }
+        "k8s.io/api/core/v1.PersistentVolumeClaim": {
+            transformer: _mockPVCTransformer
+            components: ["database"]
+        }
+    }
+
+    #renderer: opm.#KubernetesListRenderer
+
+    values: {
+        frontend: {image: "blog-frontend:dev"}
+        database: {storageSize: "5Gi"}
+        environment: "development"
+    }
+}
+
+// Test: cue export . -e blogAppLocal.output
+```
+
+### 3. Platform Team Adds to Catalog
+
+```cue
+platformCatalog: opm.#PlatformCatalog & {
+    #metadata: {
+        name:    "platform-catalog"
+        version: "1.0.0"
+    }
+
+    #availableElements: elements.#CoreElementRegistry
+
+    providers: {
+        kubernetes: kubernetesProvider
+    }
+
+    renderers: {
+        "kubernetes-list": opm.#KubernetesListRenderer
+    }
+
+    // Add developer's definition
+    moduleDefinitions: {
+        "blog-app": blogAppDefinition
+    }
+}
+```
+
+### 4. End User Deploys
+
+```cue
+productionBlog: opm.#Module & {
+    #metadata: {
+        name:      "blog-prod"
+        namespace: "production"
+    }
+
+    // Reference from catalog
+    #moduleDefinition: platformCatalog.moduleDefinitions["blog-app"]
+
+    // Map transformers to components using expressions
+    #transformersToComponents: {
+        "k8s.io/api/apps/v1.Deployment": {
+            transformer: platformCatalog.providers.kubernetes.transformers["k8s.io/api/apps/v1.Deployment"]
+            components: [
+                for id, comp in #moduleDefinition.components
+                if comp.#metadata.labels["core.opm.dev/workload-type"] == "stateless" {
+                    id
+                },
+            ]
+        }
+        "k8s.io/api/core/v1.PersistentVolumeClaim": {
+            transformer: platformCatalog.providers.kubernetes.transformers["k8s.io/api/core/v1.PersistentVolumeClaim"]
+            components: [
+                for id, comp in #moduleDefinition.components
+                if list.Contains(comp.#primitiveElements, "elements.opm.dev/core/v0.Volume") {
+                    id
+                },
+            ]
+        }
+    }
+
+    #renderer: platformCatalog.renderers["kubernetes-list"]
+
+    values: {
+        frontend: {image: "blog-frontend:v1.2.3"}
+        database: {storageSize: "100Gi"}
+        environment: "production"
+    }
+
+    // output.manifest automatically contains rendered Kubernetes resources
+}
+
+// Deploy: cue export . -e productionBlog.output.manifest
+```
+
+---
+
+## Output Formats
+
+### Manifest Output (Single File)
+
+Used by: Kubernetes List, Docker Compose
+
+```cue
+output: {
+    manifest: {
+        apiVersion: "v1"
+        kind:       "List"
+        items: [
+            // All rendered resources
+        ]
+    }
+    metadata: {
+        format: "yaml"
+    }
+}
+```
+
+### Files Output (Multiple Files)
+
+Used by: Kustomize, Helm, Terraform
+
+```cue
+output: {
+    files: {
+        "kustomization.yaml": {
+            apiVersion: "kustomize.config.k8s.io/v1beta1"
+            kind:       "Kustomization"
+            resources: ["deployments.yaml", "services.yaml"]
+        }
+        "deployments.yaml": [
+            // Deployment resources
+        ]
+        "services.yaml": [
+            // Service resources
+        ]
+    }
+    metadata: {
+        format:     "yaml"
+        entrypoint: "kustomization.yaml"
+    }
+}
+```
+
+---
+
+## Renderers
+
+### Purpose
+
+Renderers format transformed resources into platform-specific output formats. They are composable and reusable.
+
+### Structure
+
+```cue
+#Renderer: {
+    #kind:       "Renderer"
+    #apiVersion: "core.opm.dev/v0"
+
+    #metadata: {
+        name:        string
+        description: string
+        version:     string
+    }
+
+    targetPlatform: string
+
+    // Render function
+    render: {
+        // Input: list of transformed resources
+        resources: _
+
+        // Output: rendered manifest(s)
+        output: #RendererOutput
+    }
+}
+
+#RendererOutput: {
+    manifest?: _              // Single manifest
+    files?: [string]: _       // Multiple files
+    metadata?: {
+        format:      string   // "yaml", "json", "toml", "hcl"
+        entrypoint?: string
+    }
+}
+```
+
+### Built-in: Kubernetes List Renderer
+
+```cue
+#KubernetesListRenderer: #Renderer & {
+    #metadata: {
+        name:        "kubernetes-list"
+        description: "Renders to Kubernetes List format"
+        version:     "1.0.0"
+    }
+    targetPlatform: "kubernetes"
+
+    render: {
+        resources: _
+        output: {
+            manifest: {
+                apiVersion: "v1"
+                kind:       "List"
+                items:      resources
+            }
+            metadata: {
+                format: "yaml"
+            }
         }
     }
 }
 ```
 
-### Scope Aggregation
+### Custom Renderer Example
 
 ```cue
-#allScopes: {
-    // Definition scopes
-    if moduleDefinition.scopes != _|_ {
-        for id, scope in moduleDefinition.scopes {
-            "\(id)": scope
+#TerraformRenderer: #Renderer & {
+    #metadata: {
+        name:        "terraform"
+        description: "Renders to Terraform HCL"
+        version:     "1.0.0"
+    }
+    targetPlatform: "terraform"
+
+    render: {
+        resources: _
+        output: {
+            files: {
+                "main.tf": {/* HCL content */}
+                "variables.tf": {/* Variables */}
+            }
+            metadata: {
+                format:     "hcl"
+                entrypoint: "main.tf"
+            }
         }
     }
-    // Platform scopes
-    if scopes != _|_ {
-        for id, scope in scopes {
-            "\(id)": scope
-        }
-    }
-}
-```
-
-### Status Tracking
-
-```cue
-#status: {
-    totalComponentCount:    len(#allComponents)
-    platformComponentCount: len(components)
-    platformScopeCount:     len(scopes)
 }
 ```
 
@@ -423,104 +835,98 @@ _release: #ModuleRelease & {
 
 ## Key Principles
 
-### 1. Constraint Refinement, Not Override
+### 1. Separation of Concerns
 
-CUE unification refines (narrows) constraints. Cannot violate parent properties:
+- **ModuleDefinition**: What to deploy (portable)
+- **Module**: How to deploy (platform-specific)
+- **No pre-baking**: Transformers/renderers selected at deployment time
 
-```cue
-// ✅ Valid refinement
-parent: uint
-child:  uint | *3  // More specific (adds default)
+### 2. Flexibility at Deployment
 
-// ❌ Invalid - conflicts
-parent: uint
-child:  string  // Type mismatch
-```
+Users can:
 
-### 2. OpenAPIv3 Compliance
+- Deploy same definition to different platforms
+- Mix and match transformers
+- Choose different renderers for different use cases
+- Override values per environment
 
-**ModuleDefinition.values MUST be OpenAPIv3 compliant**:
+### 3. Developer Experience
 
-- No CUE templating (for/if statements)
-- Pure schema/constraints only
-- Ensures portability and tooling compatibility
+Developers:
 
-**Module.values does NOT need to be OpenAPIv3 compliant**:
+- Create portable definitions
+- Test locally with mock transformers
+- Submit to platform teams
+- No need to know platform details
 
-- Can use CUE templating (for/if statements)
-- Platform teams can dynamically generate values
-- Makes fields concrete for their environment
+### 4. Platform Control
 
-```cue
-// ❌ ModuleDefinition - No templating
-values: {
-    for name, comp in components {
-        "\(name)Image": string  // Not allowed
-    }
-}
+Platform teams:
 
-// ✅ Module - Templating allowed
-values: {
-    for name, comp in moduleDefinition.components {
-        "\(name)Image": string | *"registry.platform.com/\(name):latest"
-    }
-}
-```
+- Provide production-grade transformers
+- Offer multiple renderers
+- Validate definitions before adding to catalog
+- Don't need to "pre-bake" every combination
 
-### 3. Single-Level Inheritance
+---
 
-ModuleRelease only sees Module's constraints:
+## Comparison with Other Systems
 
-```shell
-Definition:  replicas: uint
-Module:      replicas: uint | *3
-Release:     ↑ sees this (not Definition's original)
-```
+### Helm
 
-### 4. Platform Cannot Override Developer Defaults
+| Aspect | OPM | Helm |
+|--------|-----|------|
+| Definition | ModuleDefinition (CUE) | Chart (templates + values.yaml) |
+| Templating | Type-safe CUE | Text-based Go templates |
+| Values | Strongly typed schema | Loosely typed YAML |
+| Rendering | Pluggable renderers | Built-in Kubernetes YAML |
+| Portability | Platform-agnostic | Kubernetes-specific |
 
-If Definition has defaults (anti-pattern), Platform cannot override:
+### Kustomize
 
-```cue
-// ❌ Anti-pattern - Definition has default
-definition.values: {
-    tier: string | *"free"
-}
+| Aspect | OPM | Kustomize |
+|--------|-----|-----------|
+| Composition | Components + values | Bases + overlays |
+| Validation | CUE type system | YAML schema |
+| Transformation | Programmable transformers | Patches |
+| Abstraction | High-level elements | Low-level resources |
 
-// Platform CANNOT override to "standard"
-// Can only refine further (e.g., add regex)
-```
+### Crossplane Compositions
 
-**Solution**: Definition provides constraints only.
-
-### 5. Immutability of Platform Scopes
-
-Platform scopes marked `immutable: true` cannot be modified by users. Enforces governance.
+| Aspect | OPM | Crossplane |
+|--------|-----|------------|
+| Scope | Application deployment | Infrastructure provisioning |
+| Runtime | Compile-time (CUE) | Runtime (Kubernetes controllers) |
+| Transformers | User-defined CUE | Provider-specific controllers |
+| Outputs | Static manifests | Live Kubernetes resources |
 
 ---
 
 ## Testing
 
-See integration tests:
+See test files:
 
-- [module_values_flow.cue](../../tests/integration/module_values_flow.cue) - Value constraint refinement (6 tests)
-- [module_templating.cue](../../tests/integration/module_templating.cue) - Platform value templating with for/if (7 tests)
-- [module_composition.cue](../../tests/integration/module_composition.cue) - Component/scope addition (4 tests)
-- [application_scenarios.cue](../../tests/integration/application_scenarios.cue) - Complete examples (4 tests)
+- [tests/unit/module.cue](../../tests/unit/module.cue) - Module and ModuleDefinition unit tests
+- [tests/integration/application_scenarios.cue](../../tests/integration/application_scenarios.cue) - Complete deployment examples
+- [examples/developer/](../../examples/developer/) - Developer workflow examples
 
 ---
 
 ## Related Documentation
 
-- **Concepts**: [Understanding Modules](../../../opm/docs/concepts/modules.md)
-- **Guide**: [Creating Modules](../../../opm/docs/guides/developer/creating-modules.md)
-- **Guide**: [Curating Modules](../../../opm/docs/guides/platform-team/curating-modules.md)
-- **Architecture**: [Component Model](./component.md), [Scope System](./scope.md)
-- **Reference**: [module.cue source](../../module.cue)
+- **Code**: [module.cue](../../module.cue), [renderer.cue](../../renderer.cue)
+- **Architecture**: [Component Model](./component.md), [Provider System](./provider.md)
+- **Examples**: [Developer Flow](../../examples/developer/README.md)
 
 ---
 
 ## Changelog
 
+- **2025-10-21**: Complete rewrite to document actual two-concept implementation
+  - Removed three-layer architecture documentation (not implemented)
+  - Documented transformer/renderer attachment at Module level
+  - Added developer testing workflow
+  - Updated output structure (manifest/files/metadata)
+  - Clarified catalog structure (bare definitions)
 - **2025-10-10**: Refactored to CUE constraint refinement (removed `#unifiedValues`)
-- **2025-09-15**: Initial three-layer architecture design
+- **2025-09-15**: Initial three-layer architecture design (superseded)

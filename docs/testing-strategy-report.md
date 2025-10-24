@@ -51,7 +51,7 @@ testModuleHasComponents: {
 // ✅ GOOD: Define constraint directly in type definition
 #ModuleDefinition: {
     #kind: "ModuleDefinition"
-    #apiVersion: "core.opm.dev/v1"
+    #apiVersion: "core.opm.dev/v0"
 
     // Existing fields...
     components: [Id=string]: #Component
@@ -118,8 +118,7 @@ testModuleHasComponents: {
    #metadata: version!: string & =~"^\\d+\\.\\d+\\.\\d+$"
    ```
 
-5. **Required relationships**
-
+5. **Required relationships**git config --global user.name "
    ```cue
    // ❌ Don't test
    test: len(subject.#elements) == 1  // Scopes have single trait
@@ -340,7 +339,7 @@ testModuleHasComponents: {
     }
 
     // Test both components present in unified view
-    module.#allComponents: {
+    module.components: {
         web: _        // From definition
         monitoring: _ // From platform
     }
@@ -352,7 +351,7 @@ testModuleHasComponents: {
     }
 
     // Test definition component preserved exactly
-    module.#allComponents.web.container.image: "nginx:latest"
+    module.components.web.container.image: "nginx:latest"
 }
 ```
 
@@ -496,7 +495,7 @@ testModuleHasComponents: {
 ```cue
 #ModuleDefinition: {
     #kind: "ModuleDefinition"
-    #apiVersion: "core.opm.dev/v1"
+    #apiVersion: "core.opm.dev/v0"
 
     // Existing fields...
     #metadata: {
@@ -539,7 +538,7 @@ testModuleHasComponents: {
 
 #Module: {
     #kind: "Module"
-    #apiVersion: "core.opm.dev/v1"
+    #apiVersion: "core.opm.dev/v0"
 
     moduleDefinition!: #ModuleDefinition
 
@@ -581,7 +580,8 @@ testModuleHasComponents: {
     #metadata: {
         #id!: string
         name: string | *#id
-        workloadType: string | *""
+        labels?: [string]: string
+        annotations?: [string]: string
     }
 
     #elements: [string]: #Element
@@ -656,7 +656,7 @@ testModuleHasComponents: {
 2. ✅ Field flattening in composite elements
 3. ✅ Value flow through ModuleDefinition → Module → ModuleRelease
 4. ✅ Component/scope merging logic
-5. ✅ Computed aggregations (#allComponents, #allPrimitiveElements)
+5. ✅ Computed aggregations (components, #allPrimitiveElements)
 
 **What NOT to test:**
 
@@ -701,7 +701,7 @@ moduleTests: {
     }
 
     "module/allComponents-aggregation": {
-        // Test #allComponents correctly merges definition + platform
+        // Test components correctly merges definition + platform
         // This is computed behavior worth testing
     }
 
@@ -1105,7 +1105,7 @@ import (
     // Rule: All definition components present in module
     _preservesComponents: {
         for id, _ in definition.components {
-            (id): module.#allComponents[id] != _|_
+            (id): module.components[id] != _|_
         }
     }
 
@@ -1377,7 +1377,7 @@ test: {
     subject.#metadata.name: "test"
     subject.#metadata.version: "1.0.0"
     subject.#kind: "Module"
-    subject.#apiVersion: "core.opm.dev/v1"
+    subject.#apiVersion: "core.opm.dev/v0"
     subject.components.web.container.image: "nginx:latest"
     // ... 50 more lines ...
 }
