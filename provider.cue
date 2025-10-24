@@ -19,18 +19,17 @@ import (
 		description: string // A brief description of the provider
 		version:     string // The version of the provider
 		minVersion:  string // The minimum version of the provider
+
+		// Labels for provider categorization and compatibility
+		// Example: {"core.opm.dev/output-format": "kubernetes"}
+		labels?: #LabelsAnnotationsType
 	}
 
 	// Transformer registry - maps platform resources to transformers
 	// Example:
 	// transformers: {
-	// 	"k8s.io/api/apps/v1.Deployment":            #DeploymentTransformer
-	// 	"k8s.io/api/apps/v1.StatefulSet":           #StatefulSetTransformer
-	// 	"k8s.io/api/apps/v1.DaemonSet":             #DaemonSetTransformer
-	// 	"k8s.io/api/batch/v1.Job":                  #JobTransformer
-	// 	"k8s.io/api/batch/v1.CronJob":              #CronJobTransformer
-	// 	"k8s.io/api/core/v1.PersistentVolumeClaim": #PersistentVolumeClaimTransformer
-	// 	"k8s.io/api/core/v1.Service":               #ServiceTransformer
+	// 	"k8s.io/api/apps/v1.Deployment": #DeploymentTransformer
+	// 	"k8s.io/api/apps/v1.StatefulSet": #StatefulSetTransformer
 	// }
 	transformers: #TransformerMap
 
@@ -41,16 +40,42 @@ import (
 			list.Concat([transformer.required, transformer.optional])
 		},
 	], 1)
-
-	// Render function
-	render: {
-		module: #Module
-		output: _ // Provider-specific output format. e.g., Kubernetes List object
-		...
-	}
 }
 
+// Map of transformers by fully qualified name
 #TransformerMap: [string]: #Transformer
+
+// TransformerSelector interface (for future platform workflow)
+// In developer workflow: Users manually create #transformersToComponents with expressions
+// In platform workflow: Selector can auto-generate #transformersToComponents from provider
+//
+// The selector would generate transformer-to-component mappings by:
+// 1. Analyzing component primitives and labels
+// 2. Matching against available transformers
+// 3. Producing #transformersToComponents structure
+//
+// Example selector logic (future):
+//   for each component:
+//     for each transformer in provider.transformers:
+//       if transformer.required ⊆ component.#primitiveElements:
+//         if transformer.#metadata.labels ⊆ component.#metadata.labels:
+//           add component to transformer's components list
+#TransformerSelector: {
+	select: {
+		// Input: Module definition with components
+		moduleDefinition: #ModuleDefinition
+
+		// Input: Available transformers from provider
+		availableTransformers: #TransformerMap
+
+		// Output: Generated #transformersToComponents structure
+		// Maps each transformer to its matching components
+		output: [string]: {
+			transformer: #Transformer
+			components: [...string]
+		}
+	}
+}
 
 // Transformer interface - generic for all providers
 // Transformers declare element requirements and transform logic
@@ -62,6 +87,15 @@ import (
 
 	#fullyQualifiedName: "\(#apiVersion).\(#kind)" // e.g. "k8s.io/api/apps/v1.Deployment"
 
+	// Metadata for transformer categorization and selection
+	#metadata: {
+		// Labels for categorizing transformers
+		// Can be referenced in #transformersToComponents expressions for DRY matching
+		// Example: transformer.#metadata.labels["core.opm.dev/workload-type"]
+		// Common labels: {"core.opm.dev/workload-type": "stateless"}
+		labels?: #LabelsAnnotationsType
+	}
+
 	// Required OPM primitive elements for this transformer to work
 	required: #ElementStringArray // e.g. ["elements.opm.dev/core/v0.Container"]
 
@@ -72,67 +106,58 @@ import (
 	#allTransformerElements: #ElementStringArray & list.Concat([required, optional])
 
 	// Transform function
+	// IMPORTANT: output must be a list of resources, even if only one resource is generated
+	// This allows for consistent handling and concatenation in the module orchestration layer
 	transform: {
-		component: #Component
-		context:   #ProviderContext
-		output:    _ // Provider-specific output format
+		#component: #Component
+		#context:   #TransformerContext
+
+		output: [...] // Must be a list of provider-specific resources
 	}
 }
 
 // Provider context passed to transformers
 // Contains hierarchical metadata for resource generation
-#ProviderContext: {
+#TransformerContext: close({
 	name:      string // Module name
 	namespace: string // Module namespace
 
-	// Module and component being processed
-	_module:    #Module
-	_component: #Component
-
 	// Shortcuts for easier access
-	moduleMetadata:    _module.#metadata
-	componentMetadata: _component.#metadata
+	moduleMetadata:    #Module.#metadata
+	componentMetadata: #Component.#metadata
 
 	// Unified labels and annotations from module and component
+	// Merges both module-level and component-level labels/annotations
+	// Component labels override module labels if there's a conflict
 	unifiedLabels: {
-		for k, v in moduleMetadata.labels & componentMetadata.labels {
-			"\(k)": "\(v)" // Convert all label values to strings
+		// Add all module labels
+		if moduleMetadata.labels != _|_ {
+			for k, v in moduleMetadata.labels {
+				"\(k)": "\(v)"
+			}
 		}
-	} | *{}
-	unifiedAnnotations: {
-		for k, v in moduleMetadata.annotations & componentMetadata.annotations {
-			"\(k)": "\(v)" // Convert all annotation values to strings
-		}
-	} | *{}
-}
 
-// Transformer selection logic
-// Matches component primitives to available transformers
-// For now, each primitive maps to exactly one transformer
-#SelectTransformer: {
-	component:             #Component
-	availableTransformers: #TransformerMap
-
-	// Grab primitive elements from component
-	primitiveElements: #ElementStringArray & component.#primitiveElements
-
-	// Optimized: Build reverse index first (primitive -> transformer)
-	// This avoids O(n*m) nested loops
-	_primitiveToTransformer: {
-		for tName, transformer in availableTransformers {
-			for req in transformer.required {
-				(req): transformer.#fullyQualifiedName
+		// Add all component labels (may override module labels)
+		if componentMetadata.labels != _|_ {
+			for k, v in componentMetadata.labels {
+				"\(k)": "\(v)"
 			}
 		}
 	}
 
-	// Direct mapping: each primitive gets exactly one transformer
-	// Future versions may support multiple transformers per primitive with selection logic
-	selectedTransformers: [
-		for primitiveFQN in primitiveElements
-		if _primitiveToTransformer[primitiveFQN] != _|_ {
-			primitive:   primitiveFQN
-			transformer: _primitiveToTransformer[primitiveFQN]
-		},
-	]
-}
+	unifiedAnnotations: {
+		// Add all module annotations
+		if moduleMetadata.annotations != _|_ {
+			for k, v in moduleMetadata.annotations {
+				"\(k)": "\(v)"
+			}
+		}
+
+		// Add all component annotations (may override module annotations)
+		if componentMetadata.annotations != _|_ {
+			for k, v in componentMetadata.annotations {
+				"\(k)": "\(v)"
+			}
+		}
+	}
+})

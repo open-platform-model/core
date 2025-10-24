@@ -17,10 +17,10 @@ import (
 #ProviderMap: [string]: #Provider
 
 // PlatformCatalog represents a platform's capability registry
-// It tracks available elements, providers, and registered modules
+// It tracks available elements, providers, renderers, and registered modules
 #PlatformCatalog: {
 	#kind:       "PlatformCatalog"
-	#apiVersion: "core.opm.dev/v1"
+	#apiVersion: "core.opm.dev/v0"
 	#metadata: {
 		name!:        #NameType
 		version!:     #VersionType
@@ -30,14 +30,21 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// Available element registry for this platform
-	// All elements that can be used in modules on this platform
-	#availableElements!: #ElementRegistry
-
 	// Available providers for this platform
 	// Maps provider name to provider definition
 	// Providers are validated against availableElements when registered
 	providers!: #ProviderMap
+
+	// Available renderers for this platform
+	renderers!: #RendererMap
+
+	// Module definitions registered in this catalog
+	// These are just the base definitions without transformers/renderers
+	moduleDefinitions: [string]: #ModuleDefinition
+
+	// Available element registry for this platform
+	// All elements that can be used in modules on this platform
+	#availableElements!: #ElementRegistry
 
 	// Compute supported elements for each provider based on catalog
 	#providerCapabilities: {
@@ -70,30 +77,61 @@ import (
 		}
 	}
 
-	// Modules registered in this catalog
-	// Validation context is injected automatically
-	modules?: [string]: #CatalogModule
+	// Validation for module definitions
+	// Note: Transformer validation now happens at Module instantiation time
+	// since transformers are attached to #Module, not #ModuleDefinition
+	#moduleDefinitionValidation: {
+		for modName, modDef in moduleDefinitions {
+			(modName): {
+				// Basic validation - ensure definition is valid
+				valid: modDef.#metadata.name != _|_
+			}
+		}
+	}
 
-	// Inject validation context into each module
-	for moduleName, moduleEntry in modules {
-		modules: (moduleName): #validation: {
-			_catalogElements:           #availableElements
-			_providerSupportedElements: #providerCapabilities[moduleEntry.targetProvider].supportedElements
+	// Provider/Renderer compatibility validation
+	// Checks that providers and renderers have compatible format labels
+	#providerRendererCompatibility: {
+		for providerName, provider in providers {
+			(providerName): {
+				outputFormat: string | *"unknown"
+				if provider.#metadata.labels != _|_ && provider.#metadata.labels["core.opm.dev/output-format"] != _|_ {
+					outputFormat: provider.#metadata.labels["core.opm.dev/output-format"]
+				}
+
+				// List compatible renderers
+				compatibleRenderers: [
+					for rendererName, renderer in renderers {
+						if renderer.#metadata.labels != _|_ && renderer.#metadata.labels["core.opm.dev/input-format"] != _|_ {
+							if renderer.#metadata.labels["core.opm.dev/input-format"] == outputFormat {
+								rendererName
+							}
+						}
+					},
+				]
+			}
 		}
 	}
 
 	#status: {
 		elementCount:  len(#availableElements)
 		providerCount: len(providers)
+		rendererCount: len(renderers)
 		moduleCount:   int | *0
-		moduleCount: {if modules != _|_ {len(modules)}}
+		moduleCount: {if moduleDefinitions != _|_ {len(moduleDefinitions)}}
 	}
 }
 
+// DEPRECATED: Old validation structures (kept for backwards compatibility)
+// These are no longer used in the new architecture where:
+// - ModuleDefinitions are pre-baked with transformers and renderers
+// - Validation happens at ModuleDefinition registration time
+
 // CatalogModule represents a module entry in the platform catalog
 // Includes validation against catalog capabilities
+// DEPRECATED: Use moduleDefinitions with pre-baked transformers instead
 #CatalogModule: {
-	module!: #Module
+	module!: #ModuleDefinition
 
 	// Target provider for this module
 	targetProvider!: string
@@ -122,8 +160,9 @@ import (
 }
 
 // ModuleValidationResult holds validation results for a module
+// DEPRECATED: Validation now happens at transformers attachment time
 #ModuleValidationResult: {
-	_module:                    #Module
+	_module:                    #ModuleDefinition
 	_catalogElements:           #ElementRegistry
 	_targetProviderName:        string
 	_providerSupportedElements: #ElementStringArray // Provided by catalog
@@ -191,8 +230,9 @@ import (
 
 // ValidateModuleAdmission validates whether a module can be admitted to a catalog
 // This is the main entry point for pre-admission validation
+// DEPRECATED: Use #moduleDefinitionValidation in #PlatformCatalog instead
 #ValidateModuleAdmission: {
-	module!:   #Module
+	module!:   #ModuleDefinition
 	catalog!:  #PlatformCatalog
 	provider!: string // Provider name from catalog
 

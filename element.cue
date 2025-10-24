@@ -28,11 +28,12 @@ import (
 	description?: string
 
 	// Optional metadata labels for categorization and filtering
+	// Labels are used by OPM for element selection and matching
+	// Example: {"core.opm.dev/workload-type": "stateless"}
 	labels?: #LabelsAnnotationsType
 
 	// Optional metadata annotations for element behavior hints (not used for categorization)
-	// Providers can use annotations for decision-making (e.g., workload type selection)
-	// Example: {"core.opm.dev/workload-type": "stateless"}
+	// Annotations provide additional metadata but are not used for selection
 	annotations?: #LabelsAnnotationsType
 	...
 }
@@ -55,11 +56,11 @@ import (
 
 #ElementKinds: #ElementKindPrimitive | #ElementKindModifier | #ElementKindComposite | #ElementKindCustom
 
-// Workload type annotation constants
-// Annotation key for workload type
-#AnnotationWorkloadType: "core.opm.dev/workload-type"
+// Workload type label constants
+// Label key for workload type (used for transformer selection)
+#LabelWorkloadType: "core.opm.dev/workload-type"
 
-// Workload type values (used in annotations)
+// Workload type values (used in labels)
 // e.g. Deployment, etc.
 #WorkloadTypeStateless: "stateless"
 
@@ -105,13 +106,21 @@ import (
 	composes!: #ElementArray
 
 	// Recursively extract all primitive elements from this composite
-	#primitiveElements: list.FlattenN([
+	// Collect primitives by kind, then flatten
+	_primitivesByKind: [
 		for element in composes {
-			if element.kind == "primitive" {[element.#fullyQualifiedName]}
-			if element.kind == "composite" {element.#primitiveElements}
-			if element.kind != "primitive" && element.kind != "composite" {[]}
+			if element.kind == "primitive" {
+				[element.#fullyQualifiedName]
+			}
+			if element.kind == "composite" {
+				element.#primitiveElements
+			}
+			if element.kind != "primitive" && element.kind != "composite" {
+				[]
+			}
 		},
-	], -1)
+	]
+	#primitiveElements: list.FlattenN(_primitivesByKind, 1)
 }
 
 // Modifier element - modifies other elements

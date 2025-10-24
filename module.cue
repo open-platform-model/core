@@ -8,7 +8,7 @@ import (
 //// Module
 /////////////////////////////////////////////////////////////////
 #ModuleBase: {
-	#apiVersion: "core.opm.dev/v1"
+	#apiVersion: "core.opm.dev/v0"
 	#metadata: {
 		name!:    #NameType
 		version!: #VersionType
@@ -22,7 +22,7 @@ import (
 }
 
 #ModuleDefinition: close(#ModuleBase & {
-	#apiVersion: "core.opm.dev/v1"
+	#apiVersion: "core.opm.dev/v0"
 	#kind:       "ModuleDefinition"
 	#metadata: {
 		name!:             #NameType
@@ -34,188 +34,133 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
+	// Components defined in this module
 	components: [Id=string]: #Component & {#metadata: #id: Id}
 
 	// Developer-defined module scopes
 	scopes?: [Id=string]: #Scope & {#metadata: #id: Id}
 
+	// Collect all primitive elements from all components
+	// Use a struct to deduplicate, then extract keys for unique list
+	_primitivesMap: {
+		for _, comp in components {
+			for _, prim in comp.#primitiveElements {
+				(prim): true
+			}
+		}
+	}
+	#allPrimitiveElements: #ElementStringArray & [for prim, _ in _primitivesMap {prim}]
+
 	// Schema/constraints for configurable values
 	// Developers define the configuration contract - NO defaults, NO templating
-	// Platform teams will add defaults and refine constraints in Module
+	// Platform teams can add defaults and refine constraints via CUE merging
 	// MUST be OpenAPIv3 compliant (no CUE templating - for/if statements)
-	values: {
-		// Example patterns (constraints only):
-		// replicas: uint                             // Type constraint
-		// domain!: string                            // Required field
-		// environment: "dev" | "staging" | "prod"    // Enum constraint
-		// port: >0 & <65536                          // Range constraint
-		// config: {
-		//     timeout: int
-		//     retries: uint
-		// }
-		...
-	}
+	values: {...}
 
 	#status: {
-		componentCount: int | *0
+		componentCount: len(components)
 		scopeCount:     int | *0
-		componentCount: {if components != _|_ {len(components)}}
 		scopeCount: {if scopes != _|_ {len(scopes)}}
 	}
 })
 
-// Module is a clustered resource that references a ModuleDefinition and adds platform-specific configuration'
-// Platform can add components and scopes but not remove
-// Platform can modify defaults in values but not structure
-// It is a cluster-scoped resource
+// Module is for end-user deployment
+// References a ModuleDefinition and provides concrete values
+// Includes embedded render logic
 #Module: close(#ModuleBase & {
-	#apiVersion: "core.opm.dev/v1"
+	#apiVersion: "core.opm.dev/v0"
 	#kind:       "Module"
 	#metadata: {
-		name:     #NameType
-		version?: #VersionType
-
+		name!:        #NameType
+		namespace:    string | *"default"
+		version?:     #VersionType
 		labels?:      #LabelsAnnotationsType
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// Platform context for this module instance
-	// Future plans for dynamic data.
-	// Queried from the platform at runtime
-	// e.g. current user, environment, region, cluster info, etc.
-	#context: {...}
+	// End-user provides concrete values
+	V=values: {...}
 
-	moduleDefinition: #ModuleDefinition
+	// Reference to upstream ModuleDefinition with values merged
+	#moduleDefinition!: #ModuleDefinition & {values: V}
 
-	// Platform can add components but not remove
-	components?: [Id=string]: #Component & {#metadata: #id: Id}
-	#allComponents: {
-		for id, comp in moduleDefinition.components {
-			"\(id)": comp
-		}
-		if components != _|_ {
-			for id, comp in components {
-				"\(id)": comp
+	// Explicit transformer-to-component mapping
+	// Users define which transformers apply to which components
+	// Can use CUE expressions to derive component lists dynamically
+	// Example:
+	//   #transformersToComponents: {
+	//     "k8s.io/api/apps/v1.Deployment": {
+	//       transformer: common.#DeploymentTransformer
+	//       components: [
+	//         for id, comp in #moduleDefinition.components
+	//         if transformer.#metadata.labels["core.opm.dev/workload-type"] == comp.#metadata.labels["core.opm.dev/workload-type"] &&
+	//            list.Contains(comp.#primitiveElements, "elements.opm.dev/core/v0.Container") {
+	//           id
+	//         }
+	//       ]
+	//     }
+	//   }
+	#transformersToComponents!: [string]: {
+		transformer: #Transformer
+		components: [...string] // List of component IDs
+	}
+
+	// Renderer chosen by platform team - REQUIRED
+	#renderer!: #Renderer
+
+	// Render output
+	output: {
+		// Collect resources from all components by applying transformers
+		// Uses explicit transformer-to-component mapping from #transformersToComponents
+		// Iterates transformers first (fewer outer iterations)
+		_componentOutputs: {
+			for transformerFQN, mapping in #transformersToComponents {
+				(transformerFQN): [
+					// For each component in the mapping
+					for componentID in mapping.components {
+						let comp = #moduleDefinition.components[componentID]
+
+						// Apply transformer to component
+						(mapping.transformer & {
+							transform: {
+								#component: comp
+								#context: #TransformerContext & {
+									name:              #moduleDefinition.#metadata.name
+									namespace:         #metadata.namespace
+									moduleMetadata:    #moduleDefinition.#metadata & #metadata
+									componentMetadata: comp.#metadata
+								}
+							}
+						}).transform.output
+					},
+				]
 			}
+		}
+
+		// Flatten to single list of transformer outputs
+		_transformerOutputs: [for _, outputs in _componentOutputs {outputs}]
+
+		// Flatten to single list of resources
+		#resources: list.FlattenN(_transformerOutputs, 2)
+
+		// Render using Module's renderer
+		_rendered: (#renderer.render & {
+			resources: #resources
+		}).output
+
+		// Expose rendered outputs conditionally
+		if _rendered.manifest != _|_ {
+			manifest: _rendered.manifest
+		}
+		if _rendered.files != _|_ {
+			files: _rendered.files
+		}
+		if _rendered.metadata != _|_ {
+			metadata: _rendered.metadata
 		}
 	}
 
-	// Platform can add scopes but not remove
-	scopes?: [Id=string]: #Scope & {#metadata: #id: Id}
-	#allScopes: {
-		if moduleDefinition.scopes != _|_ {
-			for id, scope in moduleDefinition.scopes {
-				"\(id)": scope
-			}
-		}
-		if scopes != _|_ {
-			for id, scope in scopes {
-				"\(id)": scope
-			}
-		}
-	}
-
-	// Collect all primitive elements used by this module
-	// Optimized: Use list.Concat instead of FlattenN for single-level flattening
-	#allPrimitiveElements: #ElementStringArray & list.Concat([for _, comp in #allComponents {comp.#primitiveElements}])
-
-	// CUE CONSTRAINT REFINEMENT STRATEGY:
-	// Platform refines Definition constraints using CUE's unification
-	// Platform can:
-	//   - Add defaults: replicas: uint | *3
-	//   - Refine constraints: domain: string & =~".*\\.myplatform\\.com$"
-	//   - Add new fields: region: string | *"us-west"
-	//   - Template values: Use for/if to populate from Definition (makes concrete)
-	//
-	// Note: Module.values does NOT need to be OpenAPIv3 compliant
-	//       (can use CUE templating with for/if statements)
-
-	// Platform team refines constraints and adds defaults
-	values: moduleDefinition.values & {
-		// Examples:
-		// replicas: uint | *3                              // Add default to Definition constraint
-		// domain: string & =~".*\\.myplatform\\.com$"     // Refine with regex pattern
-		// environment: ("dev" | "staging" | "prod") | *"dev"  // Add default to enum
-		// region: string | *"us-west"                      // New platform-specific field
-		//
-		// Templating example (makes values concrete):
-		// for name, comp in moduleDefinition.components {
-		//     "\(name)Image": string | *"default-\(name):latest"
-		// }
-		...
-	}
-
-	#status: moduleDefinition.#status & {
-		totalComponentCount:    len(#allComponents)
-		platformComponentCount: int | *0
-		platformComponentCount: {if components != _|_ {len(components)}}
-		platformScopeCount: int | *0
-		platformScopeCount: {if scopes != _|_ {len(scopes)}}
-		// platformScopes: [for id, scope in scopes if scope.#metadata.immutable {id}]
+	#status: {
+		definitionName: #moduleDefinition.#metadata.name
 	}
 })
-
-// Module Release - a specific deployment of a Module
-// Tracks the state of a Module deployment
-// Includes a reference to the Module and the resolved values
-// Includes status of the deployment
-#ModuleRelease: close(#ModuleBase & {
-	#apiVersion: "core.opm.dev/v1"
-	#kind:       "ModuleRelease"
-	#metadata: {
-		name!:    #NameType
-		version?: #VersionType
-	}
-
-	module: #Module
-
-	provider: #Provider
-
-	// User provides final concrete values
-	// Unifies with Module's refined constraints
-	// Single-level inheritance: only sees Module's constraints, not Definition's
-	values: module.values & {
-		...
-	}
-
-	#status: {}
-})
-
-// Module dependency resolution helper
-#ModuleDependencyResolver: {
-	module:   #Module
-	provider: #Provider
-
-	// Get all elements that need to be resolved
-	requiredElements: #ElementStringArray & module.#allPrimitiveElements
-
-	// Check which elements are supported by the provider
-	supportedElements: #ElementStringArray & provider.#supportedElements
-
-	// Find unsupported elements
-	unsupportedElements: [
-		for re in requiredElements
-		if (re & string) == re
-		if !list.Contains(supportedElements, re) {
-			re
-		},
-	]
-
-	// Resolution status
-	resolved: len(unsupportedElements) == 0
-
-	// Resolution report
-	report: {
-		totalElements:    len(requiredElements)
-		supported:        len(supportedElements)
-		unsupported:      len(unsupportedElements)
-		resolutionStatus: resolved
-
-		if len(unsupportedElements) > 0 {
-			missingElements: unsupportedElements
-			error:           "Module requires elements not supported by provider"
-		}
-
-		supportedElementsList: supportedElements
-	}
-}
