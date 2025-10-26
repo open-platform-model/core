@@ -177,7 +177,247 @@ myAppTest: #Module & {
 
 See [examples/developer](examples/developer) for complete examples.
 
+## OPM CLI
+
+### Overview
+
+The OPM CLI (`opm`) is a Go-based command-line tool that handles runtime operations for OPM modules. It separates runtime computation (Go) from schema definition and validation (CUE).
+
+### Architecture
+
+**Division of Responsibilities:**
+
+- **CUE**: Schema definitions, type checking, validation
+- **CLI Runtime**: Primitive resolution, transformer matching, execution, rendering
+
+### Installation
+
+```bash
+cd opm-cli
+go build -o opm ./cmd/opm
+```
+
+### Environment Variables
+
+- `OPM_ELEMENT_REGISTRY_PATH` - **Required**. Package path containing element registry (e.g., `/path/to/core/elements/core`)
+- `OPM_ELEMENT_REGISTRY_DEFINITION` - **Optional**. Definition name to load (default: `#ElementRegistry`)
+
+### Usage
+
+#### Basic Building
+
+```bash
+export OPM_ELEMENT_REGISTRY_PATH=/path/to/core/elements/core
+opm module build path/to/module.cue --output ./output
+# or using alias
+opm mod build path/to/module.cue --output ./output
+```
+
+#### With Verbose Output
+
+```bash
+opm mod build module.cue --output ./k8s --verbose
+```
+
+Output shows each step with inline timing:
+
+- 📦 Loading Module (with module details and ⏱️ timing)
+- 📚 Loading Element Registry (shows 💾 Cache or 📁 Package source with ⏱️ timing)
+- 🔍 Analyzing Components (with workload types, primitive counts, and ⏱️ timing)
+- 🔗 Matching Transformers (shows which transformers match which components with ⏱️ timing)
+- ⚙️ Executing Transformers (with individual execution times and total ⏱️ timing)
+- 📄 Rendering Output (with resource count, size, and ⏱️ timing)
+- ⏱️ Total time at the end
+
+#### With Timing Report
+
+```bash
+opm mod build module.cue --output ./k8s --timings
+```
+
+Shows detailed performance breakdown table:
+
+- Main steps with durations and percentages
+- Individual transformer execution times with percentages
+- Total execution time
+
+#### Combined Verbose + Timings
+
+```bash
+opm mod build module.cue --output ./k8s --verbose --timings
+```
+
+Shows both inline timings during execution and final timing report table
+
+### Module File Format
+
+Modules must declare `opm.#Module` at the package level:
+
+```cue
+package myapp
+
+import (
+    opm "github.com/open-platform-model/core"
+    common "github.com/open-platform-model/core/examples/common"
+)
+
+opm.#Module
+
+#metadata: {
+    name:      "my-app"
+    namespace: "production"
+}
+
+#module: opm.#CatalogModule & {
+    moduleDefinition: myAppDefinition
+    renderer:         common.#KubernetesListRenderer
+    provider:         common.#KubernetesProvider
+}
+
+values: {
+    frontend: {
+        image: "myapp:v1.0.0"
+    }
+}
+```
+
+### CLI Workflow
+
+When you run `opm module build` (or `opm mod build`), the CLI:
+
+1. **Loads the Module** from the specified file
+2. **Loads the Element Registry** from `$OPM_ELEMENT_REGISTRY_PATH`
+3. **Analyzes Components** - Resolves all primitive elements for each component
+4. **Matches Transformers** - Automatically selects transformers from the provider based on:
+   - Component labels matching **ALL** transformer labels
+   - Component primitives matching transformer required primitives
+5. **Executes Transformers** - Generates platform resources in parallel
+6. **Executes Renderer** - Aggregates resources into final output format
+7. **Writes Output** - Saves the rendered manifest
+
+### Transformer Matching Algorithm
+
+Transformers declare their requirements:
+
+```cue
+#DeploymentTransformer: opm.#Transformer & {
+    #metadata: {
+        labels: {
+            "core.opm.dev/workload-type": "stateless"
+        }
+    }
+    required: ["elements.opm.dev/core/v0.Container"]
+    optional: ["elements.opm.dev/core/v0.Replicas", ...]
+}
+```
+
+The CLI matches transformers to components when:
+
+1. **ALL** transformer labels match component labels (exact key-value match)
+2. **ALL** required primitives are present in the component
+
+### Performance Optimizations
+
+The CLI includes several performance optimizations:
+
+- **Automatic Registry Caching**: Element registries are cached in `~/.opm/cache/` with automatic invalidation
+  - Without cache: ~2.4s registry load time
+  - With cache: ~0.5ms registry load time (**4,900x faster**)
+  - Overall speedup: ~37% faster total execution
+  - Cache automatically invalidates when source files change
+- **Parallel Transformer Execution**: Independent transformers run concurrently (36% speedup)
+- **CUE Context Reuse**: Single CUE context shared across operations
+- **Efficient Component Analysis**: Fast primitive resolution (<100µs)
+
+Typical performance (with cache):
+
+- Load Module: ~1.9s (35%)
+- Load Registry: ~0.5ms (0%) - **cached**
+- Analyze Components: <1ms (0%)
+- Match Transformers: <1ms (0%)
+- Execute Transformers: ~3.6s (65%) - runs in parallel
+- Execute Renderer: ~1ms (0%)
+- **Total: ~5.6 seconds** for typical modules (vs ~8.9s without cache)
+
+To clear the cache: `opm elements cache clear`
+
+### Flags
+
+- `-o, --output <dir>` - Output directory (default: `./output`)
+- `-f, --format <format>` - Output format: `yaml` or `json` (default: `yaml`)
+- `-v, --verbose` - Show detailed matching information with inline timing for each step
+- `-t, --timings` - Show detailed timing report table at the end
+- Combine `-v` and `-t` for both inline timings and final report
+
+### Troubleshooting
+
+**Error: OPM_ELEMENT_REGISTRY_PATH environment variable is not set**
+
+Set the environment variable to point to the package directory:
+
+```bash
+export OPM_ELEMENT_REGISTRY_PATH=/path/to/core/elements/core
+```
+
+**Error: file must declare 'opm.#Module' at package level**
+
+Your module file must have `opm.#Module` declared at the top level (not inside a named field).
+
+**Error: no matching transformer found for component**
+
+The component's labels or primitives don't match any transformer requirements. Use `--verbose` to see detailed matching information.
+
+### Architecture Details
+
+**Key Packages:**
+
+- `cmd/opm` - CLI commands (render)
+- `pkg/loader` - CUE file loading (modules, providers, registries)
+- `pkg/registry` - Element registry management and primitive resolution
+- `pkg/component` - Component analysis
+- `pkg/transformer` - Transformer matching, selection, and execution
+- `pkg/renderer` - Renderer execution
+
+**Design Decisions:**
+
+- No embedded registry - loads from `$OPM_ELEMENT_REGISTRY_PATH`
+- Package-level Module declaration (not named fields)
+- Automatic transformer matching (no manual `transformersToComponents`)
+- Parallel execution for performance
+- Clean separation between CUE (schema) and Go (runtime)
+
 ## Recent Changes
+
+### 2025-10-25
+
+1. **OPM CLI Implementation**: Complete Go-based CLI for rendering OPM modules
+   - Removed `transformersToComponents` from CUE schemas - now computed at runtime
+   - Changed to single `--module` parameter (removed `--catalog` and `--definition`)
+   - Automatic transformer matching based on labels and primitives
+   - Parallel transformer execution (36% performance improvement)
+   - `--verbose` flag for clean, structured output with emojis and inline timings
+   - `--timings` flag for detailed performance analysis table
+   - Environment variable: `OPM_ELEMENT_REGISTRY_PATH` points to package directory
+   - Module files must declare `opm.#Module` at package level
+   - Provider contains transformers, CLI automatically matches to components
+   - Updated all examples to new architecture
+
+2. **Element Registry Caching**: Automatic file-based caching for performance
+   - Caches parsed element registries in `~/.opm/cache/`
+   - 4,900x faster registry loading (2.4s → 0.5ms)
+   - 37% faster overall execution time (8.9s → 5.6s)
+   - Automatic cache invalidation based on file modification time and size
+   - New command: `opm elements cache clear` to manually clear cache
+   - Verbose output shows cache status (💾 Cache vs 📁 Package)
+
+3. **CLI Command Restructuring**: Timoni-style command organization
+   - Moved `render` to `module build` (alias: `mod build`) - renamed to match industry standard
+   - Moved `cache` to `elements cache`
+   - Removed `validate` and `analyze` commands (not yet implemented)
+   - Removed all catalog-related CLI operations (catalog is a CUE concept, not CLI)
+   - Implemented `elements list` and `elements resolve` commands
+   - Commands: `opm module`, `opm elements`
+   - Example: `opm mod build module.cue --output ./k8s --verbose`
 
 ### 2025-10-23
 
