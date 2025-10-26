@@ -29,12 +29,12 @@ import (
 	target: ["component"]
 	schema: #DaemonSpec
 	composes: [
-		#ContainerElement,
-		#SidecarContainersElement,
-		#InitContainersElement,
-		#RestartPolicyElement,
-		#UpdateStrategyElement,
-		#HealthCheckElement,
+		"elements.opm.dev/core/v0.Container",
+		"elements.opm.dev/core/v0.SidecarContainers",
+		"elements.opm.dev/core/v0.InitContainers",
+		"elements.opm.dev/core/v0.RestartPolicy",
+		"elements.opm.dev/core/v0.UpdateStrategy",
+		"elements.opm.dev/core/v0.HealthCheck",
 	]
 	description: "A daemonSet workload that runs on all (or some) nodes in the cluster"
 	labels: {

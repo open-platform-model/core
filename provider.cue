@@ -21,7 +21,7 @@ import (
 		minVersion:  string // The minimum version of the provider
 
 		// Labels for provider categorization and compatibility
-		// Example: {"core.opm.dev/output-format": "kubernetes"}
+		// Example: {"core.opm.dev/format": "kubernetes"}
 		labels?: #LabelsAnnotationsType
 	}
 
@@ -51,7 +51,7 @@ import (
 //
 // The selector would generate transformer-to-component mappings by:
 // 1. Analyzing component primitives and labels
-// 2. Matching against available transformers
+// 2. Matching against available transformers from provider
 // 3. Producing #transformersToComponents structure
 //
 // Example selector logic (future):
@@ -65,8 +65,8 @@ import (
 		// Input: Module definition with components
 		moduleDefinition: #ModuleDefinition
 
-		// Input: Available transformers from provider
-		availableTransformers: #TransformerMap
+		// Input: Provider with transformers
+		provider: #Provider
 
 		// Output: Generated #transformersToComponents structure
 		// Maps each transformer to its matching components
@@ -117,47 +117,9 @@ import (
 }
 
 // Provider context passed to transformers
-// Contains hierarchical metadata for resource generation
+// Simplified: Components now have metadata unified from Module in CUE
 #TransformerContext: close({
-	name:      string // Module name
-	namespace: string // Module namespace
-
-	// Shortcuts for easier access
-	moduleMetadata:    #Module.#metadata
-	componentMetadata: #Component.#metadata
-
-	// Unified labels and annotations from module and component
-	// Merges both module-level and component-level labels/annotations
-	// Component labels override module labels if there's a conflict
-	unifiedLabels: {
-		// Add all module labels
-		if moduleMetadata.labels != _|_ {
-			for k, v in moduleMetadata.labels {
-				"\(k)": "\(v)"
-			}
-		}
-
-		// Add all component labels (may override module labels)
-		if componentMetadata.labels != _|_ {
-			for k, v in componentMetadata.labels {
-				"\(k)": "\(v)"
-			}
-		}
-	}
-
-	unifiedAnnotations: {
-		// Add all module annotations
-		if moduleMetadata.annotations != _|_ {
-			for k, v in moduleMetadata.annotations {
-				"\(k)": "\(v)"
-			}
-		}
-
-		// Add all component annotations (may override module annotations)
-		if componentMetadata.annotations != _|_ {
-			for k, v in componentMetadata.annotations {
-				"\(k)": "\(v)"
-			}
-		}
-	}
+	// Module name and version
+	name:    string
+	version: string | *"latest"
 })

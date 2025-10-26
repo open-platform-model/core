@@ -1,9 +1,5 @@
 package core
 
-import (
-	"list"
-)
-
 /////////////////////////////////////////////////////////////////
 //// Component
 /////////////////////////////////////////////////////////////////
@@ -18,6 +14,9 @@ import (
 		#id!: string
 
 		name!: string | *#id
+
+		// Namespace (typically unified from Module)
+		namespace?: string
 
 		// Component labels - automatically merged from element labels
 		// Element labels are added first, then component-specific labels can override
@@ -52,22 +51,8 @@ import (
 
 	#elements: #ElementMap
 
-	// Helper: Extract ALL primitive elements (recursively traverses composite elements)
-	// Collect primitives by kind, then flatten
-	_primitivesByKind: [
-		for _, element in #elements {
-			if element.kind == "primitive" {
-				[element.#fullyQualifiedName]
-			}
-			if element.kind == "composite" {
-				element.#primitiveElements
-			}
-			if element.kind != "primitive" && element.kind != "composite" {
-				[]
-			}
-		},
-	]
-	#primitiveElements: list.FlattenN(_primitivesByKind, 1)
+	// Note: Primitive elements are now resolved by the OPM CLI runtime
+	// The runtime analyzes #elements and recursively resolves all primitive elements
 
 	// Add schema of all elements for validation purposes
 	// This will ensure that all fields from all elements are included and validated

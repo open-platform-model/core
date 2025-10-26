@@ -92,26 +92,37 @@ moduleTests: {
 			namespace: "test"
 		}
 
-		#moduleDefinition: {
+		#module: opm.#CatalogModule & {
 			#metadata: {
-				name:    "app"
+				name:    "app-test"
 				version: "1.0.0"
 			}
-			components: {
-				web: core.#StatelessWorkload & {
-					statelessWorkload: container: {
-						name:  "web"
-						image: "nginx:latest"
+
+			moduleDefinition: {
+				#metadata: {
+					name:    "app"
+					version: "1.0.0"
+				}
+				components: {
+					web: core.#StatelessWorkload & {
+						statelessWorkload: container: {
+							name:  "web"
+							image: "nginx:latest"
+						}
 					}
 				}
+				values: {}
 			}
-			values: {}
-		}
 
-		#transformers: {
-			"mock.test/v1.Deployment": fixtures.#MockDeploymentTransformer
+			transformersToComponents: {
+				"mock.test/v1.Deployment": {
+					transformer: fixtures.#MockDeploymentTransformer
+					components: ["web"]
+				}
+			}
+
+			renderer: fixtures.#MockListRenderer
 		}
-		#renderer: fixtures.#MockListRenderer
 
 		values: {}
 	}
@@ -127,36 +138,47 @@ moduleTests: {
 			namespace: "test"
 		}
 
-		#moduleDefinition: {
+		#module: opm.#CatalogModule & {
 			#metadata: {
-				name:    "app"
+				name:    "app-scopes-test"
 				version: "1.0.0"
 			}
-			components: {
-				web: core.#StatelessWorkload & {
-					statelessWorkload: container: {
-						name:  "web"
-						image: "nginx:latest"
-					}
-				}
-			}
-			scopes: {
-				network: opm.#Scope & {
-					#metadata: #id: "network"
-					#elements: {
-						NetworkScope: core.#NetworkScopeElement
-					}
-					networkScope: networkPolicy: internalCommunication: true
-					appliesTo: "*"
-				}
-			}
-			values: {}
-		}
 
-		#transformers: {
-			"mock.test/v1.Deployment": fixtures.#MockDeploymentTransformer
+			moduleDefinition: {
+				#metadata: {
+					name:    "app"
+					version: "1.0.0"
+				}
+				components: {
+					web: core.#StatelessWorkload & {
+						statelessWorkload: container: {
+							name:  "web"
+							image: "nginx:latest"
+						}
+					}
+				}
+				scopes: {
+					network: opm.#Scope & {
+						#metadata: #id: "network"
+						#elements: {
+							NetworkScope: core.#NetworkScopeElement
+						}
+						networkScope: networkPolicy: internalCommunication: true
+						appliesTo: "*"
+					}
+				}
+				values: {}
+			}
+
+			transformersToComponents: {
+				"mock.test/v1.Deployment": {
+					transformer: fixtures.#MockDeploymentTransformer
+					components: ["web"]
+				}
+			}
+
+			renderer: fixtures.#MockListRenderer
 		}
-		#renderer: fixtures.#MockListRenderer
 
 		values: {}
 	}
@@ -191,11 +213,25 @@ moduleTests: {
 				name:      "app"
 				namespace: "test"
 			}
-			#moduleDefinition: _definition
-			#transformers: {
-				"mock.test/v1.Deployment": fixtures.#MockDeploymentTransformer
+
+			#module: opm.#CatalogModule & {
+				#metadata: {
+					name:    "app-values-test"
+					version: "1.0.0"
+				}
+
+				moduleDefinition: _definition
+
+				transformersToComponents: {
+					"mock.test/v1.Deployment": {
+						transformer: fixtures.#MockDeploymentTransformer
+						components: ["web"]
+					}
+				}
+
+				renderer: fixtures.#MockListRenderer
 			}
-			#renderer: fixtures.#MockListRenderer
+
 			values: {
 				image:    "nginx:1.25"
 				replicas: 5

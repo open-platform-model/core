@@ -30,7 +30,7 @@ package core
 		version:     string
 
 		// Labels for renderer categorization and compatibility
-		// Example: {"core.opm.dev/input-format": "kubernetes"}
+		// Example: {"core.opm.dev/format": "kubernetes"}
 		labels?: #LabelsAnnotationsType
 	}
 
@@ -60,7 +60,7 @@ package core
 		description: "Renders to Kubernetes List format"
 		version:     "1.0.0"
 		labels: {
-			"core.opm.dev/input-format": "kubernetes"
+			"core.opm.dev/format": "kubernetes"
 		}
 	}
 	targetPlatform: "kubernetes"

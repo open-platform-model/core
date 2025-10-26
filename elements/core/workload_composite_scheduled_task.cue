@@ -33,10 +33,10 @@ import (
 	target: ["component"]
 	schema: #ScheduledTaskWorkloadSpec
 	composes: [
-		#ContainerElement,
-		#SidecarContainersElement,
-		#InitContainersElement,
-		#RestartPolicyElement,
+		"elements.opm.dev/core/v0.Container",
+		"elements.opm.dev/core/v0.SidecarContainers",
+		"elements.opm.dev/core/v0.InitContainers",
+		"elements.opm.dev/core/v0.RestartPolicy",
 	]
 	description: "A scheduled task workload that runs on a schedule"
 	labels: {

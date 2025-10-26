@@ -1,7 +1,6 @@
 package core
 
 import (
-	"list"
 	"strings"
 )
 
@@ -21,8 +20,7 @@ import (
 	target!: ["component"] | ["scope"] | ["component", "scope"]
 
 	// MUST be an OpenAPIv3 compatible schema
-	// TODO: Add validation to only allow one named struct per trait
-	schema!: _
+	schema!: #OpenAPIv3Schema
 
 	// Human-readable description of the element
 	description?: string
@@ -102,25 +100,9 @@ import (
 #Composite: #Element & {
 	kind: "composite"
 
-	// Which primitives/elements this composes
-	composes!: #ElementArray
-
-	// Recursively extract all primitive elements from this composite
-	// Collect primitives by kind, then flatten
-	_primitivesByKind: [
-		for element in composes {
-			if element.kind == "primitive" {
-				[element.#fullyQualifiedName]
-			}
-			if element.kind == "composite" {
-				element.#primitiveElements
-			}
-			if element.kind != "primitive" && element.kind != "composite" {
-				[]
-			}
-		},
-	]
-	#primitiveElements: list.FlattenN(_primitivesByKind, 1)
+	// Which primitives/elements this composes (FQN strings)
+	// Primitive extraction happens at CatalogModule level where element registry is available
+	composes!: [...string]
 }
 
 // Modifier element - modifies other elements
@@ -129,8 +111,8 @@ import (
 #Modifier: #Element & {
 	kind: "modifier"
 
-	// Which primitive elements this modifies
-	modifies!: [...#Primitive]
+	// Which primitive elements this modifies (FQN strings)
+	modifies!: [...string]
 }
 
 // Custom element - special handling outside of OPM spec

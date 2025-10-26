@@ -23,12 +23,9 @@ import (
 	#apiVersion: "elements.opm.dev/core/v0"
 	target: ["component"]
 	schema: #ReplicasSpec
-	modifies: [#Container]
+	modifies: ["elements.opm.dev/core/v0.Container"]
 	description: "Number of desired replicas"
 	labels: {"core.opm.dev/category": "workload"}
-	matchLabels: {
-		"core.opm.dev/fully-qualified-name": "elements.opm.dev/core/v0.Container"
-	}
 }
 
 #Replicas: close(opm.#Component & {

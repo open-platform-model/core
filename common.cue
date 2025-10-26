@@ -9,6 +9,16 @@ import (
 
 #VersionType: string & =~"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
+// OpenAPIv3-compatible schema validator
+#OpenAPIv3Primitive: null | bool | string | bytes | number | float | int
+#OpenAPIv3Array: [...#OpenAPIv3Schema]
+#OpenAPIv3Object: {
+	[string]: #OpenAPIv3Schema
+	...
+}
+
+#OpenAPIv3Schema: #OpenAPIv3Primitive | #OpenAPIv3Array | #OpenAPIv3Object
+
 /////////////////////////////////////////////////////////////////
 //// Output Types
 /////////////////////////////////////////////////////////////////

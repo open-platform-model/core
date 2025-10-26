@@ -32,8 +32,8 @@ import (
 	target: ["component"]
 	schema: #SimpleDatabaseSpec
 	composes: [
-		#StatefulWorkloadElement,
-		#VolumeElement,
+		"elements.opm.dev/core/v0.StatefulWorkload",
+		"elements.opm.dev/core/v0.Volume",
 	]
 	description: "Composite trait to add a simple database to a component"
 	labels: {

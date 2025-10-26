@@ -30,13 +30,13 @@ import (
 	target: ["component"]
 	schema: #StatelessSpec
 	composes: [
-		#ContainerElement,
-		#SidecarContainersElement,
-		#InitContainersElement,
-		#ReplicasElement,
-		#RestartPolicyElement,
-		#UpdateStrategyElement,
-		#HealthCheckElement,
+		"elements.opm.dev/core/v0.Container",
+		"elements.opm.dev/core/v0.SidecarContainers",
+		"elements.opm.dev/core/v0.InitContainers",
+		"elements.opm.dev/core/v0.Replicas",
+		"elements.opm.dev/core/v0.RestartPolicy",
+		"elements.opm.dev/core/v0.UpdateStrategy",
+		"elements.opm.dev/core/v0.HealthCheck",
 	]
 	description: "A stateless workload with no requirement for stable identity or storage"
 	labels: {

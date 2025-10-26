@@ -1,14 +1,49 @@
 package core
 
-import (
-	"list"
-)
-
 /////////////////////////////////////////////////////////////////
 //// Element Registry
 /////////////////////////////////////////////////////////////////
 
 #ElementRegistry: #ElementMap
+
+/////////////////////////////////////////////////////////////////
+//// Catalog Module
+/////////////////////////////////////////////////////////////////
+
+// CatalogModule bundles a module definition with its rendering strategy
+// This represents a complete, ready-to-deploy module configuration
+#CatalogModule: {
+	#kind:       "CatalogModule"
+	#apiVersion: "core.opm.dev/v0"
+
+	#metadata: {
+		name!:        #NameType
+		description?: string
+		version!:     #VersionType
+
+		labels?:      #LabelsAnnotationsType
+		annotations?: #LabelsAnnotationsType
+	}
+
+	// The module definition (developer-created)
+	moduleDefinition!: #ModuleDefinition
+
+	// Renderer for this module
+	renderer!: #Renderer
+
+	// Provider for this module
+	provider!: #Provider
+
+	// Note: Both primitive element resolution and transformer-component matching
+	// are handled by the OPM CLI runtime
+	// The runtime will:
+	// 1. Load the element registry
+	// 2. Analyze components to resolve primitive elements
+	// 3. Match transformers from provider to components based on:
+	//    - Component primitives matching transformer required/optional
+	//    - Component labels matching ALL transformer labels
+	// 4. Execute matched transformers and renderer
+}
 
 /////////////////////////////////////////////////////////////////
 //// Platform Catalog
@@ -38,13 +73,13 @@ import (
 	// Available renderers for this platform
 	renderers!: #RendererMap
 
-	// Module definitions registered in this catalog
-	// These are just the base definitions without transformers/renderers
-	moduleDefinitions: [string]: #ModuleDefinition
+	// Catalog modules - complete module configurations ready to deploy
+	// Each module bundles a definition with its rendering strategy (transformers + renderer)
+	modules: [string]: #CatalogModule
 
 	// Available element registry for this platform
 	// All elements that can be used in modules on this platform
-	#availableElements!: #ElementRegistry
+	elementRegistry!: #ElementRegistry
 
 	// Compute supported elements for each provider based on catalog
 	#providerCapabilities: {
@@ -55,7 +90,7 @@ import (
 				// Elements that exist in catalog
 				supportedElements: [
 					for element in provider.#declaredElements
-					if #availableElements[element] != _|_ {
+					if elementRegistry[element] != _|_ {
 						element
 					},
 				]
@@ -63,7 +98,7 @@ import (
 				// Elements missing from catalog
 				missingElements: [
 					for element in provider.#declaredElements
-					if #availableElements[element] == _|_ {
+					if elementRegistry[element] == _|_ {
 						element
 					},
 				]
@@ -77,14 +112,19 @@ import (
 		}
 	}
 
-	// Validation for module definitions
-	// Note: Transformer validation now happens at Module instantiation time
-	// since transformers are attached to #Module, not #ModuleDefinition
-	#moduleDefinitionValidation: {
-		for modName, modDef in moduleDefinitions {
+	// Validation for catalog modules
+	// Validates that modules have valid definitions and rendering configurations
+	#moduleValidation: {
+		for modName, catalogMod in modules {
 			(modName): {
-				// Basic validation - ensure definition is valid
-				valid: modDef.#metadata.name != _|_
+				// Validate module definition
+				definitionValid: catalogMod.moduleDefinition.#metadata.name != _|_
+
+				// Validate renderer is set
+				rendererValid: catalogMod.renderer != _|_
+
+				// Validate provider is configured
+				providerValid: catalogMod.provider != _|_
 			}
 		}
 	}
@@ -95,15 +135,15 @@ import (
 		for providerName, provider in providers {
 			(providerName): {
 				outputFormat: string | *"unknown"
-				if provider.#metadata.labels != _|_ && provider.#metadata.labels["core.opm.dev/output-format"] != _|_ {
-					outputFormat: provider.#metadata.labels["core.opm.dev/output-format"]
+				if provider.#metadata.labels != _|_ && provider.#metadata.labels["core.opm.dev/format"] != _|_ {
+					outputFormat: provider.#metadata.labels["core.opm.dev/format"]
 				}
 
 				// List compatible renderers
 				compatibleRenderers: [
 					for rendererName, renderer in renderers {
-						if renderer.#metadata.labels != _|_ && renderer.#metadata.labels["core.opm.dev/input-format"] != _|_ {
-							if renderer.#metadata.labels["core.opm.dev/input-format"] == outputFormat {
+						if renderer.#metadata.labels != _|_ && renderer.#metadata.labels["core.opm.dev/format"] != _|_ {
+							if renderer.#metadata.labels["core.opm.dev/format"] == outputFormat {
 								rendererName
 							}
 						}
@@ -114,162 +154,10 @@ import (
 	}
 
 	#status: {
-		elementCount:  len(#availableElements)
+		elementCount:  len(elementRegistry)
 		providerCount: len(providers)
 		rendererCount: len(renderers)
 		moduleCount:   int | *0
-		moduleCount: {if moduleDefinitions != _|_ {len(moduleDefinitions)}}
-	}
-}
-
-// DEPRECATED: Old validation structures (kept for backwards compatibility)
-// These are no longer used in the new architecture where:
-// - ModuleDefinitions are pre-baked with transformers and renderers
-// - Validation happens at ModuleDefinition registration time
-
-// CatalogModule represents a module entry in the platform catalog
-// Includes validation against catalog capabilities
-// DEPRECATED: Use moduleDefinitions with pre-baked transformers instead
-#CatalogModule: {
-	module!: #ModuleDefinition
-
-	// Target provider for this module
-	targetProvider!: string
-
-	// Validation results
-	#validation: #ModuleValidationResult & {
-		_module:                    module
-		_catalogElements:           _ // Provided by catalog
-		_targetProviderName:        targetProvider
-		_providerSupportedElements: _ // Provided by catalog
-	}
-
-	// Module is admitted if validation passes
-	admitted: #validation.valid
-
-	// Admission metadata
-	#admissionMetadata: {
-		admittedAt?: string
-		admittedBy?: string
-		reason?:     string
-	}
-
-	if !admitted {
-		#admissionMetadata: reason: #validation.#report.summary
-	}
-}
-
-// ModuleValidationResult holds validation results for a module
-// DEPRECATED: Validation now happens at transformers attachment time
-#ModuleValidationResult: {
-	_module:                    #ModuleDefinition
-	_catalogElements:           #ElementRegistry
-	_targetProviderName:        string
-	_providerSupportedElements: #ElementStringArray // Provided by catalog
-
-	// Required elements from module
-	requiredElements: #ElementStringArray & _module.#allPrimitiveElements
-
-	// Check against catalog's available elements
-	missingInCatalog: [
-		for elem in requiredElements
-		if _catalogElements[elem] == _|_ {
-			elem
-		},
-	]
-
-	// Check against provider's supported elements
-	unsupportedByProvider: [
-		for elem in requiredElements
-		if !list.Contains(_providerSupportedElements, elem) {
-			elem
-		},
-	]
-
-	// Validation passes if no missing or unsupported elements
-	valid: len(missingInCatalog) == 0 && len(unsupportedByProvider) == 0
-
-	// Detailed validation report
-	#report: {
-		...
-
-		details: {
-			totalElements:    len(requiredElements)
-			missingCount:     len(missingInCatalog)
-			unsupportedCount: len(unsupportedByProvider)
-
-			// Valid if no missing or unsupported elements
-			valid: len(missingInCatalog) == 0 && len(unsupportedByProvider) == 0
-
-			if len(missingInCatalog) > 0 {
-				missingElements: missingInCatalog
-				missingMessage:  "Catalog is missing elements (see missingElements field for details)"
-			}
-
-			if len(unsupportedByProvider) > 0 {
-				unsupportedElements: unsupportedByProvider
-				unsupportedMessage:  "Provider '\(_targetProviderName)' does not support some elements (see unsupportedElements field for details)"
-			}
-
-			requiredElementsList: requiredElements
-			availableInCatalog: [
-				for elem in requiredElements
-				if _catalogElements[elem] != _|_ {
-					elem
-				},
-			]
-			supportedByProvider: [
-				for elem in requiredElements
-				if list.Contains(_providerSupportedElements, elem) {
-					elem
-				},
-			]
-		}
-	}
-}
-
-// ValidateModuleAdmission validates whether a module can be admitted to a catalog
-// This is the main entry point for pre-admission validation
-// DEPRECATED: Use #moduleDefinitionValidation in #PlatformCatalog instead
-#ValidateModuleAdmission: {
-	module!:   #ModuleDefinition
-	catalog!:  #PlatformCatalog
-	provider!: string // Provider name from catalog
-
-	// Ensure provider exists in catalog
-	_providerExists: provider & catalog.providers[provider].#metadata.name
-
-	// Run module validation
-	#validation: #ModuleValidationResult & {
-		_module:                    module
-		_catalogElements:           catalog.#availableElements
-		_targetProviderName:        provider
-		_providerSupportedElements: catalog.#providerCapabilities[provider].supportedElements
-	}
-
-	// Comprehensive admission report
-	admissionReport: {
-		moduleName:     module.#metadata.name
-		moduleVersion:  module.#metadata.version
-		targetProvider: provider
-
-		validationStatus: #validation.valid
-
-		// Admission decision
-		admitted: #validation.valid
-
-		validationReport: #validation.#report
-
-		// Summary message
-		if #validation.valid == true {
-			status:  "admitted"
-			message: "Module is ready for deployment"
-		}
-		if #validation.valid == false {
-			status:  "rejected"
-			message: "Module validation failed"
-		}
-
-		...
+		moduleCount: {if modules != _|_ {len(modules)}}
 	}
 }

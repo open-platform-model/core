@@ -74,15 +74,25 @@ moduleRendererTests: {
 				namespace: "production"
 			}
 
-			#moduleDefinition: _definition
+			#module: opm.#CatalogModule & {
+				#metadata: {
+					name:    "test-app-catalog"
+					version: "1.0.0"
+				}
 
-			// Attach transformers
-			#transformers: {
-				"k8s.io/api/apps/v1.Deployment": _deploymentTransformer
+				moduleDefinition: _definition
+
+				// Attach transformers
+				transformersToComponents: {
+					"k8s.io/api/apps/v1.Deployment": {
+						transformer: _deploymentTransformer
+						components: ["web"]
+					}
+				}
+
+				// Attach renderer
+				renderer: opm.#KubernetesListRenderer
 			}
-
-			// Attach renderer
-			#renderer: opm.#KubernetesListRenderer
 
 			values: {}
 		}
@@ -166,13 +176,23 @@ moduleRendererTests: {
 				namespace: "staging"
 			}
 
-			#moduleDefinition: _definition
+			#module: opm.#CatalogModule & {
+				#metadata: {
+					name:    "multi-component-app-catalog"
+					version: "1.0.0"
+				}
 
-			#transformers: {
-				"k8s.io/api/apps/v1.Deployment": _deploymentTransformer
+				moduleDefinition: _definition
+
+				transformersToComponents: {
+					"k8s.io/api/apps/v1.Deployment": {
+						transformer: _deploymentTransformer
+						components: ["web", "api"]
+					}
+				}
+
+				renderer: opm.#KubernetesListRenderer
 			}
-
-			#renderer: opm.#KubernetesListRenderer
 
 			values: {}
 		}
