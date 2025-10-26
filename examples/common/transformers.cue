@@ -49,10 +49,10 @@ import (
 			apiVersion: "apps/v1"
 			kind:       "Deployment"
 			metadata: {
-				name:        #context.componentMetadata.name
-				namespace:   #context.namespace
-				labels:      #context.unifiedLabels
-				annotations: #context.unifiedAnnotations
+				name:        #component.#metadata.name
+				namespace:   #component.#metadata.namespace
+				labels:      #component.#metadata.labels
+				annotations: #component.#metadata.annotations
 			}
 			spec: {
 				replicas: (#component.replicas | *{count: 1}).count
@@ -102,14 +102,14 @@ import (
 			apiVersion: "apps/v1"
 			kind:       "StatefulSet"
 			metadata: {
-				name:        #context.componentMetadata.name
-				namespace:   #context.namespace
-				labels:      #context.unifiedLabels
-				annotations: #context.unifiedAnnotations
+				name:        #component.#metadata.name
+				namespace:   #component.#metadata.namespace
+				labels:      #component.#metadata.labels
+				annotations: #component.#metadata.annotations
 			}
 			spec: {
 				replicas: (#component.replicas | *{count: 1}).count
-				serviceName: #context.componentMetadata.name
+				serviceName: #component.#metadata.name
 				template: {
 					spec: {
 						containers: list.Concat([[#component.container], #component.sidecarContainers | *[]])
@@ -167,10 +167,10 @@ import (
 					apiVersion: "v1"
 					kind:       "PersistentVolumeClaim"
 					metadata: {
-						name:        "\(#context.componentMetadata.name)-\(volumeName)"
-						namespace:   #context.namespace
-						labels:      #context.unifiedLabels
-						annotations: #context.unifiedAnnotations
+						name:        "\(#component.#metadata.name)-\(volumeName)"
+						namespace:   #component.#metadata.namespace
+						labels:      #component.#metadata.labels
+						annotations: #component.#metadata.annotations
 					}
 					spec: {
 						accessModes: [volumeSpec.persistentClaim.accessMode]

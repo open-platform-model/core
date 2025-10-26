@@ -5,14 +5,11 @@
 // 1. ModuleDefinition level - Developer defines app-wide metadata (app.name, team, owner)
 // 2. Module level - Platform/end-user adds deployment context (environment, deployed.by, git.commit)
 // 3. Component level - Component-specific metadata (component, tier, metrics.port, backup.enabled)
-package developer
+package blog
 
 import (
-	"list"
-
 	opm "github.com/open-platform-model/core"
 	elements "github.com/open-platform-model/core/elements/core"
-	common "github.com/open-platform-model/core/examples/common"
 )
 
 //////////////////////////////////////////////////////////////////
@@ -21,11 +18,11 @@ import (
 
 blogAppDefinition: opm.#ModuleDefinition & {
 	#metadata: {
-		name:        "blog-app"
+		name:        "blog"
 		version:     "1.0.0"
 		description: "Simple blog application with frontend and database"
 		labels: {
-			"app.name": "blog-app"
+			"app.name": #metadata.name
 			team:       "content"
 		}
 		annotations: {
@@ -114,78 +111,6 @@ blogAppDefinition: opm.#ModuleDefinition & {
 		database: {
 			storageSize!: string // Required
 		}
-		environment!: string                    // Required
-		test:         string | *"default-value" // Optional with default
-	}
-}
-
-//////////////////////////////////////////////////////////////////
-// Developer tests locally by creating a Module with transformers
-//////////////////////////////////////////////////////////////////
-
-// Developer creates test Module instance
-blogAppLocal: opm.#Module & {
-	#metadata: {
-		name:      "blog-app"
-		namespace: "development"
-		labels: {
-			environment: "dev"
-		}
-		annotations: {
-			"deployed.by": "developer@example.com"
-			"git.commit":  "abc123"
-		}
-	}
-
-	// Reference the module definition
-	#moduleDefinition: blogAppDefinition
-
-	// Attach transformers with explicit component mapping
-	// Developer workflow: Use expressions to map transformers to components
-	// Can reference transformer.#metadata.labels to avoid duplication
-	#transformersToComponents: {
-		"k8s.io/api/apps/v1.Deployment": {
-			transformer: common.#DeploymentTransformer
-			components: [
-				for id, comp in #moduleDefinition.components
-				if transformer.#metadata.labels["core.opm.dev/workload-type"] == comp.#metadata.labels["core.opm.dev/workload-type"] &&
-					list.Contains(comp.#primitiveElements, "elements.opm.dev/core/v0.Container") {
-					id
-				},
-			]
-		}
-		"k8s.io/api/apps/v1.StatefulSet": {
-			transformer: common.#StatefulSetTransformer
-			components: [
-				for id, comp in #moduleDefinition.components
-				if transformer.#metadata.labels["core.opm.dev/workload-type"] == comp.#metadata.labels["core.opm.dev/workload-type"] &&
-					list.Contains(comp.#primitiveElements, "elements.opm.dev/core/v0.Container") {
-					id
-				},
-			]
-		}
-		"k8s.io/api/core/v1.PersistentVolumeClaim": {
-			transformer: common.#PersistentVolumeClaimTransformer
-			components: [
-				for id, comp in #moduleDefinition.components
-				if list.Contains(comp.#primitiveElements, "elements.opm.dev/core/v0.Volume") {
-					id
-				},
-			]
-		}
-	}
-
-	// Attach renderer (developer testing locally)
-	#renderer: opm.#KubernetesListRenderer
-
-	// Provide concrete test values
-	values: {
-		frontend: {
-			image: "blog-frontend:dev"
-		}
-		database: {
-			storageSize: "5Gi"
-		}
-		environment: "development"
+		environment!: string // Required
 	}
 }
