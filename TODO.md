@@ -19,6 +19,7 @@
 
 ## v1
 
+- [ ] Change everything from "v0" to "v1alpha1"
 - [ ] Major redesign of the element registry. OPM CLI and OPM controller should not have to load elements from an registry, it should inherit the elements from the Module/Modules. For OPM controller, instead of passing in the elements into the #PlatfromCatalog we just have to pass in the modules, all elements would then be unified from the modules. For the OPM CLI, we do something similar except it is only for one element. This would still allow us to have a cache and we would get further speed increases from the fact that we only have the elements that we are actually using.
 - [ ] Rename #Element.name to #Element.#kind, just like everything else. Also rename #Element.kind to #Element.type to not confuse people.
 - [ ] Implement standard status definition for component.
