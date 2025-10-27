@@ -170,7 +170,7 @@ The `elements/` directory contains the official element catalog:
   - `kubernetes_schema.cue` - All K8s resource schemas
   - `primitive_*.cue` - K8s resource element definitions
 
-**Import pattern**: `import elements "github.com/open-platform-model/core/elements/core"`
+**Import pattern**: `import elements "github.com/open-platform-model/elements/core"`
 
 **Critical**: All new elements MUST be added to `elements/elements.cue` registry to be accessible.
 
@@ -263,7 +263,7 @@ import (
 **Step 2**: Register in `elements/elements.cue`
 
 ```cue
-import core "github.com/open-platform-model/core/elements/core"
+import core "github.com/open-platform-model/elements/core"
 
 #MyFeature: opm.#MyFeature
 #MyFeatureElement: opm.#MyFeatureElement

@@ -258,7 +258,7 @@ package myapp
 
 import (
     opm "github.com/open-platform-model/core"
-    common "github.com/open-platform-model/core/examples/common"
+    common "github.com/open-platform-model/opm/examples/common"
 )
 
 opm.#Module
@@ -545,7 +545,7 @@ Elements are organized in a flat directory structure with schemas co-located:
    ```cue
    // In elements/elements.cue
    import (
-       core "github.com/open-platform-model/core/elements/core"
+       core "github.com/open-platform-model/elements/core"
    )
 
    #CoreElementRegistry: {
@@ -1173,7 +1173,7 @@ core/
 
 ```cue
 // For using elements - import core elements package
-import elements "github.com/open-platform-model/core/elements/core"
+import elements "github.com/open-platform-model/elements/core"
 
 // For element development
 import (

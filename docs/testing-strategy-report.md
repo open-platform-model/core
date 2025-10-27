@@ -673,7 +673,7 @@ package unit
 
 import (
     opm "github.com/open-platform-model/core"
-    core "github.com/open-platform-model/core/elements/core"
+    core "github.com/open-platform-model/elements/core"
 )
 
 moduleTests: {
@@ -738,7 +738,7 @@ package unit
 
 import (
     opm "github.com/open-platform-model/core"
-    core "github.com/open-platform-model/core/elements/core"
+    core "github.com/open-platform-model/elements/core"
 )
 
 providerTests: {
@@ -872,7 +872,7 @@ package integration
 
 import (
     opm "github.com/open-platform-model/core"
-    core "github.com/open-platform-model/core/elements/core"
+    core "github.com/open-platform-model/elements/core"
 )
 
 realWorldTests: {

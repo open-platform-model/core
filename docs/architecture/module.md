@@ -525,7 +525,7 @@ package myapp
 
 import (
     opm "github.com/open-platform-model/core"
-    elements "github.com/open-platform-model/core/elements/core"
+    elements "github.com/open-platform-model/elements/core"
 )
 
 blogAppDefinition: opm.#ModuleDefinition & {
