@@ -1,12 +1,6 @@
 package core
 
 /////////////////////////////////////////////////////////////////
-//// Element Registry
-/////////////////////////////////////////////////////////////////
-
-#ElementRegistry: #ElementMap
-
-/////////////////////////////////////////////////////////////////
 //// Catalog Module
 /////////////////////////////////////////////////////////////////
 
@@ -77,9 +71,10 @@ package core
 	// Each module bundles a definition with its rendering strategy (transformers + renderer)
 	modules: [string]: #CatalogModule
 
-	// Available element registry for this platform
+	// Available elements for this platform
 	// All elements that can be used in modules on this platform
-	elementRegistry!: #ElementRegistry
+	// This is a direct map of element FQN -> element definition
+	elements!: #ElementMap
 
 	// Compute supported elements for each provider based on catalog
 	#providerCapabilities: {
@@ -90,7 +85,7 @@ package core
 				// Elements that exist in catalog
 				supportedElements: [
 					for element in provider.#declaredElements
-					if elementRegistry[element] != _|_ {
+					if elements[element] != _|_ {
 						element
 					},
 				]
@@ -98,7 +93,7 @@ package core
 				// Elements missing from catalog
 				missingElements: [
 					for element in provider.#declaredElements
-					if elementRegistry[element] == _|_ {
+					if elements[element] == _|_ {
 						element
 					},
 				]
@@ -154,7 +149,7 @@ package core
 	}
 
 	#status: {
-		elementCount:  len(elementRegistry)
+		elementCount:  len(elements)
 		providerCount: len(providers)
 		rendererCount: len(renderers)
 		moduleCount:   int | *0

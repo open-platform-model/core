@@ -596,6 +596,70 @@ git commit -m "docs(claude): ..."        # CLAUDE.md updates
 git commit -m "test(examples): ..."      # Example modules
 ```
 
+## Versioning
+
+**Core follows [Semantic Versioning v2.0.0](https://semver.org).**
+
+See the root [CLAUDE.md](../CLAUDE.md#versioning) for complete Semver v2 specification.
+
+### Core-Specific Version Guidelines
+
+**Element `#apiVersion` Field:**
+- Currently using `v0alpha1` format in elements
+- Migrating to `v0` format for initial development phase
+- Will move to `v1` when element schemas are stable
+
+**When to Bump Core Version:**
+
+**MAJOR (x.0.0):**
+- Breaking changes to `#Element`, `#Component`, or `#Module` base types
+- Incompatible changes to element composition patterns
+- Provider interface breaking changes
+
+**MINOR (0.x.0):**
+- New core element types added
+- New optional fields in base types
+- New element categories or kinds
+- Deprecation notices (but not removals)
+
+**PATCH (0.0.x):**
+- Bug fixes in element validation
+- Documentation improvements
+- Schema clarifications without behavioral changes
+
+### Module Versioning Best Practices
+
+When creating `#ModuleDefinition` instances:
+
+```cue
+#ModuleDefinition: {
+    #metadata: {
+        name:    "my-app"
+        version: "1.2.3"  // Follow Semver v2
+    }
+    // ...
+}
+```
+
+**Module version bumping:**
+- MAJOR: Breaking changes to component interfaces or required values
+- MINOR: New components added, new optional configuration
+- PATCH: Bug fixes, documentation updates
+
+### Git Tags
+
+Tag releases following Semver v2 with `v` prefix:
+
+```bash
+# Create version tag
+git tag -a v0.5.0 -m "Release v0.5.0"
+git push origin v0.5.0
+
+# Pre-release tags
+git tag -a v1.0.0-beta.1 -m "Beta release v1.0.0-beta.1"
+git push origin v1.0.0-beta.1
+```
+
 ## Available Commands (CUE CLI)
 
 ### Essential Commands

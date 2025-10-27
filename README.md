@@ -320,9 +320,13 @@ See the [OPM Contributing Guide](https://github.com/open-platform-model/opm/blob
 
 ## CUE Module Information
 
-- **Module**: `github.com/open-platform-model/core@v1`
+- **Module**: `github.com/open-platform-model/core`
 - **CUE Version**: v0.14.0
+- **Versioning**: Follows [Semantic Versioning v2.0.0](https://semver.org)
+- **Current Version**: `v0.x.x` (initial development phase)
 - **Source Kind**: self (no external dependencies)
+
+See [CLAUDE.md](CLAUDE.md#versioning) for detailed versioning guidelines.
 
 ## Known Issues & Gotchas
 

@@ -19,7 +19,6 @@ import (
 // Developer creates Supabase ModuleDefinition
 //////////////////////////////////////////////////////////////////
 
-
 #metadata: {
 	name:        "supabase"
 	version:     "1.0.0"

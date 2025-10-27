@@ -36,6 +36,30 @@ package core
 	// Developer-defined module scopes
 	scopes?: [Id=string]: #Scope & {#metadata: #id: Id}
 
+	#allPrimitiveElements: {
+		for _, elem in #allElements {
+			if elem.kind == "primitive" {
+				(elem.#fullyQualifiedName): elem
+			}
+			if elem.kind == "composite" {
+				// Recursively extract primitive elements from composite elements
+				for _, subElem in elem.#schema.#composedOf {
+					if subElem.kind == "primitive" {
+						(subElem.#fullyQualifiedName): subElem
+					}
+				}
+			}
+		}
+	}
+
+	#allElements: {
+		for _, comp in components {
+			for elemName, elem in comp.#elements {
+				(elemName): elem
+			}
+		}
+	}
+
 	// Note: Primitive elements are now resolved by the OPM CLI runtime
 	// The runtime analyzes all components and extracts their primitive elements
 
@@ -61,9 +85,9 @@ package core
 	#kind:       "Module"
 	M=#metadata: {
 		name!:        #NameType
-		namespace: string | *"default"
+		namespace:    string | *"default"
 		version?:     #VersionType
-		labels?:    #LabelsAnnotationsType
+		labels?:      #LabelsAnnotationsType
 		annotations?: #LabelsAnnotationsType
 	}
 
@@ -81,8 +105,8 @@ package core
 			// Unify module metadata into each component
 			components: [ID=_]: #Component & {
 				#metadata: {
-					namespace: string | *M.namespace
-					labels: M.labels
+					namespace:   string | *M.namespace
+					labels:      M.labels
 					annotations: M.annotations
 				}
 			}

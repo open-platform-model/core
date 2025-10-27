@@ -19,6 +19,16 @@ import (
 
 #OpenAPIv3Schema: #OpenAPIv3Primitive | #OpenAPIv3Array | #OpenAPIv3Object
 
+#Object: {
+	#apiVersion:         string | *"core.opm.dev/v0"
+	#kind:               string
+	#fullyQualifiedName: "\(#apiVersion).\(#kind)"
+	#FQN:                #fullyQualifiedName
+
+	#kindCamel: strings.ToCamel(#kind)
+	// TODO: Add OSCAL deterministic uuid generation
+}
+
 /////////////////////////////////////////////////////////////////
 //// Output Types
 /////////////////////////////////////////////////////////////////

@@ -120,3 +120,12 @@ import (
 #Custom: #Element & {
 	kind: "custom"
 }
+
+#ElementRegistry: #Object & {
+	#kind: "ElementRegistry"
+
+	#metadata: {
+		name:   string
+		labels: #LabelsAnnotationsType
+	}
+}
