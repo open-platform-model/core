@@ -128,4 +128,6 @@ import (
 		name:   string
 		labels: #LabelsAnnotationsType
 	}
+
+	elements: #ElementMap
 }

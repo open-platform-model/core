@@ -27,6 +27,8 @@ import (
 
 	#kindCamel: strings.ToCamel(#kind)
 	// TODO: Add OSCAL deterministic uuid generation
+
+	...
 }
 
 /////////////////////////////////////////////////////////////////
