@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 import (
 	"strings"
@@ -8,8 +8,7 @@ import (
 // that composes resources and traits into a higher-level abstraction.
 // Blueprints enable standardized configurations for common use cases.
 #Blueprint: {
-	apiVersion: #ApiVersion
-	kind:       "Blueprint"
+	kind: "Blueprint"
 
 	metadata: {
 		name!: #NameType // Example: "stateless-workload"

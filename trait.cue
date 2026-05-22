@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 import (
 	"strings"
@@ -6,8 +6,7 @@ import (
 
 // #Trait: Defines additional behavior or characteristics that can be attached to components.
 #Trait: {
-	apiVersion: #ApiVersion
-	kind:       "Trait"
+	kind: "Trait"
 
 	metadata: {
 		name!: #NameType // Example: "scaling"

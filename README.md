@@ -2,17 +2,20 @@
 
 The canonical schema for the Open Platform Model. `core` defines the CUE definitions that every OPM artifact — `#Module`, `#ModuleRelease`, `#Platform`, `#Component`, `#Resource`, `#Trait`, `#Blueprint`, `#ComponentTransformer` — is typed against.
 
-This repository is a single CUE module, `opmodel.dev/core@v1`, published to `ghcr.io/open-platform-model/core` and consumed via `import "opmodel.dev/core/v1alpha2@v1"`.
+This repository is a single CUE module, `opmodel.dev/core@v0`, published to `ghcr.io/open-platform-model/core` and consumed via `import "opmodel.dev/core@v0"` (package `core`).
+
+The module is pre-1.0: `v0.x` makes no stability promise — breaking schema changes may land in minor releases until it graduates to `v1`.
 
 The schema imports only the CUE standard library — it has no external dependencies, so `cue vet` runs fully offline.
 
 ## Layout
 
+The `core` package lives at the module root — there is no per-version subdirectory. A breaking schema revision bumps the module major (`@v0` → `@v1`) rather than adding a sibling package.
+
 ```text
-cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v1
-v1alpha2/            the v1alpha2 schema package
-  *.cue              schema definitions
-  docs/              schema design notes
+cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
+*.cue                the core schema package
+docs/                schema design notes
 INDEX.md             generated definition index
 ```
 
@@ -22,16 +25,16 @@ INDEX.md             generated definition index
 
 - Conventional-commit history drives [release-please](https://github.com/googleapis/release-please), which opens a release PR.
 - Merging the release PR tags `vX.Y.Z` and creates the GitHub Release.
-- The tag triggers `publish-cue.yml`, which runs `cue mod publish vX.Y.Z` against `ghcr.io/open-platform-model`.
+- The `vX.Y.Z` tag triggers `publish-cue.yml`, which runs `cue mod publish vX.Y.Z` against `ghcr.io/open-platform-model`. `publish-cue.yml` also has a `workflow_dispatch` mode for manual re-publishing.
 
-Tags stay within `v1.x.x` — the CUE module path is pinned to major `@v1`.
+Tags stay within `v0.x.x` — the CUE module path is pinned to major `@v0`.
 
 ## Common commands
 
 ```bash
 task fmt            # format CUE files
-task vet            # validate the v1alpha2 schema package
+task vet            # validate the core schema package
 task generate:index # regenerate INDEX.md
 task check          # fmt check + vet + INDEX freshness
-task publish VERSION=v1.0.7   # publish the CUE module (CI does this on tag)
+task publish VERSION=v0.1.0   # publish the CUE module (CI does this on tag)
 ```

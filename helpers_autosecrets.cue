@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 // #SecretsResourceFQN is the canonical FQN for the secrets resource.
 // Must stay in sync with resources/config/secret.cue #SecretsResource.metadata.fqn.

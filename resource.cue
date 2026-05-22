@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 import (
 	"strings"
@@ -7,8 +7,7 @@ import (
 // #Resource: Defines a resource of deployment within the system.
 // Resources represent deployable components, services or resources that can be instantiated and managed independently.
 #Resource: {
-	apiVersion: #ApiVersion
-	kind:       "Resource"
+	kind: "Resource"
 
 	metadata: {
 		name!: #NameType // Example: "container"

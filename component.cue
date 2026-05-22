@@ -1,11 +1,10 @@
-package v1alpha2
+package core
 
 // Workload type label key
 #LabelWorkloadType: "core.opmodel.dev/workload-type"
 
 #Component: {
-	apiVersion: #ApiVersion
-	kind:       "Component"
+	kind: "Component"
 
 	metadata: {
 		name!: #NameType

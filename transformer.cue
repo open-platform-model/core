@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 import (
 	"strings"
@@ -15,8 +15,7 @@ import (
 // Component labels are inherited from the union of labels from all attached
 // #resources, #traits, and #policies definitions.
 #ComponentTransformer: {
-	apiVersion: #ApiVersion
-	kind:       "ComponentTransformer"
+	kind: "ComponentTransformer"
 
 	metadata: {
 		modulePath!: #ModulePathType   // Example: "opmodel.dev/opm/transformers/kubernetes"

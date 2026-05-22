@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 import (
 	cue_uuid "uuid"
@@ -8,8 +8,7 @@ import (
 // Contains: Reference to Module, values, target namespace
 // Users/deployment systems create this to deploy a specific version
 #ModuleRelease: {
-	apiVersion: #ApiVersion
-	kind:       "ModuleRelease"
+	kind: "ModuleRelease"
 
 	metadata: {
 		name!:      #NameType

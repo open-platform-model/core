@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 import (
 	"crypto/sha256"

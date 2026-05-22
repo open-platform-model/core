@@ -23,7 +23,7 @@ tasks:
     desc: Verify CUE files are formatted (fails if any file would change)
     cmds:
       - cue fmt ./...
-      - git diff --exit-code
+      - git diff --exit-code -- '*.cue'
 
   vet:
     desc: Validate the v1alpha2 schema package
@@ -60,12 +60,12 @@ tasks:
   ## Publishing
 
   publish:
-    desc: Publish the CUE module at VERSION (e.g. task publish VERSION=v1.0.7)
+    desc: Publish the CUE module at VERSION (e.g. task publish VERSION=v0.1.0)
     requires:
       vars: [VERSION]
     cmds:
       - cue fmt ./...
-      - git diff --exit-code
+      - git diff --exit-code -- '*.cue'
       - cue vet ./...
       - cue mod publish {{.VERSION}}
 

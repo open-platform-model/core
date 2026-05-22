@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 import (
 	cue_uuid "uuid"
@@ -6,8 +6,7 @@ import (
 
 // #Module: The portable application blueprint created by developers and/or platform teams
 #Module: {
-	apiVersion: #ApiVersion
-	kind:       "Module"
+	kind: "Module"
 
 	metadata: {
 		name!: #NameType // Example: "example-module"

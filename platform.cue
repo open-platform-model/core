@@ -1,4 +1,4 @@
-package v1alpha2
+package core
 
 // #ModuleRegistration — single entry in #Platform.#registry.
 // Pure projection of "this Module's primitives are visible on this platform".
@@ -34,8 +34,7 @@ package v1alpha2
 // resource/trait FQN is allowed and resolved by the runtime matcher's
 // predicate evaluation.
 #Platform: {
-	apiVersion: #ApiVersion
-	kind:       "Platform"
+	kind: "Platform"
 
 	metadata: {
 		name!:        #NameType

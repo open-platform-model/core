@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the principles that govern the OPM core schema — the CUE definitions in `v1alpha2/` that every OPM artifact is typed against.
+This document records the principles that govern the OPM core schema — the CUE definitions in the `core` package that every OPM artifact is typed against.
 
 `core` is the **contract** of OPM. It is not code that runs; it is the shape that all code agrees on. The kernel (`library`), the catalog, the CLI, and the operator all resolve their behaviour against these definitions. A change here propagates to every consumer, so the principles below are written with that blast radius in mind.
 
@@ -14,14 +14,14 @@ This document records the principles that govern the OPM core schema — the CUE
 | **II** | [Type Safety First](#ii-type-safety-first) | Constrain values at the schema; reject invalid input as early as possible |
 | **III** | [Determinism](#iii-determinism) | Equal inputs yield equal artifacts — no hidden or ambient state |
 | **IV** | [Self-Contained](#iv-self-contained) | The schema depends only on the CUE standard library |
-| **V** | [Versioned Evolution](#v-versioned-evolution) | New shapes land in new version packages, not by mutating released ones |
+| **V** | [Versioned Evolution](#v-versioned-evolution) | The CUE module major versions the schema; released versions are immutable |
 | **VI** | [Documented Definitions](#vi-documented-definitions) | Every exported definition carries a doc comment and a fixture where behaviour is non-obvious |
 
 ---
 
 ### I. Contract Stability
 
-`opmodel.dev/core@v1` is consumed by every OPM repository as a published, version-pinned dependency. Once a version is published it is immutable.
+`opmodel.dev/core@v0` is consumed by every OPM repository as a published, version-pinned dependency. Once a version is published it is immutable.
 
 - Prefer **additive** change: new optional fields, new definitions.
 - A change that removes a field, tightens a type, or alters computed output is **breaking** — it requires a deliberate decision and a coordinated consumer rollout.
@@ -31,7 +31,7 @@ This document records the principles that govern the OPM core schema — the CUE
 
 The schema is the first and cheapest place to reject bad input.
 
-- Constrain primitives with explicit types and regex bounds (see `v1alpha2/types.cue`) rather than bare `string`.
+- Constrain primitives with explicit types and regex bounds (see `types.cue`) rather than bare `string`.
 - Close structs where the field set is known; leave them open (`...`) only where extension is intended.
 - Push validation into the schema so consumers inherit it for free instead of re-implementing it.
 
@@ -53,10 +53,11 @@ The core schema imports only the CUE standard library (`strings`, `list`, `uuid`
 
 ### V. Versioned Evolution
 
-Schema versions are directories (`v1alpha2/`), each its own CUE package.
+The schema is a single `core` package at the module root. It is versioned through the CUE module itself, not through internal version subdirectories.
 
-- A new generation of shapes lands in a new version package; released packages are not mutated in place.
-- The CUE module path is pinned to major `@v1`; publish tags stay within `v1.x.x`.
+- Released versions are immutable; consumers pin a published version.
+- The CUE module path is pinned to major `@v0`; publish tags stay within `v0.x.x`. Pre-1.0, a minor release may carry a breaking change.
+- A breaking generation of the schema bumps the module major (`@v0` → `@v1`) — the new major is resolved independently, so consumers migrate on their own schedule.
 
 ### VI. Documented Definitions
 

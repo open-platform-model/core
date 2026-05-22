@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # release-please opens the release PR and, on merge, tags vX.Y.Z and
-      # creates the GitHub Release. The tag then triggers publish-cue.yml,
-      # which publishes the CUE module at that version.
+      # creates the GitHub Release. The vX.Y.Z tag then triggers
+      # publish-cue.yml, which publishes the CUE module.
       - name: Run release-please
         uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
         with:

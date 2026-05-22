@@ -197,7 +197,12 @@ echo ""
 mapfile -t top_dirs < <(awk -F'\t' '{print $1}' "$TMPFILE" | sort -u)
 
 for top_dir in "${top_dirs[@]}"; do
-    section_name=$(capitalize_first "$top_dir")
+    if [[ -z "$top_dir" ]]; then
+        # Definitions in .cue files at the module root.
+        section_name="Definitions"
+    else
+        section_name=$(capitalize_first "$top_dir")
+    fi
     echo "## ${section_name}"
     echo ""
 
