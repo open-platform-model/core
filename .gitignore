@@ -1,0 +1,8 @@
+# env file
+.env
+
+# Claude Code local-only settings
+.claude/settings.local.json
+
+# Dev scratch
+out.cue

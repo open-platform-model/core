@@ -1,0 +1,79 @@
+version: "3"
+
+# Silent by default — set TASK_VERBOSE=1 or use --verbose to show commands
+silent: true
+
+vars:
+  CUE_VERSION: v0.16.0
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  ## CUE schema
+
+  fmt:
+    desc: Format all CUE files
+    cmds:
+      - cue fmt ./...
+
+  fmt:check:
+    desc: Verify CUE files are formatted (fails if any file would change)
+    cmds:
+      - cue fmt ./...
+      - git diff --exit-code
+
+  vet:
+    desc: Validate the v1alpha2 schema package
+    cmds:
+      - cue vet ./...
+
+  tidy:
+    desc: Tidy the CUE module manifest
+    cmds:
+      - cue mod tidy
+
+  ## Index generation
+
+  generate:index:
+    desc: Regenerate INDEX.md from the CUE definitions
+    cmds:
+      - bash .tasks/generate-index.sh "$(pwd)" > INDEX.md
+
+  generate:index:check:
+    desc: Verify INDEX.md matches generated output (exits non-zero if stale)
+    cmds:
+      - |
+        set -euo pipefail
+        tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
+        bash .tasks/generate-index.sh "$(pwd)" > "$tmp"
+        if ! diff -q INDEX.md "$tmp" >/dev/null 2>&1; then
+          echo "FAIL: INDEX.md is out of date — run 'task generate:index'"
+          diff INDEX.md "$tmp" || true
+          exit 1
+        fi
+        echo "OK: INDEX.md is up to date."
+
+  ## Publishing
+
+  publish:
+    desc: Publish the CUE module at VERSION (e.g. task publish VERSION=v1.0.7)
+    requires:
+      vars: [VERSION]
+    cmds:
+      - cue fmt ./...
+      - git diff --exit-code
+      - cue vet ./...
+      - cue mod publish {{.VERSION}}
+
+  ## Aggregate
+
+  check:
+    desc: Format check, vet, and INDEX freshness
+    cmds:
+      - task: fmt:check
+      - task: vet
+      - task: generate:index:check

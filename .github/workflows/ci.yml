@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    name: Validate schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup CUE
+        uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
+        with:
+          version: v0.16.0
+
+      - name: Install Task
+        uses: go-task/setup-task@3be4020d41929789a01026e0e427a4321ce0ad44 # v2.0.0
+        with:
+          version: 3.x
+
+      # The schema imports only the CUE standard library, so vet runs fully
+      # offline — no registry service needed.
+      - name: Check CUE formatting
+        run: task fmt:check
+
+      - name: Vet CUE schema
+        run: task vet
+
+      - name: Verify INDEX.md is up to date
+        run: task generate:index:check

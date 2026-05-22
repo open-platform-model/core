@@ -1,0 +1,49 @@
+name: Publish CUE Module
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CUE_VERSION: 'v0.16.0'
+  # opmodel.dev modules publish to GHCR; everything else from registry.cue.works.
+  CUE_REGISTRY: 'opmodel.dev=ghcr.io/open-platform-model,registry.cue.works'
+
+jobs:
+  publish:
+    name: Publish opmodel.dev/core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
+        with:
+          version: ${{ env.CUE_VERSION }}
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Validate and publish
+        run: |
+          set -euo pipefail
+
+          # The tag is the published version. opmodel.dev/core@v1 requires it
+          # to fall within v1.x.x — release-please guarantees this.
+          VERSION="${GITHUB_REF_NAME}"
+          echo "Publishing opmodel.dev/core@v1 at ${VERSION}"
+
+          cue fmt ./...
+          if ! git diff --quiet; then
+            echo "::error::CUE files are not formatted. Run 'cue fmt ./...' locally."
+            git diff --name-only
+            exit 1
+          fi
+
+          cue vet ./...
+          cue mod publish "${VERSION}"
+          echo "Published opmodel.dev/core ${VERSION}"
