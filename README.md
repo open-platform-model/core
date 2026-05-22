@@ -25,7 +25,8 @@ INDEX.md             generated definition index
 
 - Conventional-commit history drives [release-please](https://github.com/googleapis/release-please), which opens a release PR.
 - Merging the release PR tags `vX.Y.Z` and creates the GitHub Release.
-- The `vX.Y.Z` tag triggers `publish-cue.yml`, which runs `cue mod publish vX.Y.Z` against `ghcr.io/open-platform-model`. `publish-cue.yml` also has a `workflow_dispatch` mode for manual re-publishing.
+- The same `release.yml` run then publishes the module — a `publish-cue` job gated on release-please's `release_created` output runs `cue mod publish vX.Y.Z` against `ghcr.io/open-platform-model`.
+- `publish-cue.yml` is a separate `workflow_dispatch` workflow for manually re-publishing a version.
 
 Tags stay within `v0.x.x` — the CUE module path is pinned to major `@v0`.
 

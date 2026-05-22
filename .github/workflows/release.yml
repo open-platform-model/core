@@ -8,17 +8,58 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  packages: write
+
+env:
+  CUE_VERSION: 'v0.16.0'
+  # opmodel.dev modules publish to GHCR; everything else from registry.cue.works.
+  CUE_REGISTRY: 'opmodel.dev=ghcr.io/open-platform-model,registry.cue.works'
 
 jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
     steps:
-      # release-please opens the release PR and, on merge, tags vX.Y.Z and
-      # creates the GitHub Release. The vX.Y.Z tag then triggers
-      # publish-cue.yml, which publishes the CUE module.
       - name: Run release-please
+        id: release
         uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  publish-cue:
+    name: Publish opmodel.dev/core
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # Publishing runs here, in the same workflow run that the release-PR
+      # merge triggers — NOT from a push:tags trigger. A tag pushed by
+      # release-please uses GITHUB_TOKEN, and GitHub suppresses workflow runs
+      # for GITHUB_TOKEN-pushed tags, so a tag trigger would never fire.
+      - name: Clone the released tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Setup CUE
+        uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
+        with:
+          version: ${{ env.CUE_VERSION }}
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Publish CUE module
+        run: |
+          set -euo pipefail
+          # version output is X.Y.Z (no leading v).
+          VERSION="v${{ needs.release-please.outputs.version }}"
+          echo "Publishing opmodel.dev/core@v0 at ${VERSION}"
+          cue vet ./...
+          cue mod publish "${VERSION}"
+          echo "Published opmodel.dev/core ${VERSION}"

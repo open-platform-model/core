@@ -1,13 +1,11 @@
-name: Publish CUE Module
+name: Publish CUE Module (manual)
 
-# Publishes the CUE module on the vX.Y.Z tags produced by release-please
-# (release.yml). A workflow_dispatch path is kept for manual re-publishing —
-# e.g. a tag that predates this wiring.
+# Manual escape hatch for publishing the CUE module — normal releases publish
+# automatically from release.yml. Use this to re-publish a version, or to
+# publish a tag that release.yml did not (e.g. a release cut before this
+# wiring existed).
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       ref:
@@ -25,7 +23,6 @@ permissions:
 
 env:
   CUE_VERSION: 'v0.16.0'
-  # opmodel.dev modules publish to GHCR; everything else from registry.cue.works.
   CUE_REGISTRY: 'opmodel.dev=ghcr.io/open-platform-model,registry.cue.works'
 
 jobs:
@@ -33,23 +30,10 @@ jobs:
     name: Publish opmodel.dev/core
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve ref and version
-        id: resolve
-        run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "ref=${{ inputs.ref }}" >> "$GITHUB_OUTPUT"
-            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            # Tag push: the tag name is both the ref and the publish version.
-            echo "ref=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Clone the requested ref
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ steps.resolve.outputs.ref }}
+          ref: ${{ inputs.ref }}
 
       - name: Setup CUE
         uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
@@ -62,8 +46,8 @@ jobs:
       - name: Publish CUE module
         run: |
           set -euo pipefail
-          VERSION="${{ steps.resolve.outputs.version }}"
-          echo "Publishing opmodel.dev/core@v0 at ${VERSION}"
+          VERSION="${{ inputs.version }}"
+          echo "Publishing opmodel.dev/core@v0 at ${VERSION} (from ref ${{ inputs.ref }})"
           cue vet ./...
           cue mod publish "${VERSION}"
           echo "Published opmodel.dev/core ${VERSION}"
