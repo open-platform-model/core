@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/open-platform-model/core/compare/v0.1.0...v0.1.1) (2026-05-22)
+
+
+### Miscellaneous
+
+* release 0.1.1 ([93cf773](https://github.com/open-platform-model/core/commit/93cf773623f5c5c74e859328f2d5f6cfcffb189b))
+
 ## 0.1.0 (2026-05-22)
 
 
