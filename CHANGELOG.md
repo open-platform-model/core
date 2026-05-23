@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-platform-model/core/compare/v0.1.3...v0.2.0) (2026-05-23)
+
+
+### Features
+
+* **spec:** introduce SPEC.md and drift-detection gates ([7013e2b](https://github.com/open-platform-model/core/commit/7013e2b0914704eb6270784f27940903682fecc8))
+
 ## [0.1.3](https://github.com/open-platform-model/core/compare/v0.1.2...v0.1.3) (2026-05-23)
 
 
