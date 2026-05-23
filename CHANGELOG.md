@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-platform-model/core/compare/v0.2.0...v0.2.1) (2026-05-23)
+
+
+### Code Refactoring
+
+* nest CUE module under src/ ([3d000aa](https://github.com/open-platform-model/core/commit/3d000aaf872165cb8febbe48f4031764c378a0d7))
+
 ## [0.2.0](https://github.com/open-platform-model/core/compare/v0.1.3...v0.2.0) (2026-05-23)
 
 
