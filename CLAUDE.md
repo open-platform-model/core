@@ -27,8 +27,10 @@ Read on entry:
 ```text
 cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
 *.cue                the core schema package (lives at the module root)
-docs/                schema design notes
-.tasks/              Taskfile script fragments
+docs/                schema design notes (tutorial / explanatory)
+SPEC.md              normative schema specification (definitions, constraints, rationale)
+.tasks/              Taskfile script fragments + git hooks
+.claude/skills/      repo-local skills (e.g. core-schema-edit)
 INDEX.md             generated definition index
 ```
 
@@ -50,7 +52,19 @@ The Go schema fixture harness is **not** part of this repo — it lives in the c
 | `task fmt` / `task fmt:check` | Format CUE files / verify formatting |
 | `task vet` | Validate the core schema package |
 | `task generate:index` | Regenerate `INDEX.md` |
-| `task check` | fmt check + vet + INDEX freshness |
+| `task spec:check` | Verify `SPEC.md` inventory matches CUE construct definitions |
+| `task hooks:install` | Install the pre-commit hook (SPEC.md co-update gate) |
+| `task check` | fmt check + vet + INDEX freshness + SPEC inventory |
+
+## Schema editing protocol
+
+Every change to a tracked construct in `core/*.cue` MUST co-commit with a corresponding update to `SPEC.md`. This is enforced by three layers:
+
+- **Local pre-commit hook** — `task hooks:install` symlinks `.git/hooks/pre-commit` to `.tasks/hooks/pre-commit`. The hook blocks any commit that stages `*.cue` without `SPEC.md` unless `SPEC_IMPACT=none` is set (for whitespace / formatting-only edits).
+- **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, and SPEC references to renamed/deleted constructs.
+- **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
+
+Full protocol — section format, workflow, exceptions — lives in `.claude/skills/core-schema-edit/SKILL.md`. **Read that skill before editing any `*.cue` file.** Subagents dispatched here should be told to read it explicitly, since they do not load this file.
 
 ## CUE conventions
 

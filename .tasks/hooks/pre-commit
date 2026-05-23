@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# core/ pre-commit hook — enforce SPEC.md co-update with *.cue changes.
+#
+# Source of truth: core/.tasks/hooks/pre-commit (installed by `task hooks:install`,
+# which symlinks .git/hooks/pre-commit to this file).
+#
+# Bypass for genuinely spec-neutral edits (whitespace, doc-comment typo fixes):
+#   SPEC_IMPACT=none git commit ...
+# Document the reason in the commit body with a 'Spec-Impact: none (reason)' trailer.
+#
+# Full protocol: core/.claude/skills/core-schema-edit/SKILL.md
+
+set -euo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+cue_changed=$(printf '%s\n' "$staged" | grep -E '\.cue$' || true)
+spec_changed=$(printf '%s\n' "$staged" | grep -Fx 'SPEC.md' || true)
+
+# No *.cue changes → nothing to gate.
+if [[ -z "$cue_changed" ]]; then
+  exit 0
+fi
+
+# *.cue + SPEC.md both staged → satisfied.
+if [[ -n "$spec_changed" ]]; then
+  exit 0
+fi
+
+# Explicit bypass for genuinely spec-neutral edits.
+if [[ "${SPEC_IMPACT:-}" == "none" ]]; then
+  exit 0
+fi
+
+cat >&2 <<EOF
+ERROR: *.cue changes staged without a SPEC.md update.
+
+Changed CUE files:
+$(printf '%s\n' "$cue_changed" | sed 's/^/  /')
+
+Choose one:
+  • Update SPEC.md with the schema/rationale change and stage it.
+  • If genuinely spec-neutral (whitespace, comment typo, formatting):
+        SPEC_IMPACT=none git commit ...
+    Document why in the commit body with a 'Spec-Impact: none (reason)' trailer.
+
+Protocol: core/.claude/skills/core-schema-edit/SKILL.md
+EOF
+exit 1

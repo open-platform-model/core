@@ -1,0 +1,11 @@
+// Tracked constructs requiring a SPEC.md section.
+//
+// Every entry here MUST be referenced in SPEC.md (enforced by task spec:check).
+// Every entry here MUST be defined in core/*.cue (stale-allowlist check).
+//
+// Lines starting with // and blank lines are ignored.
+// Add entries as new constructs are introduced; remove when a construct is retired.
+
+#Resource
+#Component
+#Module

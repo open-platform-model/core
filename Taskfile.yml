@@ -57,6 +57,44 @@ tasks:
         fi
         echo "OK: INDEX.md is up to date."
 
+  ## SPEC.md drift checks
+
+  spec:check:
+    desc: Verify SPEC.md inventory matches CUE construct definitions
+    cmds:
+      - bash .tasks/spec-check.sh "$(pwd)"
+
+  ## Git hooks
+
+  hooks:install:
+    desc: Install git hooks (pre-commit gate for SPEC.md co-updates)
+    cmds:
+      - |
+        set -euo pipefail
+        src="$(pwd)/.tasks/hooks/pre-commit"
+        dst=".git/hooks/pre-commit"
+        if [[ -e "$dst" && ! -L "$dst" ]]; then
+          echo "ERROR: $dst exists and is not a symlink." >&2
+          echo "Backup or remove it before installing." >&2
+          exit 1
+        fi
+        chmod +x "$src"
+        ln -sf "$src" "$dst"
+        echo "Installed: $dst -> $src"
+
+  hooks:uninstall:
+    desc: Remove installed git hooks (symlinks only)
+    cmds:
+      - |
+        set -euo pipefail
+        for h in pre-commit; do
+          dst=".git/hooks/$h"
+          if [[ -L "$dst" ]]; then
+            rm -f "$dst"
+            echo "Removed: $dst"
+          fi
+        done
+
   ## Publishing
 
   publish:
@@ -72,8 +110,9 @@ tasks:
   ## Aggregate
 
   check:
-    desc: Format check, vet, and INDEX freshness
+    desc: Format check, vet, INDEX freshness, and SPEC inventory
     cmds:
       - task: fmt:check
       - task: vet
       - task: generate:index:check
+      - task: spec:check

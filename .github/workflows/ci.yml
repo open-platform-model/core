@@ -33,3 +33,33 @@ jobs:
 
       - name: Verify INDEX.md is up to date
         run: task generate:index:check
+
+      - name: Verify SPEC.md inventory matches CUE
+        run: task spec:check
+
+      - name: Enforce SPEC.md co-update with *.cue changes
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "$BASE_REF"
+          files=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          cue_changed=$(printf '%s\n' "$files" | grep -E '\.cue$' || true)
+          spec_changed=$(printf '%s\n' "$files" | grep -Fx 'SPEC.md' || true)
+          if [[ -z "$cue_changed" || -n "$spec_changed" ]]; then
+            echo "OK: spec co-update check satisfied."
+            exit 0
+          fi
+          if [[ "${PR_BODY:-}" == *"Spec-Impact: none"* ]]; then
+            echo "OK: 'Spec-Impact: none' override present in PR body."
+            exit 0
+          fi
+          echo "ERROR: PR changes *.cue files without updating SPEC.md."
+          echo "Changed CUE files:"
+          printf '%s\n' "$cue_changed" | sed 's/^/  /'
+          echo
+          echo "Either: update SPEC.md and include it in this PR."
+          echo "Or:     add 'Spec-Impact: none' to the PR body with justification."
+          exit 1
