@@ -40,7 +40,6 @@ The Go schema fixture harness is **not** part of this repo — it lives in the c
 
 - Versioning is via release-please (`release.yml`, release type `simple`). Merging the release PR tags `vX.Y.Z` and creates the GitHub Release.
 - The same `release.yml` run publishes the module — a `publish-cue` job gated on `release_created` runs `cue mod publish` to `ghcr.io/open-platform-model`. It runs in the workflow run the human merge triggers, so it is not subject to GITHUB_TOKEN tag-trigger suppression.
-- `publish-cue.yml` is a separate `workflow_dispatch` workflow for manually re-publishing a version.
 - Never run `cue mod publish` against a live registry manually — let CI publish.
 - Tags stay within `v0.x.x` (CUE module is pinned to major `@v0`; pre-1.0, so minors may carry breaking schema changes).
 
