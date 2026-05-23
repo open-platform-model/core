@@ -60,7 +60,7 @@ ComponentTransformer ── matches ──▶ Component (via labels + definition
 
 Labels flow upward: when a Resource or Trait declares labels (e.g., `"core.opmodel.dev/workload-type": "stateless"`), they propagate onto any Component that includes that primitive. ComponentTransformers then match Components by these inherited labels plus the FQNs of their attached primitives.
 
-**CUE schema**: [`../component.cue`](../component.cue)
+**CUE schema**: [`../src/component.cue`](../src/component.cue)
 
 ---
 
@@ -148,7 +148,7 @@ basicModule: core.#Module & {
 }
 ```
 
-**CUE schema**: [`../module.cue`](../module.cue)
+**CUE schema**: [`../src/module.cue`](../src/module.cue)
 
 ---
 
@@ -214,4 +214,4 @@ productionRelease: core.#ModuleRelease & {
 }
 ```
 
-**CUE schema**: [`../module_release.cue`](../module_release.cue)
+**CUE schema**: [`../src/module_release.cue`](../src/module_release.cue)

@@ -3,9 +3,9 @@
 #
 # Inventory check (three directions):
 #   1. Every entry in the allowlist (.tasks/spec-tracked.txt) is referenced in SPEC.md.
-#   2. Every entry in the allowlist exists as a top-level definition in core/*.cue
+#   2. Every entry in the allowlist exists as a top-level definition in src/*.cue
 #      (catches stale allowlist after a rename or removal).
-#   3. Every #Name referenced in SPEC.md is defined somewhere in core/*.cue
+#   3. Every #Name referenced in SPEC.md is defined somewhere in src/*.cue
 #      (catches stale references after a rename or removal).
 #
 # The allowlist is the explicit source of truth for which constructs require
@@ -46,9 +46,9 @@ tracked=$(
     | sort -u
 )
 
-# All top-level #Foo: definitions across core/*.cue (any name).
+# All top-level #Foo: definitions across src/*.cue (any name).
 all_cue_names=$(
-  grep -hE '^#[A-Z][a-zA-Z0-9]*:' "$ROOT"/*.cue 2>/dev/null \
+  grep -hE '^#[A-Z][a-zA-Z0-9]*:' "$ROOT"/src/*.cue 2>/dev/null \
     | grep -oE '^#[A-Z][a-zA-Z0-9]*' \
     | sort -u
 )
@@ -79,13 +79,13 @@ if [[ -n "$missing_in_spec" ]]; then
   failed=1
 fi
 if [[ -n "$stale_in_allowlist" ]]; then
-  echo "FAIL: allowlist entries not defined in any core/*.cue file (renamed or removed?):" >&2
+  echo "FAIL: allowlist entries not defined in any src/*.cue file (renamed or removed?):" >&2
   printf '%s\n' "$stale_in_allowlist" | sed 's/^/  /' >&2
   echo "  Fix: remove the entry from .tasks/spec-tracked.txt OR restore the CUE definition." >&2
   failed=1
 fi
 if [[ -n "$stale_in_spec" ]]; then
-  echo "FAIL: SPEC.md references not defined in any core/*.cue file (renamed or removed?):" >&2
+  echo "FAIL: SPEC.md references not defined in any src/*.cue file (renamed or removed?):" >&2
   printf '%s\n' "$stale_in_spec" | sed 's/^/  /' >&2
   echo "  Fix: update SPEC.md to use the current name OR restore the CUE definition." >&2
   failed=1

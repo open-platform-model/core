@@ -1,35 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# generate-index.sh — Print INDEX.md to stdout for a CUE module.
+# generate-index.sh — Print INDEX.md to stdout for the core repo.
 #
-# Usage (run from the repo root, which is the CUE module root):
+# Repo layout: docs/README/SPEC live at the repo root; the CUE module
+# (cue.mod/ + *.cue files) lives under src/. The script takes the repo
+# root and resolves the CUE module dir as $REPO_DIR/src.
+#
+# Usage (run from the repo root):
 #   bash .tasks/generate-index.sh "$(pwd)"
 #
-# The argument is the directory containing cue.mod/module.cue. Pass an
-# absolute path so the module label resolves to the directory name.
 # The caller redirects stdout to the desired output file:
 #   bash .tasks/generate-index.sh "$(pwd)" > INDEX.md
 
-MODULE_RELDIR="${1:?Error: module_dir argument required. Usage: bash .tasks/generate-index.sh core}"
-MODULE_DIR="${MODULE_RELDIR%/}"
+REPO_RELDIR="${1:?Error: repo_dir argument required. Usage: bash .tasks/generate-index.sh \"\$(pwd)\"}"
+REPO_DIR="${REPO_RELDIR%/}"
+CUE_DIR="${REPO_DIR}/src"
 
 # ── Fail fast: validate required paths exist ──────────────────────────────────
 
-[[ -d "$MODULE_DIR" ]] \
-    || { echo "Error: not a directory: $MODULE_DIR" >&2; exit 1; }
-[[ -f "$MODULE_DIR/cue.mod/module.cue" ]] \
-    || { echo "Error: missing $MODULE_DIR/cue.mod/module.cue" >&2; exit 1; }
+[[ -d "$REPO_DIR" ]] \
+    || { echo "Error: not a directory: $REPO_DIR" >&2; exit 1; }
+[[ -d "$CUE_DIR" ]] \
+    || { echo "Error: missing CUE module dir: $CUE_DIR" >&2; exit 1; }
+[[ -f "$CUE_DIR/cue.mod/module.cue" ]] \
+    || { echo "Error: missing $CUE_DIR/cue.mod/module.cue" >&2; exit 1; }
 
 # ── Parse module name from cue.mod/module.cue ─────────────────────────────────
 
 MODULE_NAME=$(
-    grep '^module:' "$MODULE_DIR/cue.mod/module.cue" \
+    grep '^module:' "$CUE_DIR/cue.mod/module.cue" \
     | sed 's/module:[[:space:]]*"\(.*\)"/\1/'
 )
 
-# Display label = trailing path component of the module directory (e.g. core)
-MODULE_LABEL=$(basename "$MODULE_DIR")
+# Display label = trailing path component of the repo directory (e.g. core)
+MODULE_LABEL=$(basename "$REPO_DIR")
 
 # ── ASCII directory tree (dirs only, no cue.mod/, pure ASCII) ─────────────────
 
@@ -37,7 +42,8 @@ print_tree() {
     local dir="$1" prefix="$2"
     local subdirs=()
     mapfile -t subdirs < <(
-        find "$dir" -maxdepth 1 -mindepth 1 -type d ! -name "cue.mod" ! -name ".*" | sort
+        find "$dir" -maxdepth 1 -mindepth 1 -type d \
+            ! -name "cue.mod" ! -name "src" ! -name ".*" | sort
     )
     local total="${#subdirs[@]}" idx=0
     for subdir in "${subdirs[@]}"; do
@@ -168,7 +174,9 @@ print_definition_table() {
 TMPFILE=$(mktemp)
 trap 'rm -f "$TMPFILE"' EXIT
 
-collect_all_definitions "$MODULE_DIR" > "$TMPFILE"
+# Collect definitions from the CUE module dir. file_rel is relative to CUE_DIR
+# (e.g. "blueprint.cue") so the File column in INDEX.md stays unprefixed.
+collect_all_definitions "$CUE_DIR" > "$TMPFILE"
 
 # ── Header ────────────────────────────────────────────────────────────────────
 
@@ -184,7 +192,7 @@ echo ""
 echo "## Project Structure"
 echo ""
 echo '```'
-print_tree "$MODULE_DIR" ""
+print_tree "$REPO_DIR" ""
 echo '```'
 echo ""
 echo "---"

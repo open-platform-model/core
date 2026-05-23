@@ -1,6 +1,6 @@
 ---
 name: core-schema-edit
-description: Required protocol for any edit to core/*.cue files. Documents the SPEC.md four-part section format, the rule that schema changes co-commit with SPEC.md updates, and the spec:check gate.
+description: Required protocol for any edit to core/src/*.cue files. Documents the SPEC.md four-part section format, the rule that schema changes co-commit with SPEC.md updates, and the spec:check gate.
 user-invocable: true
 ---
 
@@ -8,7 +8,7 @@ user-invocable: true
 
 ## When this applies
 
-Any task that adds, modifies, renames, or removes a top-level CUE definition in `core/*.cue` that is listed in `.tasks/spec-tracked.txt`. The allowlist is the source of truth for which constructs require documentation; current entries include `#Resource`, `#Component`, `#Module` (more added as SPEC.md grows).
+Any task that adds, modifies, renames, or removes a top-level CUE definition in `core/src/*.cue` that is listed in `.tasks/spec-tracked.txt`. The allowlist is the source of truth for which constructs require documentation; current entries include `#Resource`, `#Component`, `#Module` (more added as SPEC.md grows).
 
 Helper types — collection maps (`*Map`), constrained-string types (`*Type`), label constants (`#Label*`), name transformers (`#KebabTo*`), and internal pipeline helpers (`#AutoSecrets`, `#DiscoverSecrets`, `#GroupSecrets`, `#OpmSecretsComponent`, `#ContentHash`, `#SecretContentHash`, `#ImmutableName`, `#SecretImmutableName`, `#TransformerContext`, `#SecretsResourceFQN`) — are out of scope. If you add a new top-level construct that ISN'T a helper, add it to `.tasks/spec-tracked.txt` and write its SPEC.md section in the same commit.
 
@@ -61,7 +61,7 @@ End the section with a "See also" subsection linking the tutorial counterpart in
 
 ## Workflow
 
-When editing a `core/*.cue` file:
+When editing a `core/src/*.cue` file:
 
 1. Make the schema change.
 2. Update the corresponding section in `core/SPEC.md`:
@@ -80,4 +80,4 @@ When editing a `core/*.cue` file:
 
 ## Subagent note
 
-If you are a subagent dispatched to edit `core/*.cue`, the parent agent's CLAUDE.md is not loaded into your context. Read this skill in full before making changes. The mechanical gates will block your commit if you skip the SPEC.md update — saving you a wasted iteration but only if you have the format ready when you write it.
+If you are a subagent dispatched to edit `core/src/*.cue`, the parent agent's CLAUDE.md is not loaded into your context. Read this skill in full before making changes. The mechanical gates will block your commit if you skip the SPEC.md update — saving you a wasted iteration but only if you have the format ready when you write it.

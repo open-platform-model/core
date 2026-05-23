@@ -86,7 +86,7 @@ Ask yourself:
 
 The Resource's labels propagate up to any Component that includes it — ComponentTransformers use these inherited labels for matching.
 
-**CUE schema**: [`../resource.cue`](../resource.cue)
+**CUE schema**: [`../src/resource.cue`](../src/resource.cue)
 
 ---
 
@@ -164,7 +164,7 @@ Trait → appliesTo → Resource
 }
 ```
 
-**CUE schema**: [`../trait.cue`](../trait.cue)
+**CUE schema**: [`../src/trait.cue`](../src/trait.cue)
 
 ---
 
@@ -236,4 +236,4 @@ Ask yourself:
 }
 ```
 
-**CUE schema**: [`../blueprint.cue`](../blueprint.cue)
+**CUE schema**: [`../src/blueprint.cue`](../src/blueprint.cue)

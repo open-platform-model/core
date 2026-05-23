@@ -10,7 +10,7 @@ This is a pure CUE repository: schema definitions plus the tooling to validate a
 
 ## Repository Rules
 
-- Guidance from this file, `CONSTITUTION.md`, and `Taskfile.yml`.
+- Guidance from this file and `Taskfile.yml`.
 - Keep changes small; split broad requests into tiny, independently verifiable steps.
 - The schema is a published contract. A breaking change to the `core` package is a breaking change for every consumer — prefer additive evolution.
 
@@ -18,23 +18,24 @@ This is a pure CUE repository: schema definitions plus the tooling to validate a
 
 Read on entry:
 
-- Read `CONSTITUTION.md` before changing schema definitions.
 - Keep `INDEX.md` updated when adding/removing/renaming definitions. Run `task generate:index` to regenerate; `task generate:index:check` to verify. Review generated output before commit — the script extracts doc comments as descriptions.
 - Keep the Project Structure tree in `INDEX.md` in sync with new/removed directories.
 
 ## Repository Layout
 
 ```text
-cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
-*.cue                the core schema package (lives at the module root)
-docs/                schema design notes (tutorial / explanatory)
-SPEC.md              normative schema specification (definitions, constraints, rationale)
-.tasks/              Taskfile script fragments + git hooks
-.claude/skills/      repo-local skills (e.g. core-schema-edit)
-INDEX.md             generated definition index
+src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
+src/*.cue                the core schema package (CUE module root lives under src/)
+docs/                    schema design notes (tutorial / explanatory)
+SPEC.md                  normative schema specification (definitions, constraints, rationale)
+.tasks/                  Taskfile script fragments + git hooks
+.claude/skills/          repo-local skills (e.g. core-schema-edit)
+INDEX.md                 generated definition index
 ```
 
-The `core` package sits at the module root — there is no per-version subdirectory. A breaking schema revision bumps the module major (`@v0` → `@v1`), it does not add a sibling package.
+The `core` package and its `cue.mod/` both live under `src/`, so `src/` is the CUE module root and the import path stays `opmodel.dev/core@v0` — there is no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) stays at the repo root. A breaking schema revision bumps the module major (`@v0` → `@v1`), it does not add a sibling package.
+
+All raw `cue` invocations must run from `src/` (the Taskfile handles this via `dir: src` / `cd src` — see `task fmt`, `task vet`, `task tidy`, `task publish`).
 
 The Go schema fixture harness is **not** part of this repo — it lives in the consuming `library` repo, which exercises the published schema there.
 

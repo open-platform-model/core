@@ -16,22 +16,25 @@ tasks:
 
   fmt:
     desc: Format all CUE files
+    dir: src
     cmds:
       - cue fmt ./...
 
   fmt:check:
     desc: Verify CUE files are formatted (fails if any file would change)
     cmds:
-      - cue fmt ./...
-      - git diff --exit-code -- '*.cue'
+      - (cd src && cue fmt ./...)
+      - git diff --exit-code -- 'src/*.cue'
 
   vet:
-    desc: Validate the v1alpha2 schema package
+    desc: Validate the core schema package
+    dir: src
     cmds:
       - cue vet ./...
 
   tidy:
     desc: Tidy the CUE module manifest
+    dir: src
     cmds:
       - cue mod tidy
 
@@ -102,10 +105,10 @@ tasks:
     requires:
       vars: [VERSION]
     cmds:
-      - cue fmt ./...
-      - git diff --exit-code -- '*.cue'
-      - cue vet ./...
-      - cue mod publish {{.VERSION}}
+      - (cd src && cue fmt ./...)
+      - git diff --exit-code -- 'src/*.cue'
+      - (cd src && cue vet ./...)
+      - (cd src && cue mod publish {{.VERSION}})
 
   ## Aggregate
 

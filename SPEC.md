@@ -6,8 +6,6 @@
 
 This specification is the normative reference for the OPM core schema — what each construct is, what constraints it enforces, and why those constraints take the form they do. It is the companion to the schema files (`*.cue`) and to the tutorial-flavoured material in `docs/`. The `.cue` files carry the contract; the `docs/` carry the explanation for newcomers; this specification carries the *rationale* for anyone evolving the schema.
 
-The schema is governed by [`CONSTITUTION.md`](CONSTITUTION.md). References to "Principle N" in this document point to numbered sections of that file.
-
 ## Conventions
 
 The keywords MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY in this document are to be interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
@@ -71,7 +69,7 @@ Examples: `Container`, `Volume`, `ConfigMap`, `Secret`.
 }
 ```
 
-Implementation: [`resource.cue`](resource.cue).
+Implementation: [`resource.cue`](src/resource.cue).
 
 #### Constraints
 
@@ -128,7 +126,7 @@ Unlike a primitive, a Component does not introduce new schema. Its `spec` is the
 }
 ```
 
-Implementation: [`component.cue`](component.cue).
+Implementation: [`component.cue`](src/component.cue).
 
 #### Constraints
 
@@ -142,7 +140,7 @@ Implementation: [`component.cue`](component.cue).
 #### Rationale
 
 - **Why `spec` is computed via `_allFields` rather than authored.** Authoring `spec` directly would let a Component contradict the schemas its primitives declare. Computing it from the primitives' specs makes the primitives the single source of schema truth: a Component is exactly the sum of what it composes, nothing more, nothing less.
-- **Why the spec is hidden behind `#resources` / `#traits` / `#blueprints` rather than flattened at the Component root.** If the primitives' specs flattened into the Component's root, the parent `#Module` definition would have to be opened (`...`) to accept arbitrary fields, which would defeat schema validation at the Module boundary. The hashed-field indirection (`#resources`, etc.) preserves Module-level closedness. This is recorded directly as a comment in [`component.cue:49-50`](component.cue) because future contributors hit it the moment they try to simplify the layout.
+- **Why the spec is hidden behind `#resources` / `#traits` / `#blueprints` rather than flattened at the Component root.** If the primitives' specs flattened into the Component's root, the parent `#Module` definition would have to be opened (`...`) to accept arbitrary fields, which would defeat schema validation at the Module boundary. The hashed-field indirection (`#resources`, etc.) preserves Module-level closedness. This is recorded directly as a comment in [`component.cue:49-50`](src/component.cue) because future contributors hit it the moment they try to simplify the layout.
 - **Why labels and annotations unify from primitives rather than being authored.** Same principle as `spec`: the primitives are the source of truth. A Component that contradicted its primitives' labels would be a lie about what's deployed. Per Principle II (Type Safety First), CUE catches the conflict at unification time rather than waiting for a runtime mismatch.
 - **Why we don't enforce "at least one Resource" in the schema.** The constraint is true in spirit (a Component with no Resource is undeployable) but CUE cannot ergonomically express "this map is non-empty" without sacrificing the open-map semantics that let platforms add resources at deploy time. The check sits at the render boundary instead. Documented here so future contributors don't reintroduce a schema-level emptiness check that breaks platform composition.
 
@@ -194,7 +192,7 @@ A Module is the unit of versioning and distribution. A published Module at `exam
 }
 ```
 
-Implementation: [`module.cue`](module.cue).
+Implementation: [`module.cue`](src/module.cue).
 
 #### Constraints
 
@@ -212,7 +210,7 @@ Implementation: [`module.cue`](module.cue).
 
 - **Why `fqn` uses semver-with-colon while `#Resource` uses `@vN`.** Modules ship at specific versions (`1.2.3`); the consumer pins an exact release and migrates deliberately. Resources version on the contract surface (`v1`, `v2`); the consumer pins a contract major and treats patches as the publisher's concern. Different identity granularity, different separator — the visual distinction prevents confusion when both appear in a config tree.
 - **Why `uuid` is computed via `SHA1(OPMNamespace, fqn)` rather than authored or random.** Per Principle III (Determinism), two evaluations of the same `fqn` MUST yield the same identity. A registry, controller, or cluster can dedupe modules by uuid without coordinating an ID allocator. The schema fixture harness in `library/` pins a known uuid as a drift sentinel for the algorithm itself.
-- **Why FQN collisions in `#defines` surface as CUE bottoms.** Two modules defining the same FQN is the worst failure mode for a registry: silent shadowing means one module's behaviour is hidden by another's. CUE's map-key unification turns the collision into a compile-time bottom — caught at definition time, not at deploy time. This is called out as comment [`module.cue:48`](module.cue) ("FQN collisions across modules surface as CUE bottoms (D3)") because the property is load-bearing for the publication channel.
+- **Why FQN collisions in `#defines` surface as CUE bottoms.** Two modules defining the same FQN is the worst failure mode for a registry: silent shadowing means one module's behaviour is hidden by another's. CUE's map-key unification turns the collision into a compile-time bottom — caught at definition time, not at deploy time. This is called out as comment [`module.cue:48`](src/module.cue) ("FQN collisions across modules surface as CUE bottoms (D3)") because the property is load-bearing for the publication channel.
 - **Why `#config` is bare `_` and not a typed schema.** The configuration shape is per-module — every module's contract is different. Constraining `#config` at the core layer would either force a one-size-fits-all schema (too narrow) or accept everything (no value). The OpenAPI-v3 constraint is enforced by the downstream renderer, which has the context to apply it cleanly.
 - **Why no CUE templating in `#config`.** The config schema is the module's *public contract*. It travels with the published module via the OCI registry and is read by non-CUE consumers — web UIs rendering forms, kubectl plugins generating prompts, generated bindings in other languages. CUE templating would tie the schema to a CUE evaluator and exclude every one of those consumers. Per Principle I (Contract Stability), the schema must not assume a particular consumer.
 - **Why `#components` and `#defines` are separated.** A Module has two surfaces: a *deployment* surface (its `#components` — what gets rendered when this module is released) and a *publication* surface (its `#defines` — primitives this module contributes to the platform's vocabulary). A module may have one without the other: a primitive library is `#defines`-only; a leaf application is `#components`-only. Conflating them would force every Module to commit to both roles and lose the distinction between consuming and publishing.

@@ -98,7 +98,7 @@ ServiceTransformer (#ComponentTransformer)
 
 A single Component may match multiple ComponentTransformers — each contributes a different runtime resource.
 
-**CUE schema**: [`../transformer.cue`](../transformer.cue)
+**CUE schema**: [`../src/transformer.cue`](../src/transformer.cue)
 
 ---
 

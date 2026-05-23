@@ -10,13 +10,14 @@ The schema imports only the CUE standard library — it has no external dependen
 
 ## Layout
 
-The `core` package lives at the module root — there is no per-version subdirectory. A breaking schema revision bumps the module major (`@v0` → `@v1`) rather than adding a sibling package.
+The CUE module lives under `src/` — both the `core` package files and `cue.mod/` sit there, so `src/` is the CUE module root and the import path stays `opmodel.dev/core@v0` (no per-version subdirectory). Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) stays at the repo root. A breaking schema revision bumps the module major (`@v0` → `@v1`) rather than adding a sibling package.
 
 ```text
-cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
-*.cue                the core schema package
-docs/                schema design notes
-INDEX.md             generated definition index
+src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
+src/*.cue                the core schema package
+docs/                    schema design notes
+SPEC.md                  normative schema specification
+INDEX.md                 generated definition index
 ```
 
 ## Release lifecycle
