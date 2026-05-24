@@ -8,13 +8,26 @@ The schema is the source of truth for OPM. Every OPM artifact is typed against t
 
 This is a pure CUE repository: schema definitions plus the tooling to validate and publish them. No Go code.
 
-## Repository rules
+## Repository Rules
 
 - Authority is this file and `Taskfile.yml`. If they disagree with anything below, they win.
 - Keep changes small. Split broad requests into tiny, independently verifiable steps.
 - The schema is a published contract. A breaking change to the `core` package is a breaking change for every consumer — prefer additive evolution.
+- Never run `cue mod publish` against a live registry manually — let CI publish.
+- Tags stay within `v0.x.x`. The CUE module is pinned to major `@v0` and we are pre-1.0, so minors may carry breaking schema changes (`bump-minor-pre-major: true` in `release-please-config.json`).
 
-## Repository layout
+## Entrypoint
+
+Read these on entry:
+
+- `CLAUDE.md` — repo working rules (this file).
+- `Taskfile.yml` — authoritative build/validate/publish entrypoints.
+- `SPEC.md` — normative schema specification (definitions, constraints, rationale).
+- `INDEX.md` — generated definition index.
+- `docs/` — schema design notes (tutorial / explanatory).
+- `.claude/skills/core-schema-edit/SKILL.md` — **required protocol** before editing any `src/*.cue` file.
+
+## Repository Layout
 
 ```text
 src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
@@ -32,15 +45,29 @@ All raw `cue` invocations run from `src/`. The Taskfile handles this via `dir: s
 
 The Go schema fixture harness is **not** part of this repo. It lives in the consuming `library` repo, which exercises the published schema there.
 
-## INDEX upkeep
+## Environment Notes
 
-Keep `INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes.
+- Pin `language: version: "v0.16.0"` in `cue.mod/module.cue` (workspace-wide convention).
+- For raw `cue` outside `task`, export workspace registry vars from the root `CLAUDE.md` (`CUE_REGISTRY`, `OPM_REGISTRY`).
 
-- `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit).
-- `task generate:index:check` verifies it is up to date.
-- The Project Structure tree inside `INDEX.md` is hand-maintained alongside the generated section; update both.
+## Build And Dev Commands
 
-## Commit conventions and release impact
+| Command                       | Purpose                                                       |
+| ---                           | ---                                                           |
+| `task fmt` / `task fmt:check` | Format CUE files / verify formatting                          |
+| `task vet`                    | Validate the core schema package                              |
+| `task generate:index`         | Regenerate `INDEX.md`                                         |
+| `task generate:index:check`   | Verify `INDEX.md` is up to date                               |
+| `task spec:check`             | Verify `SPEC.md` inventory matches CUE construct definitions  |
+| `task hooks:install`          | Install the pre-commit hook (SPEC.md co-update gate)          |
+| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory            |
+
+### Release & publishing
+
+- release-please (`release.yml`, release type `simple`) opens and updates the release PR. Merging it tags `vX.Y.Z` and creates the GitHub Release.
+- The same workflow run publishes the module: a `publish-cue` job gated on `release_created == 'true'` runs `cue mod publish` to `ghcr.io/open-platform-model`. It executes in the workflow run triggered by the human merging the release PR, so it is not subject to GitHub's GITHUB_TOKEN tag-trigger suppression.
+
+### Commit conventions and release impact
 
 Releases are driven entirely by commit message types (Conventional Commits). Use the right type — a misclassified commit will either cut a release nobody needs or hide a change consumers needed to see.
 
@@ -69,34 +96,16 @@ Examples:
 
 If a window between releases contains only hidden-type commits, no release PR is opened. If it mixes one `feat:` with several `refactor:`/`chore:`, a release is cut but the changelog only lists the `feat:`.
 
-## Release & publishing
-
-- release-please (`release.yml`, release type `simple`) opens and updates the release PR. Merging it tags `vX.Y.Z` and creates the GitHub Release.
-- The same workflow run publishes the module: a `publish-cue` job gated on `release_created == 'true'` runs `cue mod publish` to `ghcr.io/open-platform-model`. It executes in the workflow run triggered by the human merging the release PR, so it is not subject to GitHub's GITHUB_TOKEN tag-trigger suppression.
-- Never run `cue mod publish` against a live registry manually — let CI publish.
-- Tags stay within `v0.x.x`. The CUE module is pinned to major `@v0` and we are pre-1.0, so minors may carry breaking schema changes (`bump-minor-pre-major: true` in `release-please-config.json`).
-
-## Commands
-
-| Command                       | Purpose                                                       |
-| ---                           | ---                                                           |
-| `task fmt` / `task fmt:check` | Format CUE files / verify formatting                          |
-| `task vet`                    | Validate the core schema package                              |
-| `task generate:index`         | Regenerate `INDEX.md`                                         |
-| `task spec:check`             | Verify `SPEC.md` inventory matches CUE construct definitions  |
-| `task hooks:install`          | Install the pre-commit hook (SPEC.md co-update gate)          |
-| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory            |
-
-## Schema editing protocol
-
-Every change to a tracked construct in `src/*.cue` MUST co-commit with a corresponding update to `SPEC.md`. Three layers enforce this:
-
-- **Local pre-commit hook** — `task hooks:install` symlinks `.git/hooks/pre-commit` to `.tasks/hooks/pre-commit`. The hook blocks any commit that stages `*.cue` without `SPEC.md` unless `SPEC_IMPACT=none` is set (for whitespace / formatting-only edits).
-- **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, and SPEC references to renamed or deleted constructs.
-- **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
-
-The full protocol — section format, workflow, exceptions — lives in `.claude/skills/core-schema-edit/SKILL.md`. **Read that skill before editing any `*.cue` file.** Subagents dispatched here should be told to read it explicitly, since they do not load this file.
-
-## CUE conventions
+## CUE Style Guidelines
 
 Follow the CUE style used across the workspace catalog. Pin `language: version: "v0.16.0"` in `cue.mod/module.cue`. Do not hard-wrap prose in `.md` files.
+
+## Working Style for Agents
+
+- **Before editing any `src/*.cue` file**, load `.claude/skills/core-schema-edit/SKILL.md`. Every change to a tracked construct MUST co-commit with a corresponding update to `SPEC.md`. Three layers enforce this:
+  - **Local pre-commit hook** — `task hooks:install` symlinks `.git/hooks/pre-commit` to `.tasks/hooks/pre-commit`. The hook blocks any commit that stages `*.cue` without `SPEC.md` unless `SPEC_IMPACT=none` is set (for whitespace / formatting-only edits).
+  - **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, and SPEC references to renamed or deleted constructs.
+  - **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
+- Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
+- Keep `INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `INDEX.md` is hand-maintained alongside the generated section; update both.
+- Run `task check` before finishing — it covers fmt, vet, INDEX freshness, and SPEC inventory in one shot.
