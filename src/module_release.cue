@@ -12,7 +12,12 @@ import (
 
 	metadata: {
 		name!:      #NameType
-		namespace!: string // Required for releases (target environment)
+		namespace!: #NameType // Required for releases (target environment)
+
+		// Cluster DNS domain. Defaults to "cluster.local"; override per release
+		// when the target cluster runs a non-standard domain. Surfaced into
+		// every component's #names.dns.fqdn via #module.#ctx.release.
+		clusterDomain: string | *"cluster.local"
 
 		// Generate a stable UUID for this release based on the module's UUID, name, and namespace
 		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, "\(#moduleMetadata.uuid):\(name):\(namespace)")
@@ -30,8 +35,19 @@ import (
 
 	}
 
-	// Reference to the Module to deploy
-	#module!:        #Module
+	// Reference to the Module to deploy. The #ctx.release wiring sets the
+	// module's runtime context from this release's metadata — every #Component
+	// in #module receives this release identity via the module's #components
+	// pattern constraint, so #names + DNS variants flow through automatically.
+	// Introduced by enhancement 0001 (D1, D4).
+	#module!: #Module & {
+		#ctx: release: {
+			name:          metadata.name
+			namespace:     metadata.namespace
+			uuid:          metadata.uuid
+			clusterDomain: metadata.clusterDomain
+		}
+	}
 	#moduleMetadata: #module.metadata
 
 	let unifiedModule = #module & {#config: values}

@@ -36,7 +36,7 @@ The Adapter category exists because rendering is a *target-specific* concern. Fo
 
 The Catalog category exists because *publication* is a distinct concern from composition. A `#Module` may publish nothing (a leaf application) or consume primitives from many catalogs; a `#Catalog` publishes a versioned vocabulary but has no `#components` to render. The pre-0001 schema overloaded `#Module.#defines` for both roles; splitting them gives each artifact one job.
 
-This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, and `#Platform`, the adapter `#ComponentTransformer`, and the catalog `#Catalog`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
+This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, `#Platform`, and `#ModuleRelease`, the adapter `#ComponentTransformer`, and the catalog `#Catalog`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
 
 ---
 
@@ -449,6 +449,78 @@ Implementation: [`platform.cue`](src/platform.cue).
 - Tutorial: forthcoming
 - Subscribes to: [`#Catalog`](#51-catalog)
 - Materialized for: `#Module` matching at compile time
+
+---
+
+### 3.5 `#ModuleRelease`
+
+#### Definition
+
+A `#ModuleRelease` is the concrete deployment instance — a `#Module` paired with the values that satisfy its `#config`, plus the release-scoped identity (name, namespace, uuid, cluster domain) that flows into every component as `#ctx.release`. A `#ModuleRelease` is what an operator, CI pipeline, or controller actually renders into platform-specific resources.
+
+The Module is the contract; the Release is the instance.
+
+#### Shape
+
+```cue
+#ModuleRelease: {
+    kind: "ModuleRelease"
+
+    metadata: {
+        name!:         #NameType
+        namespace!:    #NameType
+        clusterDomain: string | *"cluster.local"
+        uuid:          #UUIDType & SHA1(OPMNamespace, "<module.uuid>:<name>:<namespace>")
+        labels?:       #LabelsAnnotationsType
+        annotations?:  #LabelsAnnotationsType
+    }
+
+    // The Module to deploy, with its #ctx.release wired from this Release's
+    // metadata. Every #Component under #module receives the release identity
+    // via the module's #components pattern constraint — so #names, DNS
+    // variants, etc. compute automatically per component.
+    #module!: #Module & {
+        #ctx: release: {
+            name:          metadata.name
+            namespace:     metadata.namespace
+            uuid:          metadata.uuid
+            clusterDomain: metadata.clusterDomain
+        }
+    }
+
+    // Auto-secrets injection: when the resolved config contains #Secret
+    // fields, an opm-secrets component is added to components.
+    components: { ... }
+
+    values: _   // concrete values satisfying #module.#config
+}
+```
+
+Implementation: [`module_release.cue`](src/module_release.cue).
+
+#### Constraints
+
+- `kind` MUST be the literal string `"ModuleRelease"`.
+- `metadata.name` and `metadata.namespace` MUST be kebab-case (`#NameType`).
+- `metadata.clusterDomain` MUST be a non-empty string. The default `"cluster.local"` covers the standard Kubernetes case; override per release when the target cluster runs a non-standard domain.
+- `metadata.uuid` is deterministic: `SHA1(OPMNamespace, "<module-uuid>:<name>:<namespace>")`. Two evaluations with the same Module + name + namespace MUST yield the same uuid.
+- `#module.#ctx.release` MUST be set from `metadata.{name, namespace, uuid, clusterDomain}`. The wiring is declared inline in the schema; authors do not call a builder.
+- `values` MUST satisfy `#module.#config`. CUE unification enforces this at evaluation time.
+- If the resolved configuration contains `#Secret` fields, an `opm-secrets` component MUST be added to `components` automatically. Authors MUST NOT define a component named `opm-secrets` — the slot is reserved.
+
+#### Rationale
+
+- **Why `clusterDomain` lives on `#ReleaseIdentity` and not buried inside a runtime context type.** A FQDN like `service.namespace.svc.cluster.local` is computed once per release: every component's `#names.dns.fqdn` consumes it. Putting `clusterDomain` on the release identity gives one overridable home — a release on a `cluster.example.com` cluster sets it once, and every component's FQDN follows. Burying it inside a separate runtime-context type would force every consumer to traverse two levels of indirection to read a single string. See enhancement 0001 D4.
+- **Why `#ModuleRelease` sets `#ctx.release` inline and ships no builder.** The pre-0001 sketches considered a separate context-builder type that would take metadata and produce a context value. Two arguments against: (1) the wiring is one struct expression — a builder adds a type and a function call to do what one inline literal does already; (2) builders introduce evaluation order ("call builder before evaluating module") that pure CUE doesn't have. Setting `#ctx.release` inline keeps the module + release pair as one CUE value with no procedural dependency. See enhancement 0001 D1.
+- **Why `#module.#ctx.release` is set inside the `#module` unification, not on `#module.#ctx` after the fact.** Unification is associative and commutative — the order in which fields land doesn't matter. Setting it inside the `#module: #Module & {...}` expression makes the wiring textually adjacent to the module reference, so a reader sees both pieces at the same scroll position. The alternative ("set #module first, then patch #module.#ctx.release") is the same CUE value but harder to read.
+- **Why `uuid` is computed deterministically from module + name + namespace.** A release's identity must be reproducible across evaluations of the same inputs: a controller restarting, a CI pipeline retrying, a kubectl apply re-running. Random or author-supplied uuids drift between runs and force every consumer to track a separate "is this the same release?" signal. The SHA1-of-FQN form derives the answer from the inputs themselves. Same principle as `#Module.metadata.uuid` (§3.2 rationale).
+- **Why auto-secrets injection lives in `#ModuleRelease` rather than `#Module`.** Secrets live in the release's `values`, not in the module's `#config` shape — the module declares a contract, the release fills it. A secret-bearing field is only discoverable after `values` lands. Hooking auto-injection at the release boundary catches every `#Secret` in the final resolved config and ships a single `opm-secrets` component that downstream transformers can render uniformly. Hoisting the injection earlier would race the values resolution.
+
+#### See also
+
+- Tutorial: [`docs/constructs.md`](docs/constructs.md) (ModuleRelease section, forthcoming)
+- Instantiates: [`#Module`](#32-module)
+- Sets context for: every [`#Component`](#31-component) under `#module.#components`
 
 ---
 
