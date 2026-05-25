@@ -18,11 +18,15 @@ CUE module: `opmodel.dev/core@v0`
 |---|---|---|
 | `#Blueprint` | `blueprint.cue` | #Blueprint: Defines a reusable blueprint that composes resources and traits into a higher-level abstraction |
 | `#BlueprintMap` | `blueprint.cue` |  |
+| `#Catalog` | `catalog.cue` | #Catalog: top-level catalog definition |
+| `#CatalogFQNType` | `catalog.cue` | #CatalogFQNType: catalog-level FQN — modulePath@semver (no name segment) |
 | `#Component` | `component.cue` |  |
 | `#ComponentMap` | `component.cue` |  |
 | `#LabelWorkloadType` | `component.cue` | Workload type label key |
 | `#OpmSecretsComponent` | `helpers_autosecrets.cue` | #OpmSecretsComponent builds the opm-secrets component from grouped secret data |
 | `#SecretsResourceFQN` | `helpers_autosecrets.cue` | #SecretsResourceFQN is the canonical FQN for the secrets resource |
+| `#ComponentNames` | `module_context.cue` | #ComponentNames is the shape of the per-component computed-names projection |
+| `#ReleaseIdentity` | `module_context.cue` | #ReleaseIdentity carries the deployment-scoped facts that compute per-component names and DNS variants |
 | `#Module` | `module.cue` | #Module: The portable application blueprint created by developers and/or platform teams |
 | `#ModuleMap` | `module.cue` |  |
 | `#ModuleRelease` | `module_release.cue` | #ModuleRelease: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version |

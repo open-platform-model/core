@@ -12,3 +12,4 @@
 #Component
 #Module
 #ComponentTransformer
+#Catalog
