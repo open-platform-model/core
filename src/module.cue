@@ -35,28 +35,16 @@ import (
 		}
 	}
 
-	// Components defined in this module (developer-defined, required. May be added to by the platform-team)
-	#components: [Id=string]: #Component & {
+	// Components defined in this module (developer-defined, required. May be added
+	// to by the platform-team). The pattern constraint wires the module-level
+	// release into every component so each component computes its own #names
+	// from a shared release identity (enhancement 0001 D3).
+	#components: [Id=#NameType]: #Component & {
 		metadata: {
 			name: string | *Id
 			labels: "component.opmodel.dev/name": name
 		}
-	}
-
-	// Publication channel — primitives this module exposes to platforms.
-	// Each FQN-keyed map auto-binds the value's metadata.fqn via CUE unification.
-	// FQN collisions across modules surface as CUE bottoms (D3).
-	// (014 scope: resources, traits, transformers. Claims live in 015 — out of scope here.)
-	#defines?: {
-		resources?: [FQN=#FQNType]: #Resource & {
-			metadata: fqn: FQN
-		}
-		traits?: [FQN=#FQNType]: #Trait & {
-			metadata: fqn: FQN
-		}
-		transformers?: [FQN=#FQNType]: #ComponentTransformer & {
-			metadata: fqn: FQN
-		}
+		#release: #ctx.release
 	}
 
 	// Value schema - constraints and defaults.
@@ -67,6 +55,26 @@ import (
 	// debugValues: Example values for testing and debugging.
 	// It is unified and validated in the runtime
 	debugValues: _
+
+	// Inline runtime context channel. Open at the top level (`...`) so future
+	// enhancements can add `platform` / `environment` siblings without breaking
+	// module bodies. Introduced by enhancement 0001 (D1).
+	//
+	// `release` is set by #ModuleRelease from its own metadata. `components`
+	// is a pure CUE projection over every component's #names — components are
+	// the single source of truth for their own identity; #ctx.components only
+	// mirrors them (D2).
+	#ctx: {
+		release: #ReleaseIdentity
+
+		components: {
+			for id, c in #components {
+				(id): c.#names
+			}
+		}
+
+		...
+	}
 }
 
 #ModuleMap: [string]: #Module

@@ -173,6 +173,7 @@ Unlike a primitive, a Component does not introduce new schema. Its `spec` is the
 
     metadata: {
         name!:        #NameType
+        resourceName: *name | #NameType     // defaults to metadata.name; override cascade
         labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
@@ -180,6 +181,21 @@ Unlike a primitive, a Component does not introduce new schema. Its `spec` is the
     #resources:   #ResourceMap
     #traits?:     #TraitMap
     #blueprints?: #BlueprintMap
+
+    // Release context injected by the parent #Module's #components pattern
+    // constraint. Hidden — authors never set this directly.
+    #release: #ReleaseIdentity
+
+    // Single source of truth for this component's computed names. DNS
+    // variants derive from resourceName + #release.namespace + clusterDomain.
+    #names: {
+        resourceName: metadata.resourceName
+        dns: {
+            short: resourceName
+            local: "\(resourceName).\(#release.namespace)"
+            fqdn:  "\(resourceName).\(#release.namespace).svc.\(#release.clusterDomain)"
+        }
+    }
 
     // Computed: unification of every attached primitive's spec, closed.
     spec: close({ _allFields })
@@ -191,6 +207,9 @@ Implementation: [`component.cue`](src/component.cue).
 #### Constraints
 
 - `kind` MUST be the literal string `"Component"`.
+- `metadata.resourceName` defaults to `metadata.name`. An explicit value wins via the disjunction-default cascade and MUST also satisfy `#NameType`.
+- `#release` is set by the parent `#Module` via its `#components` pattern constraint. Component authors MUST NOT set `#release` directly; doing so collides with the module wiring and fails CUE unification.
+- `#names` is the single source of truth for this component's identity. `#Module.#ctx.components.<id>` is a pure projection of every component's `#names` — there is no separate computation path.
 - `#resources` SHOULD contain at least one entry (directly or via an attached `#Blueprint`). A Component composed of only Traits describes modifications to nothing — a category error not currently caught by the schema; it is rejected at downstream render time.
 - A `#Trait` MUST only be attached to a Component whose Resources are listed in the Trait's `appliesTo`. Conflict surfaces at CUE unification time.
 - Conflicting field definitions between attached primitives MUST fail at definition time. Consumers MUST NOT add post-hoc conflict resolution.
@@ -202,6 +221,9 @@ Implementation: [`component.cue`](src/component.cue).
 - **Why `spec` is computed via `_allFields` rather than authored.** Authoring `spec` directly would let a Component contradict the schemas its primitives declare. Computing it from the primitives' specs makes the primitives the single source of schema truth: a Component is exactly the sum of what it composes, nothing more, nothing less.
 - **Why the spec is hidden behind `#resources` / `#traits` / `#blueprints` rather than flattened at the Component root.** If the primitives' specs flattened into the Component's root, the parent `#Module` definition would have to be opened (`...`) to accept arbitrary fields, which would defeat schema validation at the Module boundary. The hashed-field indirection (`#resources`, etc.) preserves Module-level closedness. This is recorded directly as a comment in [`component.cue:49-50`](src/component.cue) because future contributors hit it the moment they try to simplify the layout.
 - **Why labels and annotations unify from primitives rather than being authored.** Same principle as `spec`: the primitives are the source of truth. A Component that contradicted its primitives' labels would be a lie about what's deployed. Per Principle II (Type Safety First), CUE catches the conflict at unification time rather than waiting for a runtime mismatch.
+- **Why `resourceName` is a cascade on `metadata`, not a top-level field.** The default case ("the rendered resource shares the component's id") is by far the common one; authors should not have to write it. The override case ("rename the rendered resource without renaming the component") needs to be cheap because real deployments hit it constantly (legacy resource names, multi-instance suffixing). A `*name | #NameType` disjunction-default does both with one line and zero ceremony.
+- **Why `#names` lives on the Component and `#ctx.components` is a projection.** Two principles. (1) The component is the thing that owns its identity — the value that ultimately renders is the one that says what its name is. (2) Projection-not-computation means there is only one place to look when reading or debugging a name; the module-level view is a comprehension, not an alternate calculation. See enhancement 0001 D2.
+- **Why `#release` is hidden and module-injected, not author-supplied.** Components are reusable across releases — the same component definition can be embedded in many `#ModuleRelease` values targeting different namespaces. If `#release` were authored on the component, every release would have to fork the component just to rewrite identity, which defeats reusability. Module-side injection via the `#components` pattern constraint keeps the release identity flowing through a single wiring point. See enhancement 0001 D3.
 - **Why we don't enforce "at least one Resource" in the schema.** The constraint is true in spirit (a Component with no Resource is undeployable) but CUE cannot ergonomically express "this map is non-empty" without sacrificing the open-map semantics that let platforms add resources at deploy time. The check sits at the render boundary instead. Documented here so future contributors don't reintroduce a schema-level emptiness check that breaks platform composition.
 
 #### See also
@@ -238,17 +260,24 @@ A Module is the unit of versioning and distribution. A published Module at `exam
         annotations?: #LabelsAnnotationsType
     }
 
-    #components: [Id=string]: #Component & { metadata: { name: string | *Id } }
-
-    // Publication channel — primitives this module exposes to platforms.
-    #defines?: {
-        resources?:    [FQN=#FQNType]: #Resource             & { metadata: fqn: FQN }
-        traits?:       [FQN=#FQNType]: #Trait                & { metadata: fqn: FQN }
-        transformers?: [FQN=#FQNType]: #ComponentTransformer & { metadata: fqn: FQN }
+    // Pattern constraint tightens the key to #NameType and wires the
+    // module-level release into every component.
+    #components: [Id=#NameType]: #Component & {
+        metadata: name: string | *Id
+        #release: #ctx.release
     }
 
-    #config: _      // OpenAPI v3 schema; no CUE templating
-    debugValues: _  // example values for testing/tooling
+    #config:     _   // OpenAPI v3 schema; no CUE templating
+    debugValues: _   // example values for testing/tooling
+
+    // Inline runtime context channel. `release` is set by #ModuleRelease;
+    // `components` is a pure CUE projection over every #Component.#names.
+    // The trailing `...` keeps the channel open for future siblings.
+    #ctx: {
+        release: #ReleaseIdentity
+        components: { for id, c in #components { (id): c.#names } }
+        ...
+    }
 }
 ```
 
@@ -261,8 +290,11 @@ Implementation: [`module.cue`](src/module.cue).
 - `metadata.modulePath` and `metadata.version` MUST come from the enclosing CUE module identity (`cue.mod/module.cue`). Consumers MUST NOT override them in-file.
 - `metadata.fqn` uses semver-with-colon (`modulePath/name:version`), distinct from `#Resource`'s `@v0` major-version separator. Consumers MUST NOT supply `fqn` directly.
 - `metadata.uuid` is computed as `SHA1(OPMNamespace, fqn)`. It is deterministic and stable across evaluations.
-- `#components` is required but MAY be empty for a Module that only publishes via `#defines`.
-- Each map under `#defines` MUST be keyed by valid `#FQNType` strings. CUE unification binds `value.metadata.fqn` to the map key — a key/value mismatch is a CUE bottom (a compile-time error).
+- `#components` is required but MAY be empty for a Module that ships only as a configuration shape. Keys MUST satisfy `#NameType`.
+- Every entry in `#components` receives `#release` from `#ctx.release` via the pattern constraint. The component's `#names` block computes `resourceName` and DNS variants from this injected release. Authors MUST NOT set `#release` on a component directly.
+- `#ctx.release` MUST be set by the consuming `#ModuleRelease` (§…). A `#Module` value with `#ctx.release` left non-concrete is a spec — usable for typing and validation, but not renderable.
+- `#ctx.components` is a pure CUE comprehension over `#components`; it cannot be authored independently of the component set. Drift between a component's `#names` and the projection is therefore impossible at the schema layer.
+- The top of `#ctx` is open (`...`). Future enhancements MAY add sibling fields (`platform`, `environment`) without invalidating existing module bodies.
 - `#config` MUST be expressible in OpenAPI v3. CUE templating constructs (`for`, `if`, comprehensions) MUST NOT appear. This rule is enforced downstream (the library's render pipeline) rather than at the schema layer.
 - `debugValues` SHOULD satisfy `#config` and is validated at runtime by the schema fixture harness.
 
@@ -270,10 +302,12 @@ Implementation: [`module.cue`](src/module.cue).
 
 - **Why `fqn` uses semver-with-colon while `#Resource` uses `@vN`.** Modules ship at specific versions (`1.2.3`); the consumer pins an exact release and migrates deliberately. Resources version on the contract surface (`v1`, `v2`); the consumer pins a contract major and treats patches as the publisher's concern. Different identity granularity, different separator — the visual distinction prevents confusion when both appear in a config tree.
 - **Why `uuid` is computed via `SHA1(OPMNamespace, fqn)` rather than authored or random.** Per Principle III (Determinism), two evaluations of the same `fqn` MUST yield the same identity. A registry, controller, or cluster can dedupe modules by uuid without coordinating an ID allocator. The schema fixture harness in `library/` pins a known uuid as a drift sentinel for the algorithm itself.
-- **Why FQN collisions in `#defines` surface as CUE bottoms.** Two modules defining the same FQN is the worst failure mode for a registry: silent shadowing means one module's behaviour is hidden by another's. CUE's map-key unification turns the collision into a compile-time bottom — caught at definition time, not at deploy time. This is called out as comment [`module.cue:48`](src/module.cue) ("FQN collisions across modules surface as CUE bottoms (D3)") because the property is load-bearing for the publication channel.
 - **Why `#config` is bare `_` and not a typed schema.** The configuration shape is per-module — every module's contract is different. Constraining `#config` at the core layer would either force a one-size-fits-all schema (too narrow) or accept everything (no value). The OpenAPI-v3 constraint is enforced by the downstream renderer, which has the context to apply it cleanly.
 - **Why no CUE templating in `#config`.** The config schema is the module's *public contract*. It travels with the published module via the OCI registry and is read by non-CUE consumers — web UIs rendering forms, kubectl plugins generating prompts, generated bindings in other languages. CUE templating would tie the schema to a CUE evaluator and exclude every one of those consumers. Per Principle I (Contract Stability), the schema must not assume a particular consumer.
-- **Why `#components` and `#defines` are separated.** A Module has two surfaces: a *deployment* surface (its `#components` — what gets rendered when this module is released) and a *publication* surface (its `#defines` — primitives this module contributes to the platform's vocabulary). A module may have one without the other: a primitive library is `#defines`-only; a leaf application is `#components`-only. Conflating them would force every Module to commit to both roles and lose the distinction between consuming and publishing.
+- **Why publication moved out of `#Module`.** The pre-0001 schema overloaded `#Module.#defines` to publish primitives to platforms. That conflated two roles — a leaf application has no publication intent; a catalog has no `#components` to render. Enhancement 0001 split the roles: `#Module` is the consumer artifact (only `#components` + `#config` + `debugValues` + `#ctx`), and [`#Catalog`](#51-catalog) is the publication artifact. A catalog need not carry application context; a module need not carry vocabulary surface.
+- **Why `#ctx` is inline on `#Module` and not a wrapper type.** Modules carry deployment context — release identity, per-component names, future siblings like platform / environment — through evaluation. Wrapping the module in a separate builder type would force every consumer (renderer, validator, debug tool) to unwrap before reading the module. An inline `#ctx` slot keeps the module a single value with a context channel exposed alongside the components map. The open top (`...`) reserves room for additive siblings without breaking existing values. See enhancement 0001 D1.
+- **Why `#ctx.components` is a projection, not an authored map.** Every component's `#names` block is the single source of truth for that component's identity. If `#ctx.components` were authored independently it could disagree with the component's own `#names` — exactly the silent-drift failure mode the schema should make impossible. Modeling it as a CUE comprehension makes drift inexpressible: the projection IS the components' names. See enhancement 0001 D2.
+- **Why the `#components` pattern injects `#release` instead of leaving it for `#ModuleRelease`.** A `#ModuleRelease` sets `#module.#ctx.release` once, at the module level. Without the pattern constraint, every component would have to thread `#release` from `#ctx.release` in author code — which is ceremony for the common case and an invitation for typos. The pattern constraint makes the wiring structural: the moment a value enters `#components`, it carries `#release: #ctx.release`. See enhancement 0001 D3.
 
 #### See also
 
