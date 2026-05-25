@@ -1,38 +1,54 @@
 package core
 
-// #ModuleRegistration — single entry in #Platform.#registry.
-// Pure projection of "this Module's primitives are visible on this platform".
-// Carries no install metadata (014 D11). enabled: false hides every projection
-// (014 D14). presentation is flat (014 D14, post-D11 cleanup).
-#ModuleRegistration: {
-	#module!: #Module
-
-	enabled: bool | *true
-
-	presentation?: {
-		description?: string
-		category?:    string
-		tags?: [...string]
-		examples?: [Name=string]: {
-			description?: string
-			values:       _
-		}
-	}
-
-	metadata?: {
-		labels?:      #LabelsAnnotationsType
-		annotations?: #LabelsAnnotationsType
-	}
+// #SubscriptionFilter narrows the set of catalog builds a #Platform pulls
+// from a subscribed registry path. All three fields are optional; when
+// every field is absent the kernel selects the highest SemVer published
+// for the path.
+//
+// Resolution order (D10):
+//   1. `range` restricts the candidate set to SemVers satisfying the
+//      constraint expression (e.g. ">=1.0.0 <2.0.0"). Parsed Go-side by
+//      the kernel via Masterminds/semver (D11).
+//   2. `allow` force-includes specific SemVers regardless of `range`.
+//   3. `deny` force-excludes specific SemVers from the survivor set.
+//
+// Introduced by enhancement 0001 (D13).
+#SubscriptionFilter: {
+	range?: string             // SemVer constraint expression
+	allow?: [...#VersionType]  // force-include specific versions
+	deny?: [...#VersionType]   // force-exclude specific versions
 }
 
-// #Platform — registry of registered Modules and their computed projections.
+// #Subscription declares that a #Platform pulls primitives from a catalog
+// published at a given CUE module path. The map key on #Platform.#registry
+// carries the path; #Subscription carries the enable flag and the optional
+// filter.
 //
-// Collisions on transformer FQN are caught by CUE map unification at
-// #composedTransformers (the map is keyed by FQN; two definitions at the
-// same key unify, identical bodies are no-ops, divergent bodies fail
-// evaluation). Multiple transformers legitimately requiring the same
-// resource/trait FQN is allowed and resolved by the runtime matcher's
-// predicate evaluation.
+// One subscription per catalog path is enforced by CUE map semantics
+// (D13). Multi-channel-per-path (e.g. RC + stable on the same platform)
+// is not expressible at this stage; if needed later it lands as an
+// additive extension that changes the key shape.
+#Subscription: {
+	enable:  bool | *true
+	filter?: #SubscriptionFilter
+}
+
+// #Platform — path-keyed registry of catalog subscriptions plus
+// kernel-filled materialization slots.
+//
+// Authors write #registry. The kernel's Materialize step (library-side)
+// resolves every subscription's filter against the OCI registry, pulls
+// the selected builds, indexes top-level #ComponentTransformer values
+// into #composedTransformers, and computes a #matchers reverse index.
+// The CUE-level #Platform value is therefore a spec; the kernel
+// populates the materialization slots on a separate MaterializedPlatform
+// twin (D14 — Materialize is explicit and caller-driven; the kernel
+// holds no cache).
+//
+// Reshaped by enhancement 0001 (supersedes the prior Id-keyed
+// #ModuleRegistration model). #knownResources / #knownTraits removed:
+// primitives surface transitively via materialized transformers'
+// required/optional maps.
 #Platform: {
 	kind: "Platform"
 
@@ -43,92 +59,23 @@ package core
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// #Platform.type — kept as authored field. Future enhancement may enforce
-	// type-vs-transformer compatibility; today informational (014 OQ2).
+	// Informational. Future enhancement may enforce type-vs-transformer
+	// compatibility; today it is an authored discriminator the matcher
+	// does not consult (014 OQ2).
 	type!: string
 
-	// #registry — kebab-case Id key (D16). Static + runtime writes unify by
-	// Id; concrete-value disagreement = _|_ surfaced by reconciler (D15).
-	#registry: [Id=#NameType]: #ModuleRegistration
+	// Path-keyed: map key is the catalog's CUE module path
+	// (e.g. "opmodel.dev/catalogs/opm"). Exactly one subscription per
+	// path — CUE map semantics enforce uniqueness (D13).
+	#registry: [Path=#ModulePathType]: #Subscription
 
-	// ---- Computed views over #registry ----
-	// Each gates on `reg.enabled` (D14 — disabled entries hide everything,
-	// types and transformers alike).
-
-	#knownResources: {
-		[FQN=string]: #Resource
-		for _, reg in #registry
-		if reg.enabled
-		if reg.#module.#defines != _|_
-		if reg.#module.#defines.resources != _|_
-		for fqn, v in reg.#module.#defines.resources {
-			(fqn): v
-		}
-	}
-
-	#knownTraits: {
-		[FQN=string]: #Trait
-		for _, reg in #registry
-		if reg.enabled
-		if reg.#module.#defines != _|_
-		if reg.#module.#defines.traits != _|_
-		for fqn, v in reg.#module.#defines.traits {
-			(fqn): v
-		}
-	}
-
-	#composedTransformers: #TransformerMap & {
-		for _, reg in #registry
-		if reg.enabled
-		if reg.#module.#defines != _|_
-		if reg.#module.#defines.transformers != _|_
-		for fqn, v in reg.#module.#defines.transformers {
-			(fqn): v
-		}
-	}
-
-	// ---- Match index ----
-	//
-	// Reverse index from primitive FQN → list of transformers that require
-	// that FQN. Multiple candidates per FQN is normal — the runtime matcher
-	// evaluates each candidate's predicate against the component and pairs
-	// every survivor.
-	#matchers: {
-		let _resourceFqns = {
-			for _, t in #composedTransformers
-			if t.requiredResources != _|_
-			for fqn, _ in t.requiredResources {
-				(fqn): _
-			}
-		}
-		let _traitFqns = {
-			for _, t in #composedTransformers
-			if t.requiredTraits != _|_
-			for fqn, _ in t.requiredTraits {
-				(fqn): _
-			}
-		}
-
-		let _resourceCandidates = {
-			for fqn, _ in _resourceFqns {
-				(fqn): [
-					for _, t in #composedTransformers
-					if t.requiredResources != _|_
-					if t.requiredResources[fqn] != _|_ {t},
-				]
-			}
-		}
-		let _traitCandidates = {
-			for fqn, _ in _traitFqns {
-				(fqn): [
-					for _, t in #composedTransformers
-					if t.requiredTraits != _|_
-					if t.requiredTraits[fqn] != _|_ {t},
-				]
-			}
-		}
-
-		resources: {[FQN=string]: [...#ComponentTransformer]} & _resourceCandidates
-		traits: {[FQN=string]: [...#ComponentTransformer]} & _traitCandidates
+	// Kernel-filled after Materialize. Both optional because the
+	// CUE-level #Platform value is a spec; the kernel populates these
+	// on the materialized twin. Materialize is explicit and caller-driven
+	// (D14 — no kernel cache).
+	#composedTransformers?: #TransformerMap
+	#matchers?: {
+		resources: [#FQNType]: [...#ComponentTransformer]
+		traits: [#FQNType]:    [...#ComponentTransformer]
 	}
 }

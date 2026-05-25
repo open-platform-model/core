@@ -13,3 +13,4 @@
 #Module
 #ComponentTransformer
 #Catalog
+#Platform

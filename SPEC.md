@@ -23,17 +23,20 @@ Cross-references use `file.cue:line` against the repository at the tag in [`CHAN
 
 ## 1. Type System Overview
 
-OPM Core distinguishes three categories of definition:
+OPM Core distinguishes four categories of definition:
 
 - **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Secret`. Each carries its own `metadata`, its own versioned identity, and a `spec` schema namespaced under a camelCase form of its name.
-- **Constructs** (§3) — framework types that compose, organize, or carry primitives: `#Component`, `#Blueprint`, `#Module`, `#ModuleRelease`, `#Platform` (with `#ModuleRegistration`). Constructs do not introduce new schema; they unify primitives into structured wholes.
+- **Constructs** (§3) — framework types that compose, organize, or carry primitives: `#Component`, `#Blueprint`, `#Module`, `#ModuleRelease`, `#Platform`. Constructs do not introduce new schema; they unify primitives into structured wholes.
 - **Adapters** (§4) — types that translate the model into target runtime form without participating in composition: `#ComponentTransformer`.
+- **Catalog** (§5) — the publication artifact a catalog package exports: `#Catalog`. A catalog ships a versioned set of `#ComponentTransformer` values under one CUE module path; the kernel resolves `#Platform` subscriptions against this artifact.
 
 The Primitive/Construct split exists because primitives are the unit of *vocabulary* and constructs are the unit of *composition*. A platform team extends the vocabulary by authoring new primitives; an application team uses constructs to assemble them. Conflating the two would force every composition decision through a schema-publishing workflow.
 
 The Adapter category exists because rendering is a *target-specific* concern. Forcing transformers into the composition graph would mean every primitive needs a target-specific arm — an explosion that doesn't compose. Adapters sit beside the model, not inside it.
 
-This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, and `#Module`, and the adapter `#ComponentTransformer`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
+The Catalog category exists because *publication* is a distinct concern from composition. A `#Module` may publish nothing (a leaf application) or consume primitives from many catalogs; a `#Catalog` publishes a versioned vocabulary but has no `#components` to render. The pre-0001 schema overloaded `#Module.#defines` for both roles; splitting them gives each artifact one job.
+
+This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, and `#Platform`, the adapter `#ComponentTransformer`, and the catalog `#Catalog`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
 
 ---
 
@@ -334,6 +337,84 @@ Implementation: [`blueprint.cue`](src/blueprint.cue).
 - Tutorial: [`docs/constructs.md`](docs/constructs.md) (Blueprint section)
 - Composes: [`#Resource`](#21-resource), [`#Trait`](#22-trait)
 - Attached by: [`#Component`](#31-component)
+
+---
+
+### 3.4 `#Platform`
+
+#### Definition
+
+A `#Platform` is a path-keyed registry of *subscriptions* to catalogs plus the kernel-filled materialization slots the matcher uses at compile time. Authors write the subscription map; the kernel's `Materialize` step resolves every subscription against the OCI registry, indexes the transformers it pulls into `#composedTransformers`, and computes a `#matchers` reverse index from primitive FQN to candidate transformer.
+
+A `#Platform` value is therefore a *spec* (what to pull, what to allow / deny) plus a place for the kernel to write its materialization output. The match-time evaluation runs against the materialized twin, not the raw spec.
+
+#### Shape
+
+```cue
+#Platform: {
+    kind: "Platform"
+
+    metadata: {
+        name!:        #NameType
+        description?: string
+        labels?:      #LabelsAnnotationsType
+        annotations?: #LabelsAnnotationsType
+    }
+
+    type!: string
+
+    // Path-keyed: map key is the catalog's CUE module path.
+    // Exactly one subscription per path (CUE map semantics).
+    #registry: [Path=#ModulePathType]: #Subscription
+
+    // Kernel-filled after Materialize. Both optional because the
+    // CUE-level value is a spec; the kernel populates them on the
+    // materialized twin.
+    #composedTransformers?: #TransformerMap
+    #matchers?: {
+        resources: [#FQNType]: [...#ComponentTransformer]
+        traits:    [#FQNType]: [...#ComponentTransformer]
+    }
+}
+
+#Subscription: {
+    enable:  bool | *true
+    filter?: #SubscriptionFilter
+}
+
+#SubscriptionFilter: {
+    range?: string             // SemVer constraint expression
+    allow?: [...#VersionType]
+    deny?:  [...#VersionType]
+}
+```
+
+Implementation: [`platform.cue`](src/platform.cue).
+
+#### Constraints
+
+- `kind` MUST be the literal string `"Platform"`.
+- `metadata.name` MUST be kebab-case (`#NameType`).
+- `type` MUST be present. The value is informational at this stage — the matcher does not consult it.
+- `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). One subscription per path is enforced by CUE map semantics; multi-channel-per-path is intentionally not expressible.
+- `#Subscription.enable` defaults to `true`. When `false`, the kernel SHOULD skip materialization for that path; primitives owned by the path do not surface on the platform.
+- `#SubscriptionFilter.range`, when present, MUST be a SemVer constraint expression parseable Go-side (the kernel uses Masterminds/semver). An unparseable expression surfaces as a structured `MaterializeError` against the offending subscription path.
+- Filter resolution order: `range` restricts the candidate set, `allow` force-includes specific SemVers, `deny` force-excludes them. The final survivor set is materialized.
+- `#composedTransformers` and `#matchers` are kernel-filled output slots. Authors MUST NOT supply them; doing so would let an author override what the registry actually published. Both are optional at the CUE level because the spec value carries them empty.
+
+#### Rationale
+
+- **Why subscriptions instead of inline module registrations.** The pre-0001 design forced a platform to embed concrete `#Module` values keyed by an arbitrary author-chosen `Id`. That meant: (a) the platform spec bundled the entire transitive content of every catalog it consumed, not just the intent to consume it; (b) multi-tenant platforms couldn't express "pull a SemVer range from this catalog, force-include this fix" without authoring every concrete version inline. Subscriptions move pull intent into a small declarative shape (path + filter) and let the kernel materialize against the registry. See enhancement 0001 D13.
+- **Why the registry map is path-keyed, not Id-keyed.** A catalog has exactly one CUE module path. Keying on path lets CUE's map-uniqueness semantics enforce "one subscription per catalog" structurally — two declarations at the same key unify, divergent declarations fail. Id-keying admitted "two subscriptions for the same catalog under different names" silently, which is meaningless and a common author error.
+- **Why `#composedTransformers` and `#matchers` are optional kernel-filled slots, not CUE comprehensions.** Materialize pulls remote artifacts from OCI — it cannot be a pure CUE comprehension over an in-memory `#registry`. Modeling these as optional fields lets the CUE-level spec remain valid without materialization, while the materialized twin (built by the kernel after fetching) carries the populated values. The alternative — making them required — would force every author to construct a "materialized" view in CUE by hand, defeating the purpose. See enhancement 0001 D14.
+- **Why `#knownResources` and `#knownTraits` are removed.** Both were eager projections that flattened every catalog's primitives into a flat map on the platform. They duplicated information the matcher could (and now does) reach transitively via each transformer's required/optional maps. Removing them eliminates a sync point that always lagged the materialized transformer set.
+- **Why the filter has three independent levers (`range` + `allow` + `deny`).** Real upgrade flows mix continuous and discrete decisions: "track 1.x" is a range; "but pin 1.4.2 because 1.5 has a regression" is an allow; "skip 1.4.0 — it was yanked" is a deny. Modeling all three lets a platform team express the upgrade policy without dropping into imperative escape hatches. The ordered resolution (range → allow → deny) gives deterministic results when the levers overlap.
+
+#### See also
+
+- Tutorial: forthcoming
+- Subscribes to: [`#Catalog`](#51-catalog)
+- Materialized for: `#Module` matching at compile time
 
 ---
 

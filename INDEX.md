@@ -31,8 +31,9 @@ CUE module: `opmodel.dev/core@v0`
 | `#ModuleMap` | `module.cue` |  |
 | `#ModuleRelease` | `module_release.cue` | #ModuleRelease: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version |
 | `#ModuleReleaseMap` | `module_release.cue` |  |
-| `#ModuleRegistration` | `platform.cue` | #ModuleRegistration — single entry in #Platform |
-| `#Platform` | `platform.cue` | #Platform — registry of registered Modules and their computed projections |
+| `#Platform` | `platform.cue` | #Platform — path-keyed registry of catalog subscriptions plus kernel-filled materialization slots |
+| `#Subscription` | `platform.cue` | #Subscription declares that a #Platform pulls primitives from a catalog published at a given CUE module path |
+| `#SubscriptionFilter` | `platform.cue` | #SubscriptionFilter narrows the set of catalog builds a #Platform pulls from a subscribed registry path |
 | `#Resource` | `resource.cue` | #Resource: Defines a resource of deployment within the system |
 | `#ResourceMap` | `resource.cue` |  |
 | `#AutoSecrets` | `schemas.cue` | #AutoSecrets discovers all #Secret instances from a resolved config and groups them by $secretName/$dataKey in one step |
