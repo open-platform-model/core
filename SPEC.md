@@ -23,20 +23,19 @@ Cross-references use `file.cue:line` against the repository at the tag in [`CHAN
 
 ## 1. Type System Overview
 
-OPM Core distinguishes four categories of definition:
+OPM Core distinguishes three categories of definition:
 
 - **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Secret`. Each carries its own `metadata`, its own versioned identity, and a `spec` schema namespaced under a camelCase form of its name.
-- **Constructs** (§3) — framework types that compose, organize, or carry primitives: `#Component`, `#Blueprint`, `#Module`, `#ModuleRelease`, `#Platform`. Constructs do not introduce new schema; they unify primitives into structured wholes.
+- **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleRelease`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleRelease`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
 - **Adapters** (§4) — types that translate the model into target runtime form without participating in composition: `#ComponentTransformer`.
-- **Catalog** (§5) — the publication artifact a catalog package exports: `#Catalog`. A catalog ships a versioned set of `#ComponentTransformer` values under one CUE module path; the kernel resolves `#Platform` subscriptions against this artifact.
 
 The Primitive/Construct split exists because primitives are the unit of *vocabulary* and constructs are the unit of *composition*. A platform team extends the vocabulary by authoring new primitives; an application team uses constructs to assemble them. Conflating the two would force every composition decision through a schema-publishing workflow.
 
 The Adapter category exists because rendering is a *target-specific* concern. Forcing transformers into the composition graph would mean every primitive needs a target-specific arm — an explosion that doesn't compose. Adapters sit beside the model, not inside it.
 
-The Catalog category exists because *publication* is a distinct concern from composition. A `#Module` may publish nothing (a leaf application) or consume primitives from many catalogs; a `#Catalog` publishes a versioned vocabulary but has no `#components` to render. The pre-0001 schema overloaded `#Module.#defines` for both roles; splitting them gives each artifact one job.
+`#Catalog` sits under Constructs (rather than as its own category) because it follows the same rule as every other construct: it introduces no new schema vocabulary, it organizes primitives. A `#Catalog` packages a versioned set of `#ComponentTransformer` values under one CUE module path so platforms can subscribe to it. Splitting consumption (`#Module`) from publication (`#Catalog`) gives each artifact one job — but both are constructs, not separate categories.
 
-This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, `#Platform`, and `#ModuleRelease`, the adapter `#ComponentTransformer`, and the catalog `#Catalog`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
+This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleRelease`, and `#Catalog`, and the adapter `#ComponentTransformer`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
 
 ---
 
@@ -304,7 +303,7 @@ Implementation: [`module.cue`](src/module.cue).
 - **Why `uuid` is computed via `SHA1(OPMNamespace, fqn)` rather than authored or random.** Per Principle III (Determinism), two evaluations of the same `fqn` MUST yield the same identity. A registry, controller, or cluster can dedupe modules by uuid without coordinating an ID allocator. The schema fixture harness in `library/` pins a known uuid as a drift sentinel for the algorithm itself.
 - **Why `#config` is bare `_` and not a typed schema.** The configuration shape is per-module — every module's contract is different. Constraining `#config` at the core layer would either force a one-size-fits-all schema (too narrow) or accept everything (no value). The OpenAPI-v3 constraint is enforced by the downstream renderer, which has the context to apply it cleanly.
 - **Why no CUE templating in `#config`.** The config schema is the module's *public contract*. It travels with the published module via the OCI registry and is read by non-CUE consumers — web UIs rendering forms, kubectl plugins generating prompts, generated bindings in other languages. CUE templating would tie the schema to a CUE evaluator and exclude every one of those consumers. Per Principle I (Contract Stability), the schema must not assume a particular consumer.
-- **Why publication moved out of `#Module`.** The pre-0001 schema overloaded `#Module.#defines` to publish primitives to platforms. That conflated two roles — a leaf application has no publication intent; a catalog has no `#components` to render. Enhancement 0001 split the roles: `#Module` is the consumer artifact (only `#components` + `#config` + `debugValues` + `#ctx`), and [`#Catalog`](#51-catalog) is the publication artifact. A catalog need not carry application context; a module need not carry vocabulary surface.
+- **Why publication moved out of `#Module`.** The pre-0001 schema overloaded `#Module.#defines` to publish primitives to platforms. That conflated two roles — a leaf application has no publication intent; a catalog has no `#components` to render. Enhancement 0001 split the roles: `#Module` is the consumer artifact (only `#components` + `#config` + `debugValues` + `#ctx`), and [`#Catalog`](#36-catalog) is the publication artifact. A catalog need not carry application context; a module need not carry vocabulary surface.
 - **Why `#ctx` is inline on `#Module` and not a wrapper type.** Modules carry deployment context — release identity, per-component names, future siblings like platform / environment — through evaluation. Wrapping the module in a separate builder type would force every consumer (renderer, validator, debug tool) to unwrap before reading the module. An inline `#ctx` slot keeps the module a single value with a context channel exposed alongside the components map. The open top (`...`) reserves room for additive siblings without breaking existing values. See enhancement 0001 D1.
 - **Why `#ctx.components` is a projection, not an authored map.** Every component's `#names` block is the single source of truth for that component's identity. If `#ctx.components` were authored independently it could disagree with the component's own `#names` — exactly the silent-drift failure mode the schema should make impossible. Modeling it as a CUE comprehension makes drift inexpressible: the projection IS the components' names. See enhancement 0001 D2.
 - **Why the `#components` pattern injects `#release` instead of leaving it for `#ModuleRelease`.** A `#ModuleRelease` sets `#module.#ctx.release` once, at the module level. Without the pattern constraint, every component would have to thread `#release` from `#ctx.release` in author code — which is ceremony for the common case and an invitation for typos. The pattern constraint makes the wiring structural: the moment a value enters `#components`, it carries `#release: #ctx.release`. See enhancement 0001 D3.
@@ -447,7 +446,7 @@ Implementation: [`platform.cue`](src/platform.cue).
 #### See also
 
 - Tutorial: forthcoming
-- Subscribes to: [`#Catalog`](#51-catalog)
+- Subscribes to: [`#Catalog`](#36-catalog)
 - Materialized for: `#Module` matching at compile time
 
 ---
@@ -524,6 +523,72 @@ Implementation: [`module_release.cue`](src/module_release.cue).
 
 ---
 
+### 3.6 `#Catalog`
+
+#### Definition
+
+A `#Catalog` is the construct a catalog package exports to publish its primitives — primarily its `#ComponentTransformer` set — into a versioned, registry-resolvable artifact. It collapses what used to be a `#Module.#defines` block plus author-discipline conventions into one typed value with schema-enforced lockstep on transformer metadata.
+
+A `#Catalog` introduces no new vocabulary itself — like every other construct (§3), it organizes primitives into a structured whole. Where `#Module` carries a set of components to render, `#Catalog` carries a set of transformers to publish. Both are constructs; their difference is which artifact they ship.
+
+The catalog's identity is its `metadata.modulePath` + SemVer `metadata.version`. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
+
+#### Shape
+
+```cue
+#Catalog: {
+    kind: "Catalog"
+
+    M=metadata: {
+        modulePath!:  #ModulePathType
+        version!:     #VersionType | *"0.0.0-dev"   // source-tree default
+        fqn:          "\(modulePath)@\(version)"
+        description?: string
+        labels?:      #LabelsAnnotationsType
+        annotations?: #LabelsAnnotationsType
+    }
+
+    // Every entry's metadata.modulePath is stamped to
+    //   "<catalog modulePath>/transformers"
+    // and metadata.version is stamped to the catalog's version.
+    // Pattern enforced by the schema, not by author discipline.
+    #transformers: [#FQNType]: #ComponentTransformer & {
+        metadata: {
+            modulePath: "\(M.modulePath)/transformers"
+            version:    M.version
+        }
+    }
+}
+```
+
+Implementation: [`catalog.cue`](src/catalog.cue).
+
+#### Constraints
+
+- `kind` MUST be the literal string `"Catalog"`.
+- `metadata.modulePath` MUST be the catalog package's CUE module path (e.g. `opmodel.dev/catalogs/opm`). The publish task is the source of truth for this value at publish time.
+- `metadata.version` defaults to `"0.0.0-dev"` in a source tree so `cue vet` is cheap during development. At publish time it MUST be overwritten with a concrete SemVer via a `version_override.cue` file in the sibling `identity/` subpackage; OCI artifacts ship fully concrete.
+- `metadata.fqn` is computed from `modulePath` and `version`; consumers MUST NOT supply it.
+- Every entry in `#transformers` MUST be keyed by a valid `#FQNType` (SemVer-suffixed primitive FQN). The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog modulePath>/transformers"` and every entry's `metadata.version` to the catalog's version. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
+- The pattern does NOT stamp `metadata.fqn` — fqn derives in the transformer's metadata from `modulePath/name/version`, and the map key already carries the transformer's own fqn by construction. Stamping it would be a no-op or a conflict.
+- Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
+
+#### Rationale
+
+- **Why a single `#Catalog` construct instead of a `#Module.#defines` block.** The pre-0001 design overloaded `#Module` to act as both a consumer artifact (declares components) and a publisher artifact (defines primitives). A catalog has no `#components` to render — it only publishes vocabulary. Collapsing both responsibilities into one type forced every catalog to ship the consumer surface (and vice versa). Splitting them gives `#Module` one role (consume) and `#Catalog` one role (publish). Both remain constructs — they organize primitives, they don't introduce schema vocabulary. See enhancement 0001 D19.
+- **Why the `M=metadata` field-label alias.** The pattern constraint on `#transformers` needs to reach the outer catalog's `modulePath` and `version` from inside the nested `metadata: { ... }` block of every entry. A bare `metadata.modulePath` reference inside the entry's own metadata walks to the closest parent field named `metadata` — the inner field itself — and self-embeds into a non-concrete interpolation. CUE's value-alias form (`metadata: M={...}`) does not carry across the nested constraint boundary; only the field-label alias form does. Experiment 09 in the enhancement validated both sound forms (hidden-mirror + label-alias); the label-alias is chosen here for inline locality. See enhancement 0001 D25.
+- **Why the pattern stamps `modulePath` + `version` but not `fqn`.** Stamping `modulePath` and `version` replaces the prior author-discipline rule ("every transformer's metadata must match the catalog's version") with a structural guarantee that `cue vet` enforces. The transformer's `metadata.fqn` derives in its own definition from those three fields, so stamping it would either be redundant (matches) or produce a conflict (author-supplied fqn diverges). Experiment 10 confirmed the asymmetry: a wrong `modulePath` or `version` fails vet loudly; trying to stamp fqn introduces conflicts on round-tripped FQNs.
+- **Why catalogs don't enumerate Resources / Traits / Blueprints.** A transformer's `requiredResources` / `requiredTraits` already names every primitive the matcher needs to reach. Adding sibling `#resources` / `#traits` / `#blueprints` maps on `#Catalog` would duplicate that information and invite drift between the enumeration and the transitive set. If introspection demand surfaces later, the sibling maps are an additive extension — not a precondition.
+- **Why `#CatalogFQNType` exists despite overlapping `#FQNType`.** A catalog's FQN is `modulePath@version` (no name segment); a primitive's FQN is `modulePath/name@version`. The two regexes are not structurally disjoint — a string like `opmodel.dev/catalogs/opm/transformer@1.0.0` matches both. They are distinguished by usage (which field they appear in), not by the regex alone. Naming the type makes the intent clear at the field site even if the regex doesn't enforce mutual exclusion.
+
+#### See also
+
+- Tutorial: forthcoming
+- Publishes: [`#ComponentTransformer`](#41-componenttransformer)
+- Consumed by: [`#Platform`](#34-platform) via `#registry` subscriptions
+
+---
+
 ## 4. Adapters
 
 ### 4.1 `#ComponentTransformer`
@@ -594,70 +659,5 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - Tutorial: [`docs/adapters.md`](docs/adapters.md) (forthcoming)
 - Matches: [`#Component`](#31-component)
 - Requires: [`#Resource`](#21-resource), [`#Trait`](#22-trait)
-- Discovered via: [`#Catalog`](#5-catalog)
+- Discovered via: [`#Catalog`](#36-catalog)
 
----
-
-## 5. Catalog
-
-### 5.1 `#Catalog`
-
-#### Definition
-
-A `#Catalog` is the top-level value a catalog package exports to publish its primitives — primarily its `#ComponentTransformer` set — into a versioned, registry-resolvable artifact. It collapses what used to be a `#Module.#defines` block plus author-discipline conventions into one typed value with schema-enforced lockstep on transformer metadata.
-
-The catalog's identity is its `metadata.modulePath` + SemVer `metadata.version`. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
-
-#### Shape
-
-```cue
-#Catalog: {
-    kind: "Catalog"
-
-    M=metadata: {
-        modulePath!:  #ModulePathType
-        version!:     #VersionType | *"0.0.0-dev"   // source-tree default
-        fqn:          "\(modulePath)@\(version)"
-        description?: string
-        labels?:      #LabelsAnnotationsType
-        annotations?: #LabelsAnnotationsType
-    }
-
-    // Every entry's metadata.modulePath is stamped to
-    //   "<catalog modulePath>/transformers"
-    // and metadata.version is stamped to the catalog's version.
-    // Pattern enforced by the schema, not by author discipline.
-    #transformers: [#FQNType]: #ComponentTransformer & {
-        metadata: {
-            modulePath: "\(M.modulePath)/transformers"
-            version:    M.version
-        }
-    }
-}
-```
-
-Implementation: [`catalog.cue`](src/catalog.cue).
-
-#### Constraints
-
-- `kind` MUST be the literal string `"Catalog"`.
-- `metadata.modulePath` MUST be the catalog package's CUE module path (e.g. `opmodel.dev/catalogs/opm`). The publish task is the source of truth for this value at publish time.
-- `metadata.version` defaults to `"0.0.0-dev"` in a source tree so `cue vet` is cheap during development. At publish time it MUST be overwritten with a concrete SemVer via a `version_override.cue` file in the sibling `identity/` subpackage; OCI artifacts ship fully concrete.
-- `metadata.fqn` is computed from `modulePath` and `version`; consumers MUST NOT supply it.
-- Every entry in `#transformers` MUST be keyed by a valid `#FQNType` (SemVer-suffixed primitive FQN). The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog modulePath>/transformers"` and every entry's `metadata.version` to the catalog's version. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
-- The pattern does NOT stamp `metadata.fqn` — fqn derives in the transformer's metadata from `modulePath/name/version`, and the map key already carries the transformer's own fqn by construction. Stamping it would be a no-op or a conflict.
-- Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
-
-#### Rationale
-
-- **Why a single `#Catalog` value instead of a `#Module.#defines` block.** The pre-0001 design overloaded `#Module` to act as both a consumer artifact (declares components) and a publisher artifact (defines primitives). A catalog has no `#components` to render — it only publishes vocabulary. Collapsing both responsibilities into one type forced every catalog to ship the consumer surface (and vice versa). Splitting them gives `#Module` one role (consume) and `#Catalog` one role (publish). See enhancement 0001 D19.
-- **Why the `M=metadata` field-label alias.** The pattern constraint on `#transformers` needs to reach the outer catalog's `modulePath` and `version` from inside the nested `metadata: { ... }` block of every entry. A bare `metadata.modulePath` reference inside the entry's own metadata walks to the closest parent field named `metadata` — the inner field itself — and self-embeds into a non-concrete interpolation. CUE's value-alias form (`metadata: M={...}`) does not carry across the nested constraint boundary; only the field-label alias form does. Experiment 09 in the enhancement validated both sound forms (hidden-mirror + label-alias); the label-alias is chosen here for inline locality. See enhancement 0001 D25.
-- **Why the pattern stamps `modulePath` + `version` but not `fqn`.** Stamping `modulePath` and `version` replaces the prior author-discipline rule ("every transformer's metadata must match the catalog's version") with a structural guarantee that `cue vet` enforces. The transformer's `metadata.fqn` derives in its own definition from those three fields, so stamping it would either be redundant (matches) or produce a conflict (author-supplied fqn diverges). Experiment 10 confirmed the asymmetry: a wrong `modulePath` or `version` fails vet loudly; trying to stamp fqn introduces conflicts on round-tripped FQNs.
-- **Why catalogs don't enumerate Resources / Traits / Blueprints.** A transformer's `requiredResources` / `requiredTraits` already names every primitive the matcher needs to reach. Adding sibling `#resources` / `#traits` / `#blueprints` maps on `#Catalog` would duplicate that information and invite drift between the enumeration and the transitive set. If introspection demand surfaces later, the sibling maps are an additive extension — not a precondition.
-- **Why `#CatalogFQNType` exists despite overlapping `#FQNType`.** A catalog's FQN is `modulePath@version` (no name segment); a primitive's FQN is `modulePath/name@version`. The two regexes are not structurally disjoint — a string like `opmodel.dev/catalogs/opm/transformer@1.0.0` matches both. They are distinguished by usage (which field they appear in), not by the regex alone. Naming the type makes the intent clear at the field site even if the regex doesn't enforce mutual exclusion.
-
-#### See also
-
-- Tutorial: forthcoming
-- Publishes: [`#ComponentTransformer`](#41-componenttransformer)
-- Consumed by: `#Platform` (forthcoming section, enhancement 0001)
