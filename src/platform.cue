@@ -14,9 +14,9 @@ package core
 //
 // Introduced by enhancement 0001 (D13).
 #SubscriptionFilter: {
-	range?: string             // SemVer constraint expression
-	allow?: [...#VersionType]  // force-include specific versions
-	deny?: [...#VersionType]   // force-exclude specific versions
+	range?: string // SemVer constraint expression
+	allow?: [...#VersionType] // force-include specific versions
+	deny?: [...#VersionType] // force-exclude specific versions
 }
 
 // #Subscription declares that a #Platform pulls primitives from a catalog
@@ -76,6 +76,6 @@ package core
 	#composedTransformers?: #TransformerMap
 	#matchers?: {
 		resources: [#FQNType]: [...#ComponentTransformer]
-		traits: [#FQNType]:    [...#ComponentTransformer]
+		traits: [#FQNType]: [...#ComponentTransformer]
 	}
 }
