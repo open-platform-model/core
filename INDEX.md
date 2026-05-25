@@ -50,7 +50,7 @@ CUE module: `opmodel.dev/core@v0`
 | `#TransformerContext` | `transformer.cue` | Provider context passed to transformers |
 | `#TransformerMap` | `transformer.cue` | Map of transformers by fully qualified name |
 | `#BundleFQNType` | `types.cue` | BundleFQNType: FQN for #Bundle — path/name:vN (major version) Example: "opmodel |
-| `#FQNType` | `types.cue` | FQNType: primitive definition FQN — path/name@version Example: "opmodel |
+| `#FQNType` | `types.cue` | FQNType: primitive definition FQN — path/name@semver Example: "opmodel |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |
 | `#LabelsAnnotationsType` | `types.cue` |  |

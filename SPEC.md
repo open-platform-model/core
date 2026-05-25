@@ -33,7 +33,7 @@ The Primitive/Construct split exists because primitives are the unit of *vocabul
 
 The Adapter category exists because rendering is a *target-specific* concern. Forcing transformers into the composition graph would mean every primitive needs a target-specific arm — an explosion that doesn't compose. Adapters sit beside the model, not inside it.
 
-This v0 of the specification covers `#Resource`, `#Component`, and `#Module`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
+This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, and `#Module`, and the adapter `#ComponentTransformer`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
 
 ---
 
@@ -56,7 +56,7 @@ Examples: `Container`, `Volume`, `ConfigMap`, `Secret`.
     metadata: {
         name!:       #NameType            // kebab-case
         modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/resources/workload"
-        version!:    #MajorVersionType    // e.g. "v1"
+        version!:    #VersionType         // SemVer 2.0, e.g. "1.4.0"
         fqn:         "\(modulePath)/\(name)@\(version)"
 
         description?: string
@@ -75,15 +75,15 @@ Implementation: [`resource.cue`](src/resource.cue).
 
 - `kind` MUST be the literal string `"Resource"`. Downstream tools dispatch on this field.
 - `metadata.name` MUST be kebab-case (`#NameType` regex, max 63 runes) and MUST be unique within its `modulePath`.
-- `metadata.version` MUST be a major version (`vN`), not a semver. Resources version on the compatibility surface, not the implementation revision.
-- `metadata.fqn` is computed from `modulePath`, `name`, and `version`. Consumers MUST NOT supply `fqn` directly.
+- `metadata.version` MUST be a SemVer 2.0 string (`#VersionType`), not a MAJOR-only prefix. The published FQN carries the exact patch the catalog stamped at publish time.
+- `metadata.fqn` is computed from `modulePath`, `name`, and `version`. Consumers MUST NOT supply `fqn` directly. The computed FQN MUST match `#FQNType` (SemVer-suffixed).
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
 
 #### Rationale
 
 - **Why `kind` is a fixed string and not implicit from the type.** CUE definitions do not carry type information at runtime. Downstream tools walking a rendered tree need a discriminator to route handlers; `kind` is that discriminator. Removing it would force every consumer to do structural detection, which is brittle.
 - **Why `fqn` is computed, not stored.** The fully-qualified name is a function of three other fields. Storing it would allow drift between the stated identity and its parts. Computing it makes the schema the single source of identity truth — an instance of Principle III (Determinism).
-- **Why `version` is a major version (`vN`), not semver.** Resources are the *vocabulary* of OPM. Two resources at `v1` and `v2` are distinct contracts that consumers must opt into. A semver patch is a property of the implementation publishing the resource, not of the contract; conflating the two would tie every dependent on the contract to the publisher's release cadence.
+- **Why `version` is exact SemVer, not a MAJOR-only prefix.** Two builds of the same primitive at adjacent versions (e.g. `1.0.0` and `1.0.1`) must occupy distinct keys so the kernel matcher can compare definitions deterministically. The previous MAJOR-only scheme collapsed every patch into one bucket and let two divergent definitions at the same `@v1` silently coexist — the worst failure mode for a vocabulary. Catalog-monolithic SemVer (every primitive's version equals the publishing catalog's version) keeps version churn coordinated; consumer-pin churn is mitigated by always-on unification at match time (byte-identical bodies unify across SemVers, and platform subscriptions express SemVer ranges that span many versions). See enhancement 0001 D5 and D18.
 - **Why `spec` is namespaced under the definition's camelCase name.** When multiple primitives unify into a `#Component` (§3.1), their `spec` fields merge. Namespacing under the definition name prevents field-name collisions — two primitives both defining `port` would clash at the root but coexist under `container.port` and `service.port`. This pushes naming collisions to *definition time* (caught by CUE unification) rather than *deployment time* (silent merge).
 - **Why we don't allow free-form CUE inside `spec`.** OpenAPI v3 is the contract surface for non-CUE consumers — Kubernetes CRDs, web UIs, kubectl plugins. CUE templating (`for`, `if`, comprehensions) would tie the schema to a CUE evaluator and exclude every consumer that uses the schema through generated bindings. Per Principle II (Type Safety First), this constraint is in the schema rather than relying on downstream rejection.
 
@@ -91,7 +91,64 @@ Implementation: [`resource.cue`](src/resource.cue).
 
 - Tutorial: [`docs/primitives.md`](docs/primitives.md) (Resource section)
 - Composed by: [`#Component`](#31-component)
-- Modified by: `#Trait` (forthcoming section)
+- Modified by: [`#Trait`](#22-trait)
+
+---
+
+### 2.2 `#Trait`
+
+#### Definition
+
+A `#Trait` is a primitive that *modifies* a `#Component`'s behavior or surface without being a deployable thing in its own right. Traits are the *adjectives* of OPM. A Trait declares which `#Resource` kinds it can be applied to via `appliesTo`, and contributes a `spec` schema namespaced under a camelCase form of its name.
+
+Examples: `scaling`, `health-check`, `network-expose`.
+
+#### Shape
+
+```cue
+#Trait: {
+    kind: "Trait"
+
+    metadata: {
+        name!:       #NameType            // kebab-case
+        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/traits/workload"
+        version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
+        fqn:         "\(modulePath)/\(name)@\(version)"
+
+        description?: string
+        labels?:      #LabelsAnnotationsType
+        annotations?: #LabelsAnnotationsType
+    }
+
+    // MUST be OpenAPIv3-compatible, namespaced under camelCase(name).
+    spec!: (strings.ToCamel(metadata.#definitionName)): _
+
+    // Resources this Trait may modify.
+    appliesTo!: [...#Resource]
+}
+```
+
+Implementation: [`trait.cue`](src/trait.cue).
+
+#### Constraints
+
+- `kind` MUST be the literal string `"Trait"`.
+- `metadata.name`, `metadata.modulePath`, `metadata.version`, `metadata.fqn` follow the same rules as `#Resource` (§2.1), with `version` as SemVer 2.0.
+- `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
+- `appliesTo` MUST list at least one `#Resource`. A Trait that applies to nothing is a category error.
+- A Trait attached to a `#Component` whose `#resources` do not include any entry in `appliesTo` MUST fail at CUE unification.
+
+#### Rationale
+
+- **Why `appliesTo` is required and listed.** Traits modify the surface of specific Resources. Without `appliesTo` an author could attach `scaling` to a `Volume` and produce nonsense; with it, the mismatch surfaces at unification time rather than render time. The list shape lets a single Trait apply to a family of related Resources (e.g. `scaling` applies to `Container` and `Job`) without forcing N Trait copies.
+- **Why Traits share the primitive-metadata shape (`name` + `modulePath` + `version` + computed `fqn`, plus optional `description` / `labels` / `annotations`) with `#Resource`.** Both are vocabulary primitives that catalogs version and publish; the kernel matcher walks both via the same FQN-keyed lookup. A divergent metadata shape would force the matcher to special-case each, which would invite drift. Per enhancement 0001 D5, the SemVer-FQN regime applies uniformly to every primitive.
+- **Why we don't allow free-form CUE inside `spec`.** Same as `#Resource` (§2.1) — the OpenAPI v3 contract surface is for non-CUE consumers.
+
+#### See also
+
+- Tutorial: [`docs/primitives.md`](docs/primitives.md) (Trait section)
+- Modifies: [`#Resource`](#21-resource)
+- Composed by: [`#Component`](#31-component)
 
 ---
 
@@ -218,5 +275,135 @@ Implementation: [`module.cue`](src/module.cue).
 #### See also
 
 - Tutorial: [`docs/constructs.md`](docs/constructs.md) (Module section)
-- Composes: [`#Component`](#31-component), `#Resource` (§2.1), `#Trait` and `#ComponentTransformer` (forthcoming)
+- Composes: [`#Component`](#31-component), [`#Resource`](#21-resource), [`#Trait`](#22-trait), [`#ComponentTransformer`](#41-componenttransformer)
 - Instantiated by: `#ModuleRelease` (forthcoming)
+
+---
+
+### 3.3 `#Blueprint`
+
+#### Definition
+
+A `#Blueprint` is a reusable composition of `#Resource` and `#Trait` primitives into a higher-level abstraction that a `#Component` can attach as a single unit. Blueprints are versioned and shipped by catalogs alongside the primitives they compose.
+
+Examples: `stateless-workload`, `stateful-workload`, `cronjob`.
+
+#### Shape
+
+```cue
+#Blueprint: {
+    kind: "Blueprint"
+
+    metadata: {
+        name!:       #NameType            // kebab-case
+        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/blueprints/workload"
+        version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
+        fqn:         "\(modulePath)/\(name)@\(version)"
+
+        description?: string
+        labels?:      #LabelsAnnotationsType
+        annotations?: #LabelsAnnotationsType
+    }
+
+    composedResources!: [...#Resource]
+    composedTraits?:    [...#Trait]
+
+    // MUST be OpenAPIv3-compatible, namespaced under camelCase(name).
+    spec!: (strings.ToCamel(metadata.#definitionName)): _
+}
+```
+
+Implementation: [`blueprint.cue`](src/blueprint.cue).
+
+#### Constraints
+
+- `kind` MUST be the literal string `"Blueprint"`.
+- `metadata` follows the primitive-metadata shape (`name` + `modulePath` + `version` + computed `fqn`, plus optional `description` / `labels` / `annotations`) (same rules as `#Resource` and `#Trait`), with `version` as SemVer 2.0.
+- `composedResources` MUST list at least one `#Resource`. A Blueprint that composes nothing is a category error.
+- `composedTraits` is optional. A Trait listed here MUST have a `#Resource` from `composedResources` in its `appliesTo`, otherwise unification fails.
+- `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
+
+#### Rationale
+
+- **Why Blueprints share the primitive-metadata shape with `#Resource` and `#Trait`.** Blueprints are shipped by catalogs, FQN-keyed, and version in lockstep with the primitives they compose (enhancement 0001 D21). A divergent metadata shape would force every catalog tool to special-case Blueprints. The shared FQN regex and identical metadata layout keep every primitive-shaped artifact discoverable through the same machinery.
+- **Why Blueprints sit under Constructs and not Primitives.** A Blueprint adds no new vocabulary — its `spec` is the composition of fields its underlying Resources and Traits already declare. It is composition packaged for reuse, not a new noun. The categorical line is "does this introduce schema vocabulary?" — Resources and Traits do; Blueprints do not.
+- **Why `composedResources` is required and listed, while `composedTraits` is optional.** A Blueprint with no Resource composes nothing renderable. Traits modify Resources, so a Resource-only Blueprint (`headless-workload`-style) is meaningful; a Trait-only Blueprint is the same category error as a Trait with empty `appliesTo`.
+
+#### See also
+
+- Tutorial: [`docs/constructs.md`](docs/constructs.md) (Blueprint section)
+- Composes: [`#Resource`](#21-resource), [`#Trait`](#22-trait)
+- Attached by: [`#Component`](#31-component)
+
+---
+
+## 4. Adapters
+
+### 4.1 `#ComponentTransformer`
+
+#### Definition
+
+A `#ComponentTransformer` translates a matched `#Component` into platform-specific output (e.g. Kubernetes manifests). It declares which primitives a Component must (or may) carry to be a candidate match, plus a `#transform` function that the runtime evaluates with concrete inputs.
+
+Transformers are catalog-versioned. The match algorithm is FQN-keyed: each entry in `requiredResources` / `requiredTraits` names the exact `#FQNType` (SemVer-suffixed) the Component must surface for the transformer to consider it.
+
+#### Shape
+
+```cue
+#ComponentTransformer: {
+    kind: "ComponentTransformer"
+
+    metadata: {
+        name!:       #NameType
+        modulePath!: #ModulePathType
+        version!:    #VersionType         // SemVer 2.0
+        fqn:         "\(modulePath)/\(name)@\(version)"
+
+        description!: string              // required for catalog listings
+        labels?:      #LabelsAnnotationsType
+        annotations?: #LabelsAnnotationsType
+    }
+
+    requiredLabels?:    #LabelsAnnotationsType
+    optionalLabels?:    #LabelsAnnotationsType
+    requiredResources?: [#FQNType]: #Resource
+    optionalResources?: [#FQNType]: #Resource
+    requiredTraits?:    [#FQNType]: #Trait
+    optionalTraits?:    [#FQNType]: #Trait
+
+    readsContext?:  [...string]
+    producesKinds?: [...string]
+
+    #transform: {
+        #moduleRelease: _
+        #component:     _
+        #context:       #TransformerContext
+
+        output: {...} | [...{...}]
+    }
+}
+```
+
+Implementation: [`transformer.cue`](src/transformer.cue).
+
+#### Constraints
+
+- `kind` MUST be the literal string `"ComponentTransformer"`.
+- `metadata.description` MUST be present and non-empty (it is the description surface for catalog listings and tooling).
+- `metadata` follows the primitive-metadata shape (`name` + `modulePath` + `version` + computed `fqn`, plus optional `description` / `labels` / `annotations`) with `version` as SemVer 2.0; the computed `metadata.fqn` MUST match `#FQNType`.
+- Every map key under `requiredResources` / `optionalResources` / `requiredTraits` / `optionalTraits` MUST be a valid `#FQNType` string. The map value's `metadata.fqn` MUST equal the key.
+- A Transformer matches a Component when: all `requiredLabels` are present on the Component with matching values, every `requiredResources` FQN appears in the Component's `#resources`, and every `requiredTraits` FQN appears in the Component's `#traits`. The kernel matcher additionally unifies the consumer's primitive against the transformer's required slot at the same FQN; divergent definitions surface as a structured error per (component, FQN).
+- `#transform.output` MUST be either a single struct (one rendered resource per match) or a list of structs (N rendered resources per match). Other CUE kinds are rejected by the renderer.
+
+#### Rationale
+
+- **Why match is FQN-keyed and always unifies.** Two builds of the same primitive at distinct SemVers are different keys now (enhancement 0001 D5), so a transformer requiring `…@1.0.0` is structurally distinct from one requiring `…@1.0.1`. But within a single FQN, the consumer Component may carry a slightly different definition body (drift, partial override). Always unifying the consumer's primitive against the transformer's required slot ensures that drift surfaces as a structured `UnifyError` per (component, FQN) pair rather than as a render-time mystery. See enhancement 0001 D6.
+- **Why labels participate in matching but are inherited from primitives.** Component labels are not authored on the Component itself — they unify upward from every attached `#Resource`, `#Trait`, and `#Blueprint` (§3.1). This means a label-based match (e.g. `requiredLabels: {"core.opmodel.dev/workload-type": "stateless"}`) is a stable structural predicate the catalog can stamp on the primitive once and rely on, not a user-supplied free-text field. Conflating Component labels with author-supplied metadata would invite typos and silent misrouting.
+- **Why `#transform.output` may be either a struct or a list.** Most transformers emit one rendered resource per match (`Deployment` per stateless workload, `Service` per network-expose Trait). Some emit a variable number derived from a Component-side map: a `ConfigMapTransformer` emits one `ConfigMap` per entry in a component's `config` map. A single shape would force the variable case into a struct-of-resources contortion; a list-only shape would force the single case into a one-element list. Two shapes is the smallest schema that doesn't lie.
+- **Why we don't allow free-form CUE inside the transformer's output.** The renderer dispatches on `cue.Kind` — struct vs list — and never inspects field bodies. This keeps the kernel's render path agnostic to apply-layer conventions: a Kubernetes transformer's output is whatever the apply layer (kubectl, controller, gitops bridge) interprets, not whatever shape the core schema happens to know. Per Principle I (Contract Stability), the core schema must not assume a particular target.
+
+#### See also
+
+- Tutorial: [`docs/adapters.md`](docs/adapters.md) (forthcoming)
+- Matches: [`#Component`](#31-component)
+- Requires: [`#Resource`](#21-resource), [`#Trait`](#22-trait)

@@ -2,7 +2,7 @@ package core
 
 // #SecretsResourceFQN is the canonical FQN for the secrets resource.
 // Must stay in sync with resources/config/secret.cue #SecretsResource.metadata.fqn.
-#SecretsResourceFQN: "opmodel.dev/opm/resources/config/secrets@v1"
+#SecretsResourceFQN: "opmodel.dev/opm/resources/config/secrets@1.0.0"
 
 // #OpmSecretsComponent builds the opm-secrets component from grouped secret data.
 //
@@ -29,7 +29,7 @@ package core
 			(#SecretsResourceFQN): #Resource & {
 				metadata: {
 					modulePath: "opmodel.dev/opm/resources/config"
-					version:    "v1"
+					version:    "1.0.0"
 					name:       "secrets"
 				}
 				spec: secrets: {

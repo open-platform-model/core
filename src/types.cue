@@ -28,11 +28,16 @@ import (
 // Semver 2.0
 #VersionType: string & =~"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
-// FQNType: primitive definition FQN — path/name@version
-// Example: "opmodel.dev/opm/traits/workload/scaling@v1"
-// Example: "opmodel.dev/opm/resources/workload/container@v1"
-// Example: "github.com/myorg/traits/network/expose@v2"
-#FQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@v[0-9]+$"
+// FQNType: primitive definition FQN — path/name@semver
+// Example: "opmodel.dev/opm/traits/workload/scaling@1.0.0"
+// Example: "opmodel.dev/opm/resources/workload/container@1.4.0"
+// Example: "github.com/myorg/traits/network/expose@2.1.0-rc.1"
+//
+// Lifted from MAJOR-only (@vN) to SemVer 2.0 per enhancement 0001 D5:
+// two builds of the same primitive at adjacent versions must occupy
+// distinct keys so divergent definitions surface as structured errors
+// at match time rather than silently colliding on a MAJOR bucket.
+#FQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
 // UUIDType: RFC 4122 UUID in standard format (lowercase hex)
 #UUIDType: string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
