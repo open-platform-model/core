@@ -31,7 +31,7 @@ jobs:
       - name: Vet CUE schema
         run: task vet
 
-      - name: Verify INDEX.md is up to date
+      - name: Verify src/INDEX.md is up to date
         run: task generate:index:check
 
       - name: Verify SPEC.md inventory matches CUE

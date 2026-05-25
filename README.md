@@ -10,14 +10,14 @@ The schema imports only the CUE standard library — it has no external dependen
 
 ## Layout
 
-The CUE module lives under `src/` — both the `core` package files and `cue.mod/` sit there, so `src/` is the CUE module root and the import path stays `opmodel.dev/core@v0` (no per-version subdirectory). Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) stays at the repo root. A breaking schema revision bumps the module major (`@v0` → `@v1`) rather than adding a sibling package.
+The CUE module lives under `src/` — both the `core` package files and `cue.mod/` sit there, so `src/` is the CUE module root and the import path stays `opmodel.dev/core@v0` (no per-version subdirectory). The generated definition index ships inside `src/` so it travels with the published module; everything else (docs, SPEC, README, Taskfile, CI workflows) stays at the repo root. A breaking schema revision bumps the module major (`@v0` → `@v1`) rather than adding a sibling package.
 
 ```text
 src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
 src/*.cue                the core schema package
+src/INDEX.md             generated definition index
 docs/                    schema design notes
 SPEC.md                  normative schema specification
-INDEX.md                 generated definition index
 ```
 
 ## Release lifecycle
@@ -35,7 +35,7 @@ Tags stay within `v0.x.x` — the CUE module path is pinned to major `@v0`.
 ```bash
 task fmt            # format CUE files
 task vet            # validate the core schema package
-task generate:index # regenerate INDEX.md
+task generate:index # regenerate src/INDEX.md
 task check          # fmt check + vet + INDEX freshness
 task publish VERSION=v0.1.0   # publish the CUE module (CI does this on tag)
 ```

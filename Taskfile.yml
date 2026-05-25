@@ -41,24 +41,24 @@ tasks:
   ## Index generation
 
   generate:index:
-    desc: Regenerate INDEX.md from the CUE definitions
+    desc: Regenerate src/INDEX.md from the CUE definitions
     cmds:
-      - bash .tasks/generate-index.sh "$(pwd)" > INDEX.md
+      - bash .tasks/generate-index.sh "$(pwd)" > src/INDEX.md
 
   generate:index:check:
-    desc: Verify INDEX.md matches generated output (exits non-zero if stale)
+    desc: Verify src/INDEX.md matches generated output (exits non-zero if stale)
     cmds:
       - |
         set -euo pipefail
         tmp=$(mktemp)
         trap 'rm -f "$tmp"' EXIT
         bash .tasks/generate-index.sh "$(pwd)" > "$tmp"
-        if ! diff -q INDEX.md "$tmp" >/dev/null 2>&1; then
-          echo "FAIL: INDEX.md is out of date — run 'task generate:index'"
-          diff INDEX.md "$tmp" || true
+        if ! diff -q src/INDEX.md "$tmp" >/dev/null 2>&1; then
+          echo "FAIL: src/INDEX.md is out of date — run 'task generate:index'"
+          diff src/INDEX.md "$tmp" || true
           exit 1
         fi
-        echo "OK: INDEX.md is up to date."
+        echo "OK: src/INDEX.md is up to date."
 
   ## SPEC.md drift checks
 

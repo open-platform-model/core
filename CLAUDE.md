@@ -23,7 +23,7 @@ Read these on entry:
 - `CLAUDE.md` — repo working rules (this file).
 - `Taskfile.yml` — authoritative build/validate/publish entrypoints.
 - `SPEC.md` — normative schema specification (definitions, constraints, rationale).
-- `INDEX.md` — generated definition index.
+- `src/INDEX.md` — generated definition index (lives inside the CUE module so it ships with publication).
 - `docs/` — schema design notes (tutorial / explanatory).
 - `.claude/skills/core-schema-edit/SKILL.md` — **required protocol** before editing any `src/*.cue` file.
 
@@ -32,11 +32,11 @@ Read these on entry:
 ```text
 src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v0
 src/*.cue                the core schema package (module root lives under src/)
+src/INDEX.md             generated definition index (ships inside the CUE module)
 docs/                    schema design notes (tutorial / explanatory)
 SPEC.md                  normative schema specification (definitions, constraints, rationale)
 .tasks/                  Taskfile script fragments + git hooks
 .claude/skills/          repo-local skills (e.g. core-schema-edit)
-INDEX.md                 generated definition index
 ```
 
 `src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the import path stays `opmodel.dev/core@v0` with no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) sits at the repo root. A breaking schema revision bumps the module major (`@v0` → `@v1`); it does not add a sibling package.
@@ -56,8 +56,8 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 | ---                           | ---                                                           |
 | `task fmt` / `task fmt:check` | Format CUE files / verify formatting                          |
 | `task vet`                    | Validate the core schema package                              |
-| `task generate:index`         | Regenerate `INDEX.md`                                         |
-| `task generate:index:check`   | Verify `INDEX.md` is up to date                               |
+| `task generate:index`         | Regenerate `src/INDEX.md`                                     |
+| `task generate:index:check`   | Verify `src/INDEX.md` is up to date                           |
 | `task spec:check`             | Verify `SPEC.md` inventory matches CUE construct definitions  |
 | `task hooks:install`          | Install the pre-commit hook (SPEC.md co-update gate)          |
 | `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory            |
@@ -107,5 +107,5 @@ Follow the CUE style used across the workspace catalog. Pin `language: version: 
   - **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, and SPEC references to renamed or deleted constructs.
   - **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
 - Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
-- Keep `INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `INDEX.md` is hand-maintained alongside the generated section; update both.
+- Keep `src/INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated section; update both.
 - Run `task check` before finishing — it covers fmt, vet, INDEX freshness, and SPEC inventory in one shot.

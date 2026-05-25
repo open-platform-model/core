@@ -4,14 +4,14 @@ set -euo pipefail
 # generate-index.sh — Print INDEX.md to stdout for the core repo.
 #
 # Repo layout: docs/README/SPEC live at the repo root; the CUE module
-# (cue.mod/ + *.cue files) lives under src/. The script takes the repo
-# root and resolves the CUE module dir as $REPO_DIR/src.
+# (cue.mod/ + *.cue files + INDEX.md) lives under src/. The script
+# takes the repo root and resolves the CUE module dir as $REPO_DIR/src.
 #
 # Usage (run from the repo root):
 #   bash .tasks/generate-index.sh "$(pwd)"
 #
 # The caller redirects stdout to the desired output file:
-#   bash .tasks/generate-index.sh "$(pwd)" > INDEX.md
+#   bash .tasks/generate-index.sh "$(pwd)" > src/INDEX.md
 
 REPO_RELDIR="${1:?Error: repo_dir argument required. Usage: bash .tasks/generate-index.sh \"\$(pwd)\"}"
 REPO_DIR="${REPO_RELDIR%/}"
@@ -175,7 +175,7 @@ TMPFILE=$(mktemp)
 trap 'rm -f "$TMPFILE"' EXIT
 
 # Collect definitions from the CUE module dir. file_rel is relative to CUE_DIR
-# (e.g. "blueprint.cue") so the File column in INDEX.md stays unprefixed.
+# (e.g. "blueprint.cue") so the File column in src/INDEX.md stays unprefixed.
 collect_all_definitions "$CUE_DIR" > "$TMPFILE"
 
 # ── Header ────────────────────────────────────────────────────────────────────
