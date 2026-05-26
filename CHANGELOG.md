@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-platform-model/core/compare/v0.2.1...v0.3.0) (2026-05-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* every existing #Module that uses #defines MUST be rewritten as a #Catalog. #Component values that set #release directly fail unification.
+* every existing #Platform value MUST be rewritten. The #registry key changes from #NameType (author-chosen Id) to #ModulePathType (catalog package path). #ModuleRegistration is removed. Embedded #Module values move out of the platform spec and into the catalog artifact the platform subscribes to.
+* every primitive FQN string changes shape from path/name@vN to path/name@N.N.N. Catalogs publishing primitives MUST stamp SemVer onto metadata.version; consumers pinning FQNs MUST update their references.
+
+### Features
+
+* add #Catalog and module-context types (enhancement 0001 D19/D25/D1) ([bf98af3](https://github.com/open-platform-model/core/commit/bf98af3e5c3472f983af606a84f8ecd22ae5977f))
+* add inline #ctx and component #names (enhancement 0001 D1/D2/D3) ([15db9a8](https://github.com/open-platform-model/core/commit/15db9a8ff2f3dad5a421b5165172442fc453b171))
+* lift primitive FQNs to SemVer (enhancement 0001 D5) ([45db25e](https://github.com/open-platform-model/core/commit/45db25e8bce2c01bb7f33751f40e7b6ab0ae3e5c))
+* reshape #Platform to subscription registry (enhancement 0001 D13/D14) ([6e5c2fd](https://github.com/open-platform-model/core/commit/6e5c2fddf085985f2f1516ed72a18fdd5e11c6a4))
+* wire release identity into #Module.#ctx (enhancement 0001 D4) ([75a5d43](https://github.com/open-platform-model/core/commit/75a5d43eb70218b1a26b079a798ff590e2abace8))
+
 ## [0.2.1](https://github.com/open-platform-model/core/compare/v0.2.0...v0.2.1) (2026-05-23)
 
 
