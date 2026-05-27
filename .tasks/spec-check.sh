@@ -21,6 +21,11 @@
 
 set -euo pipefail
 
+# See generate-index.sh for the rationale — pin to C so set ordering is
+# byte-stable across locales (CI runs with C.UTF-8, contributors often run
+# with en_*.UTF-8).
+export LC_ALL=C
+
 ROOT="${1:?Error: module_dir argument required. Usage: bash .tasks/spec-check.sh \"\$(pwd)\"}"
 SPEC="${ROOT}/SPEC.md"
 ALLOWLIST="${ROOT}/.tasks/spec-tracked.txt"

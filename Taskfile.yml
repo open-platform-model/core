@@ -110,6 +110,21 @@ tasks:
       - (cd src && cue vet ./...)
       - (cd src && cue mod publish {{.VERSION}})
 
+  branch-tag:
+    desc: Print the branch-publish tag for HEAD (no side effects)
+    cmds:
+      - bash .tasks/branch-tag.sh "$(pwd)"
+
+  publish:branch:
+    desc: Publish HEAD as a -dev pre-release derived from the commit
+    cmds:
+      - task: check
+      - |
+        set -euo pipefail
+        tag=$(bash .tasks/branch-tag.sh "$(pwd)")
+        echo "Publishing opmodel.dev/core@${tag}"
+        (cd src && cue mod publish "${tag}")
+
   ## Aggregate
 
   check:
