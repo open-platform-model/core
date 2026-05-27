@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Force a stable, ASCII-byte-ordered locale. `sort` and `find` ordering varies
+# between en_*.UTF-8 and C/POSIX locales (e.g. "module.cue" vs
+# "module_context.cue" flip order because dictionary collation treats `.` and
+# `_` differently). Without this, the committed INDEX.md drifts depending on
+# whose machine regenerated it — CI failed once for exactly this reason.
+export LC_ALL=C
+
 # generate-index.sh — Print INDEX.md to stdout for the core repo.
 #
 # Repo layout: docs/README/SPEC live at the repo root; the CUE module
