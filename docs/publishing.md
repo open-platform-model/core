@@ -121,9 +121,15 @@ Behavior was verified against CUE 0.16.1's in-memory registry. Key results:
 
 Full transcript of the resolver tests is in the design conversation; not duplicated here.
 
-## Out of scope (next steps)
+## Implementation
 
-- `task publish:branch` Taskfile target that runs the same computation locally.
-- GitHub Actions workflow that fires on `push` to non-`main` branches.
-- Idempotency guard: skip publish if the computed tag already exists.
-- Consumer helper (`task core:latest-tag MINOR=v0.4`) for automation that needs the resolved tag string outside CUE.
+- `.tasks/branch-tag.sh` — pure shell function that prints the tag for HEAD. Reads the major from `src/cue.mod/module.cue` and `NEXT_MINOR` from the highest stable `vMAJOR.*.*` git tag (falls back to `0` if no stable release exists yet for the current major). Refuses to run on `main` or against a dirty worktree.
+- `task branch-tag` — prints the tag without side effects.
+- `task publish:branch` — runs `task check` then `cue mod publish $TAG` from `src/`. Honours `CUE_REGISTRY`, so the same command publishes to a local registry (`localhost:5099+insecure`) or GHCR depending on the environment.
+- `.github/workflows/branch-publish.yml` — fires on `push` to any branch except `main`. Skipped on forks (no `packages: write`). Calls `task publish:branch` after logging into GHCR with `GITHUB_TOKEN`.
+
+## Follow-ups (not yet implemented)
+
+- Idempotency probe: HEAD the OCI manifest before publish and skip if the tag already exists. Current behavior is to re-publish the same content under the same tag — registries dedupe by digest, so this is a no-op in storage but produces noisy logs.
+- Cleanup workflow: prune branch tags whose SHA is no longer reachable from any current ref (avoids accumulating orphaned tags after force-pushes / rebases).
+- Consumer helper (e.g. `task core:latest-tag MINOR=v0.4`) for automation that needs the resolved tag string outside of CUE — wraps an OCI tag-list query and SemVer sort.

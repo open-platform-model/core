@@ -1,0 +1,45 @@
+name: Branch publish
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CUE_VERSION: 'v0.16.0'
+  # opmodel.dev modules publish to GHCR; everything else from registry.cue.works.
+  CUE_REGISTRY: 'opmodel.dev=ghcr.io/open-platform-model,registry.cue.works'
+
+jobs:
+  publish:
+    name: Publish opmodel.dev/core (dev tag)
+    # Forks have no access to GITHUB_TOKEN with packages:write — skip cleanly.
+    if: github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # branch-tag.sh reads the highest stable git tag for the current
+          # major; need full history (and tags) for that.
+          fetch-depth: 0
+
+      - name: Setup CUE
+        uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
+        with:
+          version: ${{ env.CUE_VERSION }}
+
+      - name: Install Task
+        uses: go-task/setup-task@3be4020d41929789a01026e0e427a4321ce0ad44 # v2.0.0
+        with:
+          version: 3.x
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Publish branch tag
+        run: task publish:branch
