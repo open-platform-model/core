@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-platform-model/core/compare/v0.3.0...v0.4.0) (2026-05-31)
+
+
+### Features
+
+* **cue:** require CUE language version v0.17 ([#11](https://github.com/open-platform-model/core/issues/11)) ([d8c7411](https://github.com/open-platform-model/core/commit/d8c7411e1dc62e358b7b9b459f29f3d881b9db19))
+
 ## [0.3.0](https://github.com/open-platform-model/core/compare/v0.2.1...v0.3.0) (2026-05-25)
 
 
