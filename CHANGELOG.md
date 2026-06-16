@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-platform-model/core/compare/v0.4.0...v0.5.0) (2026-06-16)
+
+
+### Features
+
+* **module:** make #Module identity author-supplied (fix self-cycle re-admission) ([#13](https://github.com/open-platform-model/core/issues/13)) ([68e4520](https://github.com/open-platform-model/core/commit/68e4520a05f43c28b82f0584dd1a25d75501af81))
+
 ## [0.4.0](https://github.com/open-platform-model/core/compare/v0.3.0...v0.4.0) (2026-05-31)
 
 
