@@ -11,9 +11,9 @@ import (
 	metadata: {
 		name!: #NameType // Example: "example-module"
 
-		modulePath: metadata.modulePath                                 // Example: "example.com/modules"
-		version:    metadata.version                                    // Example: "0.1.0"
-		fqn:        #ModuleFQNType & "\(modulePath)/\(name):\(version)" // Example: "example.com/modules/example-module:0.1.0"
+		modulePath!: #ModulePathType                                     // Example: "example.com/modules" (author-supplied in module.cue)
+		version!:    #VersionType                                        // Example: "0.1.0" (author-supplied in module.cue)
+		fqn:         #ModuleFQNType & "\(modulePath)/\(name):\(version)" // Example: "example.com/modules/example-module:0.1.0"
 
 		// Unique identifier for the module, computed as a UUID v5 (SHA1) of the FQN using the OPM namespace UUID.
 		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
