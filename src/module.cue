@@ -11,6 +11,13 @@ import (
 	metadata: {
 		name!: #NameType // Example: "example-module"
 
+		// nameSnakeCase: snake_case projection of name (hyphens → underscores).
+		// A CUE-identifier-safe form of the module name (e.g. "zot-registry-ttl"
+		// → "zot_registry_ttl"), intended as the canonical CUE package name and
+		// registry-path leaf under the OPM module publishing convention. Derived
+		// from name — authors never set it.
+		nameSnakeCase: #SnakeNameType & (#KebabToSnake & {"in": name}).out
+
 		modulePath!: #ModulePathType                                     // Example: "example.com/modules" (author-supplied in module.cue)
 		version!:    #VersionType                                        // Example: "0.1.0" (author-supplied in module.cue)
 		fqn:         #ModuleFQNType & "\(modulePath)/\(name):\(version)" // Example: "example.com/modules/example-module:0.1.0"
