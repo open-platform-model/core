@@ -9,6 +9,12 @@ import (
 // NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars
 #NameType: string & =~"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
 
+// SnakeNameType: snake_case projection of #NameType — lowercase alphanumeric
+// with underscores. Same character budget as #NameType; differs only in the
+// separator (`_` instead of `-`), making it a valid CUE identifier (and thus a
+// usable CUE package name / registry-path leaf).
+#SnakeNameType: string & =~"^[a-z0-9]([a-z0-9_]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
+
 // ModulePathType: plain registry path without embedded version
 // Example: "opmodel.dev/opm/modules", "opmodel.dev/opm/traits/workload"
 #ModulePathType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
@@ -56,6 +62,13 @@ OPMNamespace: "11bc6112-a6e8-4021-bec9-b3ad246f9466"
 		let _runes = strings.Runes(p)
 		strings.ToUpper(strings.SliceRunes(p, 0, 1)) + strings.SliceRunes(p, 1, len(_runes))
 	}], "")
+}
+
+// KebabToSnake converts a kebab-case string to snake_case (hyphens → underscores).
+// Usage: (#KebabToSnake & {"in": "zot-registry-ttl"}).out => "zot_registry_ttl"
+#KebabToSnake: {
+	X="in": string
+	out:    strings.Replace(X, "-", "_", -1)
 }
 
 // KebabToCamel converts a kebab-case string to camelCase.

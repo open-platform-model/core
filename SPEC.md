@@ -248,11 +248,12 @@ A Module is the unit of versioning and distribution. A published Module at `exam
     kind: "Module"
 
     metadata: {
-        name!:       #NameType
-        modulePath!: #ModulePathType                                      // author-supplied in module.cue
-        version!:    #VersionType                                         // author-supplied in module.cue
-        fqn:         #ModuleFQNType & "\(modulePath)/\(name):\(version)"  // semver-with-colon
-        uuid:        #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
+        name!:          #NameType
+        nameSnakeCase:  #SnakeNameType & (#KebabToSnake & {"in": name}).out  // derived: hyphens → underscores
+        modulePath!:    #ModulePathType                                      // author-supplied in module.cue
+        version!:       #VersionType                                         // author-supplied in module.cue
+        fqn:            #ModuleFQNType & "\(modulePath)/\(name):\(version)"   // semver-with-colon
+        uuid:           #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
 
         description?: string
         labels?:      #LabelsAnnotationsType
@@ -286,6 +287,7 @@ Implementation: [`module.cue`](src/module.cue).
 
 - `kind` MUST be the literal string `"Module"`.
 - `metadata.name` MUST be kebab-case (`#NameType`).
+- `metadata.nameSnakeCase` is the snake_case projection of `name` (`#KebabToSnake`: hyphens replaced with underscores) and MUST satisfy `#SnakeNameType`. It is derived — consumers MUST NOT supply it directly. It is intended as the CUE-identifier-safe form of the module name (canonical CUE package name and registry-path leaf under the module publishing convention).
 - `metadata.modulePath` (`#ModulePathType`) and `metadata.version` (`#VersionType`) are author-supplied: a Module MUST declare them in its own `module.cue`, the same way `#Resource`, `#Trait`, `#Blueprint`, and `#Catalog` declare their identity. Both are required (`!`); a `#Module` value missing either is incomplete and cannot compute `fqn`/`uuid`.
 - `metadata.fqn` uses semver-with-colon (`modulePath/name:version`), distinct from `#Resource`'s `@v0` major-version separator. Consumers MUST NOT supply `fqn` directly.
 - `metadata.uuid` is computed as `SHA1(OPMNamespace, fqn)`. It is deterministic and stable across evaluations.
@@ -300,6 +302,7 @@ Implementation: [`module.cue`](src/module.cue).
 #### Rationale
 
 - **Why `modulePath` / `version` are author-supplied typed-required fields, not self-referential.** Earlier revisions declared them `modulePath: metadata.modulePath` / `version: metadata.version` — a bare-direct self-cycle that resolves to itself, contributing neither a value nor a constraint. CUE never registers a cycle-only field as a permitted member of the *closed* `#Module`, so re-unifying an already-closed published `#Module` into `#ModuleRelease.#module` (the authored-`release.cue` import path) rejected the concrete `modulePath`/`version` as "field not allowed." The bug was invisible to `cue vet` because a standalone Module is only closed once. Declaring them `!: #ModulePathType` / `!: #VersionType` — the form every sibling identity-bearing construct already uses — makes them genuine permitted fields, fixes the re-unification, and adds real format validation the self-cycle silently skipped.
+- **Why `metadata.nameSnakeCase` exists as a derived field.** `#NameType` is kebab-case (RFC 1123 DNS-label), but a CUE package name and a CUE registry-path leaf must be valid CUE identifiers — which forbid hyphens. Authors therefore publish hyphenated-named modules under an underscored path/package (e.g. name `zot-registry-ttl` published at `…/zot_registry_ttl`), and the two forms drift. Deriving the snake_case form in the schema gives every consumer one authoritative, deterministic projection of the name into identifier space, rather than each re-implementing `strings.Replace(name, "-", "_")` and risking divergence. It is a *projection of name*, not an independent field, so it cannot disagree with `name`. The companion module publishing convention (see `enhancements/`) builds the canonical registry path on `modulePath/nameSnakeCase` so an imported module is resolvable from its metadata alone.
 - **Why `fqn` uses semver-with-colon while `#Resource` uses `@vN`.** Modules ship at specific versions (`1.2.3`); the consumer pins an exact release and migrates deliberately. Resources version on the contract surface (`v1`, `v2`); the consumer pins a contract major and treats patches as the publisher's concern. Different identity granularity, different separator — the visual distinction prevents confusion when both appear in a config tree.
 - **Why `uuid` is computed via `SHA1(OPMNamespace, fqn)` rather than authored or random.** Per Principle III (Determinism), two evaluations of the same `fqn` MUST yield the same identity. A registry, controller, or cluster can dedupe modules by uuid without coordinating an ID allocator. The schema fixture harness in `library/` pins a known uuid as a drift sentinel for the algorithm itself.
 - **Why `#config` is bare `_` and not a typed schema.** The configuration shape is per-module — every module's contract is different. Constraining `#config` at the core layer would either force a one-size-fits-all schema (too narrow) or accept everything (no value). The OpenAPI-v3 constraint is enforced by the downstream renderer, which has the context to apply it cleanly.

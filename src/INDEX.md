@@ -58,11 +58,13 @@ CUE module: `opmodel.dev/core@v0`
 | `#FQNType` | `types.cue` | FQNType: primitive definition FQN — path/name@semver Example: "opmodel |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |
+| `#KebabToSnake` | `types.cue` | KebabToSnake converts a kebab-case string to snake_case (hyphens → underscores) |
 | `#LabelsAnnotationsType` | `types.cue` |  |
 | `#MajorVersionType` | `types.cue` | MajorVersionType: major version prefix used in primitive FQNs Example: "v1", "v0" |
 | `#ModuleFQNType` | `types.cue` | ModuleFQNType: container-style FQN for #Module — path/name:semver Example: "opmodel |
 | `#ModulePathType` | `types.cue` | ModulePathType: plain registry path without embedded version Example: "opmodel |
 | `#NameType` | `types.cue` | NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars |
+| `#SnakeNameType` | `types.cue` | SnakeNameType: snake_case projection of #NameType — lowercase alphanumeric with underscores |
 | `#UUIDType` | `types.cue` | UUIDType: RFC 4122 UUID in standard format (lowercase hex) |
 | `#VersionType` | `types.cue` | Semver 2 |
 
