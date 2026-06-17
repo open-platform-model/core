@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-platform-model/core/compare/v0.5.0...v0.6.0) (2026-06-17)
+
+
+### Features
+
+* **module:** add derived nameSnakeCase to #Module.metadata ([#15](https://github.com/open-platform-model/core/issues/15)) ([92bdaf0](https://github.com/open-platform-model/core/commit/92bdaf0acbafd57999b02cd274bdd40ed5c96cac))
+
 ## [0.5.0](https://github.com/open-platform-model/core/compare/v0.4.0...v0.5.0) (2026-06-16)
 
 
