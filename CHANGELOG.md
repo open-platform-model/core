@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0-alpha.1](https://github.com/open-platform-model/core/compare/v1.0.0-alpha.0...v1.0.0-alpha.1) (2026-06-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **schema:** #ModuleRelease->#ModuleInstance, #ModuleReleaseMap-> #ModuleInstanceMap, #ReleaseIdentity->#InstanceIdentity, #ctx.release-> #ctx.instance, #Component.#release->#instance, transformer #moduleRelease*-> #moduleInstance*; wire kind "ModuleRelease"->"ModuleInstance"; label domain module-release.opmodel.dev/*->module-instance.opmodel.dev/*. The CUE module advances opmodel.dev/core@v0->@v1 (every downstream import re-pins to @v1) and ships on the v1.0.0-alpha.N prerelease line.
+
+### Features
+
+* **schema:** rename #ModuleRelease family to #ModuleInstance ([#17](https://github.com/open-platform-model/core/issues/17)) ([a03a88b](https://github.com/open-platform-model/core/commit/a03a88badfd882dcfb8216f1c4c9f4073aa522bd))
+
 ## [0.6.0](https://github.com/open-platform-model/core/compare/v0.5.0...v0.6.0) (2026-06-17)
 
 
