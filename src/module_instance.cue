@@ -4,30 +4,32 @@ import (
 	cue_uuid "uuid"
 )
 
-// #ModuleRelease: The concrete deployment instance
+// #ModuleInstance: The concrete deployment instance
 // Contains: Reference to Module, values, target namespace
 // Users/deployment systems create this to deploy a specific version
-#ModuleRelease: {
-	kind: "ModuleRelease"
+//
+// Was: #ModuleRelease (renamed in enhancement 0002)
+#ModuleInstance: {
+	kind: "ModuleInstance"
 
 	metadata: {
 		name!:      #NameType
-		namespace!: #NameType // Required for releases (target environment)
+		namespace!: #NameType // Required for instances (target environment)
 
-		// Cluster DNS domain. Defaults to "cluster.local"; override per release
+		// Cluster DNS domain. Defaults to "cluster.local"; override per instance
 		// when the target cluster runs a non-standard domain. Surfaced into
-		// every component's #names.dns.fqdn via #module.#ctx.release.
+		// every component's #names.dns.fqdn via #module.#ctx.instance.
 		clusterDomain: string | *"cluster.local"
 
-		// Generate a stable UUID for this release based on the module's UUID, name, and namespace
+		// Generate a stable UUID for this instance based on the module's UUID, name, and namespace
 		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, "\(#moduleMetadata.uuid):\(name):\(namespace)")
 
 		labels?: #LabelsAnnotationsType
 		labels?: {if #moduleMetadata.labels != _|_ {#moduleMetadata.labels}}
 		labels: {
-			// Standard labels for module release identification
-			"module-release.opmodel.dev/name": "\(name)"
-			"module-release.opmodel.dev/uuid": "\(uuid)"
+			// Standard labels for module instance identification
+			"module-instance.opmodel.dev/name": "\(name)"
+			"module-instance.opmodel.dev/uuid": "\(uuid)"
 		}
 
 		annotations?: #LabelsAnnotationsType
@@ -35,13 +37,13 @@ import (
 
 	}
 
-	// Reference to the Module to deploy. The #ctx.release wiring sets the
-	// module's runtime context from this release's metadata — every #Component
-	// in #module receives this release identity via the module's #components
+	// Reference to the Module to deploy. The #ctx.instance wiring sets the
+	// module's runtime context from this instance's metadata — every #Component
+	// in #module receives this instance identity via the module's #components
 	// pattern constraint, so #names + DNS variants flow through automatically.
 	// Introduced by enhancement 0001 (D1, D4).
 	#module!: #Module & {
-		#ctx: release: {
+		#ctx: instance: {
 			name:          metadata.name
 			namespace:     metadata.namespace
 			uuid:          metadata.uuid
@@ -76,4 +78,5 @@ import (
 	values: _
 }
 
-#ModuleReleaseMap: [string]: #ModuleRelease
+// Was: #ModuleReleaseMap (renamed in enhancement 0002)
+#ModuleInstanceMap: [string]: #ModuleInstance

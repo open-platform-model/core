@@ -21,7 +21,7 @@ graph TB
         direction LR
         Component:::construct
         Module:::construct
-        ModuleRelease:::construct
+        ModuleInstance:::construct
     end
 
     subgraph Adapters[" "]
@@ -37,10 +37,10 @@ graph TB
     Blueprint -->|composes| Component
 
     Component -->|composes| Module
-    Module -->|instantiates| ModuleRelease
+    Module -->|instantiates| ModuleInstance
 
     Component -.->|matched by| ComponentTransformer
-    ComponentTransformer -->|renders for| ModuleRelease
+    ComponentTransformer -->|renders for| ModuleInstance
 
     classDef primitive fill:#e8f4f8,stroke:#2196F3,color:#1565C0
     classDef construct fill:#fff3e0,stroke:#FF9800,color:#E65100
@@ -64,7 +64,7 @@ graph TB
 | [**Blueprint**](primitives.md#blueprint) | Primitive | "What is the reusable pattern?" | Component |
 | [**Component**](constructs.md#component) | Construct | "What composes primitives?" | Module |
 | [**Module**](constructs.md#module) | Construct | "What is the application?" | Top-level |
-| [**ModuleRelease**](constructs.md#modulerelease) | Construct | "What is being deployed?" | Deployment |
+| [**ModuleInstance**](constructs.md#moduleinstance) | Construct | "What is being deployed?" | Deployment |
 | [**ComponentTransformer**](adapters.md#componenttransformer) | Adapter | "How does a component become a target resource?" | Runtime |
 | [**Platform**](adapters.md#platform) *(planned)* | Adapter | "What target are we rendering to?" | Runtime |
 

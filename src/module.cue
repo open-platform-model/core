@@ -44,14 +44,15 @@ import (
 
 	// Components defined in this module (developer-defined, required. May be added
 	// to by the platform-team). The pattern constraint wires the module-level
-	// release into every component so each component computes its own #names
-	// from a shared release identity (enhancement 0001 D3).
+	// instance into every component so each component computes its own #names
+	// from a shared instance identity (enhancement 0001 D3).
 	#components: [Id=#NameType]: #Component & {
 		metadata: {
 			name: string | *Id
 			labels: "component.opmodel.dev/name": name
 		}
-		#release: #ctx.release
+		// Was: #release: #ctx.release (renamed in enhancement 0002)
+		#instance: #ctx.instance
 	}
 
 	// Value schema - constraints and defaults.
@@ -67,12 +68,13 @@ import (
 	// enhancements can add `platform` / `environment` siblings without breaking
 	// module bodies. Introduced by enhancement 0001 (D1).
 	//
-	// `release` is set by #ModuleRelease from its own metadata. `components`
+	// `instance` is set by #ModuleInstance from its own metadata. `components`
 	// is a pure CUE projection over every component's #names — components are
 	// the single source of truth for their own identity; #ctx.components only
 	// mirrors them (D2).
 	#ctx: {
-		release: #ReleaseIdentity
+		// Was: release: #ReleaseIdentity (renamed in enhancement 0002)
+		instance: #InstanceIdentity
 
 		components: {
 			for id, c in #components {

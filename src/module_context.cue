@@ -1,14 +1,16 @@
 package core
 
-// #ReleaseIdentity carries the deployment-scoped facts that compute per-component
-// names and DNS variants. Set by #ModuleRelease and propagated into every
+// #InstanceIdentity carries the deployment-scoped facts that compute per-component
+// names and DNS variants. Set by #ModuleInstance and propagated into every
 // #Component via the parent #Module's pattern constraint on #components.
 //
 // clusterDomain lives here (not buried inside a runtime context) so a single
 // overridable value covers every #Component's FQDN derivation.
 //
 // Introduced by enhancement 0001 (D1, D3, D4).
-#ReleaseIdentity: {
+//
+// Was: #ReleaseIdentity (renamed in enhancement 0002)
+#InstanceIdentity: {
 	name!:         #NameType
 	namespace!:    #NameType
 	uuid!:         #UUIDType

@@ -33,14 +33,16 @@ package core
 	// Blueprints applied to this component
 	#blueprints?: #BlueprintMap
 
-	// Release context injected by the parent #Module via its #components
+	// Instance context injected by the parent #Module via its #components
 	// pattern constraint. Hidden definition slot — module authors never set
 	// this directly. Introduced by enhancement 0001 (D3).
-	#release: #ReleaseIdentity
+	//
+	// Was: #release: #ReleaseIdentity (renamed in enhancement 0002)
+	#instance: #InstanceIdentity
 
 	// Single source of truth for this component's computed names. `resourceName`
 	// reads straight from metadata (cascade lives there); DNS variants derive
-	// deterministically from resourceName + #release.namespace + #release.clusterDomain.
+	// deterministically from resourceName + #instance.namespace + #instance.clusterDomain.
 	// Introduced by enhancement 0001 (D2). #Module.#ctx.components projects this
 	// block automatically; authors writing self-references inside a component's
 	// `spec` body MUST go through `#ctx.components.<self-id>.dns.fqdn` because
@@ -49,8 +51,8 @@ package core
 		resourceName: metadata.resourceName
 		dns: {
 			short: resourceName
-			local: "\(resourceName).\(#release.namespace)"
-			fqdn:  "\(resourceName).\(#release.namespace).svc.\(#release.clusterDomain)"
+			local: "\(resourceName).\(#instance.namespace)"
+			fqdn:  "\(resourceName).\(#instance.namespace).svc.\(#instance.clusterDomain)"
 		}
 	}
 

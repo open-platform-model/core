@@ -2,6 +2,8 @@
 
 This document describes how `opmodel.dev/core` is published to its OCI registry: the stable release flow (already in place) and the branch-build flow (to be implemented). The focus is the *strategy* — tag format, determinism guarantees, and how consumers resolve them. Implementation (Taskfile, CI) follows once this is agreed.
 
+> **Note (enhancement 0002 D13).** The module advanced to `opmodel.dev/core@v1` and now ships its main channel as `v1.0.0-alpha.N` prereleases (release-please `prerelease` mode). The `@v0.x` import paths and the stable-`vX.Y.Z`-vs-branch-`-dev` framing in the worked examples below **predate that cutover** and are retained to illustrate the resolution *mechanics*; the concrete version strings are stale. Refreshing this strategy for the v1 alpha-prerelease channel (and how branch `-dev` tags coexist with `-alpha` release tags now that `MAJOR=1`) is a tracked follow-up.
+
 ## Goal
 
 Every commit that lands on a feature branch, plus every released commit on `main`, produces a versioned, immutable CUE module artifact in the registry. The same Git commit produces the **same tag** whether published from a developer laptop or from CI — no rebuilds, no clock-dependent state.

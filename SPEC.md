@@ -2,7 +2,7 @@
 
 **Status**: Living document. Authored alongside the schema and gated by `task spec:check`.
 **Source of truth**: When this document and the `.cue` files disagree, **the schema wins**. File an issue.
-**Module**: `opmodel.dev/core@v0`
+**Module**: `opmodel.dev/core@v1`
 
 This specification is the normative reference for the OPM core schema — what each construct is, what constraints it enforces, and why those constraints take the form they do. It is the companion to the schema files (`*.cue`) and to the tutorial-flavoured material in `docs/`. The `.cue` files carry the contract; the `docs/` carry the explanation for newcomers; this specification carries the *rationale* for anyone evolving the schema.
 
@@ -26,7 +26,7 @@ Cross-references use `file.cue:line` against the repository at the tag in [`CHAN
 OPM Core distinguishes three categories of definition:
 
 - **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Secret`. Each carries its own `metadata`, its own versioned identity, and a `spec` schema namespaced under a camelCase form of its name.
-- **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleRelease`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleRelease`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
+- **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleInstance`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleInstance`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
 - **Adapters** (§4) — types that translate the model into target runtime form without participating in composition: `#ComponentTransformer`.
 
 The Primitive/Construct split exists because primitives are the unit of *vocabulary* and constructs are the unit of *composition*. A platform team extends the vocabulary by authoring new primitives; an application team uses constructs to assemble them. Conflating the two would force every composition decision through a schema-publishing workflow.
@@ -35,7 +35,7 @@ The Adapter category exists because rendering is a *target-specific* concern. Fo
 
 `#Catalog` sits under Constructs (rather than as its own category) because it follows the same rule as every other construct: it introduces no new schema vocabulary, it organizes primitives. A `#Catalog` packages a versioned set of `#ComponentTransformer` values under one CUE module path so platforms can subscribe to it. Splitting consumption (`#Module`) from publication (`#Catalog`) gives each artifact one job — but both are constructs, not separate categories.
 
-This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleRelease`, and `#Catalog`, and the adapter `#ComponentTransformer`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
+This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleInstance`, and `#Catalog`, and the adapter `#ComponentTransformer`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
 
 ---
 
@@ -181,18 +181,18 @@ Unlike a primitive, a Component does not introduce new schema. Its `spec` is the
     #traits?:     #TraitMap
     #blueprints?: #BlueprintMap
 
-    // Release context injected by the parent #Module's #components pattern
+    // Instance context injected by the parent #Module's #components pattern
     // constraint. Hidden — authors never set this directly.
-    #release: #ReleaseIdentity
+    #instance: #InstanceIdentity
 
     // Single source of truth for this component's computed names. DNS
-    // variants derive from resourceName + #release.namespace + clusterDomain.
+    // variants derive from resourceName + #instance.namespace + clusterDomain.
     #names: {
         resourceName: metadata.resourceName
         dns: {
             short: resourceName
-            local: "\(resourceName).\(#release.namespace)"
-            fqdn:  "\(resourceName).\(#release.namespace).svc.\(#release.clusterDomain)"
+            local: "\(resourceName).\(#instance.namespace)"
+            fqdn:  "\(resourceName).\(#instance.namespace).svc.\(#instance.clusterDomain)"
         }
     }
 
@@ -207,7 +207,7 @@ Implementation: [`component.cue`](src/component.cue).
 
 - `kind` MUST be the literal string `"Component"`.
 - `metadata.resourceName` defaults to `metadata.name`. An explicit value wins via the disjunction-default cascade and MUST also satisfy `#NameType`.
-- `#release` is set by the parent `#Module` via its `#components` pattern constraint. Component authors MUST NOT set `#release` directly; doing so collides with the module wiring and fails CUE unification.
+- `#instance` is set by the parent `#Module` via its `#components` pattern constraint. Component authors MUST NOT set `#instance` directly; doing so collides with the module wiring and fails CUE unification.
 - `#names` is the single source of truth for this component's identity. `#Module.#ctx.components.<id>` is a pure projection of every component's `#names` — there is no separate computation path.
 - `#resources` SHOULD contain at least one entry (directly or via an attached `#Blueprint`). A Component composed of only Traits describes modifications to nothing — a category error not currently caught by the schema; it is rejected at downstream render time.
 - A `#Trait` MUST only be attached to a Component whose Resources are listed in the Trait's `appliesTo`. Conflict surfaces at CUE unification time.
@@ -222,7 +222,7 @@ Implementation: [`component.cue`](src/component.cue).
 - **Why labels and annotations unify from primitives rather than being authored.** Same principle as `spec`: the primitives are the source of truth. A Component that contradicted its primitives' labels would be a lie about what's deployed. Per Principle II (Type Safety First), CUE catches the conflict at unification time rather than waiting for a runtime mismatch.
 - **Why `resourceName` is a cascade on `metadata`, not a top-level field.** The default case ("the rendered resource shares the component's id") is by far the common one; authors should not have to write it. The override case ("rename the rendered resource without renaming the component") needs to be cheap because real deployments hit it constantly (legacy resource names, multi-instance suffixing). A `*name | #NameType` disjunction-default does both with one line and zero ceremony.
 - **Why `#names` lives on the Component and `#ctx.components` is a projection.** Two principles. (1) The component is the thing that owns its identity — the value that ultimately renders is the one that says what its name is. (2) Projection-not-computation means there is only one place to look when reading or debugging a name; the module-level view is a comprehension, not an alternate calculation. See enhancement 0001 D2.
-- **Why `#release` is hidden and module-injected, not author-supplied.** Components are reusable across releases — the same component definition can be embedded in many `#ModuleRelease` values targeting different namespaces. If `#release` were authored on the component, every release would have to fork the component just to rewrite identity, which defeats reusability. Module-side injection via the `#components` pattern constraint keeps the release identity flowing through a single wiring point. See enhancement 0001 D3.
+- **Why `#instance` is hidden and module-injected, not author-supplied.** Components are reusable across instances — the same component definition can be embedded in many `#ModuleInstance` values targeting different namespaces. If `#instance` were authored on the component, every instance would have to fork the component just to rewrite identity, which defeats reusability. Module-side injection via the `#components` pattern constraint keeps the instance identity flowing through a single wiring point. See enhancement 0001 D3.
 - **Why we don't enforce "at least one Resource" in the schema.** The constraint is true in spirit (a Component with no Resource is undeployable) but CUE cannot ergonomically express "this map is non-empty" without sacrificing the open-map semantics that let platforms add resources at deploy time. The check sits at the render boundary instead. Documented here so future contributors don't reintroduce a schema-level emptiness check that breaks platform composition.
 
 #### See also
@@ -237,7 +237,7 @@ Implementation: [`component.cue`](src/component.cue).
 
 #### Definition
 
-A `#Module` is the portable application blueprint — a developer's (or platform team's) description of an application as a graph of Components, optionally publishing additional primitives to the platform's registry. A Module describes *what* an application is; concrete values are supplied separately by `#ModuleRelease` (forthcoming).
+A `#Module` is the portable application blueprint — a developer's (or platform team's) description of an application as a graph of Components, optionally publishing additional primitives to the platform's registry. A Module describes *what* an application is; concrete values are supplied separately by `#ModuleInstance` (forthcoming).
 
 A Module is the unit of versioning and distribution. A published Module at `example.com/modules/foo:1.2.3` is immutable.
 
@@ -261,20 +261,20 @@ A Module is the unit of versioning and distribution. A published Module at `exam
     }
 
     // Pattern constraint tightens the key to #NameType and wires the
-    // module-level release into every component.
+    // module-level instance into every component.
     #components: [Id=#NameType]: #Component & {
         metadata: name: string | *Id
-        #release: #ctx.release
+        #instance: #ctx.instance
     }
 
     #config:     _   // OpenAPI v3 schema; no CUE templating
     debugValues: _   // example values for testing/tooling
 
-    // Inline runtime context channel. `release` is set by #ModuleRelease;
+    // Inline runtime context channel. `instance` is set by #ModuleInstance;
     // `components` is a pure CUE projection over every #Component.#names.
     // The trailing `...` keeps the channel open for future siblings.
     #ctx: {
-        release: #ReleaseIdentity
+        instance: #InstanceIdentity
         components: { for id, c in #components { (id): c.#names } }
         ...
     }
@@ -292,8 +292,8 @@ Implementation: [`module.cue`](src/module.cue).
 - `metadata.fqn` uses semver-with-colon (`modulePath/name:version`), distinct from `#Resource`'s `@v0` major-version separator. Consumers MUST NOT supply `fqn` directly.
 - `metadata.uuid` is computed as `SHA1(OPMNamespace, fqn)`. It is deterministic and stable across evaluations.
 - `#components` is required but MAY be empty for a Module that ships only as a configuration shape. Keys MUST satisfy `#NameType`.
-- Every entry in `#components` receives `#release` from `#ctx.release` via the pattern constraint. The component's `#names` block computes `resourceName` and DNS variants from this injected release. Authors MUST NOT set `#release` on a component directly.
-- `#ctx.release` MUST be set by the consuming `#ModuleRelease` (§…). A `#Module` value with `#ctx.release` left non-concrete is a spec — usable for typing and validation, but not renderable.
+- Every entry in `#components` receives `#instance` from `#ctx.instance` via the pattern constraint. The component's `#names` block computes `resourceName` and DNS variants from this injected instance. Authors MUST NOT set `#instance` on a component directly.
+- `#ctx.instance` MUST be set by the consuming `#ModuleInstance` (§…). A `#Module` value with `#ctx.instance` left non-concrete is a spec — usable for typing and validation, but not renderable.
 - `#ctx.components` is a pure CUE comprehension over `#components`; it cannot be authored independently of the component set. Drift between a component's `#names` and the projection is therefore impossible at the schema layer.
 - The top of `#ctx` is open (`...`). Future enhancements MAY add sibling fields (`platform`, `environment`) without invalidating existing module bodies.
 - `#config` MUST be expressible in OpenAPI v3. CUE templating constructs (`for`, `if`, comprehensions) MUST NOT appear. This rule is enforced downstream (the library's render pipeline) rather than at the schema layer.
@@ -301,22 +301,22 @@ Implementation: [`module.cue`](src/module.cue).
 
 #### Rationale
 
-- **Why `modulePath` / `version` are author-supplied typed-required fields, not self-referential.** Earlier revisions declared them `modulePath: metadata.modulePath` / `version: metadata.version` — a bare-direct self-cycle that resolves to itself, contributing neither a value nor a constraint. CUE never registers a cycle-only field as a permitted member of the *closed* `#Module`, so re-unifying an already-closed published `#Module` into `#ModuleRelease.#module` (the authored-`release.cue` import path) rejected the concrete `modulePath`/`version` as "field not allowed." The bug was invisible to `cue vet` because a standalone Module is only closed once. Declaring them `!: #ModulePathType` / `!: #VersionType` — the form every sibling identity-bearing construct already uses — makes them genuine permitted fields, fixes the re-unification, and adds real format validation the self-cycle silently skipped.
+- **Why `modulePath` / `version` are author-supplied typed-required fields, not self-referential.** Earlier revisions declared them `modulePath: metadata.modulePath` / `version: metadata.version` — a bare-direct self-cycle that resolves to itself, contributing neither a value nor a constraint. CUE never registers a cycle-only field as a permitted member of the *closed* `#Module`, so re-unifying an already-closed published `#Module` into `#ModuleInstance.#module` (the authored-`instance.cue` import path) rejected the concrete `modulePath`/`version` as "field not allowed." The bug was invisible to `cue vet` because a standalone Module is only closed once. Declaring them `!: #ModulePathType` / `!: #VersionType` — the form every sibling identity-bearing construct already uses — makes them genuine permitted fields, fixes the re-unification, and adds real format validation the self-cycle silently skipped.
 - **Why `metadata.nameSnakeCase` exists as a derived field.** `#NameType` is kebab-case (RFC 1123 DNS-label), but a CUE package name and a CUE registry-path leaf must be valid CUE identifiers — which forbid hyphens. Authors therefore publish hyphenated-named modules under an underscored path/package (e.g. name `zot-registry-ttl` published at `…/zot_registry_ttl`), and the two forms drift. Deriving the snake_case form in the schema gives every consumer one authoritative, deterministic projection of the name into identifier space, rather than each re-implementing `strings.Replace(name, "-", "_")` and risking divergence. It is a *projection of name*, not an independent field, so it cannot disagree with `name`. The companion module publishing convention (see `enhancements/`) builds the canonical registry path on `modulePath/nameSnakeCase` so an imported module is resolvable from its metadata alone.
 - **Why `fqn` uses semver-with-colon while `#Resource` uses `@vN`.** Modules ship at specific versions (`1.2.3`); the consumer pins an exact release and migrates deliberately. Resources version on the contract surface (`v1`, `v2`); the consumer pins a contract major and treats patches as the publisher's concern. Different identity granularity, different separator — the visual distinction prevents confusion when both appear in a config tree.
 - **Why `uuid` is computed via `SHA1(OPMNamespace, fqn)` rather than authored or random.** Per Principle III (Determinism), two evaluations of the same `fqn` MUST yield the same identity. A registry, controller, or cluster can dedupe modules by uuid without coordinating an ID allocator. The schema fixture harness in `library/` pins a known uuid as a drift sentinel for the algorithm itself.
 - **Why `#config` is bare `_` and not a typed schema.** The configuration shape is per-module — every module's contract is different. Constraining `#config` at the core layer would either force a one-size-fits-all schema (too narrow) or accept everything (no value). The OpenAPI-v3 constraint is enforced by the downstream renderer, which has the context to apply it cleanly.
 - **Why no CUE templating in `#config`.** The config schema is the module's *public contract*. It travels with the published module via the OCI registry and is read by non-CUE consumers — web UIs rendering forms, kubectl plugins generating prompts, generated bindings in other languages. CUE templating would tie the schema to a CUE evaluator and exclude every one of those consumers. Per Principle I (Contract Stability), the schema must not assume a particular consumer.
 - **Why publication moved out of `#Module`.** The pre-0001 schema overloaded `#Module.#defines` to publish primitives to platforms. That conflated two roles — a leaf application has no publication intent; a catalog has no `#components` to render. Enhancement 0001 split the roles: `#Module` is the consumer artifact (only `#components` + `#config` + `debugValues` + `#ctx`), and [`#Catalog`](#36-catalog) is the publication artifact. A catalog need not carry application context; a module need not carry vocabulary surface.
-- **Why `#ctx` is inline on `#Module` and not a wrapper type.** Modules carry deployment context — release identity, per-component names, future siblings like platform / environment — through evaluation. Wrapping the module in a separate builder type would force every consumer (renderer, validator, debug tool) to unwrap before reading the module. An inline `#ctx` slot keeps the module a single value with a context channel exposed alongside the components map. The open top (`...`) reserves room for additive siblings without breaking existing values. See enhancement 0001 D1.
+- **Why `#ctx` is inline on `#Module` and not a wrapper type.** Modules carry deployment context — instance identity, per-component names, future siblings like platform / environment — through evaluation. Wrapping the module in a separate builder type would force every consumer (renderer, validator, debug tool) to unwrap before reading the module. An inline `#ctx` slot keeps the module a single value with a context channel exposed alongside the components map. The open top (`...`) reserves room for additive siblings without breaking existing values. See enhancement 0001 D1.
 - **Why `#ctx.components` is a projection, not an authored map.** Every component's `#names` block is the single source of truth for that component's identity. If `#ctx.components` were authored independently it could disagree with the component's own `#names` — exactly the silent-drift failure mode the schema should make impossible. Modeling it as a CUE comprehension makes drift inexpressible: the projection IS the components' names. See enhancement 0001 D2.
-- **Why the `#components` pattern injects `#release` instead of leaving it for `#ModuleRelease`.** A `#ModuleRelease` sets `#module.#ctx.release` once, at the module level. Without the pattern constraint, every component would have to thread `#release` from `#ctx.release` in author code — which is ceremony for the common case and an invitation for typos. The pattern constraint makes the wiring structural: the moment a value enters `#components`, it carries `#release: #ctx.release`. See enhancement 0001 D3.
+- **Why the `#components` pattern injects `#instance` instead of leaving it for `#ModuleInstance`.** A `#ModuleInstance` sets `#module.#ctx.instance` once, at the module level. Without the pattern constraint, every component would have to thread `#instance` from `#ctx.instance` in author code — which is ceremony for the common case and an invitation for typos. The pattern constraint makes the wiring structural: the moment a value enters `#components`, it carries `#instance: #ctx.instance`. See enhancement 0001 D3.
 
 #### See also
 
 - Tutorial: [`docs/constructs.md`](docs/constructs.md) (Module section)
 - Composes: [`#Component`](#31-component), [`#Resource`](#21-resource), [`#Trait`](#22-trait), [`#ComponentTransformer`](#41-componenttransformer)
-- Instantiated by: `#ModuleRelease` (forthcoming)
+- Instantiated by: `#ModuleInstance` (forthcoming)
 
 ---
 
@@ -455,19 +455,21 @@ Implementation: [`platform.cue`](src/platform.cue).
 
 ---
 
-### 3.5 `#ModuleRelease`
+### 3.5 `#ModuleInstance`
 
 #### Definition
 
-A `#ModuleRelease` is the concrete deployment instance — a `#Module` paired with the values that satisfy its `#config`, plus the release-scoped identity (name, namespace, uuid, cluster domain) that flows into every component as `#ctx.release`. A `#ModuleRelease` is what an operator, CI pipeline, or controller actually renders into platform-specific resources.
+A `#ModuleInstance` is the concrete deployment instance — a `#Module` paired with the values that satisfy its `#config`, plus the instance-scoped identity (name, namespace, uuid, cluster domain) that flows into every component as `#ctx.instance`. A `#ModuleInstance` is what an operator, CI pipeline, or controller actually renders into platform-specific resources.
 
-The Module is the contract; the Release is the instance.
+Renamed from `#ModuleRelease` (enhancement 0002).
+
+The Module is the contract; the Instance is the instance.
 
 #### Shape
 
 ```cue
-#ModuleRelease: {
-    kind: "ModuleRelease"
+#ModuleInstance: {
+    kind: "ModuleInstance"
 
     metadata: {
         name!:         #NameType
@@ -478,12 +480,12 @@ The Module is the contract; the Release is the instance.
         annotations?:  #LabelsAnnotationsType
     }
 
-    // The Module to deploy, with its #ctx.release wired from this Release's
-    // metadata. Every #Component under #module receives the release identity
+    // The Module to deploy, with its #ctx.instance wired from this Instance's
+    // metadata. Every #Component under #module receives the instance identity
     // via the module's #components pattern constraint — so #names, DNS
     // variants, etc. compute automatically per component.
     #module!: #Module & {
-        #ctx: release: {
+        #ctx: instance: {
             name:          metadata.name
             namespace:     metadata.namespace
             uuid:          metadata.uuid
@@ -499,29 +501,29 @@ The Module is the contract; the Release is the instance.
 }
 ```
 
-Implementation: [`module_release.cue`](src/module_release.cue).
+Implementation: [`module_instance.cue`](src/module_instance.cue).
 
 #### Constraints
 
-- `kind` MUST be the literal string `"ModuleRelease"`.
+- `kind` MUST be the literal string `"ModuleInstance"`.
 - `metadata.name` and `metadata.namespace` MUST be kebab-case (`#NameType`).
-- `metadata.clusterDomain` MUST be a non-empty string. The default `"cluster.local"` covers the standard Kubernetes case; override per release when the target cluster runs a non-standard domain.
+- `metadata.clusterDomain` MUST be a non-empty string. The default `"cluster.local"` covers the standard Kubernetes case; override per instance when the target cluster runs a non-standard domain.
 - `metadata.uuid` is deterministic: `SHA1(OPMNamespace, "<module-uuid>:<name>:<namespace>")`. Two evaluations with the same Module + name + namespace MUST yield the same uuid.
-- `#module.#ctx.release` MUST be set from `metadata.{name, namespace, uuid, clusterDomain}`. The wiring is declared inline in the schema; authors do not call a builder.
+- `#module.#ctx.instance` MUST be set from `metadata.{name, namespace, uuid, clusterDomain}`. The wiring is declared inline in the schema; authors do not call a builder.
 - `values` MUST satisfy `#module.#config`. CUE unification enforces this at evaluation time.
 - If the resolved configuration contains `#Secret` fields, an `opm-secrets` component MUST be added to `components` automatically. Authors MUST NOT define a component named `opm-secrets` — the slot is reserved.
 
 #### Rationale
 
-- **Why `clusterDomain` lives on `#ReleaseIdentity` and not buried inside a runtime context type.** A FQDN like `service.namespace.svc.cluster.local` is computed once per release: every component's `#names.dns.fqdn` consumes it. Putting `clusterDomain` on the release identity gives one overridable home — a release on a `cluster.example.com` cluster sets it once, and every component's FQDN follows. Burying it inside a separate runtime-context type would force every consumer to traverse two levels of indirection to read a single string. See enhancement 0001 D4.
-- **Why `#ModuleRelease` sets `#ctx.release` inline and ships no builder.** The pre-0001 sketches considered a separate context-builder type that would take metadata and produce a context value. Two arguments against: (1) the wiring is one struct expression — a builder adds a type and a function call to do what one inline literal does already; (2) builders introduce evaluation order ("call builder before evaluating module") that pure CUE doesn't have. Setting `#ctx.release` inline keeps the module + release pair as one CUE value with no procedural dependency. See enhancement 0001 D1.
-- **Why `#module.#ctx.release` is set inside the `#module` unification, not on `#module.#ctx` after the fact.** Unification is associative and commutative — the order in which fields land doesn't matter. Setting it inside the `#module: #Module & {...}` expression makes the wiring textually adjacent to the module reference, so a reader sees both pieces at the same scroll position. The alternative ("set #module first, then patch #module.#ctx.release") is the same CUE value but harder to read.
-- **Why `uuid` is computed deterministically from module + name + namespace.** A release's identity must be reproducible across evaluations of the same inputs: a controller restarting, a CI pipeline retrying, a kubectl apply re-running. Random or author-supplied uuids drift between runs and force every consumer to track a separate "is this the same release?" signal. The SHA1-of-FQN form derives the answer from the inputs themselves. Same principle as `#Module.metadata.uuid` (§3.2 rationale).
-- **Why auto-secrets injection lives in `#ModuleRelease` rather than `#Module`.** Secrets live in the release's `values`, not in the module's `#config` shape — the module declares a contract, the release fills it. A secret-bearing field is only discoverable after `values` lands. Hooking auto-injection at the release boundary catches every `#Secret` in the final resolved config and ships a single `opm-secrets` component that downstream transformers can render uniformly. Hoisting the injection earlier would race the values resolution.
+- **Why `clusterDomain` lives on `#InstanceIdentity` and not buried inside a runtime context type.** A FQDN like `service.namespace.svc.cluster.local` is computed once per instance: every component's `#names.dns.fqdn` consumes it. Putting `clusterDomain` on the instance identity gives one overridable home — an instance on a `cluster.example.com` cluster sets it once, and every component's FQDN follows. Burying it inside a separate runtime-context type would force every consumer to traverse two levels of indirection to read a single string. See enhancement 0001 D4.
+- **Why `#ModuleInstance` sets `#ctx.instance` inline and ships no builder.** The pre-0001 sketches considered a separate context-builder type that would take metadata and produce a context value. Two arguments against: (1) the wiring is one struct expression — a builder adds a type and a function call to do what one inline literal does already; (2) builders introduce evaluation order ("call builder before evaluating module") that pure CUE doesn't have. Setting `#ctx.instance` inline keeps the module + instance pair as one CUE value with no procedural dependency. See enhancement 0001 D1.
+- **Why `#module.#ctx.instance` is set inside the `#module` unification, not on `#module.#ctx` after the fact.** Unification is associative and commutative — the order in which fields land doesn't matter. Setting it inside the `#module: #Module & {...}` expression makes the wiring textually adjacent to the module reference, so a reader sees both pieces at the same scroll position. The alternative ("set #module first, then patch #module.#ctx.instance") is the same CUE value but harder to read.
+- **Why `uuid` is computed deterministically from module + name + namespace.** An instance's identity must be reproducible across evaluations of the same inputs: a controller restarting, a CI pipeline retrying, a kubectl apply re-running. Random or author-supplied uuids drift between runs and force every consumer to track a separate "is this the same instance?" signal. The SHA1-of-FQN form derives the answer from the inputs themselves. Same principle as `#Module.metadata.uuid` (§3.2 rationale).
+- **Why auto-secrets injection lives in `#ModuleInstance` rather than `#Module`.** Secrets live in the instance's `values`, not in the module's `#config` shape — the module declares a contract, the instance fills it. A secret-bearing field is only discoverable after `values` lands. Hooking auto-injection at the instance boundary catches every `#Secret` in the final resolved config and ships a single `opm-secrets` component that downstream transformers can render uniformly. Hoisting the injection earlier would race the values resolution.
 
 #### See also
 
-- Tutorial: [`docs/constructs.md`](docs/constructs.md) (ModuleRelease section, forthcoming)
+- Tutorial: [`docs/constructs.md`](docs/constructs.md) (ModuleInstance section, forthcoming)
 - Instantiates: [`#Module`](#32-module)
 - Sets context for: every [`#Component`](#31-component) under `#module.#components`
 
@@ -631,9 +633,9 @@ Transformers are catalog-versioned. The match algorithm is FQN-keyed: each entry
     producesKinds?: [...string]
 
     #transform: {
-        #moduleRelease: _
-        #component:     _
-        #context:       #TransformerContext
+        #moduleInstance: _
+        #component:      _
+        #context:        #TransformerContext
 
         output: {...} | [...{...}]
     }

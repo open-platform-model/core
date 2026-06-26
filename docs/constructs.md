@@ -68,7 +68,7 @@ Labels flow upward: when a Resource or Trait declares labels (e.g., `"core.opmod
 
 A **Module** is the top-level application definition. It groups Components and a config schema (`#config`) into a portable, versionable unit that a Module Author publishes.
 
-Modules enforce a clear separation between the configuration **contract** (`#config` — the constraints consumers must satisfy) and concrete values supplied at deploy time by [`#ModuleRelease`](#modulerelease). The `debugValues` field carries optional, in-module example values used by build/validation tooling.
+Modules enforce a clear separation between the configuration **contract** (`#config` — the constraints consumers must satisfy) and concrete values supplied at deploy time by [`#ModuleInstance`](#moduleinstance). The `debugValues` field carries optional, in-module example values used by build/validation tooling.
 
 #### What Module Infers
 
@@ -110,7 +110,7 @@ Modules enforce a clear separation between the configuration **contract** (`#con
 
 ```text
 Module Author ──defines──▶ Module (#components, #config, debugValues)
-End-user ──deploys──▶ ModuleRelease (concrete values into #config)
+End-user ──deploys──▶ ModuleInstance (concrete values into #config)
 ```
 
 #### Module Example
@@ -154,31 +154,33 @@ basicModule: core.#Module & {
 
 ## Deployment
 
-### ModuleRelease
+### ModuleInstance
 
-A **ModuleRelease** is the concrete deployment instance of a Module. It binds a Module to a target namespace with concrete values that satisfy the module's `#config` schema.
+Renamed from `#ModuleRelease` (enhancement 0002).
 
-The separation between Module and ModuleRelease is fundamental to OPM's delivery flow. The Module Author publishes a portable definition; the End-user (or deployment system) creates a ModuleRelease that supplies environment-specific values. CUE ensures the provided values satisfy the `#config` contract at definition time.
+A **ModuleInstance** is the concrete deployment instance of a Module. It binds a Module to a target namespace with concrete values that satisfy the module's `#config` schema.
 
-Internally, the release unifies the referenced Module with `{#config: values}`, so the release's concrete values flow through `#config` into Component specs. This is what makes `release.components` contain fully-resolved Components rather than templates with unresolved config references.
+The separation between Module and ModuleInstance is fundamental to OPM's delivery flow. The Module Author publishes a portable definition; the End-user (or deployment system) creates a ModuleInstance that supplies environment-specific values. CUE ensures the provided values satisfy the `#config` contract at definition time.
 
-`#AutoSecrets` walks the resolved config and discovers any `#Secret` instances. When secrets are present, an additional `opm-secrets` Component is automatically appended to the release's `components`.
+Internally, the instance unifies the referenced Module with `{#config: values}`, so the instance's concrete values flow through `#config` into Component specs. This is what makes `instance.components` contain fully-resolved Components rather than templates with unresolved config references.
 
-#### What ModuleRelease Infers
+`#AutoSecrets` walks the resolved config and discovers any `#Secret` instances. When secrets are present, an additional `opm-secrets` Component is automatically appended to the instance's `components`.
+
+#### What ModuleInstance Infers
 
 - "This Module is **being deployed** to this namespace with these values"
 - "All configuration is **concrete and validated** against the module's contract"
 - "This is the **input to the compile pipeline**"
 
-#### ModuleRelease Structure
+#### ModuleInstance Structure
 
 ```cue
-#ModuleRelease: {
+#ModuleInstance: {
     apiVersion: #ApiVersion
-    kind:       "ModuleRelease"
+    kind:       "ModuleInstance"
 
     metadata: {
-        name!:        #NameType        // release name
+        name!:        #NameType        // instance name
         namespace!:   string           // target environment
         uuid:         #UUIDType        // UUIDv5 of (module.uuid:name:namespace)
         labels?:      #LabelsAnnotationsType
@@ -196,10 +198,10 @@ Internally, the release unifies the referenced Module with `{#config: values}`, 
 }
 ```
 
-#### ModuleRelease Example
+#### ModuleInstance Example
 
 ```cue
-productionRelease: core.#ModuleRelease & {
+productionInstance: core.#ModuleInstance & {
     metadata: {
         name:      "basic-module-prod"
         namespace: "production"
@@ -214,4 +216,4 @@ productionRelease: core.#ModuleRelease & {
 }
 ```
 
-**CUE schema**: [`../src/module_release.cue`](../src/module_release.cue)
+**CUE schema**: [`../src/module_instance.cue`](../src/module_instance.cue)
