@@ -1,6 +1,6 @@
 # core — Definition Index
 
-CUE module: `opmodel.dev/core@v0`
+CUE module: `opmodel.dev/core@v1`
 
 ---
 
@@ -28,9 +28,9 @@ CUE module: `opmodel.dev/core@v0`
 | `#Module` | `module.cue` | #Module: The portable application blueprint created by developers and/or platform teams |
 | `#ModuleMap` | `module.cue` |  |
 | `#ComponentNames` | `module_context.cue` | #ComponentNames is the shape of the per-component computed-names projection |
-| `#ReleaseIdentity` | `module_context.cue` | #ReleaseIdentity carries the deployment-scoped facts that compute per-component names and DNS variants |
-| `#ModuleRelease` | `module_release.cue` | #ModuleRelease: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version |
-| `#ModuleReleaseMap` | `module_release.cue` |  |
+| `#InstanceIdentity` | `module_context.cue` | #InstanceIdentity carries the deployment-scoped facts that compute per-component names and DNS variants |
+| `#ModuleInstance` | `module_instance.cue` | #ModuleInstance: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version Was: #ModuleRelease (renamed in enhancement 0002) |
+| `#ModuleInstanceMap` | `module_instance.cue` | Was: #ModuleReleaseMap (renamed in enhancement 0002) |
 | `#Platform` | `platform.cue` | #Platform — path-keyed registry of catalog subscriptions plus kernel-filled materialization slots |
 | `#Subscription` | `platform.cue` | #Subscription declares that a #Platform pulls primitives from a catalog published at a given CUE module path |
 | `#SubscriptionFilter` | `platform.cue` | #SubscriptionFilter narrows the set of catalog builds a #Platform pulls from a subscribed registry path |

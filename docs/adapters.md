@@ -66,7 +66,7 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
 
 Every `#transform` body receives a `#TransformerContext` that carries:
 
-- `#moduleReleaseMetadata` — name, namespace, fqn, version, uuid, labels, annotations of the release.
+- `#moduleInstanceMetadata` — name, namespace, fqn, version, uuid, labels, annotations of the instance.
 - `#componentMetadata` — name, labels, annotations of the matched Component.
 - `#runtimeName` — identity of the runtime executing the transform (e.g., `"opm-cli"` for the CLI, `"opm-controller"` for the operator). Stamped onto every rendered resource as `app.kubernetes.io/managed-by`.
 - Computed `labels` / `annotations` — final maps merged from module, component, and controller layers, ready to apply to the output.

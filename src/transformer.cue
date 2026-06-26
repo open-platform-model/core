@@ -82,7 +82,8 @@ import (
 	// derived from a component-side map (e.g. ConfigMaps, Secrets, PVCs)
 	// should use a list comprehension.
 	#transform: {
-		#moduleRelease: _ // Fully concrete #ModuleRelease (D18)
+		// Was: #moduleRelease (renamed in enhancement 0002)
+		#moduleInstance: _ // Fully concrete #ModuleInstance (D18)
 
 		#component: _ // Unconstrained; validated by matching, not by the transform signature
 		#context:   #TransformerContext
@@ -96,9 +97,10 @@ import (
 
 // Provider context passed to transformers
 #TransformerContext: {
-	#moduleReleaseMetadata: {
+	// Was: #moduleReleaseMetadata (renamed in enhancement 0002)
+	#moduleInstanceMetadata: {
 		name!:        #NameType
-		namespace!:   #NameType // Required for releases (target environment)
+		namespace!:   #NameType // Required for instances (target environment)
 		fqn:          string
 		version:      string
 		uuid:         #UUIDType
@@ -121,30 +123,30 @@ import (
 
 	// Labels and annotations. These are inherited from the component and module metadata.
 	//
-	// - moduleLabels: labels from #moduleReleaseMetadata.labels (if defined)
-	// - moduleAnnotations: annotations from #moduleReleaseMetadata.annotations (if defined)
+	// - moduleLabels: labels from #moduleInstanceMetadata.labels (if defined)
+	// - moduleAnnotations: annotations from #moduleInstanceMetadata.annotations (if defined)
 	// - componentLabels: labels from #componentMetadata.labels (if defined) + "app.kubernetes.io/name" = component name
 	// - componentAnnotations: annotations from #componentMetadata.annotations (if defined)
 	// - controllerLabels: standard controller labels (including managed-by = #runtimeName)
 	moduleLabels: {
-		if #moduleReleaseMetadata.labels != _|_ {
-			for k, v in #moduleReleaseMetadata.labels {
+		if #moduleInstanceMetadata.labels != _|_ {
+			for k, v in #moduleInstanceMetadata.labels {
 				(k): "\(v)"
 			}
 		}
 	}
 
 	moduleAnnotations: {
-		if #moduleReleaseMetadata.annotations != _|_ {
-			for k, v in #moduleReleaseMetadata.annotations {
+		if #moduleInstanceMetadata.annotations != _|_ {
+			for k, v in #moduleInstanceMetadata.annotations {
 				(k): "\(v)"
 			}
 		}
 	}
 
 	componentLabels: {
-		"app.kubernetes.io/name":          #componentMetadata.name
-		"module-release.opmodel.dev/name": #moduleReleaseMetadata.name
+		"app.kubernetes.io/name":           #componentMetadata.name
+		"module-instance.opmodel.dev/name": #moduleInstanceMetadata.name
 		if #componentMetadata.labels != _|_ {
 			for k, v in #componentMetadata.labels {
 				if !strings.HasPrefix(k, "transformer.opmodel.dev/") {

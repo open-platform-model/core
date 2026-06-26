@@ -1,13 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "include-component-in-tag": false,
+  "bootstrap-sha": "6fa27ed8f9e14514bacd0a927bb80a61c1b03c49",
   "packages": {
     ".": {
       "release-type": "simple",
       "package-name": "core",
       "changelog-path": "CHANGELOG.md",
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": false
+      "versioning": "prerelease",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "prerelease": true,
+      "prerelease-type": "alpha"
     }
   },
   "changelog-sections": [

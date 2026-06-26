@@ -14,4 +14,4 @@
 #ComponentTransformer
 #Catalog
 #Platform
-#ModuleRelease
+#ModuleInstance

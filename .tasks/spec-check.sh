@@ -59,7 +59,13 @@ all_cue_names=$(
 )
 
 # Names referenced anywhere in SPEC.md (headers, prose, code blocks).
-spec_refs=$(grep -oE '#[A-Z][a-zA-Z0-9]+' "$SPEC" | sort -u)
+#
+# Old-name breadcrumb lines (enhancement 0002 D12 — "Renamed from `#Old`
+# (enhancement NNNN).") intentionally name a now-removed identifier to leave a
+# migration trail in the construct's Definition prose. These are deliberate
+# historical references, not stale ones, so drop breadcrumb lines before
+# extracting refs — otherwise Direction 3 would flag every retired name.
+spec_refs=$(grep -v 'Renamed from' "$SPEC" | grep -oE '#[A-Z][a-zA-Z0-9]+' | sort -u)
 
 # Direction 1: allowlist entries missing from SPEC.md.
 missing_in_spec=$(
