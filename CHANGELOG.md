@@ -5,7 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **schema:** #ModuleRelease->#ModuleInstance, #ModuleReleaseMap-> #ModuleInstanceMap, #ReleaseIdentity->#InstanceIdentity, #ctx.release-> #ctx.instance, #Component.#release->#instance, transformer #moduleRelease*-> #moduleInstance*; wire kind "ModuleRelease"->"ModuleInstance"; label domain module-release.opmodel.dev/*->module-instance.opmodel.dev/*. The CUE module advances opmodel.dev/core@v0->@v1 (every downstream import re-pins to @v1) and ships on the v1.0.0-alpha.N prerelease line.
+* **schema:** #ModuleRelease->#ModuleInstance, #ModuleReleaseMap-> #ModuleInstanceMap, #ReleaseIdentity->#InstanceIdentity, #ctx.release-> #ctx.instance, #Component.#release->#instance, transformer #moduleRelease*-> #moduleInstance*; wire kind "ModuleRelease"->"ModuleInstance"; label domain module-release.opmodel.dev/*->module-instance.opmodel.dev/*. The CUE module advances `opmodel.dev/core@v0` -> `@v1` (every downstream import re-pins to the new major) and ships on the `v1.0.0-alpha.N` prerelease line.
 
 ### Features
 
