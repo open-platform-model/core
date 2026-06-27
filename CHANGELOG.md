@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-alpha.2](https://github.com/open-platform-model/core/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2026-06-27)
+
+
+### Bug Fixes
+
+* **cue:** pin language version to v0.17.0-alpha.1 ([#20](https://github.com/open-platform-model/core/issues/20)) ([40daf05](https://github.com/open-platform-model/core/commit/40daf05eb3aee238c4eda7c42caeaca54f52b441))
+
 ## [1.0.0-alpha.1](https://github.com/open-platform-model/core/compare/v1.0.0-alpha.0...v1.0.0-alpha.1) (2026-06-26)
 
 
