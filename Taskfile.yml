@@ -3,9 +3,6 @@ version: "3"
 # Silent by default — set TASK_VERBOSE=1 or use --verbose to show commands
 silent: true
 
-vars:
-  CUE_VERSION: v0.16.0
-
 tasks:
   default:
     desc: Show available tasks
