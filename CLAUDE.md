@@ -47,7 +47,11 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 
 ## Environment Notes
 
-- Pin `language: version: "v0.16.0"` in `cue.mod/module.cue` (workspace-wide convention).
+- Pin `language: version: "v0.17.0"` in `cue.mod/module.cue` (workspace-wide convention). This is a
+  consumer floor, not a toolchain pin: a module declaring `vX` is rejected by every `cue` older than
+  `vX`. Declare `v0.17.0` — the minimum that enables `cue.mod/local-module.cue` — never `v0.17.1`,
+  which would lock out v0.17.0 tools for no gain. The toolchain itself is pinned separately (CI
+  `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
 - For raw `cue` outside `task`, export workspace registry vars from the root `CLAUDE.md` (`CUE_REGISTRY`, `OPM_REGISTRY`).
 
 ## Build And Dev Commands
@@ -98,7 +102,7 @@ If a window between releases contains only hidden-type commits, no release PR is
 
 ## CUE Style Guidelines
 
-Follow the CUE style used across the workspace catalog. Pin `language: version: "v0.16.0"` in `cue.mod/module.cue`. Do not hard-wrap prose in `.md` files.
+Follow the CUE style used across the workspace catalog. Pin `language: version: "v0.17.0"` in `cue.mod/module.cue` (see Environment Notes for why `v0.17.0` and not the current toolchain version). Do not hard-wrap prose in `.md` files.
 
 ## Working Style for Agents
 
