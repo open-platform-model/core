@@ -493,8 +493,7 @@ The Module is the contract; the Instance is the instance.
         }
     }
 
-    // Auto-secrets injection: when the resolved config contains #Secret
-    // fields, an opm-secrets component is added to components.
+    // The module's own components, verbatim. Core injects nothing.
     components: { ... }
 
     values: _   // concrete values satisfying #module.#config
@@ -511,7 +510,7 @@ Implementation: [`module_instance.cue`](src/module_instance.cue).
 - `metadata.uuid` is deterministic: `SHA1(OPMNamespace, "<module-uuid>:<name>:<namespace>")`. Two evaluations with the same Module + name + namespace MUST yield the same uuid.
 - `#module.#ctx.instance` MUST be set from `metadata.{name, namespace, uuid, clusterDomain}`. The wiring is declared inline in the schema; authors do not call a builder.
 - `values` MUST satisfy `#module.#config`. CUE unification enforces this at evaluation time.
-- If the resolved configuration contains `#Secret` fields, an `opm-secrets` component MUST be added to `components` automatically. Authors MUST NOT define a component named `opm-secrets` — the slot is reserved.
+- `components` MUST be exactly the module's `#components`. Core MUST NOT synthesise, inject, or reserve any component name; a module whose config carries `#Secret` fields MUST declare its own secrets component against its catalog's secrets resource.
 
 #### Rationale
 
@@ -519,7 +518,7 @@ Implementation: [`module_instance.cue`](src/module_instance.cue).
 - **Why `#ModuleInstance` sets `#ctx.instance` inline and ships no builder.** The pre-0001 sketches considered a separate context-builder type that would take metadata and produce a context value. Two arguments against: (1) the wiring is one struct expression — a builder adds a type and a function call to do what one inline literal does already; (2) builders introduce evaluation order ("call builder before evaluating module") that pure CUE doesn't have. Setting `#ctx.instance` inline keeps the module + instance pair as one CUE value with no procedural dependency. See enhancement 0001 D1.
 - **Why `#module.#ctx.instance` is set inside the `#module` unification, not on `#module.#ctx` after the fact.** Unification is associative and commutative — the order in which fields land doesn't matter. Setting it inside the `#module: #Module & {...}` expression makes the wiring textually adjacent to the module reference, so a reader sees both pieces at the same scroll position. The alternative ("set #module first, then patch #module.#ctx.instance") is the same CUE value but harder to read.
 - **Why `uuid` is computed deterministically from module + name + namespace.** An instance's identity must be reproducible across evaluations of the same inputs: a controller restarting, a CI pipeline retrying, a kubectl apply re-running. Random or author-supplied uuids drift between runs and force every consumer to track a separate "is this the same instance?" signal. The SHA1-of-FQN form derives the answer from the inputs themselves. Same principle as `#Module.metadata.uuid` (§3.2 rationale).
-- **Why auto-secrets injection lives in `#ModuleInstance` rather than `#Module`.** Secrets live in the instance's `values`, not in the module's `#config` shape — the module declares a contract, the instance fills it. A secret-bearing field is only discoverable after `values` lands. Hooking auto-injection at the instance boundary catches every `#Secret` in the final resolved config and ships a single `opm-secrets` component that downstream transformers can render uniformly. Hoisting the injection earlier would race the values resolution.
+- **Why core no longer injects an `opm-secrets` component.** Earlier revisions discovered every `#Secret` in the resolved config and synthesised a component carrying a secrets resource, so that modules got Secret objects for free. That required core to name the resource's FQN, and transformer matching is exact-FQN: a catalog stamps its own version into every FQN it publishes (`…/resources/secrets@1.0.0-alpha.2`), a value core cannot know and must not guess. The hardcoded constant went stale the moment the catalogs moved to the `@v1` line, and the synthesised component then matched no transformer at all — turning a convenience into a hard render failure for every secret-bearing module. Discovery itself was never the problem and stays available: catalogs re-export `#AutoSecrets`, so a module writes one component and keeps the ergonomics without core guessing at another package's identity.
 
 #### See also
 

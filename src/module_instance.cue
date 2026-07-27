@@ -54,22 +54,18 @@ import (
 
 	let unifiedModule = #module & {#config: values}
 
-	// _autoSecrets discovers all #Secret instances from the resolved config (internal).
-	// When non-empty, an opm-secrets component is automatically added to components.
-	_autoSecrets: (#AutoSecrets & {#in: unifiedModule.#config}).out
-
-	// components includes all user-defined components plus the auto-generated
-	// opm-secrets component when the module config contains #Secret fields.
+	// components are the module's own components, verbatim.
 	//
-	// Uses a comprehension to merge user components with the conditional opm-secrets entry.
-	// The opm-secrets component uses explicit component.#Component typing;
-	// see core/helpers/autosecrets.cue.
+	// Core no longer injects an `opm-secrets` component for configs carrying
+	// #Secret fields. Transformer matching is by exact resource FQN, and a
+	// catalog's FQN embeds that catalog's version — a value core cannot know
+	// and must not hardcode, so the injected component matched no transformer
+	// on the v1 line and failed the render outright. A module with secrets
+	// declares a secrets component against its own catalog's #Secrets resource
+	// (catalogs re-export #AutoSecrets for the discovery half).
 	components: {
 		for name, comp in unifiedModule.#components {
 			(name): comp
-		}
-		if len(_autoSecrets) > 0 {
-			"opm-secrets": (#OpmSecretsComponent & {#secrets: _autoSecrets}).out
 		}
 	}
 

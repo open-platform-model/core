@@ -164,7 +164,7 @@ The separation between Module and ModuleInstance is fundamental to OPM's deliver
 
 Internally, the instance unifies the referenced Module with `{#config: values}`, so the instance's concrete values flow through `#config` into Component specs. This is what makes `instance.components` contain fully-resolved Components rather than templates with unresolved config references.
 
-`#AutoSecrets` walks the resolved config and discovers any `#Secret` instances. When secrets are present, an additional `opm-secrets` Component is automatically appended to the instance's `components`.
+The instance's `components` are the module's own, verbatim — core synthesises nothing. A module whose config carries `#Secret` fields declares a secrets Component itself, against its catalog's secrets resource; catalogs re-export `#AutoSecrets` to walk the resolved config and collect those `#Secret` instances into the component's spec. The FQN of that resource belongs to the catalog (it carries the catalog's version), which is why core cannot fold the component in on the module's behalf.
 
 #### What ModuleInstance Infers
 
@@ -190,7 +190,7 @@ Internally, the instance unifies the referenced Module with `{#config: values}`,
     #module!:        #Module
     #moduleMetadata: #module.metadata
 
-    // Components resolved with concrete values; auto-secrets folded in.
+    // Components resolved with concrete values.
     components: { ... }
 
     // Concrete values satisfying #module.#config.
