@@ -17,7 +17,13 @@ import (
 
 // ModulePathType: plain registry path without embedded version
 // Example: "opmodel.dev/modules", "opmodel.dev/catalogs/opm/traits"
-#ModulePathType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
+//
+// Underscores are permitted in path segments because a CUE module's package
+// name is inferred from its path leaf, and only #SnakeNameType leaves are
+// valid CUE identifiers (see above). A catalog stamps its full module path —
+// leaf included — into metadata.modulePath, so a snake_case catalog such as
+// opmodel.dev/catalogs/opm_experimental must satisfy this constraint.
+#ModulePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
 
 // MajorVersionType: major version prefix used in primitive FQNs
 // Example: "v1", "v0"
@@ -25,11 +31,11 @@ import (
 
 // ModuleFQNType: container-style FQN for #Module — path/name:semver
 // Example: "opmodel.dev/modules/jellyfin:2.0.0"
-#ModuleFQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:\\d+\\.\\d+\\.\\d+.*$"
+#ModuleFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:\\d+\\.\\d+\\.\\d+.*$"
 
 // BundleFQNType: FQN for #Bundle — path/name:vN (major version)
 // Example: "opmodel.dev/bundles/game-stack:v1"
-#BundleFQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:v[0-9]+$"
+#BundleFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:v[0-9]+$"
 
 // Semver 2.0
 #VersionType: string & =~"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
@@ -43,7 +49,7 @@ import (
 // two builds of the same primitive at adjacent versions must occupy
 // distinct keys so divergent definitions surface as structured errors
 // at match time rather than silently colliding on a MAJOR bucket.
-#FQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+#FQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
 // UUIDType: RFC 4122 UUID in standard format (lowercase hex)
 #UUIDType: string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
