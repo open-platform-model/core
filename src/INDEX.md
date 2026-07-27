@@ -23,8 +23,6 @@ CUE module: `opmodel.dev/core@v1`
 | `#Component` | `component.cue` |  |
 | `#ComponentMap` | `component.cue` |  |
 | `#LabelWorkloadType` | `component.cue` | Workload type label key |
-| `#OpmSecretsComponent` | `helpers_autosecrets.cue` | #OpmSecretsComponent builds the opm-secrets component from grouped secret data |
-| `#SecretsResourceFQN` | `helpers_autosecrets.cue` | #SecretsResourceFQN is the canonical FQN for the secrets resource |
 | `#Module` | `module.cue` | #Module: The portable application blueprint created by developers and/or platform teams |
 | `#ModuleMap` | `module.cue` |  |
 | `#ComponentNames` | `module_context.cue` | #ComponentNames is the shape of the per-component computed-names projection |

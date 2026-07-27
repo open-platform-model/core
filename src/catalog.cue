@@ -7,7 +7,7 @@ package core
 // matches both. They are semantically distinguished by usage, not regex.
 //
 // Introduced by enhancement 0001 (D19).
-#CatalogFQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+#CatalogFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
 // #Catalog: top-level catalog definition. Authoring shape uses the modules
 // pattern — bare `c.#Catalog` at file root, fields written at package level,
