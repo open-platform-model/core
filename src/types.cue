@@ -16,7 +16,7 @@ import (
 #SnakeNameType: string & =~"^[a-z0-9]([a-z0-9_]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
 
 // ModulePathType: plain registry path without embedded version
-// Example: "opmodel.dev/opm/modules", "opmodel.dev/opm/traits/workload"
+// Example: "opmodel.dev/modules", "opmodel.dev/catalogs/opm/traits"
 #ModulePathType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
 
 // MajorVersionType: major version prefix used in primitive FQNs
@@ -24,19 +24,19 @@ import (
 #MajorVersionType: string & =~"^v[0-9]+$"
 
 // ModuleFQNType: container-style FQN for #Module — path/name:semver
-// Example: "opmodel.dev/opm/modules/my-app:1.2.3"
+// Example: "opmodel.dev/modules/jellyfin:2.0.0"
 #ModuleFQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:\\d+\\.\\d+\\.\\d+.*$"
 
 // BundleFQNType: FQN for #Bundle — path/name:vN (major version)
-// Example: "opmodel.dev/opm/bundles/game-stack:v1"
+// Example: "opmodel.dev/bundles/game-stack:v1"
 #BundleFQNType: string & =~"^[a-z0-9.-]+(/[a-z0-9.-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:v[0-9]+$"
 
 // Semver 2.0
 #VersionType: string & =~"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
 // FQNType: primitive definition FQN — path/name@semver
-// Example: "opmodel.dev/opm/traits/workload/scaling@1.0.0"
-// Example: "opmodel.dev/opm/resources/workload/container@1.4.0"
+// Example: "opmodel.dev/catalogs/opm/traits/scaling@1.0.0"
+// Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@1.0.0"
 // Example: "github.com/myorg/traits/network/expose@2.1.0-rc.1"
 //
 // Lifted from MAJOR-only (@vN) to SemVer 2.0 per enhancement 0001 D5:
