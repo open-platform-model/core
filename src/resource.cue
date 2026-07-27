@@ -13,9 +13,9 @@ import (
 		name!: #NameType // Example: "container"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #ModulePathType                               // Example: "opmodel.dev/opm/resources/workload"
-		version!:    #VersionType                                  // Example: "1.4.0"
-		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/opm/resources/workload/container@1.4.0"
+		modulePath!: #ModulePathType                               // Example: "opmodel.dev/catalogs/opm/resources"
+		version!:    #VersionType                                  // Example: "1.0.0"
+		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/catalogs/opm/resources/container@1.0.0"
 
 		// Human-readable description of the definition
 		description?: string

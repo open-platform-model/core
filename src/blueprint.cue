@@ -14,9 +14,9 @@ import (
 		name!: #NameType // Example: "stateless-workload"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #ModulePathType                               // Example: "opmodel.dev/opm/blueprints/workload"
+		modulePath!: #ModulePathType                               // Example: "opmodel.dev/catalogs/opm/blueprints/workload"
 		version!:    #VersionType                                  // Example: "1.0.0"
-		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/opm/blueprints/workload/stateless-workload@1.0.0"
+		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@1.0.0"
 
 		// Human-readable description of the definition
 		description?: string

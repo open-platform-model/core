@@ -18,12 +18,12 @@ import (
 	kind: "ComponentTransformer"
 
 	metadata: {
-		modulePath!: #ModulePathType // Example: "opmodel.dev/opm/transformers"
+		modulePath!: #ModulePathType // Example: "opmodel.dev/catalogs/opm/transformers"
 		version!:    #VersionType    // Example: "1.0.0"
 		name!:       #NameType       // Example: "deployment-transformer"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		fqn: #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/opm/transformers/deployment-transformer@1.0.0"
+		fqn: #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/catalogs/opm/transformers/deployment-transformer@1.0.0"
 
 		description!: string // A brief description of what this transformer produces
 

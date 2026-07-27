@@ -12,9 +12,9 @@ import (
 		name!: #NameType // Example: "scaling"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #ModulePathType                               // Example: "opmodel.dev/opm/traits/workload"
+		modulePath!: #ModulePathType                               // Example: "opmodel.dev/catalogs/opm/traits"
 		version!:    #VersionType                                  // Example: "1.0.0"
-		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/opm/traits/workload/scaling@1.0.0"
+		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/catalogs/opm/traits/scaling@1.0.0"
 
 		// Human-readable description of the definition
 		description?: string
