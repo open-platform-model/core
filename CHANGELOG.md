@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-alpha.3](https://github.com/open-platform-model/core/compare/v1.0.0-alpha.2...v1.0.0-alpha.3) (2026-07-27)
+
+
+### Bug Fixes
+
+* allow snake_case catalog module paths; stop injecting stale opm-secrets ([#24](https://github.com/open-platform-model/core/issues/24)) ([7500c5d](https://github.com/open-platform-model/core/commit/7500c5d9ce779a57ccd60fd0feedc39fd7319712))
+
 ## [1.0.0-alpha.2](https://github.com/open-platform-model/core/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2026-06-27)
 
 
