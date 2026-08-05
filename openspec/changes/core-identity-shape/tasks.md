@@ -50,11 +50,11 @@ What the groups below do guarantee is that **every group ends at a tree that vet
 
 Mirror `enhancements/0010/schemas/target.cue`'s cases so the properties are pinned where the schema lives, not only in the design document.
 
-- [ ] 5.1 Positive: a module at `@v2` whose `fqn` equals its path and whose `registryPath` drops the major; a catalog likewise.
-- [ ] 5.2 Invariant, both directions: `uuid` unchanged across a `version` change; `uuid` **changed** across a major bump. Assert `uuid` explicitly — a case checking `fqn` alone will not catch a `uuid` regression.
-- [ ] 5.3 Instance invariant: `instance.uuid` unchanged across both a version change and a major bump, and **distinct** across a differing module registry path, a differing namespace, and a differing instance name.
-- [ ] 5.4 MUST FAIL: a version interpolated into `fqn`; a kebab-case module name; a name disagreeing with the path leaf; a module path with no major; a primitive path carrying one; a module path substituted where a registry path belongs.
-- [ ] 5.5 MUST VET CLEAN, deliberately: `modulePath: ".../postgres@v2"` with `version: "3.0.0"` on both `#Module` and `#Catalog`. This pins D43/D45's accepting behaviour so that reintroducing the `core`-side assertion reads as a change rather than as a fix. Comment it with that reason — an uncommented passing case looks like an oversight.
+- [x] 5.1 Positive: a module at `@v2` whose `fqn` equals its path and whose `registryPath` drops the major; a catalog likewise.
+- [x] 5.2 Invariant, both directions: `uuid` unchanged across a `version` change; `uuid` **changed** across a major bump. Assert `uuid` explicitly — a case checking `fqn` alone will not catch a `uuid` regression.
+- [x] 5.3 Instance invariant: `instance.uuid` unchanged across both a version change and a major bump, and **distinct** across a differing module registry path, a differing namespace, and a differing instance name.
+- [x] 5.4 MUST FAIL: a version interpolated into `fqn`; a kebab-case module name; a name disagreeing with the path leaf; a module path with no major; a primitive path carrying one; a module path substituted where a registry path belongs.
+- [x] 5.5 MUST VET CLEAN, deliberately: `modulePath: ".../postgres@v2"` with `version: "3.0.0"` on both `#Module` and `#Catalog`. This pins D43/D45's accepting behaviour so that reintroducing the `core`-side assertion reads as a change rather than as a fix. Comment it with that reason — an uncommented passing case looks like an oversight.
 
 ## 6. Generated artifacts and gates
 
