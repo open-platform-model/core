@@ -45,12 +45,22 @@ MODULE_LABEL=$(basename "$REPO_DIR")
 
 # ── ASCII directory tree (dirs only, no cue.mod/, pure ASCII) ─────────────────
 
+# `openspec` is excluded for two reasons, both about the fact that INDEX.md
+# SHIPS INSIDE THE PUBLISHED CUE MODULE (it lives under src/). First, the
+# change workflow is not part of the schema a consumer pulls, so listing it
+# is noise in a published artifact. Second, and worse, it churns: every
+# OpenSpec change adds openspec/changes/<slug>/specs/<capability>/ to the
+# tree, so a workflow directory nobody publishes would rewrite a published
+# file on every proposal and every archive. Empty dirs make it incoherent
+# anyway — git does not track openspec/specs/ or openspec/changes/archive/
+# until something lands in them, so a fresh clone would generate a
+# different tree than the one committed and fail this repo's own gate.
 print_tree() {
     local dir="$1" prefix="$2"
     local subdirs=()
     mapfile -t subdirs < <(
         find "$dir" -maxdepth 1 -mindepth 1 -type d \
-            ! -name "cue.mod" ! -name "src" ! -name ".*" | sort
+            ! -name "cue.mod" ! -name "src" ! -name "openspec" ! -name ".*" | sort
     )
     local total="${#subdirs[@]}" idx=0
     for subdir in "${subdirs[@]}"; do

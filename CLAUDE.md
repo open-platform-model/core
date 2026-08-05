@@ -44,6 +44,7 @@ Read these on entry:
 
 - `CLAUDE.md` — repo working rules (this file).
 - `Taskfile.yml` — authoritative build/validate/publish entrypoints.
+- `openspec/config.yaml` — normative constitution + OpenSpec artifact rules. This repo has no `CONSTITUTION.md`; that file and this one are the two normative sources, and `Taskfile.yml` wins over both on how commands run.
 - `SPEC.md` — normative schema specification (definitions, constraints, rationale).
 - `src/INDEX.md` — generated definition index (lives inside the CUE module so it ships with publication).
 - `docs/` — schema design notes (tutorial / explanatory).
@@ -57,8 +58,9 @@ src/*.cue                the core schema package (module root lives under src/)
 src/INDEX.md             generated definition index (ships inside the CUE module)
 docs/                    schema design notes (tutorial / explanatory)
 SPEC.md                  normative schema specification (definitions, constraints, rationale)
+openspec/                OpenSpec proposals/specs/archives (active change workflow)
 .tasks/                  Taskfile script fragments + git hooks
-.claude/skills/          repo-local skills (e.g. core-schema-edit)
+.claude/skills/          repo-local skills (core-schema-edit, openspec-*)
 ```
 
 `src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the import path is `opmodel.dev/core@v1` with no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) sits at the repo root. A breaking schema revision bumps the module major (e.g. `@v1` → `@v2`); it does not add a sibling package.
@@ -135,3 +137,6 @@ Follow the CUE style used across the workspace catalog. Pin `language: version: 
 - Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
 - Keep `src/INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated section; update both.
 - Run `task check` before finishing — it covers fmt, vet, INDEX freshness, and SPEC inventory in one shot.
+- **Non-trivial schema work goes through OpenSpec** (`openspec/`, added 2026-08-05). Scaffold with the `openspec-new-change` skill; `openspec/config.yaml` carries the normative rules each artifact must satisfy. Two things it does *not* replace: `SPEC.md`, which is the published specification and is written in the implementing commit itself under `core-schema-edit`; and the enhancement entry, when the change is a slice of one.
+  - **Core-scoped slice of a cross-cutting enhancement** — the design lives in `enhancements/NNNN/`, the execution lives in an OpenSpec change here. Seed it with `task enhancements:slice:seed ID=NNNN SLICE=<id>` from the workspace root, cite the decision numbers it satisfies, and close the loop afterwards (`status: done` + `openspec_ref` in that entry's `plan.yaml`, plus the matching `history` event).
+  - Apply the small-batch hard gate before starting work — split oversized requests using `openspec/config.yaml` § Execution Gate phrasing.

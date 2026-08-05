@@ -1,0 +1,199 @@
+schema: spec-driven
+
+context: |
+  # OPM Core Development Constitution
+
+  ## Core Principles (Canonical Schema)
+
+  This repo defines and publishes the Open Platform Model **core schema** as a versioned CUE
+  module (`opmodel.dev/core@v1`). It is the source of truth for OPM: every OPM artifact is typed
+  against these definitions, and `library`, `catalog`, `cli`, `opm-operator`, `modules` and the
+  deployment repositories all consume it as a published dependency — never by filesystem path.
+  This is a pure CUE repository. There is no Go code here.
+
+  ### I. The Schema Is a Published Contract
+  A breaking change to the `core` package is a breaking change for every consumer, and consumers
+  cannot opt out of a definition they already unify against.
+  - Prefer additive evolution. Adding an optional field is cheap; tightening a published
+    constraint is not.
+  - Tightening an existing constraint is breaking even when no field is removed — consumers that
+    validated yesterday may fail today.
+  - A change that cannot be additive MUST state its downstream migration cost explicitly, naming
+    the consuming repos it breaks.
+  - Never run `cue mod publish` against a live registry by hand. CI publishes on release.
+
+  ### II. SPEC.md Co-Update Is Mandatory
+  The normative specification is not documentation that trails the schema; it is part of the
+  change.
+  - **Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL.md`.** It is
+    the binding protocol, not background reading.
+  - Every change to a construct tracked in `.tasks/spec-tracked.txt` MUST co-commit with its
+    `SPEC.md` section update, in the four-part format that skill defines.
+  - Three layers enforce this and none of them can be talked around: the local pre-commit hook
+    (`task hooks:install`), `task spec:check` (wired into `task check`), and the CI co-update gate
+    in `ci.yml`.
+  - The `SPEC_IMPACT=none` / `Spec-Impact: none` escape is for genuinely spec-neutral edits —
+    whitespace, formatting, doc-comment typos — and requires a stated reason. It is not a way to
+    defer the write-up.
+  - A new top-level construct that is not a helper MUST be added to `.tasks/spec-tracked.txt` in
+    the same commit that introduces it.
+
+  ### III. Type Discipline in CUE
+  The schema's job is to make invalid OPM artifacts unrepresentable, as early as possible.
+  - Express constraints in the type where CUE can check them, rather than in prose a consumer
+    must remember.
+  - Prefer a closed definition with an explicit escape over an open one that accepts anything.
+  - Derived values SHOULD be computed in the schema rather than authored, so an artifact cannot
+    disagree with itself.
+  - Every definition carries a doc comment — `task generate:index` extracts it into
+    `src/INDEX.md`, so a missing comment degrades the published index.
+
+  ### IV. Single Package, Single Major
+  - `src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the
+    import path is `opmodel.dev/core@v1` with no per-version subdirectory.
+  - A breaking schema revision bumps the module major (`@v1` → `@v2`). It does not add a sibling
+    package or a versioned subdirectory.
+  - `@v1` currently ships `v1.0.0-alpha.N` prereleases. The stable compatibility promise has not
+    started, so a break lands in the alpha line with the module path unmoved. Do not treat that as
+    permanent licence — say so explicitly in the proposal when a change relies on it.
+  - Pin `language: version: "v0.17.0"` in `cue.mod/module.cue`. That is a consumer floor, not a
+    toolchain pin: a module declaring `vX` is rejected by every `cue` older than `vX`.
+
+  ### V. Simplicity & YAGNI
+  Every published definition is a permanent support obligation.
+  - Start with the simplest schema that types a real downstream need.
+  - Defer speculative fields, extension points and open structs until a consumer actually requires
+    one.
+  - A definition that exists so that something *could* be expressed, with nothing expressing it,
+    is surface without a consumer — leave it out.
+
+  ### VI. Small Batch Sizes (Iterative & Incremental Delivery)
+  All changes MUST be kept TINY. Small, incremental, independently verifiable steps are required.
+  - **WARNING & BLOCK**: If a user requests a change that is too large (e.g. reshaping several
+    top-level definitions at once, redesigning the identity or matching surface in one go, or
+    designing + implementing + documenting a major schema revision in one go), the Agent MUST warn
+    the user, block the execution, and suggest a way to split the request into smaller, sequential
+    tasks.
+  - **Commit Quality**: Tiny changes lead to focused, atomic commits, each carrying its own
+    `SPEC.md` section update. A single commit should touch one construct or one coherent group.
+
+  ## Execution Gate (Agent Directive)
+  Before beginning ANY implementation, the Agent MUST evaluate the scope of the request against the
+  "Small Batch Sizes" principle.
+  If the request is too large, the Agent MUST reply with:
+  "🛑 **Scope Warning**: This request is too large for a single safe iteration. I suggest we split
+  it into the following smaller steps: [list 2-3 logical, tiny steps]. Should we start with step 1?"
+
+  ## Technology Standards
+
+  See [CLAUDE.md](../CLAUDE.md) for full details. This repo has no `CONSTITUTION.md`; this file and
+  `CLAUDE.md` are the two normative sources, and `Taskfile.yml` wins over both on how commands run.
+  - Language: CUE only. No Go, no other runtime.
+  - CUE language floor: `v0.17.0`, declared in `src/cue.mod/module.cue`.
+  - Toolchain: pinned separately (CI `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
+  - Build/validate entrypoint: `Taskfile.yml`. All raw `cue` invocations run from `src/`.
+  - Registry vars (`CUE_REGISTRY`, `OPM_REGISTRY`) come from the workspace root `CLAUDE.md`.
+
+  ## Code Style
+
+  ### CUE Patterns
+  - Follow the CUE style used across the workspace catalogs.
+  - Every top-level definition carries a doc comment; it becomes its `src/INDEX.md` description.
+  - Keep constraint names and regexes consistent with their neighbours in `types.cue` — a new
+    `*Type` that duplicates an existing one with a slightly different regex is a defect.
+  - Do not hard-wrap prose in `.md` files.
+
+  ### Generated Artifacts
+  - `src/INDEX.md` is regenerated by `task generate:index`. Review the generated output before
+    committing — it extracts doc comments verbatim.
+  - The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated
+    section. Update both when the tree under `src/` changes.
+
+  ## Commit Conventions (release-please drives releases)
+  Releases are driven entirely by commit type. A misclassified commit either cuts a release nobody
+  needs or hides a change consumers needed to see.
+  - `feat:` (minor) — new construct, new field, additive schema surface.
+  - `fix:` (patch) — wrong constraint, broken default, definition behaving wrong.
+  - `feat!:` / `BREAKING CHANGE:` (advances `-alpha.N` on `@v1`) — removing or renaming a
+    definition, tightening a published constraint.
+  - `refactor:`, `docs:`, `style:`, `chore:`, `test:`, `ci:`, `build:` — no release.
+  - **Rule of thumb**: if the published CUE schema is byte-identical before and after, it is not a
+    `feat:` or a `fix:`.
+  - Never add AI attribution, co-author trailers, generated-with footers, or session IDs/URLs to a
+    commit message, PR title, PR body, issue or review comment. See `CLAUDE.md`.
+
+  ## Validation Gates (before merge)
+  1. `task fmt:check` — CUE files are formatted.
+  2. `task vet` — the core schema package validates.
+  3. `task generate:index:check` — `src/INDEX.md` is up to date.
+  4. `task spec:check` — `SPEC.md` inventory matches the tracked CUE constructs.
+
+  Equivalently, `task check` runs all four.
+
+rules:
+  proposal:
+    - "Focus: WHY we're doing this, WHAT's in/out of scope"
+    - "Updates when: Scope changes, intent clarifies, approach fundamentally shifts"
+    - Name every downstream consumer the change reaches (`library`, `cli`, `opm-operator`, the
+      catalogs, `modules`) and what each of them has to do about it.
+    - State whether this is MAJOR/MINOR/PATCH per Principle I, and whether it relies on `@v1`
+      still being in prerelease (Principle IV).
+    - Breaking changes MUST be called out explicitly with downstream migration cost — a tightened
+      constraint counts as breaking even when nothing is removed.
+    - Additions to the published surface MUST justify themselves against Principle V.
+    - Scope MUST be small enough to implement in a short session (Principle VI).
+    - When the change implements a slice of an enhancement, cite the entry and the decision
+      numbers it satisfies (e.g. `enhancements/0010` D1, D6, D8) rather than restating the design.
+
+  design:
+    - "Focus: HOW we'll implement it technically"
+    - "Updates when: Implementation reveals better approach, constraints change"
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
+    - MUST include a "Research & Decisions" section when exploration was done.
+    # Every entry in a rules list MUST be a plain string. OpenSpec 1.3.1 drops
+    # the WHOLE artifact's rules with `Rules for 'design' must be an array of
+    # strings, ignoring this artifact's rules` if any entry is a mapping — so
+    # the familiar `- Format: |` block silently disables every design rule
+    # beside it. Keep this one a block scalar, not a `Format:` key.
+    - |
+      Format for that section:
+
+      ## Research & Decisions
+
+      ### [Topic]
+      **Context**: [Why this decision was needed]
+      **Explored**: [What was investigated - link to exploration notes]
+      **Decision**: [Chosen option]
+      **Rationale**: [Why this option was selected]
+    - Show the CUE, not a description of the CUE — the definition's shape is the design.
+    - Name every `src/*.cue` file the change touches, and every construct in
+      `.tasks/spec-tracked.txt` whose SPEC.md section moves with it.
+    - State whether any construct is newly tracked (added to `.tasks/spec-tracked.txt`) or is a
+      helper deliberately left untracked, and why.
+    - Call out any change to a definition's closedness, defaults, or required-field set — these
+      break consumers in ways an added optional field does not.
+
+  specs:
+    - "Focus: WHAT behavior is changing (not HOW it's implemented)"
+    - "Updates when: New or changed requirements emerge"
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
+    - Describe observable behavior — what an artifact may now express, what it may no longer
+      express, and what error a consumer sees when it gets it wrong.
+    - Use ADDED/MODIFIED/REMOVED sections to show deltas.
+    - Include scenarios in both directions — a value the change starts accepting, and a value it
+      starts rejecting.
+    - Spec deltas here describe schema behavior. They do not replace `SPEC.md`, which is the
+      published normative specification and is updated in the implementing commit itself.
+
+  tasks:
+    - "Focus: STEPS to take for implementation"
+    - "Updates when: Tasks complete, new tasks discovered, blockers identified"
+    - "CRITICAL: Break tasks into TINY chunks (max 1-2 hours)."
+    - "CRITICAL: If the task list grows too long (>10 items) or reshapes several top-level
+      definitions at once, suggest splitting into a new OpenSpec change."
+    - Group tasks by `src/*.cue` file.
+    - Pair every schema task with its `SPEC.md` section task — they land in the same commit
+      (Principle II), so they are not separate line items to be scheduled apart.
+    - Include `task generate:index` as a task whenever definitions are added, removed or renamed,
+      or the tree under `src/` changes.
+    - Include the validation gates as final tasks (`task check`, or the four individually).
