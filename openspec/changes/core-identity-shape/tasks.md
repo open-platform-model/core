@@ -31,10 +31,10 @@ What the groups below do guarantee is that **every group ends at a tree that vet
 
 ## 3. Instance identity (`src/module_instance.cue` + `SPEC.md` §`#ModuleInstance`)
 
-- [ ] 3.1 Add `metadata.fqn: "\(#moduleMetadata.registryPath):\(name):\(namespace)"`.
-- [ ] 3.2 Redefine `metadata.uuid` as `#UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)`, replacing the inline `"\(#moduleMetadata.uuid):\(name):\(namespace)"` interpolation.
-- [ ] 3.3 Update `SPEC.md` §`#ModuleInstance` — state **both halves** of the invariant beside the fields, not only in the enhancement: artifact identity distinguishes majors and nothing finer; instance identity is reached by neither the version nor the major. Name the owner label and the prune behaviour that depends on it.
-- [ ] 3.4 `task vet`.
+- [x] 3.1 Add `metadata.fqn: "\(#moduleMetadata.registryPath):\(name):\(namespace)"`.
+- [x] 3.2 Redefine `metadata.uuid` as `#UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)`, replacing the inline `"\(#moduleMetadata.uuid):\(name):\(namespace)"` interpolation.
+- [x] 3.3 Update `SPEC.md` §`#ModuleInstance` — state **both halves** of the invariant beside the fields, not only in the enhancement: artifact identity distinguishes majors and nothing finer; instance identity is reached by neither the version nor the major. Name the owner label and the prune behaviour that depends on it.
+- [x] 3.4 `task vet`.
 
 ## 4. Catalog identity (`src/catalog.cue` + `SPEC.md` §`#Catalog`)
 
