@@ -57,7 +57,7 @@ Examples: `Container`, `Volume`, `ConfigMap`, `Secret`.
 
     metadata: {
         name!:       #NameType            // kebab-case
-        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/resources/workload"
+        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/resources/workload"
         version!:    #VersionType         // SemVer 2.0, e.g. "1.4.0"
         fqn:         "\(modulePath)/\(name)@\(version)"
 
@@ -77,6 +77,7 @@ Implementation: [`resource.cue`](src/resource.cue).
 
 - `kind` MUST be the literal string `"Resource"`. Downstream tools dispatch on this field.
 - `metadata.name` MUST be kebab-case (`#NameType` regex, max 63 runes) and MUST be unique within its `modulePath`.
+- `metadata.modulePath` MUST be a `#PackagePathType` — a package path inside a module, carrying no `@vN` major suffix. A value carrying one MUST be rejected. This is the type `#ModulePathType` carried before enhancement 0010 D1, so no primitive value shipped by any catalog changes.
 - `metadata.version` MUST be a SemVer 2.0 string (`#VersionType`), not a MAJOR-only prefix. The published FQN carries the exact patch the catalog stamped at publish time.
 - `metadata.fqn` is computed from `modulePath`, `name`, and `version`. Consumers MUST NOT supply `fqn` directly. The computed FQN MUST match `#FQNType` (SemVer-suffixed).
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
@@ -85,6 +86,7 @@ Implementation: [`resource.cue`](src/resource.cue).
 
 - **Why `kind` is a fixed string and not implicit from the type.** CUE definitions do not carry type information at runtime. Downstream tools walking a rendered tree need a discriminator to route handlers; `kind` is that discriminator. Removing it would force every consumer to do structural detection, which is brittle.
 - **Why `fqn` is computed, not stored.** The fully-qualified name is a function of three other fields. Storing it would allow drift between the stated identity and its parts. Computing it makes the schema the single source of identity truth — an instance of Principle III (Determinism).
+- **Why a primitive's path is `#PackagePathType` and not the `#ModulePathType` an artifact declares.** Enhancement 0010 D1 makes `#ModulePathType` an artifact's *complete* CUE module path, `@vN` included, so that `#Module` and `#Catalog` can be addressed by reading one field. A primitive inherits nothing useful from that suffix: it is a package *inside* a module, and its major is structurally redundant — a `@vN` module publishes only `vN.*` tags, so a primitive already stating its catalog's build version has already stated its catalog's major. It is also not a path anyone writes, since a consumer imports `opmodel.dev/catalogs/opm/resources` with no suffix and CUE resolves the major from `cue.mod`'s `deps`. An earlier revision of D1 widened one shared type for both; every field typed with it then inherited a major with no referent, and D20 (merged into D1) split it in two instead.
 - **Why `version` is exact SemVer, not a MAJOR-only prefix.** Two builds of the same primitive at adjacent versions (e.g. `1.0.0` and `1.0.1`) must occupy distinct keys so the kernel matcher can compare definitions deterministically. The previous MAJOR-only scheme collapsed every patch into one bucket and let two divergent definitions at the same `@v1` silently coexist — the worst failure mode for a vocabulary. Catalog-monolithic SemVer (every primitive's version equals the publishing catalog's version) keeps version churn coordinated; consumer-pin churn is mitigated by always-on unification at match time (byte-identical bodies unify across SemVers, and platform subscriptions express SemVer ranges that span many versions). See enhancement 0001 D5 and D18.
 - **Why `spec` is namespaced under the definition's camelCase name.** When multiple primitives unify into a `#Component` (§3.1), their `spec` fields merge. Namespacing under the definition name prevents field-name collisions — two primitives both defining `port` would clash at the root but coexist under `container.port` and `service.port`. This pushes naming collisions to *definition time* (caught by CUE unification) rather than *deployment time* (silent merge).
 - **Why we don't allow free-form CUE inside `spec`.** OpenAPI v3 is the contract surface for non-CUE consumers — Kubernetes CRDs, web UIs, kubectl plugins. CUE templating (`for`, `if`, comprehensions) would tie the schema to a CUE evaluator and exclude every consumer that uses the schema through generated bindings. Per Principle II (Type Safety First), this constraint is in the schema rather than relying on downstream rejection.
@@ -113,7 +115,7 @@ Examples: `scaling`, `health-check`, `network-expose`.
 
     metadata: {
         name!:       #NameType            // kebab-case
-        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/traits/workload"
+        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/traits/workload"
         version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
         fqn:         "\(modulePath)/\(name)@\(version)"
 
@@ -336,7 +338,7 @@ Examples: `stateless-workload`, `stateful-workload`, `cronjob`.
 
     metadata: {
         name!:       #NameType            // kebab-case
-        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/blueprints/workload"
+        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/blueprints/workload"
         version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
         fqn:         "\(modulePath)/\(name)@\(version)"
 
@@ -433,7 +435,7 @@ Implementation: [`platform.cue`](src/platform.cue).
 - `kind` MUST be the literal string `"Platform"`.
 - `metadata.name` MUST be kebab-case (`#NameType`).
 - `type` MUST be present. The value is informational at this stage — the matcher does not consult it.
-- `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). One subscription per path is enforced by CUE map semantics; multi-channel-per-path is intentionally not expressible.
+- `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). Since enhancement 0010 D1 that type carries a terminal `@vN`, so a key names one major of one catalog (`"opmodel.dev/catalogs/opm@v1"`) and a platform MAY subscribe to two majors of the same catalog as two distinct entries. One subscription per key is enforced by CUE map semantics; multi-channel-per-key is intentionally not expressible.
 - `#Subscription.enable` defaults to `true`. When `false`, the kernel SHOULD skip materialization for that path; primitives owned by the path do not surface on the platform.
 - `#SubscriptionFilter.range`, when present, MUST be a SemVer constraint expression parseable Go-side (the kernel uses Masterminds/semver). An unparseable expression surfaces as a structured `MaterializeError` against the offending subscription path.
 - Filter resolution order: `range` restricts the candidate set, `allow` force-includes specific SemVers, `deny` force-excludes them. The final survivor set is materialized.
@@ -612,7 +614,7 @@ Transformers are catalog-versioned. The match algorithm is FQN-keyed: each entry
 
     metadata: {
         name!:       #NameType
-        modulePath!: #ModulePathType
+        modulePath!: #PackagePathType
         version!:    #VersionType         // SemVer 2.0
         fqn:         "\(modulePath)/\(name)@\(version)"
 

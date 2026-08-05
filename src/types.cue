@@ -15,19 +15,71 @@ import (
 // usable CUE package name / registry-path leaf).
 #SnakeNameType: string & =~"^[a-z0-9]([a-z0-9_]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
 
-// ModulePathType: plain registry path without embedded version
-// Example: "opmodel.dev/modules", "opmodel.dev/catalogs/opm/traits"
+// ModulePathType: an artifact's complete CUE module path, major suffix
+// mandatory. What #Module and #Catalog declare.
+// Example: "opmodel.dev/modules/postgres@v2", "opmodel.dev/catalogs/opm@v1"
+//
+// It is the same string cue.mod/module.cue's `module:` field, the registry
+// coordinate and an `import` statement already agree on, so the registry
+// address is recoverable by reading one field rather than recomposed from a
+// prefix and a name (enhancement 0010 D1).
 //
 // Underscores are permitted in path segments because a CUE module's package
 // name is inferred from its path leaf, and only #SnakeNameType leaves are
-// valid CUE identifiers (see above). A catalog stamps its full module path —
-// leaf included — into metadata.modulePath, so a snake_case catalog such as
-// opmodel.dev/catalogs/opm_experimental must satisfy this constraint.
-#ModulePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
+// valid CUE identifiers (see above) — and under D8 a module path *ends in*
+// the module's own snake_case name, so every multi-word name carries one.
+// Hyphens stay legal in non-leaf segments so an organisation such as
+// github.com/open-platform-model remains expressible; only the leaf is
+// constrained, and #Module.metadata constrains it rather than this regex.
+//
+// The suffix-free form this type carried before D1 is #PackagePathType.
+#ModulePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*@v[0-9]+$" & strings.MinRunes(1) & strings.MaxRunes(254)
+
+// PackagePathType: the path a *primitive* declares — a package path inside a
+// module, carrying no major suffix. #Resource, #Trait, #Blueprint and
+// #ComponentTransformer carry this; #Module and #Catalog carry
+// #ModulePathType. Also the type of a major-free registry path — see
+// #ArtifactRef.registryPath.
+// Example: "opmodel.dev/catalogs/opm/resources", "opmodel.dev/catalogs/opm/traits"
+//
+// This is #ModulePathType's regex from before enhancement 0010 D1, verbatim,
+// so no primitive value shipped by any catalog changes. The major is inert on
+// a primitive: a @vN module publishes vN.* tags, so a primitive carrying its
+// catalog's build version already states its catalog's major. It is also not a
+// path anyone writes — a consumer imports opmodel.dev/catalogs/opm/resources
+// with no suffix and CUE resolves the major from cue.mod's deps.
+#PackagePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
 
 // MajorVersionType: major version prefix used in primitive FQNs
 // Example: "v1", "v0"
 #MajorVersionType: string & =~"^v[0-9]+$"
+
+// ArtifactRef splits a complete module path into the OCI repository its tags
+// live under and the major it declares. This is the one place in the schema a
+// module path is decomposed: every "compose an address from a prefix and a
+// name" site collapses into reading registryPath (enhancement 0010 D1).
+//
+// A module path carries at most one "@", always terminal, so SplitN(2) is
+// exact. CUE has no string slicing, so a LastIndex-plus-slice form is
+// unavailable.
+#ArtifactRef: {
+	modulePath!: #ModulePathType
+
+	_p: strings.SplitN(modulePath, "@", 2)
+
+	// registryPath: the OCI repository. Tags hang off this, and it is the
+	// major-free identity of the artifact's lineage. Typed #PackagePathType so
+	// a value still carrying a major is refused by the type rather than
+	// silently yielding a second address.
+	registryPath: #PackagePathType & _p[0]
+
+	// major: the identity-bearing version component, read rather than parsed.
+	major: #MajorVersionType & _p[1]
+
+	// importPath: what an `import` statement and a cue.mod dependency key
+	// carry. modulePath verbatim — nothing is recombined.
+	importPath: modulePath
+}
 
 // ModuleFQNType: container-style FQN for #Module — path/name:semver
 // Example: "opmodel.dev/modules/jellyfin:2.0.0"

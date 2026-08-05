@@ -8,12 +8,12 @@ What the groups below do guarantee is that **every group ends at a tree that vet
 
 ## 1. Path types and address decomposition (`src/types.cue`)
 
-- [ ] 1.1 Narrow `#ModulePathType` to require a terminal `@vN`: `^[a-z0-9._-]+(/[a-z0-9._-]+)*@v[0-9]+$`. Update its doc comment — the current one describes a "plain registry path without embedded version", which becomes `#PackagePathType`'s.
-- [ ] 1.2 Add `#PackagePathType` carrying the old regex verbatim, doc-commented as what a *primitive* declares and why the major is inert there.
-- [ ] 1.3 Add `#ArtifactRef` with `modulePath!`, `_p: strings.SplitN(modulePath, "@", 2)`, `registryPath`, `major: #MajorVersionType & _p[1]`, `importPath: modulePath`.
-- [ ] 1.4 Retype `metadata.modulePath` to `#PackagePathType` in `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue` and `src/transformer.cue`. Values are unchanged — this is a type rename at four sites, not a value migration.
-- [ ] 1.5 Delete `#KebabToSnake`. Leave `#KebabToPascal` and `#KebabToCamel` — the three primitive kinds still build `spec!` keys from them.
-- [ ] 1.6 `task vet` — the tree will not be internally consistent yet (`#Module.fqn` still recombines), but the types must compile.
+- [x] 1.1 Narrow `#ModulePathType` to require a terminal `@vN`: `^[a-z0-9._-]+(/[a-z0-9._-]+)*@v[0-9]+$`. Update its doc comment — the current one describes a "plain registry path without embedded version", which becomes `#PackagePathType`'s.
+- [x] 1.2 Add `#PackagePathType` carrying the old regex verbatim, doc-commented as what a *primitive* declares and why the major is inert there.
+- [x] 1.3 Add `#ArtifactRef` with `modulePath!`, `_p: strings.SplitN(modulePath, "@", 2)`, `registryPath`, `major: #MajorVersionType & _p[1]`, `importPath: modulePath`.
+- [x] 1.4 Retype `metadata.modulePath` to `#PackagePathType` in `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue` and `src/transformer.cue`. Values are unchanged — this is a type rename at four sites, not a value migration.
+- [ ] 1.5 Delete `#KebabToSnake`. **Deferred into group 2** — its only reader is `#Module.metadata.nameSnakeCase` (2.2), so deleting it here would break group 1's own "must vet" checkpoint. Landed with 2.2. Leave `#KebabToPascal` and `#KebabToCamel` — the three primitive kinds still build `spec!` keys from them.
+- [x] 1.6 `task vet` — the tree will not be internally consistent yet (`#Module.fqn` still recombines), but the types must compile.
 
 ## 2. Module identity (`src/module.cue` + `SPEC.md` §`#Module`)
 
