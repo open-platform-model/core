@@ -38,13 +38,13 @@ What the groups below do guarantee is that **every group ends at a tree that vet
 
 ## 4. Catalog identity (`src/catalog.cue` + `SPEC.md` §`#Catalog`)
 
-- [ ] 4.1 Add `_ref: #ArtifactRef & {modulePath: M.modulePath}`; redefine `fqn` as `#ModulePathType & modulePath`. Delete `#CatalogFQNType`.
-- [ ] 4.2 Remove the `*"0.0.0-dev"` default from `version!`. An unfilled version becomes an incomplete value naming the field.
-- [ ] 4.3 Change the `#transformers` pattern constraint to stamp `"\(_ref.registryPath)/transformers"` — major split out and **not** re-appended. Leave the `version` stamp alone; its rename to `catalogVersion` is `core-primitive-keying`.
-- [ ] 4.4 Add **no** version/path major assertion — D43, the same holding as 2.7. Comment it for the same reason.
-- [ ] 4.5 Update the authoring-shape doc comment at the head of `#Catalog`: it still describes publish-time stamping into `identity/version_override.cue`, which D5 replaces with a committed `identity/identity.cue`.
-- [ ] 4.6 Update `SPEC.md` §`#Catalog`.
-- [ ] 4.7 `task vet`.
+- [x] 4.1 Add `_ref: #ArtifactRef & {modulePath: M.modulePath}`; redefine `fqn` as `#ModulePathType & modulePath`. Delete `#CatalogFQNType`.
+- [x] 4.2 Remove the `*"0.0.0-dev"` default from `version!`. An unfilled version becomes an incomplete value naming the field.
+- [x] 4.3 Change the `#transformers` pattern constraint to stamp `"\(_ref.registryPath)/transformers"` — major split out and **not** re-appended. Leave the `version` stamp alone; its rename to `catalogVersion` is `core-primitive-keying`.
+- [x] 4.4 Add **no** version/path major assertion — D43, the same holding as 2.7. Comment it for the same reason.
+- [x] 4.5 Update the authoring-shape doc comment at the head of `#Catalog`: it still describes publish-time stamping into `identity/version_override.cue`, which D5 replaces with a committed `identity/identity.cue`.
+- [x] 4.6 Update `SPEC.md` §`#Catalog`.
+- [x] 4.7 `task vet`.
 
 ## 5. Schema-level test cases
 

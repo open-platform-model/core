@@ -1,14 +1,5 @@
 package core
 
-// #CatalogFQNType: catalog-level FQN — modulePath@semver (no name segment).
-// Distinct from #FQNType which is modulePath/name@semver for primitives.
-// Both accept SemVer 2.0. Note: the two regexes are NOT structurally
-// disjoint — a string like "opmodel.dev/catalogs/opm/transformer@1.0.0"
-// matches both. They are semantically distinguished by usage, not regex.
-//
-// Introduced by enhancement 0001 (D19).
-#CatalogFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
-
 // #Catalog: top-level catalog definition. Authoring shape uses the modules
 // pattern — bare `c.#Catalog` at file root, fields written at package level,
 // no `Catalog:` wrapper:
@@ -24,7 +15,7 @@ package core
 //
 //   c.#Catalog
 //   metadata: {
-//       modulePath:  id.ModulePath
+//       modulePath:  id.ModulePath  // "opmodel.dev/catalogs/opm@v1"
 //       version:     id.Version
 //       description: "OPM core catalog"
 //   }
@@ -34,11 +25,18 @@ package core
 //   }
 //
 // Catalog identity lives in a sibling `identity/` subpackage so transformer
-// subpackages can source it without a circular import. Publish-time stamping
-// targets `identity/version_override.cue`.
+// subpackages can source it without a circular import. That subpackage is a
+// COMMITTED `identity/identity.cue` (enhancement 0010 D5): it holds the real
+// ModulePath and Version, so a checkout and a published artifact compute the
+// same values. It replaces the earlier arrangement, in which the committed
+// tree carried a placeholder version and publish stamped the real one into a
+// generated `identity/version_override.cue` — under which a local render
+// demanded ".../transformers/deployment@0.0.0-dev" while the registry supplied
+// ".../transformers/deployment@1.0.0".
 //
 // The pattern constraint on `#transformers` stamps every entry's
-// `metadata.modulePath` to "\(M.modulePath)/transformers" and
+// `metadata.modulePath` to "\(_ref.registryPath)/transformers" — the MAJOR-FREE
+// path, because a primitive declares a #PackagePathType — and
 // `metadata.version` to the catalog's version. It does NOT stamp
 // `metadata.fqn` — fqn derives from modulePath/name/version, and the map
 // key already carries the transformer's own fqn. Author discipline replaced
@@ -59,9 +57,30 @@ package core
 #Catalog: {
 	kind: "Catalog"
 	M=metadata: {
-		modulePath!:  #ModulePathType
-		version!:     #VersionType | *"0.0.0-dev"
-		fqn:          #CatalogFQNType & "\(modulePath)@\(version)"
+		modulePath!: #ModulePathType // Example: "opmodel.dev/catalogs/opm@v1"
+
+		// No "0.0.0-dev" default: an unfilled version is an incomplete value
+		// naming this field, rather than one that renders successfully while
+		// being wrong.
+		version!: #VersionType
+
+		// fqn IS the module path (enhancement 0010 D1) — the version no longer
+		// joins it, and #CatalogFQNType retires with the derivation it typed.
+		fqn: #ModulePathType & modulePath
+
+		// The one decomposition of modulePath. registryPath is what the
+		// #transformers stamp below is built on.
+		_ref: #ArtifactRef & {"modulePath": modulePath}
+
+		// NO version/path major assertion here, deliberately — D43, the same
+		// holding #Module carries under D45. `identity/identity.cue` asserts
+		// VersionMajor == Major at the point both values are WRITTEN; `core`
+		// re-deriving it one hop downstream tests the same relation over the
+		// same two values. The exposure — a catalog whose identity package is
+		// absent or non-conformant carries no consumer-runnable major check,
+		// and the skew surfaces in a platform author's file instead — is
+		// accepted and bounded by enhancement 0011's publish gates.
+
 		description?: string
 		labels?:      #LabelsAnnotationsType
 		annotations?: #LabelsAnnotationsType
@@ -69,7 +88,9 @@ package core
 
 	#transformers: [#FQNType]: #ComponentTransformer & {
 		metadata: {
-			modulePath: "\(M.modulePath)/transformers"
+			// The major is split out and NOT re-appended: a transformer is a
+			// primitive, and a primitive declares a #PackagePathType.
+			modulePath: "\(M._ref.registryPath)/transformers"
 			version:    M.version
 		}
 	}

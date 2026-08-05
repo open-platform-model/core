@@ -566,7 +566,7 @@ A `#Catalog` is the construct a catalog package exports to publish its primitive
 
 A `#Catalog` introduces no new vocabulary itself — like every other construct (§3), it organizes primitives into a structured whole. Where `#Module` carries a set of components to render, `#Catalog` carries a set of transformers to publish. Both are constructs; their difference is which artifact they ship.
 
-The catalog's identity is its `metadata.modulePath` + SemVer `metadata.version`. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
+The catalog's identity is its `metadata.modulePath` — the complete CUE module path, `@vN` included — and its `metadata.fqn` is that path verbatim. The SemVer `metadata.version` is the catalog's *build*: it keys the transformers and stamps every primitive's provenance, but it is not part of the catalog's identity. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
 
 #### Shape
 
@@ -575,21 +575,27 @@ The catalog's identity is its `metadata.modulePath` + SemVer `metadata.version`.
     kind: "Catalog"
 
     M=metadata: {
-        modulePath!:  #ModulePathType
-        version!:     #VersionType | *"0.0.0-dev"   // source-tree default
-        fqn:          "\(modulePath)@\(version)"
+        modulePath!:  #ModulePathType   // complete module path, @vN included
+        version!:     #VersionType      // no default — unset is incomplete
+        fqn:          #ModulePathType & modulePath   // the module path, verbatim
+
+        _ref: #ArtifactRef & {"modulePath": modulePath}   // the one decomposition
+
+        // No assertion that version's major agrees with the path's — see
+        // Constraints; the same deliberate absence #Module carries.
+
         description?: string
         labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
 
     // Every entry's metadata.modulePath is stamped to
-    //   "<catalog modulePath>/transformers"
+    //   "<catalog registryPath>/transformers"     // major split out, NOT re-appended
     // and metadata.version is stamped to the catalog's version.
     // Pattern enforced by the schema, not by author discipline.
     #transformers: [#FQNType]: #ComponentTransformer & {
         metadata: {
-            modulePath: "\(M.modulePath)/transformers"
+            modulePath: "\(M._ref.registryPath)/transformers"
             version:    M.version
         }
     }
@@ -601,10 +607,11 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 #### Constraints
 
 - `kind` MUST be the literal string `"Catalog"`.
-- `metadata.modulePath` MUST be the catalog package's CUE module path (e.g. `opmodel.dev/catalogs/opm`). The publish task is the source of truth for this value at publish time.
-- `metadata.version` defaults to `"0.0.0-dev"` in a source tree so `cue vet` is cheap during development. At publish time it MUST be overwritten with a concrete SemVer via a `version_override.cue` file in the sibling `identity/` subpackage; OCI artifacts ship fully concrete.
-- `metadata.fqn` is computed from `modulePath` and `version`; consumers MUST NOT supply it.
-- Every entry in `#transformers` MUST be keyed by a valid `#FQNType` (SemVer-suffixed primitive FQN). The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog modulePath>/transformers"` and every entry's `metadata.version` to the catalog's version. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
+- `metadata.modulePath` MUST be the catalog package's **complete** CUE module path, `@vN` suffix included (e.g. `opmodel.dev/catalogs/opm@v1`). It MUST be the same string `cue.mod/module.cue`'s `module:` field and the registry coordinate carry. A path with no major MUST be rejected. It is sourced from the sibling `identity/` subpackage.
+- `metadata.version` MUST be a concrete `#VersionType` and MUST have **no default**. A `#Catalog` evaluated with `version` unset MUST report an incomplete value naming the field. The former `*"0.0.0-dev"` default is removed.
+- `metadata.fqn` MUST equal `modulePath` and MUST be typed `#ModulePathType`. It MUST NOT interpolate `version`. Consumers MUST NOT supply it.
+- `metadata` MUST NOT assert that `version`'s major agrees with `modulePath`'s. A `#Catalog` declaring `modulePath: "…/opm@v1"` with `version: "2.0.0"` MUST validate. As with [`#Module`](#32-module), this is an **accepting** behaviour specified deliberately — see Rationale.
+- Every entry in `#transformers` MUST be keyed by a valid `#FQNType` (SemVer-suffixed primitive FQN). The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.version` to the catalog's version. The major MUST NOT be re-appended: a transformer is a primitive, and a primitive declares a `#PackagePathType`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
 - The pattern does NOT stamp `metadata.fqn` — fqn derives in the transformer's metadata from `modulePath/name/version`, and the map key already carries the transformer's own fqn by construction. Stamping it would be a no-op or a conflict.
 - Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
 
@@ -614,7 +621,10 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 - **Why the `M=metadata` field-label alias.** The pattern constraint on `#transformers` needs to reach the outer catalog's `modulePath` and `version` from inside the nested `metadata: { ... }` block of every entry. A bare `metadata.modulePath` reference inside the entry's own metadata walks to the closest parent field named `metadata` — the inner field itself — and self-embeds into a non-concrete interpolation. CUE's value-alias form (`metadata: M={...}`) does not carry across the nested constraint boundary; only the field-label alias form does. Experiment 09 in the enhancement validated both sound forms (hidden-mirror + label-alias); the label-alias is chosen here for inline locality. See enhancement 0001 D25.
 - **Why the pattern stamps `modulePath` + `version` but not `fqn`.** Stamping `modulePath` and `version` replaces the prior author-discipline rule ("every transformer's metadata must match the catalog's version") with a structural guarantee that `cue vet` enforces. The transformer's `metadata.fqn` derives in its own definition from those three fields, so stamping it would either be redundant (matches) or produce a conflict (author-supplied fqn diverges). Experiment 10 confirmed the asymmetry: a wrong `modulePath` or `version` fails vet loudly; trying to stamp fqn introduces conflicts on round-tripped FQNs.
 - **Why catalogs don't enumerate Resources / Traits / Blueprints.** A transformer's `requiredResources` / `requiredTraits` already names every primitive the matcher needs to reach. Adding sibling `#resources` / `#traits` / `#blueprints` maps on `#Catalog` would duplicate that information and invite drift between the enumeration and the transitive set. If introspection demand surfaces later, the sibling maps are an additive extension — not a precondition.
-- **Why `#CatalogFQNType` exists despite overlapping `#FQNType`.** A catalog's FQN is `modulePath@version` (no name segment); a primitive's FQN is `modulePath/name@version`. The two regexes are not structurally disjoint — a string like `opmodel.dev/catalogs/opm/transformer@1.0.0` matches both. They are distinguished by usage (which field they appear in), not by the regex alone. Naming the type makes the intent clear at the field site even if the regex doesn't enforce mutual exclusion.
+- **Why a catalog's `fqn` is its module path, and why the dedicated catalog-FQN type retired with it.** The old `fqn` was `modulePath@version`, which meant a catalog's identity moved on every release and its regex was not structurally disjoint from a primitive's `modulePath/name@version` — the two were distinguished by which field they appeared in, not by anything checkable. Making `fqn` the module path removes both problems at once: identity names the artifact rather than the release, and the type is the same `#ModulePathType` a `#Module` carries, so there is one path type per artifact kind instead of one per derivation. The catalog's *build* still has a home — `version` — and it is what keys the transformers.
+- **Why the `"0.0.0-dev"` default is gone.** It existed so `cue vet` was cheap in a source tree, and it made a checkout and a published artifact compute different values: the committed tree resolved `Version` to `0.0.0-dev`, so a local render demanded `…/transformers/deployment@0.0.0-dev` while the registry supplied `…/transformers/deployment@1.0.0`. A default that renders successfully while being wrong is worse than no value at all — an unset `version` is now an incomplete value that names the field, and the committed `identity/identity.cue` supplies the real one to checkout and artifact alike. See enhancement 0010 D5/D6.
+- **Why the transformer stamp drops the major instead of re-appending it.** The stamp builds a *package* path — `metadata.modulePath` on a `#ComponentTransformer` is a `#PackagePathType`, which admits no `@vN` (§2.1 Rationale). Re-appending the catalog's major would produce a value the primitive's own type rejects, and would key every published contract under a suffix no import statement writes.
+- **Why `core` does not assert that a catalog's `version` major matches its path's.** Same holding as `#Module` (§3.2), taken first here: the relation is asserted in `identity/identity.cue` where both values are written, and re-deriving it in `core` tests the same relation one hop downstream. The asymmetry that this shape *is* what a consumer evaluates — `materialize` builds the catalog against `#Catalog`, while the identity package is never evaluated as a package by a consumer — is why the exposure is stated rather than assumed: a catalog with a non-conformant identity package carries no consumer-runnable check, and the skew surfaces at platform-subscription selection instead, in a platform author's file about a publisher's mistake. Accepted by enhancement 0010 D43, and closed by 0011's publish gates rather than here.
 
 #### See also
 
