@@ -31,7 +31,7 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
 
     metadata: {
         name!:        #NameType         // e.g., "deployment-transformer"
-        modulePath!:  #ModulePathType   // e.g., "opmodel.dev/opm/transformers/kubernetes"
+        modulePath!:  #PackagePathType  // e.g., "opmodel.dev/opm/transformers/kubernetes"
         version!:     #MajorVersionType
         fqn:          #FQNType          // computed
         description!: string

@@ -71,9 +71,11 @@ Without this, the survival requirement above is satisfiable by an identity that 
 
 ### Requirement: An instance FQN cannot be built from a module path
 
-The field `#ModuleInstance.metadata.fqn` derives from MUST be the major-free registry path. Substituting a full module path MUST be refused by the type rather than silently producing a third identity.
+The field that `#ModuleInstance.metadata.fqn` derives from MUST be the major-free registry path. Substituting a full module path MUST be refused structurally rather than silently producing a third identity.
+
+`#Module.metadata.registryPath` is derived from `#ArtifactRef` rather than authored, so the refusal is a conflict against the already-computed value. Its `#PackagePathType` is a backstop that cannot fire on its own: `strings.SplitN(modulePath, "@", 2)[0]` carries no `@` by construction under `#ModulePathType`. Both refusals are structural; only the reported error differs.
 
 #### Scenario: A module path in the registry-path position is refused
 
 - **WHEN** the value supplied as the module's `registryPath` is `"opmodel.dev/modules/postgres@v2"`
-- **THEN** validation fails against `#PackagePathType`, rather than yielding an `fqn` of `"opmodel.dev/modules/postgres@v2:postgres-prod:prod"`
+- **THEN** validation fails with a conflict between `"opmodel.dev/modules/postgres"` and `"opmodel.dev/modules/postgres@v2"`, rather than yielding an `fqn` of `"opmodel.dev/modules/postgres@v2:postgres-prod:prod"`

@@ -183,7 +183,8 @@ The instance's `components` are the module's own, verbatim — core synthesises 
     metadata: {
         name!:        #NameType        // instance name
         namespace!:   string           // target environment
-        uuid:         #UUIDType        // UUIDv5 of (module.uuid:name:namespace)
+        fqn:          string           // "{module.registryPath}:{name}:{namespace}"
+        uuid:         #UUIDType        // UUIDv5 of fqn — no module version, no major
         labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
