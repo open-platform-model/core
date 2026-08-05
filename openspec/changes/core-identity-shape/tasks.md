@@ -12,22 +12,22 @@ What the groups below do guarantee is that **every group ends at a tree that vet
 - [x] 1.2 Add `#PackagePathType` carrying the old regex verbatim, doc-commented as what a *primitive* declares and why the major is inert there.
 - [x] 1.3 Add `#ArtifactRef` with `modulePath!`, `_p: strings.SplitN(modulePath, "@", 2)`, `registryPath`, `major: #MajorVersionType & _p[1]`, `importPath: modulePath`.
 - [x] 1.4 Retype `metadata.modulePath` to `#PackagePathType` in `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue` and `src/transformer.cue`. Values are unchanged — this is a type rename at four sites, not a value migration.
-- [ ] 1.5 Delete `#KebabToSnake`. **Deferred into group 2** — its only reader is `#Module.metadata.nameSnakeCase` (2.2), so deleting it here would break group 1's own "must vet" checkpoint. Landed with 2.2. Leave `#KebabToPascal` and `#KebabToCamel` — the three primitive kinds still build `spec!` keys from them.
+- [x] 1.5 Delete `#KebabToSnake`. **Deferred into group 2** — its only reader is `#Module.metadata.nameSnakeCase` (2.2), so deleting it here would break group 1's own "must vet" checkpoint. Landed with 2.2. Leave `#KebabToPascal` and `#KebabToCamel` — the three primitive kinds still build `spec!` keys from them.
 - [x] 1.6 `task vet` — the tree will not be internally consistent yet (`#Module.fqn` still recombines), but the types must compile.
 
 ## 2. Module identity (`src/module.cue` + `SPEC.md` §`#Module`)
 
-- [ ] 2.1 Retype `metadata.name!` to `#SnakeNameType`.
-- [ ] 2.2 Delete `metadata.nameSnakeCase`.
-- [ ] 2.3 Add `_ref: #ArtifactRef & {modulePath: metadata.modulePath}`.
-- [ ] 2.4 Redefine `fqn` as `#ModulePathType & modulePath`. Delete `#ModuleFQNType` from `src/types.cue`.
-- [ ] 2.5 Add `registryPath: _ref.registryPath`.
-- [ ] 2.6 Add the hidden leaf constraint: `_leaf: strings.HasSuffix(_ref.registryPath, "/" + name)` and `_leaf: true`.
-- [ ] 2.7 Confirm `version!` is retained and that neither `fqn` nor `uuid` reads it. Add **no** `versionMajor` field and **no** version/path major assertion — D45. Leave a comment saying so, naming D45, so its absence reads as specified rather than forgotten.
-- [ ] 2.8 Leave `uuid: SHA1(OPMNamespace, fqn)` unchanged in form. Its input has changed; the formula has not.
-- [ ] 2.9 Delete `#definitionName` — it computes a Pascal-case projection that under a snake `name` yields `Media_server`, and nothing reads it. (`transformer.cue`'s copy belongs to `core-primitive-keying`.)
-- [ ] 2.10 Update `SPEC.md` §`#Module` — Shape, Constraints, and a *Why* paragraph in Rationale for each of: the path widening, the name retype, the `fqn` redefinition, the `registryPath` addition, and the deliberate absence of the major assertion.
-- [ ] 2.11 `task vet`.
+- [x] 2.1 Retype `metadata.name!` to `#SnakeNameType`.
+- [x] 2.2 Delete `metadata.nameSnakeCase`.
+- [x] 2.3 Add `_ref: #ArtifactRef & {modulePath: metadata.modulePath}`.
+- [x] 2.4 Redefine `fqn` as `#ModulePathType & modulePath`. Delete `#ModuleFQNType` from `src/types.cue`.
+- [x] 2.5 Add `registryPath: _ref.registryPath`.
+- [x] 2.6 Add the hidden leaf constraint: `_leaf: strings.HasSuffix(_ref.registryPath, "/" + name)` and `_leaf: true`.
+- [x] 2.7 Confirm `version!` is retained and that neither `fqn` nor `uuid` reads it. Add **no** `versionMajor` field and **no** version/path major assertion — D45. Leave a comment saying so, naming D45, so its absence reads as specified rather than forgotten.
+- [x] 2.8 Leave `uuid: SHA1(OPMNamespace, fqn)` unchanged in form. Its input has changed; the formula has not.
+- [x] 2.9 Delete `#definitionName` — it computes a Pascal-case projection that under a snake `name` yields `Media_server`, and nothing reads it. (`transformer.cue`'s copy belongs to `core-primitive-keying`.)
+- [x] 2.10 Update `SPEC.md` §`#Module` — Shape, Constraints, and a *Why* paragraph in Rationale for each of: the path widening, the name retype, the `fqn` redefinition, the `registryPath` addition, and the deliberate absence of the major assertion.
+- [x] 2.11 `task vet`.
 
 ## 3. Instance identity (`src/module_instance.cue` + `SPEC.md` §`#ModuleInstance`)
 

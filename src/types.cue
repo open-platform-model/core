@@ -9,10 +9,15 @@ import (
 // NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars
 #NameType: string & =~"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
 
-// SnakeNameType: snake_case projection of #NameType — lowercase alphanumeric
-// with underscores. Same character budget as #NameType; differs only in the
-// separator (`_` instead of `-`), making it a valid CUE identifier (and thus a
-// usable CUE package name / registry-path leaf).
+// SnakeNameType: snake_case name — lowercase alphanumeric with underscores.
+// Same character budget as #NameType; differs only in the separator (`_`
+// instead of `-`), making it a valid CUE identifier (and thus a usable CUE
+// package name / registry-path leaf).
+//
+// This is #Module.metadata.name's type (enhancement 0010 D8): a module IS a
+// CUE package, so its name has one spelling and that spelling is the one a
+// package name admits. #Resource, #Trait and #Blueprint keep kebab-case
+// #NameType — they are not packages, and their spec! keys are built from it.
 #SnakeNameType: string & =~"^[a-z0-9]([a-z0-9_]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
 
 // ModulePathType: an artifact's complete CUE module path, major suffix
@@ -81,10 +86,6 @@ import (
 	importPath: modulePath
 }
 
-// ModuleFQNType: container-style FQN for #Module — path/name:semver
-// Example: "opmodel.dev/modules/jellyfin:2.0.0"
-#ModuleFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:\\d+\\.\\d+\\.\\d+.*$"
-
 // BundleFQNType: FQN for #Bundle — path/name:vN (major version)
 // Example: "opmodel.dev/bundles/game-stack:v1"
 #BundleFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:v[0-9]+$"
@@ -120,13 +121,6 @@ OPMNamespace: "11bc6112-a6e8-4021-bec9-b3ad246f9466"
 		let _runes = strings.Runes(p)
 		strings.ToUpper(strings.SliceRunes(p, 0, 1)) + strings.SliceRunes(p, 1, len(_runes))
 	}], "")
-}
-
-// KebabToSnake converts a kebab-case string to snake_case (hyphens → underscores).
-// Usage: (#KebabToSnake & {"in": "zot-registry-ttl"}).out => "zot_registry_ttl"
-#KebabToSnake: {
-	X="in": string
-	out:    strings.Replace(X, "-", "_", -1)
 }
 
 // KebabToCamel converts a kebab-case string to camelCase.

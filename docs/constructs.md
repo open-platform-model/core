@@ -84,10 +84,11 @@ Modules enforce a clear separation between the configuration **contract** (`#con
     kind:       "Module"
 
     metadata: {
-        name!:        #NameType        // e.g., "my-app"
-        modulePath:   #ModulePathType  // e.g., "example.com/modules"
+        name!:        #SnakeNameType   // e.g., "my_app"; the leaf of modulePath
+        modulePath:   #ModulePathType  // e.g., "example.com/modules/my_app@v1"
         version:      #VersionType     // SemVer 2.0
-        fqn:          #ModuleFQNType   // computed: "{modulePath}/{name}:{version}"
+        fqn:          #ModulePathType  // the module path, verbatim
+        registryPath: #PackagePathType // computed: modulePath with @vN stripped
         uuid:         #UUIDType        // UUIDv5 of fqn under OPMNamespace
         description?: string
         labels?:      #LabelsAnnotationsType
