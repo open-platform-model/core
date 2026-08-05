@@ -19,7 +19,6 @@ CUE module: `opmodel.dev/core@v1`
 | `#Blueprint` | `blueprint.cue` | #Blueprint: Defines a reusable blueprint that composes resources and traits into a higher-level abstraction |
 | `#BlueprintMap` | `blueprint.cue` |  |
 | `#Catalog` | `catalog.cue` | #Catalog: top-level catalog definition |
-| `#CatalogFQNType` | `catalog.cue` | #CatalogFQNType: catalog-level FQN — modulePath@semver (no name segment) |
 | `#Component` | `component.cue` |  |
 | `#ComponentMap` | `component.cue` |  |
 | `#LabelWorkloadType` | `component.cue` | Workload type label key |
@@ -52,17 +51,17 @@ CUE module: `opmodel.dev/core@v1`
 | `#ComponentTransformer` | `transformer.cue` | #ComponentTransformer: Declares how to convert OPM components into platform-specific resources |
 | `#TransformerContext` | `transformer.cue` | Provider context passed to transformers |
 | `#TransformerMap` | `transformer.cue` | Map of transformers by fully qualified name |
+| `#ArtifactRef` | `types.cue` | ArtifactRef splits a complete module path into the OCI repository its tags live under and the major it declares |
 | `#BundleFQNType` | `types.cue` | BundleFQNType: FQN for #Bundle — path/name:vN (major version) Example: "opmodel |
 | `#FQNType` | `types.cue` | FQNType: primitive definition FQN — path/name@semver Example: "opmodel |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |
-| `#KebabToSnake` | `types.cue` | KebabToSnake converts a kebab-case string to snake_case (hyphens → underscores) |
 | `#LabelsAnnotationsType` | `types.cue` |  |
 | `#MajorVersionType` | `types.cue` | MajorVersionType: major version prefix used in primitive FQNs Example: "v1", "v0" |
-| `#ModuleFQNType` | `types.cue` | ModuleFQNType: container-style FQN for #Module — path/name:semver Example: "opmodel |
-| `#ModulePathType` | `types.cue` | ModulePathType: plain registry path without embedded version Example: "opmodel |
+| `#ModulePathType` | `types.cue` | ModulePathType: an artifact's complete CUE module path, major suffix mandatory |
 | `#NameType` | `types.cue` | NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars |
-| `#SnakeNameType` | `types.cue` | SnakeNameType: snake_case projection of #NameType — lowercase alphanumeric with underscores |
+| `#PackagePathType` | `types.cue` | PackagePathType: the path a *primitive* declares — a package path inside a module, carrying no major suffix |
+| `#SnakeNameType` | `types.cue` | SnakeNameType: snake_case name — lowercase alphanumeric with underscores |
 | `#UUIDType` | `types.cue` | UUIDType: RFC 4122 UUID in standard format (lowercase hex) |
 | `#VersionType` | `types.cue` | Semver 2 |
 

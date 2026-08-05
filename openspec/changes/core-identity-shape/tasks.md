@@ -58,10 +58,10 @@ Mirror `enhancements/0010/schemas/target.cue`'s cases so the properties are pinn
 
 ## 6. Generated artifacts and gates
 
-- [ ] 6.1 `task generate:index` — `#ArtifactRef` and `#PackagePathType` are added; `#KebabToSnake`, `#ModuleFQNType` and `#CatalogFQNType` are removed. Review the extracted doc comments before staging.
-- [ ] 6.2 Update `.tasks/spec-tracked.txt` only if a new **top-level, non-helper** construct was added. `#ArtifactRef` and `#PackagePathType` are helpers by the `core-schema-edit` allowlist's own definition (a constrained-string type and an internal decomposition helper), so the expected outcome is **no change** — confirm rather than assume.
-- [ ] 6.3 `task check` — `fmt:check`, `vet`, `generate:index:check`, `spec:check`.
-- [ ] 6.4 Verify no `*.cue` commit went in without its `SPEC.md` co-update: `git log --stat` over the change's commits.
+- [x] 6.1 `task generate:index` — `#ArtifactRef` and `#PackagePathType` are added; `#KebabToSnake`, `#ModuleFQNType` and `#CatalogFQNType` are removed. Review the extracted doc comments before staging.
+- [x] 6.2 Update `.tasks/spec-tracked.txt` only if a new **top-level, non-helper** construct was added. `#ArtifactRef` and `#PackagePathType` are helpers by the `core-schema-edit` allowlist's own definition (a constrained-string type and an internal decomposition helper), so the expected outcome is **no change** — confirm rather than assume.
+- [x] 6.3 `task check` — `fmt:check`, `vet`, `generate:index:check`, `spec:check`.
+- [x] 6.4 Verify no `*.cue` commit went in without its `SPEC.md` co-update: `git log --stat` over the change's commits.
 
 ## 7. Close the loop
 
