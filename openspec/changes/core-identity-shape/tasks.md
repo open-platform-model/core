@@ -65,7 +65,7 @@ Mirror `enhancements/0010/schemas/target.cue`'s cases so the properties are pinn
 
 ## 7. Close the loop
 
-- [ ] 7.1 Set `enhancements/0010/plan.yaml` slice `core-identity-shape` to `status: done` with `openspec_ref: core/core-identity-shape`.
-- [ ] 7.2 In the **same commit**, append a `history` event to `enhancements/0010/config.yaml` citing the same `openspec_ref` in its `slice` field.
-- [ ] 7.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index` from the workspace root.
-- [ ] 7.4 Confirm `task enhancements:plan:ready ID=0010` now surfaces `core-primitive-keying` and `core-platform-and-match`, and that `0011:core-identity-package` is unblocked.
+- [x] 7.1 Set `enhancements/0010/plan.yaml` slice `core-identity-shape` to `status: done` with `openspec_ref: core/core-identity-shape`.
+- [x] 7.2 In the **same commit**, append a `history` event to `enhancements/0010/config.yaml` citing the same `openspec_ref` in its `slice` field.
+- [x] 7.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index` from the workspace root.
+- [x] 7.4 Confirm `task enhancements:plan:ready ID=0010` now surfaces `core-primitive-keying` and `core-platform-and-match`, and that `0011:core-identity-package` is unblocked.
