@@ -2,7 +2,7 @@
 
 This document describes how `opmodel.dev/core` is published to its OCI registry: the stable release flow (already in place) and the branch-build flow (to be implemented). The focus is the *strategy* — tag format, determinism guarantees, and how consumers resolve them. Implementation (Taskfile, CI) follows once this is agreed.
 
-> **Note (enhancement 0002 D13).** The module advanced to `opmodel.dev/core@v1` and now ships its main channel as `v1.0.0-alpha.N` prereleases (release-please `prerelease` mode). The `@v0.x` import paths and the stable-`vX.Y.Z`-vs-branch-`-dev` framing in the worked examples below **predate that cutover** and are retained to illustrate the resolution *mechanics*; the concrete version strings are stale. Refreshing this strategy for the v1 alpha-prerelease channel (and how branch `-dev` tags coexist with `-alpha` release tags now that `MAJOR=1`) is a tracked follow-up.
+> **Note (enhancement 0002 D13).** The module advanced to `opmodel.dev/core@v1` and now ships its main channel as `v1.0.0-alpha.N` prereleases (release-please `prerelease` mode). The `@v0.x` import paths and the stable-`vX.Y.Z`-vs-branch-`-dev` framing in the worked examples below **predate that cutover** and are retained to illustrate the resolution *mechanics*; the concrete version strings are stale. How branch `-dev` tags coexist with `-alpha` release tags now that `MAJOR=1` — previously a tracked follow-up — is resolved in [Pre-stable: why branch builds carry a leading `0`](#pre-stable-why-branch-builds-carry-a-leading-0).
 
 ## Goal
 
@@ -25,16 +25,20 @@ Stable (main, cut by release-please):
   e.g. v0.4.0
 
 Branch (every commit on a non-main branch):
-  v<MAJOR>.<NEXT_MINOR>.0-dev.<commit_ct>.g<short_sha>
-  e.g. v0.4.0-dev.1779820079.g3def91f
+  v<MAJOR>.<MINOR>.<PATCH>-0.dev.<commit_ct>.g<short_sha>
+  e.g. v1.0.0-0.dev.1785961206.g6b10e87
 ```
+
+The branch build shares the base version of the highest existing release and is
+ranked below it by the leading `0.` — see [Why branch builds carry a leading
+`0`](#why-branch-builds-carry-a-leading-0).
 
 Where:
 
 | Field | Source | Notes |
 | --- | --- | --- |
-| `MAJOR` | `cue.mod/module.cue` module suffix (`@v0`) | matches the published module identity |
-| `NEXT_MINOR` | bump-minor of latest stable tag (read from `.release-please-manifest.json`) | every branch publish is "the next minor that hasn't happened yet" |
+| `MAJOR` | `cue.mod/module.cue` module suffix (`@v1`) | matches the published module identity |
+| `MINOR`/`PATCH` | base version of the highest release tag for this major, stable or prerelease | the branch build shares the release channel's base so it can be ranked *below* it; falls back to `MAJOR.0.0` when the major has no release yet |
 | `commit_ct` | `git show -s --format=%ct <SHA>` | committer Unix seconds, baked into the SHA — see Determinism |
 | `short_sha` | `git rev-parse --short=7 <SHA>` | seven hex chars, prefixed with `g` |
 
@@ -50,6 +54,27 @@ The `g` prefix on the SHA mirrors `git describe`. It exists for one reason: a 7-
 | branch slug | **dropped** | would only enable registry-side filtering by branch (`crane ls \| grep …`). Same information is available from Git for any commit identified by SHA, and the tag should be artifact identity, not branch metadata |
 
 If branch-by-branch tag listing becomes necessary later, the right answer is OCI annotations on the manifest (`org.opencontainers.image.source.ref`, etc.), not a longer SemVer string.
+
+## Why branch builds carry a leading `0`
+
+The invariant: **a branch build must never be the version a query selects**, under `@vN`, `@vN.M`, or an explicit range that admits prereleases. Resolving any of those to an unreleased branch commit silently ships in-flight work to every consumer.
+
+It is tempting to lean on Go/CUE's rule that `@vN` ignores prereleases when a stable version exists, and let branch builds preview the next minor. Two things defeat that:
+
+1. **A major can live for a long time with no stable release.** `@v1` ships only `v1.0.0-alpha.N` today, so there is nothing for `@v1` to prefer and it must take the highest prerelease. `v1.0.0-dev.*` beats every `v1.0.0-alpha.N`, because prerelease identifiers compare lexically and `alpha` < `dev`. Moving the branch build to the next minor is *strictly worse*: `v1.1.0-dev.*` beats `v1.0.0-alpha.3` on the base version alone, before prerelease identifiers are consulted at all.
+2. **Range subscriptions deliberately admit prereleases.** The opm-operator's platform registry filters are written as ranges precisely so they can pin alpha catalogs. The `@vN` stable-preference rule does not apply to them, so a next-minor branch build wins any range whose top minor has no release of its own yet — regardless of whether a stable release exists elsewhere.
+
+So the branch build shares the base version of the highest existing release and is ranked below it there. SemVer 2.0 §11.4.3 is the lever: *a numeric identifier always has lower precedence than an alphanumeric one at the same position*. Leading the prerelease with `0` puts every branch build under every named channel on that base:
+
+```text
+v1.0.0-0.dev.1785961206.g6b10e87  <  v1.0.0-alpha.1  <  v1.0.0
+```
+
+One rule, every phase, every query kind. `0` is a valid numeric identifier — the SemVer prohibition is on *leading* zeroes (`01`), which the registry rejects outright (see the validation table).
+
+A branch build may still outrank an *older* release on a lower base — `v1.1.0-0.dev.*` is above `v1.0.0`. That is expected and harmless: resolution selects the maximum, and the maximum is always the newest release (`v1.1.0-alpha`), never the branch build.
+
+The cost is that "track latest dev" has no range-based form: `@v1.0` resolves to the newest alpha, since branch builds now sort below it. Pinning an exact `-0.dev.` tag is the only way to follow a branch. That is the intended trade — an unreleased build should be opted into explicitly, never inherited by someone who wrote `@v1`.
 
 ## Determinism: local publish == CI publish
 
@@ -72,7 +97,7 @@ What this means in practice:
 - A developer publishing locally before pushing produces the same tag CI will produce on the matching push. The second publish is a no-op (OCI registry refuses to overwrite immutable tags, or returns the same digest).
 - Reproducible builds: anyone with the commit can re-derive the exact tag, fetch the artifact, and verify the digest.
 
-`NEXT_MINOR` is the one piece sourced outside the commit. It comes from `.release-please-manifest.json`, which is checked into the repo and thus stable at any commit. Worst case: a branch outlives a minor release, and re-publishes from that branch keep targeting an outdated `NEXT_MINOR`. The publisher should `git pull --rebase` periodically; CI naturally sees the latest manifest because it checks out fresh.
+The base version is the one piece sourced outside the commit — it is read from the repo's git tags. Worst case: a branch outlives a release, and re-publishes from that branch keep targeting an outdated base. The publisher should `git fetch --tags` periodically; CI naturally sees the latest tags because it checks out fresh with `fetch-depth: 0`. A stale base is not a correctness problem for the invariant — an older base ranks *lower*, so the branch build still loses to every newer release.
 
 ## Consumer resolution
 
@@ -85,20 +110,22 @@ Verified against CUE 0.16.1:
 | `cue mod get opmodel.dev/core@latest` | latest stable (e.g. `v0.3.0`) |
 | `cue mod get opmodel.dev/core@v0` | latest stable |
 | `cue mod tidy` (no pin) | latest stable |
-| `cue mod get opmodel.dev/core@v0.4` | **latest pre-release of v0.4**, until `v0.4.0` stable lands; then `v0.4.0` |
-| `cue mod get opmodel.dev/core@v0.4.0-dev.<ts>.g<sha>` | exact pin |
+| `cue mod get opmodel.dev/core@v0.4` | **highest release on v0.4** — branch builds sort below every named channel on that base, so they are never selected here |
+| `cue mod get opmodel.dev/core@v0.4.0-0.dev.<ts>.g<sha>` | exact pin |
+
+The same holds for the opm-operator's range subscriptions: a range such as `>=1.0.0-alpha.1, <=1.0.0-alpha.7` admits prereleases deliberately, and still resolves to the highest *release* in the window rather than to whatever branch happened to build last.
 
 So two pin styles are blessed by this strategy:
 
 ```cue
-// Track stable
-deps: "opmodel.dev/core@v0": v: "v0.3.0"
+// Track the release channel
+deps: "opmodel.dev/core@v1": v: "v1.0.0-alpha.3"
 
-// Track latest dev — auto-transitions to v0.4.0 stable once cut
-deps: "opmodel.dev/core@v0": v: "v0.4.0-dev.<latest-ts>.g<latest-sha>"
+// Follow a specific branch build — exact pin only, by design
+deps: "opmodel.dev/core@v1": v: "v1.0.0-0.dev.1785961206.g6b10e87"
 ```
 
-For the "track latest dev" pattern, downstream automation runs `cue mod get opmodel.dev/core@v0.4` and accepts whatever the registry has at that moment.
+There is deliberately no range-based "track latest dev" pin. Consuming an unreleased build is an explicit act: query the OCI tag list, pick the tag, write it down. See [Why branch builds carry a leading `0`](#why-branch-builds-carry-a-leading-0).
 
 ## What this strategy does not provide
 
