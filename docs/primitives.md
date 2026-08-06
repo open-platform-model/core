@@ -44,7 +44,7 @@ Ask yourself:
 
     metadata: {
         name!:        #NameType         // e.g., "container"
-        modulePath!:  #ModulePathType   // e.g., "opmodel.dev/opm/resources/workload"
+        modulePath!:  #PackagePathType  // e.g., "opmodel.dev/opm/resources/workload"
         version!:     #MajorVersionType // e.g., "v1"
         fqn:          #FQNType          // computed: "{modulePath}/{name}@{version}"
         description?: string
@@ -121,7 +121,7 @@ Ask yourself:
 
     metadata: {
         name!:        #NameType
-        modulePath!:  #ModulePathType
+        modulePath!:  #PackagePathType
         version!:     #MajorVersionType
         fqn:          #FQNType
         description?: string
@@ -199,7 +199,7 @@ Ask yourself:
 
     metadata: {
         name!:        #NameType
-        modulePath!:  #ModulePathType
+        modulePath!:  #PackagePathType
         version!:     #MajorVersionType
         fqn:          #FQNType
         description?: string

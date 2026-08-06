@@ -13,7 +13,7 @@ import (
 		name!: #NameType // Example: "container"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #ModulePathType                               // Example: "opmodel.dev/catalogs/opm/resources"
+		modulePath!: #PackagePathType                              // Example: "opmodel.dev/catalogs/opm/resources"
 		version!:    #VersionType                                  // Example: "1.0.0"
 		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/catalogs/opm/resources/container@1.0.0"
 

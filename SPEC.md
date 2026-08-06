@@ -57,7 +57,7 @@ Examples: `Container`, `Volume`, `ConfigMap`, `Secret`.
 
     metadata: {
         name!:       #NameType            // kebab-case
-        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/resources/workload"
+        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/resources/workload"
         version!:    #VersionType         // SemVer 2.0, e.g. "1.4.0"
         fqn:         "\(modulePath)/\(name)@\(version)"
 
@@ -77,6 +77,7 @@ Implementation: [`resource.cue`](src/resource.cue).
 
 - `kind` MUST be the literal string `"Resource"`. Downstream tools dispatch on this field.
 - `metadata.name` MUST be kebab-case (`#NameType` regex, max 63 runes) and MUST be unique within its `modulePath`.
+- `metadata.modulePath` MUST be a `#PackagePathType` — a package path inside a module, carrying no `@vN` major suffix. A value carrying one MUST be rejected. This is the type `#ModulePathType` carried before enhancement 0010 D1, so no primitive value shipped by any catalog changes.
 - `metadata.version` MUST be a SemVer 2.0 string (`#VersionType`), not a MAJOR-only prefix. The published FQN carries the exact patch the catalog stamped at publish time.
 - `metadata.fqn` is computed from `modulePath`, `name`, and `version`. Consumers MUST NOT supply `fqn` directly. The computed FQN MUST match `#FQNType` (SemVer-suffixed).
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
@@ -85,6 +86,7 @@ Implementation: [`resource.cue`](src/resource.cue).
 
 - **Why `kind` is a fixed string and not implicit from the type.** CUE definitions do not carry type information at runtime. Downstream tools walking a rendered tree need a discriminator to route handlers; `kind` is that discriminator. Removing it would force every consumer to do structural detection, which is brittle.
 - **Why `fqn` is computed, not stored.** The fully-qualified name is a function of three other fields. Storing it would allow drift between the stated identity and its parts. Computing it makes the schema the single source of identity truth — an instance of Principle III (Determinism).
+- **Why a primitive's path is `#PackagePathType` and not the `#ModulePathType` an artifact declares.** Enhancement 0010 D1 makes `#ModulePathType` an artifact's *complete* CUE module path, `@vN` included, so that `#Module` and `#Catalog` can be addressed by reading one field. A primitive inherits nothing useful from that suffix: it is a package *inside* a module, and its major is structurally redundant — a `@vN` module publishes only `vN.*` tags, so a primitive already stating its catalog's build version has already stated its catalog's major. It is also not a path anyone writes, since a consumer imports `opmodel.dev/catalogs/opm/resources` with no suffix and CUE resolves the major from `cue.mod`'s `deps`. An earlier revision of D1 widened one shared type for both; every field typed with it then inherited a major with no referent, and D20 (merged into D1) split it in two instead.
 - **Why `version` is exact SemVer, not a MAJOR-only prefix.** Two builds of the same primitive at adjacent versions (e.g. `1.0.0` and `1.0.1`) must occupy distinct keys so the kernel matcher can compare definitions deterministically. The previous MAJOR-only scheme collapsed every patch into one bucket and let two divergent definitions at the same `@v1` silently coexist — the worst failure mode for a vocabulary. Catalog-monolithic SemVer (every primitive's version equals the publishing catalog's version) keeps version churn coordinated; consumer-pin churn is mitigated by always-on unification at match time (byte-identical bodies unify across SemVers, and platform subscriptions express SemVer ranges that span many versions). See enhancement 0001 D5 and D18.
 - **Why `spec` is namespaced under the definition's camelCase name.** When multiple primitives unify into a `#Component` (§3.1), their `spec` fields merge. Namespacing under the definition name prevents field-name collisions — two primitives both defining `port` would clash at the root but coexist under `container.port` and `service.port`. This pushes naming collisions to *definition time* (caught by CUE unification) rather than *deployment time* (silent merge).
 - **Why we don't allow free-form CUE inside `spec`.** OpenAPI v3 is the contract surface for non-CUE consumers — Kubernetes CRDs, web UIs, kubectl plugins. CUE templating (`for`, `if`, comprehensions) would tie the schema to a CUE evaluator and exclude every consumer that uses the schema through generated bindings. Per Principle II (Type Safety First), this constraint is in the schema rather than relying on downstream rejection.
@@ -113,7 +115,7 @@ Examples: `scaling`, `health-check`, `network-expose`.
 
     metadata: {
         name!:       #NameType            // kebab-case
-        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/traits/workload"
+        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/traits/workload"
         version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
         fqn:         "\(modulePath)/\(name)@\(version)"
 
@@ -239,7 +241,7 @@ Implementation: [`component.cue`](src/component.cue).
 
 A `#Module` is the portable application blueprint — a developer's (or platform team's) description of an application as a graph of Components, optionally publishing additional primitives to the platform's registry. A Module describes *what* an application is; concrete values are supplied separately by `#ModuleInstance` (forthcoming).
 
-A Module is the unit of versioning and distribution. A published Module at `example.com/modules/foo:1.2.3` is immutable.
+A Module is the unit of versioning and distribution. A published Module at `example.com/modules/foo@v1`, tagged `1.2.3`, is immutable.
 
 #### Shape
 
@@ -248,12 +250,22 @@ A Module is the unit of versioning and distribution. A published Module at `exam
     kind: "Module"
 
     metadata: {
-        name!:          #NameType
-        nameSnakeCase:  #SnakeNameType & (#KebabToSnake & {"in": name}).out  // derived: hyphens → underscores
-        modulePath!:    #ModulePathType                                      // author-supplied in module.cue
-        version!:       #VersionType                                         // author-supplied in module.cue
-        fqn:            #ModuleFQNType & "\(modulePath)/\(name):\(version)"   // semver-with-colon
-        uuid:           #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
+        name!:        #SnakeNameType   // snake_case; the leaf of modulePath
+        modulePath!:  #ModulePathType  // complete CUE module path, @vN included
+        version!:     #VersionType     // author-supplied in module.cue
+
+        _ref: #ArtifactRef & {"modulePath": modulePath}   // the one decomposition
+
+        fqn:          #ModulePathType & modulePath   // the module path, verbatim
+        registryPath: _ref.registryPath              // major stripped
+        uuid:         #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
+
+        // The path's leaf is the module's name. Hidden — a check, not a value.
+        _leaf: strings.HasSuffix(_ref.registryPath, "/"+name)
+        _leaf: true
+
+        // No versionMajor field, and no assertion that version's major equals
+        // the path's — deliberately absent (see Constraints).
 
         description?: string
         labels?:      #LabelsAnnotationsType
@@ -286,11 +298,15 @@ Implementation: [`module.cue`](src/module.cue).
 #### Constraints
 
 - `kind` MUST be the literal string `"Module"`.
-- `metadata.name` MUST be kebab-case (`#NameType`).
-- `metadata.nameSnakeCase` is the snake_case projection of `name` (`#KebabToSnake`: hyphens replaced with underscores) and MUST satisfy `#SnakeNameType`. It is derived — consumers MUST NOT supply it directly. It is intended as the CUE-identifier-safe form of the module name (canonical CUE package name and registry-path leaf under the module publishing convention).
-- `metadata.modulePath` (`#ModulePathType`) and `metadata.version` (`#VersionType`) are author-supplied: a Module MUST declare them in its own `module.cue`, the same way `#Resource`, `#Trait`, `#Blueprint`, and `#Catalog` declare their identity. Both are required (`!`); a `#Module` value missing either is incomplete and cannot compute `fqn`/`uuid`.
-- `metadata.fqn` uses semver-with-colon (`modulePath/name:version`), distinct from `#Resource`'s `@v0` major-version separator. Consumers MUST NOT supply `fqn` directly.
-- `metadata.uuid` is computed as `SHA1(OPMNamespace, fqn)`. It is deterministic and stable across evaluations.
+- `metadata.name` MUST be snake_case (`#SnakeNameType`). A kebab-case module name MUST be rejected. `metadata.nameSnakeCase` no longer exists — with `name` already in the constrained form there is no projection left to make.
+- `metadata.modulePath` MUST be the Module's **complete** CUE module path, `@vN` suffix included (`#ModulePathType`) — the same string `cue.mod/module.cue`'s `module:` field, the registry coordinate and an `import` statement carry. A path with no major MUST be rejected.
+- `metadata.modulePath` and `metadata.version` (`#VersionType`) are author-supplied: a Module MUST declare them in its own `module.cue`, the same way `#Resource`, `#Trait`, `#Blueprint`, and `#Catalog` declare their identity. Both are required (`!`); a `#Module` value missing either is incomplete and cannot compute `fqn`/`uuid`.
+- `metadata.registryPath` MUST be `modulePath` with the major stripped, sourced from `#ArtifactRef`. It MUST be typed `#PackagePathType`, so a value still carrying a major is refused. Because it is derived rather than authored, a supplied module path conflicts with the computed value before that type is reached — the type states the intent at the field and is the backstop, not the trigger. It is stable across a major bump.
+- `metadata.registryPath` MUST end in `/` followed by `metadata.name`. This is enforced by a hidden constraint on `metadata`; a name disagreeing with the path's leaf MUST fail unification, naming `_leaf`. Only the **leaf** is constrained — hyphens remain legal in every other segment.
+- `metadata.fqn` MUST equal `modulePath` and MUST be typed `#ModulePathType`. It MUST NOT interpolate `name` or `version`. Consumers MUST NOT supply `fqn` directly.
+- `metadata.uuid` is computed as `SHA1(OPMNamespace, fqn)`. It is deterministic and stable across evaluations. Because `fqn` is the module path, `uuid` MUST be unchanged when only `version` changes and MUST change when the path's major changes: **module artifact identity distinguishes majors and nothing finer.** The complementary half — that instance identity is reached by neither the version nor the major — is stated at [`#ModuleInstance`](#35-moduleinstance).
+- `metadata.version` MUST NOT be an input to `fqn` or to `uuid`. It remains the source of the `module.opmodel.dev/version` label and is read by the deploying `#ModuleInstance`.
+- `metadata` MUST NOT assert that `version`'s major agrees with `modulePath`'s, and MUST NOT expose a `versionMajor` field. A Module declaring `modulePath: "…/postgres@v2"` with `version: "3.0.0"` MUST validate. This is an **accepting** behaviour specified deliberately, not an omission — see Rationale.
 - `#components` is required but MAY be empty for a Module that ships only as a configuration shape. Keys MUST satisfy `#NameType`.
 - Every entry in `#components` receives `#instance` from `#ctx.instance` via the pattern constraint. The component's `#names` block computes `resourceName` and DNS variants from this injected instance. Authors MUST NOT set `#instance` on a component directly.
 - `#ctx.instance` MUST be set by the consuming `#ModuleInstance` (§…). A `#Module` value with `#ctx.instance` left non-concrete is a spec — usable for typing and validation, but not renderable.
@@ -302,8 +318,11 @@ Implementation: [`module.cue`](src/module.cue).
 #### Rationale
 
 - **Why `modulePath` / `version` are author-supplied typed-required fields, not self-referential.** Earlier revisions declared them `modulePath: metadata.modulePath` / `version: metadata.version` — a bare-direct self-cycle that resolves to itself, contributing neither a value nor a constraint. CUE never registers a cycle-only field as a permitted member of the *closed* `#Module`, so re-unifying an already-closed published `#Module` into `#ModuleInstance.#module` (the authored-`instance.cue` import path) rejected the concrete `modulePath`/`version` as "field not allowed." The bug was invisible to `cue vet` because a standalone Module is only closed once. Declaring them `!: #ModulePathType` / `!: #VersionType` — the form every sibling identity-bearing construct already uses — makes them genuine permitted fields, fixes the re-unification, and adds real format validation the self-cycle silently skipped.
-- **Why `metadata.nameSnakeCase` exists as a derived field.** `#NameType` is kebab-case (RFC 1123 DNS-label), but a CUE package name and a CUE registry-path leaf must be valid CUE identifiers — which forbid hyphens. Authors therefore publish hyphenated-named modules under an underscored path/package (e.g. name `zot-registry-ttl` published at `…/zot_registry_ttl`), and the two forms drift. Deriving the snake_case form in the schema gives every consumer one authoritative, deterministic projection of the name into identifier space, rather than each re-implementing `strings.Replace(name, "-", "_")` and risking divergence. It is a *projection of name*, not an independent field, so it cannot disagree with `name`. The companion module publishing convention (see `enhancements/`) builds the canonical registry path on `modulePath/nameSnakeCase` so an imported module is resolvable from its metadata alone.
-- **Why `fqn` uses semver-with-colon while `#Resource` uses `@vN`.** Modules ship at specific versions (`1.2.3`); the consumer pins an exact release and migrates deliberately. Resources version on the contract surface (`v1`, `v2`); the consumer pins a contract major and treats patches as the publisher's concern. Different identity granularity, different separator — the visual distinction prevents confusion when both appear in a config tree.
+- **Why `modulePath` is the complete module path and not a bare prefix.** It used to be a prefix that every consumer recombined with `name` to reach a registry address, and that composition was duplicated across `cli` and `library` with no single definition to check any of them against. Making the declared path the address means it is *recoverable by reading one field*: code holding a decoded module can re-import it, and a fetched artifact can be compared against the coordinate it was fetched by. The `@vN` is part of that string rather than a separate field because CUE, the OCI registry and an `import` statement already agree on exactly this spelling — inventing a fourth is what created the drift. See enhancement 0010 D1.
+- **Why `name` is snake_case and the path's leaf must equal it.** There used to be three spellings of one name: kebab `name`, a derived `nameSnakeCase`, and the path's leaf — a third, independently authored value that was *supposed* to equal one of the other two with nothing saying which or checking either. A module is a CUE package, a CUE package name is inferred from its path leaf, and package names cannot contain hyphens; so exactly one of those spellings was ever usable, and the schema now names it. Collapsing to one spelling deletes the derived `nameSnakeCase` field and the kebab-to-snake helper behind it, and turns the leaf agreement into a constraint expressible over a single field. Constraining only the leaf, and not the whole path, is what keeps `github.com/open-platform-model/...` expressible. See enhancement 0010 D8.
+- **Why `fqn` is a field rather than a recombination, and why the version left it.** The old `fqn` interpolated `version`, so `SHA1(OPMNamespace, fqn)` moved on every release — and `#ModuleInstance.metadata.uuid` derived from it, which put a moving value in the `module-instance.opmodel.dev/uuid` ownership label. The operator skips deleting any live object whose owner label disagrees with the instance UUID it recorded, so every upgrade silently orphaned whatever the new render stopped emitting *and reported success*. Making `fqn` the path fixes the cause rather than the symptom: identity that names the artifact stops tracking the release. The formula over it is untouched, so every module's UUID moves exactly once — which is what makes this a breaking change and why the fleet republishes once.
+- **Why `registryPath` is exposed rather than recomputed at each use.** It is the major-free identity of the module *lineage*, and it has two independent callers: `#ModuleInstance` derives its own `fqn` from it (so instance identity survives a major bump), and it is the OCI repository every address-composition site in `cli` and `library` collapses into. Computing it once in `#ArtifactRef` and naming it here is what makes "nothing is recombined" checkable rather than implied. Substituting a full module path fails structurally instead of silently yielding a third identity — as a conflict against the derived value, since `registryPath` is computed rather than authored. The `#PackagePathType` on it declares the intent at the field site; it cannot fire alone, because the split's left half is `@`-free by construction.
+- **Why `core` does not assert that `version`'s major matches the path's.** The relation is asserted in the artifact's own `identity/identity.cue`, where both values are written — so a failure names the file the author has open. Re-deriving it here would test the same relation over the same two values one hop downstream, and `core` cannot reach the identity package's own `VersionMajor` to compare against: it cannot import a consumer's package. The exposure this accepts is real and bounded: a module whose identity package is absent or non-conformant carries no consumer-runnable major check, which enhancement 0011's publish gates (D8/D12/D21) close instead. This is written down because the constraint's *absence* is a decision (0010 D45, transposing D43 from `#Catalog`) — restoring it should read as a change, not as a fix.
 - **Why `uuid` is computed via `SHA1(OPMNamespace, fqn)` rather than authored or random.** Per Principle III (Determinism), two evaluations of the same `fqn` MUST yield the same identity. A registry, controller, or cluster can dedupe modules by uuid without coordinating an ID allocator. The schema fixture harness in `library/` pins a known uuid as a drift sentinel for the algorithm itself.
 - **Why `#config` is bare `_` and not a typed schema.** The configuration shape is per-module — every module's contract is different. Constraining `#config` at the core layer would either force a one-size-fits-all schema (too narrow) or accept everything (no value). The OpenAPI-v3 constraint is enforced by the downstream renderer, which has the context to apply it cleanly.
 - **Why no CUE templating in `#config`.** The config schema is the module's *public contract*. It travels with the published module via the OCI registry and is read by non-CUE consumers — web UIs rendering forms, kubectl plugins generating prompts, generated bindings in other languages. CUE templating would tie the schema to a CUE evaluator and exclude every one of those consumers. Per Principle I (Contract Stability), the schema must not assume a particular consumer.
@@ -336,7 +355,7 @@ Examples: `stateless-workload`, `stateful-workload`, `cronjob`.
 
     metadata: {
         name!:       #NameType            // kebab-case
-        modulePath!: #ModulePathType      // e.g. "opmodel.dev/opm/blueprints/workload"
+        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/blueprints/workload"
         version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
         fqn:         "\(modulePath)/\(name)@\(version)"
 
@@ -433,7 +452,7 @@ Implementation: [`platform.cue`](src/platform.cue).
 - `kind` MUST be the literal string `"Platform"`.
 - `metadata.name` MUST be kebab-case (`#NameType`).
 - `type` MUST be present. The value is informational at this stage — the matcher does not consult it.
-- `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). One subscription per path is enforced by CUE map semantics; multi-channel-per-path is intentionally not expressible.
+- `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). Since enhancement 0010 D1 that type carries a terminal `@vN`, so a key names one major of one catalog (`"opmodel.dev/catalogs/opm@v1"`) and a platform MAY subscribe to two majors of the same catalog as two distinct entries. One subscription per key is enforced by CUE map semantics; multi-channel-per-key is intentionally not expressible.
 - `#Subscription.enable` defaults to `true`. When `false`, the kernel SHOULD skip materialization for that path; primitives owned by the path do not surface on the platform.
 - `#SubscriptionFilter.range`, when present, MUST be a SemVer constraint expression parseable Go-side (the kernel uses Masterminds/semver). An unparseable expression surfaces as a structured `MaterializeError` against the offending subscription path.
 - Filter resolution order: `range` restricts the candidate set, `allow` force-includes specific SemVers, `deny` force-excludes them. The final survivor set is materialized.
@@ -475,7 +494,11 @@ The Module is the contract; the Instance is the instance.
         name!:         #NameType
         namespace!:    #NameType
         clusterDomain: string | *"cluster.local"
-        uuid:          #UUIDType & SHA1(OPMNamespace, "<module.uuid>:<name>:<namespace>")
+
+        // The module's MAJOR-FREE registry path, this name, this namespace.
+        fqn:           "\(#moduleMetadata.registryPath):\(name):\(namespace)"
+        uuid:          #UUIDType & SHA1(OPMNamespace, fqn)
+
         labels?:       #LabelsAnnotationsType
         annotations?:  #LabelsAnnotationsType
     }
@@ -507,7 +530,11 @@ Implementation: [`module_instance.cue`](src/module_instance.cue).
 - `kind` MUST be the literal string `"ModuleInstance"`.
 - `metadata.name` and `metadata.namespace` MUST be kebab-case (`#NameType`).
 - `metadata.clusterDomain` MUST be a non-empty string. The default `"cluster.local"` covers the standard Kubernetes case; override per instance when the target cluster runs a non-standard domain.
-- `metadata.uuid` is deterministic: `SHA1(OPMNamespace, "<module-uuid>:<name>:<namespace>")`. Two evaluations with the same Module + name + namespace MUST yield the same uuid.
+- `metadata.fqn` MUST be `"\(#moduleMetadata.registryPath):\(name):\(namespace)"`. It MUST derive from the deployed module's **major-free** `registryPath` and MUST NOT derive from the module's `fqn`, `uuid`, `version`, or major. Supplying a full module path in the registry-path position MUST be refused — as a conflict against the derived `registryPath` — rather than yielding a third identity.
+- `metadata.uuid` MUST be `SHA1(OPMNamespace, fqn)` over the instance's own `fqn`. It MUST NOT interpolate the module's `uuid`. Two evaluations with the same module registry path + name + namespace MUST yield the same uuid.
+- **Instance identity MUST survive every upgrade of the module it deploys.** For one `{module registry path, name, namespace}` triple, `metadata.uuid` MUST NOT change when the module's `version` changes, and MUST NOT change when the module path's **major** changes — even though `#Module.metadata.uuid` does change across that major bump (§3.2). This is the second half of the invariant whose first half is stated at [`#Module`](#32-module): artifact identity distinguishes majors and nothing finer; instance identity is reached by neither the version nor the major.
+- **Instance identity MUST still separate modules and namespaces.** `metadata.uuid` MUST differ for two modules whose registry paths differ, and MUST differ for one module deployed under two instance names or into two namespaces. Without this the survival rule above is satisfiable by an identity that has stopped distinguishing anything.
+- `metadata.labels["module-instance.opmodel.dev/uuid"]` MUST carry `metadata.uuid`. This is the **ownership** label: the operator's prune step skips deleting any live object whose owner label disagrees with the instance UUID it recorded, so a UUID that moves on upgrade orphans whatever the new render stopped emitting — without erroring, and while reporting success.
 - `#module.#ctx.instance` MUST be set from `metadata.{name, namespace, uuid, clusterDomain}`. The wiring is declared inline in the schema; authors do not call a builder.
 - `values` MUST satisfy `#module.#config`. CUE unification enforces this at evaluation time.
 - `components` MUST be exactly the module's `#components`. Core MUST NOT synthesise, inject, or reserve any component name; a module whose config carries `#Secret` fields MUST declare its own secrets component against its catalog's secrets resource.
@@ -518,6 +545,9 @@ Implementation: [`module_instance.cue`](src/module_instance.cue).
 - **Why `#ModuleInstance` sets `#ctx.instance` inline and ships no builder.** The pre-0001 sketches considered a separate context-builder type that would take metadata and produce a context value. Two arguments against: (1) the wiring is one struct expression — a builder adds a type and a function call to do what one inline literal does already; (2) builders introduce evaluation order ("call builder before evaluating module") that pure CUE doesn't have. Setting `#ctx.instance` inline keeps the module + instance pair as one CUE value with no procedural dependency. See enhancement 0001 D1.
 - **Why `#module.#ctx.instance` is set inside the `#module` unification, not on `#module.#ctx` after the fact.** Unification is associative and commutative — the order in which fields land doesn't matter. Setting it inside the `#module: #Module & {...}` expression makes the wiring textually adjacent to the module reference, so a reader sees both pieces at the same scroll position. The alternative ("set #module first, then patch #module.#ctx.instance") is the same CUE value but harder to read.
 - **Why `uuid` is computed deterministically from module + name + namespace.** An instance's identity must be reproducible across evaluations of the same inputs: a controller restarting, a CI pipeline retrying, a kubectl apply re-running. Random or author-supplied uuids drift between runs and force every consumer to track a separate "is this the same instance?" signal. The SHA1-of-FQN form derives the answer from the inputs themselves. Same principle as `#Module.metadata.uuid` (§3.2 rationale).
+- **Why instance identity derives from the module's `registryPath` and not from its `fqn` or `uuid`.** The two values answer different questions, and deriving one from the other forced them to agree when they must not. `module.uuid` is *artifact* identity — `@v2` and `@v3` are distinct modules under both CUE and Go semantics, so it has to move across a major. `instance.uuid` is *ownership* identity, the value the prune step compares against a live object's owner label, so it has to survive every upgrade of the same deployment including a major bump. While `instance.uuid` interpolated `module.uuid`, and `module.uuid` hashed an FQN containing the version, ownership identity moved on **every release**: the operator then skipped each delete it should have performed, left the objects running, and reported success. Stripping the major on the way in is what makes the two move independently.
+- **Why not derive instance identity from the module's `name`.** It collides. `opmodel.dev/modules/jellyfin` and `example.com/jellyfin` both carry `name: "jellyfin"`, so two unrelated modules deployed under the same instance name into the same namespace would share an ownership identity — and each render would then claim the other's objects. A full registry path is unique by construction, which is the property the label needs.
+- **Why `fqn` is a named field rather than an interpolation inlined into `uuid`.** The derivation is the whole contract here: which module fields reach ownership identity, and which deliberately do not. Inlined inside the hash it was a string literal nobody reviewed; as a field it is one line to read, it mirrors `#Module`'s own `fqn → uuid` shape, and a change to what identity depends on shows up as a change to a named value.
 - **Why core no longer injects an `opm-secrets` component.** Earlier revisions discovered every `#Secret` in the resolved config and synthesised a component carrying a secrets resource, so that modules got Secret objects for free. That required core to name the resource's FQN, and transformer matching is exact-FQN: a catalog stamps its own version into every FQN it publishes (`…/resources/secrets@1.0.0-alpha.2`), a value core cannot know and must not guess. The hardcoded constant went stale the moment the catalogs moved to the `@v1` line, and the synthesised component then matched no transformer at all — turning a convenience into a hard render failure for every secret-bearing module. Discovery itself was never the problem and stays available: catalogs re-export `#AutoSecrets`, so a module writes one component and keeps the ergonomics without core guessing at another package's identity.
 
 #### See also
@@ -536,7 +566,7 @@ A `#Catalog` is the construct a catalog package exports to publish its primitive
 
 A `#Catalog` introduces no new vocabulary itself — like every other construct (§3), it organizes primitives into a structured whole. Where `#Module` carries a set of components to render, `#Catalog` carries a set of transformers to publish. Both are constructs; their difference is which artifact they ship.
 
-The catalog's identity is its `metadata.modulePath` + SemVer `metadata.version`. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
+The catalog's identity is its `metadata.modulePath` — the complete CUE module path, `@vN` included — and its `metadata.fqn` is that path verbatim. The SemVer `metadata.version` is the catalog's *build*: it keys the transformers and stamps every primitive's provenance, but it is not part of the catalog's identity. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
 
 #### Shape
 
@@ -545,21 +575,27 @@ The catalog's identity is its `metadata.modulePath` + SemVer `metadata.version`.
     kind: "Catalog"
 
     M=metadata: {
-        modulePath!:  #ModulePathType
-        version!:     #VersionType | *"0.0.0-dev"   // source-tree default
-        fqn:          "\(modulePath)@\(version)"
+        modulePath!:  #ModulePathType   // complete module path, @vN included
+        version!:     #VersionType      // no default — unset is incomplete
+        fqn:          #ModulePathType & modulePath   // the module path, verbatim
+
+        _ref: #ArtifactRef & {"modulePath": modulePath}   // the one decomposition
+
+        // No assertion that version's major agrees with the path's — see
+        // Constraints; the same deliberate absence #Module carries.
+
         description?: string
         labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
 
     // Every entry's metadata.modulePath is stamped to
-    //   "<catalog modulePath>/transformers"
+    //   "<catalog registryPath>/transformers"     // major split out, NOT re-appended
     // and metadata.version is stamped to the catalog's version.
     // Pattern enforced by the schema, not by author discipline.
     #transformers: [#FQNType]: #ComponentTransformer & {
         metadata: {
-            modulePath: "\(M.modulePath)/transformers"
+            modulePath: "\(M._ref.registryPath)/transformers"
             version:    M.version
         }
     }
@@ -571,10 +607,11 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 #### Constraints
 
 - `kind` MUST be the literal string `"Catalog"`.
-- `metadata.modulePath` MUST be the catalog package's CUE module path (e.g. `opmodel.dev/catalogs/opm`). The publish task is the source of truth for this value at publish time.
-- `metadata.version` defaults to `"0.0.0-dev"` in a source tree so `cue vet` is cheap during development. At publish time it MUST be overwritten with a concrete SemVer via a `version_override.cue` file in the sibling `identity/` subpackage; OCI artifacts ship fully concrete.
-- `metadata.fqn` is computed from `modulePath` and `version`; consumers MUST NOT supply it.
-- Every entry in `#transformers` MUST be keyed by a valid `#FQNType` (SemVer-suffixed primitive FQN). The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog modulePath>/transformers"` and every entry's `metadata.version` to the catalog's version. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
+- `metadata.modulePath` MUST be the catalog package's **complete** CUE module path, `@vN` suffix included (e.g. `opmodel.dev/catalogs/opm@v1`). It MUST be the same string `cue.mod/module.cue`'s `module:` field and the registry coordinate carry. A path with no major MUST be rejected. It is sourced from the sibling `identity/` subpackage.
+- `metadata.version` MUST be a concrete `#VersionType` and MUST have **no default**. A `#Catalog` evaluated with `version` unset MUST report an incomplete value naming the field. The former `*"0.0.0-dev"` default is removed.
+- `metadata.fqn` MUST equal `modulePath` and MUST be typed `#ModulePathType`. It MUST NOT interpolate `version`. Consumers MUST NOT supply it.
+- `metadata` MUST NOT assert that `version`'s major agrees with `modulePath`'s. A `#Catalog` declaring `modulePath: "…/opm@v1"` with `version: "2.0.0"` MUST validate. As with [`#Module`](#32-module), this is an **accepting** behaviour specified deliberately — see Rationale.
+- Every entry in `#transformers` MUST be keyed by a valid `#FQNType` (SemVer-suffixed primitive FQN). The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.version` to the catalog's version. The major MUST NOT be re-appended: a transformer is a primitive, and a primitive declares a `#PackagePathType`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
 - The pattern does NOT stamp `metadata.fqn` — fqn derives in the transformer's metadata from `modulePath/name/version`, and the map key already carries the transformer's own fqn by construction. Stamping it would be a no-op or a conflict.
 - Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
 
@@ -584,7 +621,10 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 - **Why the `M=metadata` field-label alias.** The pattern constraint on `#transformers` needs to reach the outer catalog's `modulePath` and `version` from inside the nested `metadata: { ... }` block of every entry. A bare `metadata.modulePath` reference inside the entry's own metadata walks to the closest parent field named `metadata` — the inner field itself — and self-embeds into a non-concrete interpolation. CUE's value-alias form (`metadata: M={...}`) does not carry across the nested constraint boundary; only the field-label alias form does. Experiment 09 in the enhancement validated both sound forms (hidden-mirror + label-alias); the label-alias is chosen here for inline locality. See enhancement 0001 D25.
 - **Why the pattern stamps `modulePath` + `version` but not `fqn`.** Stamping `modulePath` and `version` replaces the prior author-discipline rule ("every transformer's metadata must match the catalog's version") with a structural guarantee that `cue vet` enforces. The transformer's `metadata.fqn` derives in its own definition from those three fields, so stamping it would either be redundant (matches) or produce a conflict (author-supplied fqn diverges). Experiment 10 confirmed the asymmetry: a wrong `modulePath` or `version` fails vet loudly; trying to stamp fqn introduces conflicts on round-tripped FQNs.
 - **Why catalogs don't enumerate Resources / Traits / Blueprints.** A transformer's `requiredResources` / `requiredTraits` already names every primitive the matcher needs to reach. Adding sibling `#resources` / `#traits` / `#blueprints` maps on `#Catalog` would duplicate that information and invite drift between the enumeration and the transitive set. If introspection demand surfaces later, the sibling maps are an additive extension — not a precondition.
-- **Why `#CatalogFQNType` exists despite overlapping `#FQNType`.** A catalog's FQN is `modulePath@version` (no name segment); a primitive's FQN is `modulePath/name@version`. The two regexes are not structurally disjoint — a string like `opmodel.dev/catalogs/opm/transformer@1.0.0` matches both. They are distinguished by usage (which field they appear in), not by the regex alone. Naming the type makes the intent clear at the field site even if the regex doesn't enforce mutual exclusion.
+- **Why a catalog's `fqn` is its module path, and why the dedicated catalog-FQN type retired with it.** The old `fqn` was `modulePath@version`, which meant a catalog's identity moved on every release and its regex was not structurally disjoint from a primitive's `modulePath/name@version` — the two were distinguished by which field they appeared in, not by anything checkable. Making `fqn` the module path removes both problems at once: identity names the artifact rather than the release, and the type is the same `#ModulePathType` a `#Module` carries, so there is one path type per artifact kind instead of one per derivation. The catalog's *build* still has a home — `version` — and it is what keys the transformers.
+- **Why the `"0.0.0-dev"` default is gone.** It existed so `cue vet` was cheap in a source tree, and it made a checkout and a published artifact compute different values: the committed tree resolved `Version` to `0.0.0-dev`, so a local render demanded `…/transformers/deployment@0.0.0-dev` while the registry supplied `…/transformers/deployment@1.0.0`. A default that renders successfully while being wrong is worse than no value at all — an unset `version` is now an incomplete value that names the field, and the committed `identity/identity.cue` supplies the real one to checkout and artifact alike. See enhancement 0010 D5/D6.
+- **Why the transformer stamp drops the major instead of re-appending it.** The stamp builds a *package* path — `metadata.modulePath` on a `#ComponentTransformer` is a `#PackagePathType`, which admits no `@vN` (§2.1 Rationale). Re-appending the catalog's major would produce a value the primitive's own type rejects, and would key every published contract under a suffix no import statement writes.
+- **Why `core` does not assert that a catalog's `version` major matches its path's.** Same holding as `#Module` (§3.2), taken first here: the relation is asserted in `identity/identity.cue` where both values are written, and re-deriving it in `core` tests the same relation one hop downstream. The asymmetry that this shape *is* what a consumer evaluates — `materialize` builds the catalog against `#Catalog`, while the identity package is never evaluated as a package by a consumer — is why the exposure is stated rather than assumed: a catalog with a non-conformant identity package carries no consumer-runnable check, and the skew surfaces at platform-subscription selection instead, in a platform author's file about a publisher's mistake. Accepted by enhancement 0010 D43, and closed by 0011's publish gates rather than here.
 
 #### See also
 
@@ -612,7 +652,7 @@ Transformers are catalog-versioned. The match algorithm is FQN-keyed: each entry
 
     metadata: {
         name!:       #NameType
-        modulePath!: #ModulePathType
+        modulePath!: #PackagePathType
         version!:    #VersionType         // SemVer 2.0
         fqn:         "\(modulePath)/\(name)@\(version)"
 

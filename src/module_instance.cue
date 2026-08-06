@@ -21,8 +21,32 @@ import (
 		// every component's #names.dns.fqdn via #module.#ctx.instance.
 		clusterDomain: string | *"cluster.local"
 
-		// Generate a stable UUID for this instance based on the module's UUID, name, and namespace
-		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, "\(#moduleMetadata.uuid):\(name):\(namespace)")
+		// fqn: this instance's own identity — the deployed module's MAJOR-FREE
+		// registry path, this instance's name, and its namespace.
+		//
+		// It derives from the module's registryPath rather than from its fqn or
+		// uuid, so NEITHER the module's version NOR its major reaches instance
+		// identity (enhancement 0010 D41). The two values answer different
+		// questions and were forced to agree by deriving one from the other:
+		// module.uuid answers "which module is this" and MUST move across a
+		// major; instance.uuid answers "which resources does this manage" and
+		// MUST survive every upgrade of the same deployment.
+		//
+		// A full module path substituted here is refused by the type rather
+		// than silently producing a third identity — registryPath is a
+		// #PackagePathType, which admits no "@vN" at all.
+		//
+		// Deriving from the module's `name` instead was rejected on collision:
+		// opmodel.dev/modules/jellyfin and example.com/jellyfin both carry
+		// name "jellyfin", while a full registry path is unique by construction.
+		fqn: "\(#moduleMetadata.registryPath):\(name):\(namespace)"
+
+		// Stable UUID for this instance, computed as a UUID v5 (SHA1) of the
+		// instance's own fqn — mirroring #Module's own fqn → uuid shape. This
+		// is the value carried in the module-instance.opmodel.dev/uuid label
+		// below, which the operator reads to decide whether it owns a live
+		// object.
+		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
 
 		labels?: #LabelsAnnotationsType
 		labels?: {if #moduleMetadata.labels != _|_ {#moduleMetadata.labels}}
