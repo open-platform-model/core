@@ -42,6 +42,64 @@ jobs:
       - name: Verify SPEC.md inventory matches CUE
         run: task spec:check
 
+      - name: Reject bare @mentions in the PR title, body and commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          # GitHub turns a bare `@name` into a link to a real user account.
+          # @v0, @v1 and @v2 are all real accounts, so "@v1" meaning "major 1"
+          # pings an uninvolved stranger. A pushed commit message can never be
+          # edited, and release-please replays commit bodies verbatim into the
+          # release PR and the GitHub Release — so it leaks onward too.
+          #
+          # A mention fires when `@` is not preceded by a word character.
+          # Quoting and backslash-escaping do NOT suppress it; only a backtick
+          # code span (Markdown surfaces only) or gluing the `@` to a word
+          # character does. Commit messages are not Markdown, so there the only
+          # options are gluing it or dropping the `@`.
+          pattern='(^|[^A-Za-z0-9])@[A-Za-z0-9]'
+          fail=0
+
+          check() {
+            local label="$1" text="$2" allow_backticks="$3"
+            [[ -z "$text" ]] && return 0
+            local scan="$text"
+            # In Markdown-rendered surfaces a code span is genuinely safe, so
+            # strip code spans before scanning. Not done for commit messages.
+            if [[ "$allow_backticks" == "yes" ]]; then
+              scan=$(printf '%s' "$scan" | sed 's/`[^`]*`//g')
+            fi
+            local hits
+            hits=$(printf '%s\n' "$scan" | grep -nE "$pattern" || true)
+            if [[ -n "$hits" ]]; then
+              echo "ERROR: bare @mention in $label:"
+              printf '%s\n' "$hits" | sed 's/^/  /'
+              fail=1
+            fi
+          }
+
+          check "the PR title" "${PR_TITLE:-}" no
+          check "the PR body" "${PR_BODY:-}" yes
+
+          git fetch origin "$BASE_REF"
+          while IFS= read -r sha; do
+            [[ -z "$sha" ]] && continue
+            check "commit $(git log -1 --format=%h "$sha")" "$(git log -1 --format=%B "$sha")" no
+          done < <(git rev-list "origin/$BASE_REF..HEAD")
+
+          if [[ "$fail" -eq 1 ]]; then
+            echo
+            echo "Fix: glue the @ to its path (opmodel.dev/core@v2), or drop it"
+            echo "     entirely (\"the v2 line\", \"major v2\"). Quoting does NOT work."
+            echo "Rule: CLAUDE.md § \"Never Write a Bare \`@name\` Into GitHub Text\""
+            exit 1
+          fi
+          echo "OK: no bare @mentions."
+
       - name: Enforce SPEC.md co-update with *.cue changes
         if: github.event_name == 'pull_request'
         env:

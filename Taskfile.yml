@@ -67,27 +67,29 @@ tasks:
   ## Git hooks
 
   hooks:install:
-    desc: Install git hooks (pre-commit gate for SPEC.md co-updates)
+    desc: Install git hooks (SPEC.md co-update gate; bare-@mention gate)
     cmds:
       - |
         set -euo pipefail
-        src="$(pwd)/.tasks/hooks/pre-commit"
-        dst=".git/hooks/pre-commit"
-        if [[ -e "$dst" && ! -L "$dst" ]]; then
-          echo "ERROR: $dst exists and is not a symlink." >&2
-          echo "Backup or remove it before installing." >&2
-          exit 1
-        fi
-        chmod +x "$src"
-        ln -sf "$src" "$dst"
-        echo "Installed: $dst -> $src"
+        for h in pre-commit commit-msg; do
+          src="$(pwd)/.tasks/hooks/$h"
+          dst=".git/hooks/$h"
+          if [[ -e "$dst" && ! -L "$dst" ]]; then
+            echo "ERROR: $dst exists and is not a symlink." >&2
+            echo "Backup or remove it before installing." >&2
+            exit 1
+          fi
+          chmod +x "$src"
+          ln -sf "$src" "$dst"
+          echo "Installed: $dst -> $src"
+        done
 
   hooks:uninstall:
     desc: Remove installed git hooks (symlinks only)
     cmds:
       - |
         set -euo pipefail
-        for h in pre-commit; do
+        for h in pre-commit commit-msg; do
           dst=".git/hooks/$h"
           if [[ -L "$dst" ]]; then
             rm -f "$dst"

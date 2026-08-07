@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# core/ commit-msg hook — refuse a bare @mention in a commit message.
+#
+# Source of truth: core/.tasks/hooks/commit-msg (installed by `task hooks:install`,
+# which symlinks .git/hooks/commit-msg to this file).
+#
+# GitHub turns a bare `@name` into a USER MENTION. `@v0`, `@v1` and `@v2` are all
+# real GitHub accounts, so writing `@v1` to mean "major version 1" subscribes an
+# uninvolved stranger to the thread and leaves a permanent backlink on their
+# profile. A commit message cannot be edited after it is pushed, and it also
+# propagates: release-please replays commit bodies verbatim into the release PR
+# and the GitHub Release, so one bad message leaks into generated notes months
+# later. That is why this gate is at commit time rather than at review time.
+#
+# What is safe, measured against GitHub's renderer:
+#   opmodel.dev/core@v2   safe  — `@` glued to a word character
+#   `@v2`                 NOT safe here — commit messages are not Markdown, so
+#                         backticks are literal and the mention still fires
+#   "@v2" / '@v2' / \@v2  NOT safe — quoting and escaping do NOT suppress it
+#
+# So in a commit message: glue the `@` to its path, or drop it entirely
+# ("the v2 line", "major v2").
+#
+# Bypass, for the rare case where a real mention is intended:
+#   AT_MENTION_OK=1 git commit ...
+#
+# Full rule: CLAUDE.md § "Never Write a Bare `@name` Into GitHub Text"
+
+set -euo pipefail
+
+msg_file="${1:?commit-msg hook requires the message file path}"
+
+# Strip git's own comment lines and the scissors section before scanning —
+# `# On branch ...` and the verbose diff are not part of the message.
+body=$(sed -e '/^#/d' -e '/^diff --git /,$d' "$msg_file")
+
+# A mention fires when `@` is NOT preceded by a word character. Anything else —
+# start of line, whitespace, quote, backtick, paren, `>` — is a boundary GitHub
+# accepts, which is why quoting does not help.
+hits=$(printf '%s\n' "$body" | grep -nE '(^|[^A-Za-z0-9])@[A-Za-z0-9]' || true)
+
+if [[ -z "$hits" ]]; then
+  exit 0
+fi
+
+if [[ "${AT_MENTION_OK:-}" == "1" ]]; then
+  exit 0
+fi
+
+cat >&2 <<EOF
+ERROR: commit message contains a bare @mention.
+
+GitHub will turn each of these into a link to a real user account, and a pushed
+commit message can never be edited:
+
+$(printf '%s\n' "$hits" | sed 's/^/  /')
+
+Fix it one of these ways:
+  • Glue the @ to its path      opmodel.dev/core@v2      (safe)
+  • Drop the @ entirely         "the v2 line", "major v2"
+  • NOT quoting or backticks    "@v2", '@v2', \`@v2\`     (still mentions)
+
+If you genuinely mean to mention a GitHub user:
+    AT_MENTION_OK=1 git commit ...
+
+Rule: CLAUDE.md § "Never Write a Bare \`@name\` Into GitHub Text"
+EOF
+exit 1
