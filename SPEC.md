@@ -25,17 +25,17 @@ Cross-references use `file.cue:line` against the repository at the tag in [`CHAN
 
 OPM Core distinguishes three categories of definition:
 
-- **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Secret`. Each carries its own `metadata`, its own versioned identity, and a `spec` schema namespaced under a camelCase form of its name.
-- **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleInstance`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleInstance`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
+- **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Blueprint` (specified at §3.3, whose section number is retained so existing cross-references keep resolving), `#Secret`. Each carries its own `metadata`, its own contract-keyed identity, and a `spec` schema namespaced under a camelCase form of its name. A primitive is a building block a `#Module` attaches and writes values against, so each carries an `apiVersion` and the additive-only promise that level gates.
+- **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Module`, `#Platform`, `#ModuleInstance`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleInstance`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
 - **Adapters** (§4) — types that translate the model into target runtime form without participating in composition: `#ComponentTransformer`.
 
-The Primitive/Construct split exists because primitives are the unit of *vocabulary* and constructs are the unit of *composition*. A platform team extends the vocabulary by authoring new primitives; an application team uses constructs to assemble them. Conflating the two would force every composition decision through a schema-publishing workflow.
+The Primitive/Construct split exists because primitives are what a module *attaches and writes against*, and constructs are what *carries* them. A platform team publishes primitives from a catalog on its own release cadence; an application team uses constructs to assemble what a catalog published. The dividing question is not "does this introduce vocabulary?" — under that reading `#Blueprint` sat with the constructs, even though a module names a blueprint and writes values under its `spec` exactly as it does for a resource, and is broken by a change to it exactly as it is. What the split has to track is which definitions carry a **contract key** and the additive-only promise it gates (enhancement 0010 D44), and that is decided by whether a module writes against the thing.
 
-The Adapter category exists because rendering is a *target-specific* concern. Forcing transformers into the composition graph would mean every primitive needs a target-specific arm — an explosion that doesn't compose. Adapters sit beside the model, not inside it.
+The Adapter category exists because rendering is a *target-specific* concern. Forcing transformers into the composition graph would mean every primitive needs a target-specific arm — an explosion that doesn't compose. Adapters sit beside the model, not inside it. The category is load-bearing in the identity model too: an adapter's inputs are other people's contracts and its output is platform objects, so it carries no `apiVersion` and keys on the build it shipped in rather than on a contract level (§4.1).
 
 `#Catalog` sits under Constructs (rather than as its own category) because it follows the same rule as every other construct: it introduces no new schema vocabulary, it organizes primitives. A `#Catalog` packages a versioned set of `#ComponentTransformer` values under one CUE module path so platforms can subscribe to it. Splitting consumption (`#Module`) from publication (`#Catalog`) gives each artifact one job — but both are constructs, not separate categories.
 
-This v0 of the specification covers the primitives `#Resource` and `#Trait`, the constructs `#Component`, `#Blueprint`, `#Module`, `#Platform`, `#ModuleInstance`, and `#Catalog`, and the adapter `#ComponentTransformer`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
+This v0 of the specification covers the primitives `#Resource`, `#Trait` and `#Blueprint`, the constructs `#Component`, `#Module`, `#Platform`, `#ModuleInstance`, and `#Catalog`, and the adapter `#ComponentTransformer`. Remaining constructs are documented in `docs/` and will land in this spec as the schema stabilises.
 
 ---
 
@@ -56,10 +56,14 @@ Examples: `Container`, `Volume`, `ConfigMap`, `Secret`.
     kind: "Resource"
 
     metadata: {
-        name!:       #NameType            // kebab-case
-        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/resources/workload"
-        version!:    #VersionType         // SemVer 2.0, e.g. "1.4.0"
-        fqn:         "\(modulePath)/\(name)@\(version)"
+        name!:           #NameType         // kebab-case
+        modulePath!:     #PackagePathType  // e.g. "opmodel.dev/catalogs/opm/resources"
+        apiVersion!:     #APIVersionType   // contract level, e.g. "v1beta1"
+        catalogVersion!: #VersionType      // SemVer 2.0 of the build it shipped in, e.g. "1.4.0"
+
+        // Authored by the declaring catalog, not derived here.
+        // e.g. "opmodel.dev/catalogs/opm/resources/container@v1beta1"
+        fqn!: #ContractFQNType
 
         description?: string
         labels?:      #LabelsAnnotationsType
@@ -78,16 +82,21 @@ Implementation: [`resource.cue`](src/resource.cue).
 - `kind` MUST be the literal string `"Resource"`. Downstream tools dispatch on this field.
 - `metadata.name` MUST be kebab-case (`#NameType` regex, max 63 runes) and MUST be unique within its `modulePath`.
 - `metadata.modulePath` MUST be a `#PackagePathType` — a package path inside a module, carrying no `@vN` major suffix. A value carrying one MUST be rejected. This is the type `#ModulePathType` carried before enhancement 0010 D1, so no primitive value shipped by any catalog changes.
-- `metadata.version` MUST be a SemVer 2.0 string (`#VersionType`), not a MAJOR-only prefix. The published FQN carries the exact patch the catalog stamped at publish time.
-- `metadata.fqn` is computed from `modulePath`, `name`, and `version`. Consumers MUST NOT supply `fqn` directly. The computed FQN MUST match `#FQNType` (SemVer-suffixed).
+- `metadata.apiVersion` MUST be an `#APIVersionType` — `vN`, `vNalphaM` or `vNbetaM`. It is this Resource's own **contract level** and the only version component of its key. A catalog release MUST NOT move it; a breaking change to this Resource's `spec` MUST.
+- `metadata.catalogVersion` MUST be a SemVer 2.0 string (`#VersionType`) naming the catalog build the definition shipped in. It is **provenance**: it MUST NOT appear in `metadata.fqn`, and no match compares it.
+- `metadata.fqn` MUST be authored by the declaring catalog and MUST match `#ContractFQNType` — the `path/name@vN` form, where `vN` is an `#APIVersionType`. `core` MUST NOT derive it, and MUST NOT refuse a value that disagrees with this Resource's own `modulePath`, `name` or `apiVersion`; that agreement is asserted at publish by `CatalogMemberFQNGate`, not here. (That gate is authored alongside this change and is not yet a definition in `src/`; both land in the same alpha.)
+- The authored `fqn` MUST retain its kind segment (`/resources`), so that a Resource and a Trait sharing a name at one `apiVersion` occupy distinct keys.
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
 
 #### Rationale
 
 - **Why `kind` is a fixed string and not implicit from the type.** CUE definitions do not carry type information at runtime. Downstream tools walking a rendered tree need a discriminator to route handlers; `kind` is that discriminator. Removing it would force every consumer to do structural detection, which is brittle.
-- **Why `fqn` is computed, not stored.** The fully-qualified name is a function of three other fields. Storing it would allow drift between the stated identity and its parts. Computing it makes the schema the single source of identity truth — an instance of Principle III (Determinism).
+- **Why `fqn` is authored rather than computed, and what replaces the check that lost.** It was computed as `"\(modulePath)/\(name)@\(version)"`, which made a wrong value inexpressible. Enhancement 0010 D21 removes the derivation because the three parts no longer have one source: `fqn`, `modulePath` and `catalogVersion` are all supplied by the catalog's `identity/` package, and deriving one of them here means a release moves them by two edits in two places instead of one. Two alternatives were measured and rejected — dropping `catalogVersion` and authoring only `fqn` lets a catalog on `1.2.0` ship a key naming `1.1.0` at `cue vet -c` exit 0, and deriving `catalogVersion` back out of `fqn` is a CUE cycle. Enforcement therefore **moves** rather than disappearing: `CatalogMemberFQNGate` asserts the agreement at publish. The window in which nothing checks it is real inside this repo and closes in the same alpha; the cost of the trade — a visible, overridable value at the definition site — is the author's, and is accepted for one identity source.
+- **Why the key carries `apiVersion` and not `catalogVersion`.** A module's demand and a platform's supply must match on an *equal* key, and under the previous scheme both keys interpolated the catalog build they compiled against. `catalog_opm` declares contracts it ships no transformer for — `backup` is one — so the fulfilling transformer comes from a provider catalog pinned to whichever `catalog_opm` build *it* compiled against. Equal keys were then reachable only by rebuilding both sides in lockstep, and every `catalog_opm` release broke `backup` until that happened. Keying the demand on the contract's own level (enhancement 0010 D4) makes the key survive a release of the catalog that declares it, which is the only thing that decouples the two release cadences. Subscription breadth cannot substitute: subscribing to every `catalogs/opm` build supplies every build's own transformers, and `backup` has none in any of them.
+- **Why the level follows the Kubernetes ladder rather than a bare major.** `vNalphaM | vNbetaM | vN` lets the additive-only promise bind at beta and GA and stay off at alpha (enhancement 0010 D34), so a contract can state that it promises nothing yet without leaving the versioning scheme. A bare `vN` would force either a promise on every contract from its first day or no promise anywhere. `#APIVersionGated` reads that off the string; nothing compares two levels, so no ordering enters the schema.
 - **Why a primitive's path is `#PackagePathType` and not the `#ModulePathType` an artifact declares.** Enhancement 0010 D1 makes `#ModulePathType` an artifact's *complete* CUE module path, `@vN` included, so that `#Module` and `#Catalog` can be addressed by reading one field. A primitive inherits nothing useful from that suffix: it is a package *inside* a module, and its major is structurally redundant — a `@vN` module publishes only `vN.*` tags, so a primitive already stating its catalog's build version has already stated its catalog's major. It is also not a path anyone writes, since a consumer imports `opmodel.dev/catalogs/opm/resources` with no suffix and CUE resolves the major from `cue.mod`'s `deps`. An earlier revision of D1 widened one shared type for both; every field typed with it then inherited a major with no referent, and D20 (merged into D1) split it in two instead.
-- **Why `version` is exact SemVer, not a MAJOR-only prefix.** Two builds of the same primitive at adjacent versions (e.g. `1.0.0` and `1.0.1`) must occupy distinct keys so the kernel matcher can compare definitions deterministically. The previous MAJOR-only scheme collapsed every patch into one bucket and let two divergent definitions at the same `@v1` silently coexist — the worst failure mode for a vocabulary. Catalog-monolithic SemVer (every primitive's version equals the publishing catalog's version) keeps version churn coordinated; consumer-pin churn is mitigated by always-on unification at match time (byte-identical bodies unify across SemVers, and platform subscriptions express SemVer ranges that span many versions). See enhancement 0001 D5 and D18.
+- **Why `catalogVersion` is kept at all, once it is out of the key.** It is the provenance both ends of a match read, and it is what lets a diagnostic say "this platform's provider was built against `1.0.0`; this module needs `1.3.0`" when two shapes are compatible but the provider lags. Dropping it would leave a contract stating what it promises and nothing about where it came from. It stays exact SemVer rather than a major prefix for the reason enhancement 0001 D5 first lifted it there — a major-only build stamp lets two divergent definitions coexist under one bucket — and that concern now lands on `#ComponentTransformer` (§4.1), which still keys on it.
+- **Why the field was renamed from `version`.** Once a primitive carries two versions, an unqualified `version` names neither: a reader has to know which of the contract level and the build it means, at every site that reads it. `catalogVersion` says which. `moduleVersion` was rejected on collision — "module" already denotes three things in OPM (`#Module`, the CUE module, the module path), so on a primitive it reads as the version of the `#Module`, which is a different field on a different construct.
 - **Why `spec` is namespaced under the definition's camelCase name.** When multiple primitives unify into a `#Component` (§3.1), their `spec` fields merge. Namespacing under the definition name prevents field-name collisions — two primitives both defining `port` would clash at the root but coexist under `container.port` and `service.port`. This pushes naming collisions to *definition time* (caught by CUE unification) rather than *deployment time* (silent merge).
 - **Why we don't allow free-form CUE inside `spec`.** OpenAPI v3 is the contract surface for non-CUE consumers — Kubernetes CRDs, web UIs, kubectl plugins. CUE templating (`for`, `if`, comprehensions) would tie the schema to a CUE evaluator and exclude every consumer that uses the schema through generated bindings. Per Principle II (Type Safety First), this constraint is in the schema rather than relying on downstream rejection.
 
@@ -114,10 +123,14 @@ Examples: `scaling`, `health-check`, `network-expose`.
     kind: "Trait"
 
     metadata: {
-        name!:       #NameType            // kebab-case
-        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/traits/workload"
-        version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
-        fqn:         "\(modulePath)/\(name)@\(version)"
+        name!:           #NameType         // kebab-case
+        modulePath!:     #PackagePathType  // e.g. "opmodel.dev/catalogs/opm/traits"
+        apiVersion!:     #APIVersionType   // contract level, e.g. "v1beta1"
+        catalogVersion!: #VersionType      // SemVer 2.0 of the build it shipped in, e.g. "1.0.0"
+
+        // Authored by the declaring catalog, not derived here.
+        // e.g. "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
+        fqn!: #ContractFQNType
 
         description?: string
         labels?:      #LabelsAnnotationsType
@@ -137,7 +150,8 @@ Implementation: [`trait.cue`](src/trait.cue).
 #### Constraints
 
 - `kind` MUST be the literal string `"Trait"`.
-- `metadata.name`, `metadata.modulePath`, `metadata.version`, `metadata.fqn` follow the same rules as `#Resource` (§2.1), with `version` as SemVer 2.0.
+- `metadata.name`, `metadata.modulePath`, `metadata.apiVersion`, `metadata.catalogVersion` and `metadata.fqn` follow the same rules as `#Resource` (§2.1): the key is `#ContractFQNType`, authored by the catalog and terminated by `apiVersion`; `catalogVersion` is SemVer 2.0 provenance that no key interpolates.
+- The authored `fqn` MUST retain its kind segment (`/traits`). A Trait and a Resource sharing a name at one `apiVersion` MUST NOT collide.
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
 - `appliesTo` MUST list at least one `#Resource`. A Trait that applies to nothing is a category error.
 - A Trait attached to a `#Component` whose `#resources` do not include any entry in `appliesTo` MUST fail at CUE unification.
@@ -145,7 +159,7 @@ Implementation: [`trait.cue`](src/trait.cue).
 #### Rationale
 
 - **Why `appliesTo` is required and listed.** Traits modify the surface of specific Resources. Without `appliesTo` an author could attach `scaling` to a `Volume` and produce nonsense; with it, the mismatch surfaces at unification time rather than render time. The list shape lets a single Trait apply to a family of related Resources (e.g. `scaling` applies to `Container` and `Job`) without forcing N Trait copies.
-- **Why Traits share the primitive-metadata shape (`name` + `modulePath` + `version` + computed `fqn`, plus optional `description` / `labels` / `annotations`) with `#Resource`.** Both are vocabulary primitives that catalogs version and publish; the kernel matcher walks both via the same FQN-keyed lookup. A divergent metadata shape would force the matcher to special-case each, which would invite drift. Per enhancement 0001 D5, the SemVer-FQN regime applies uniformly to every primitive.
+- **Why Traits repeat the primitive-metadata shape (`name` + `modulePath` + `apiVersion` + `catalogVersion` + authored `fqn`, plus optional `description` / `labels` / `annotations`) rather than sharing a parent definition with `#Resource` and `#Blueprint`.** Both are vocabulary primitives that catalogs version and publish, and the kernel matcher walks both via the same key-shaped lookup, so the shape must agree — but it is repeated, not inherited. A single parent naming three kinds is what admitted `#ComponentTransformer` as a fourth, and a shape named after three things that admits a fourth hands every future field to that fourth for free: `apiVersion` is the field that actually landed there, and `fulfilment` and `matchLabels` each had to be kept off transformers by hand. Enhancement 0010 D44 buys structural exclusion for the price of repeating four field lines. See §4.1 for the adapter's own shape.
 - **Why we don't allow free-form CUE inside `spec`.** Same as `#Resource` (§2.1) — the OpenAPI v3 contract surface is for non-CUE consumers.
 
 #### See also
@@ -354,10 +368,14 @@ Examples: `stateless-workload`, `stateful-workload`, `cronjob`.
     kind: "Blueprint"
 
     metadata: {
-        name!:       #NameType            // kebab-case
-        modulePath!: #PackagePathType     // e.g. "opmodel.dev/opm/blueprints/workload"
-        version!:    #VersionType         // SemVer 2.0, e.g. "1.0.0"
-        fqn:         "\(modulePath)/\(name)@\(version)"
+        name!:           #NameType         // kebab-case
+        modulePath!:     #PackagePathType  // e.g. "opmodel.dev/catalogs/opm/blueprints/workload"
+        apiVersion!:     #APIVersionType   // contract level, e.g. "v1beta1"
+        catalogVersion!: #VersionType      // SemVer 2.0 of the build it shipped in, e.g. "1.0.0"
+
+        // Authored by the declaring catalog, not derived here.
+        // e.g. ".../blueprints/workload/stateless-workload@v1beta1"
+        fqn!: #ContractFQNType
 
         description?: string
         labels?:      #LabelsAnnotationsType
@@ -377,15 +395,17 @@ Implementation: [`blueprint.cue`](src/blueprint.cue).
 #### Constraints
 
 - `kind` MUST be the literal string `"Blueprint"`.
-- `metadata` follows the primitive-metadata shape (`name` + `modulePath` + `version` + computed `fqn`, plus optional `description` / `labels` / `annotations`) (same rules as `#Resource` and `#Trait`), with `version` as SemVer 2.0.
+- `metadata` follows the primitive-metadata shape (`name` + `modulePath` + `apiVersion` + `catalogVersion` + authored `fqn`, plus optional `description` / `labels` / `annotations`), under the same rules as `#Resource` (§2.1) and `#Trait` (§2.2): the key is a `#ContractFQNType` terminated by `apiVersion`, and `catalogVersion` is SemVer 2.0 provenance.
+- The authored `fqn` MUST retain its kind segment (`/blueprints`, plus any grouping segments the catalog uses beneath it).
+- `#Blueprint` MUST NOT carry a `fulfilment` field. A `#ComponentTransformer` declares `requiredResources` and `requiredTraits` and has no blueprint equivalent, so nothing can demand a Blueprint and the field would be unreachable.
 - `composedResources` MUST list at least one `#Resource`. A Blueprint that composes nothing is a category error.
 - `composedTraits` is optional. A Trait listed here MUST have a `#Resource` from `composedResources` in its `appliesTo`, otherwise unification fails.
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
 
 #### Rationale
 
-- **Why Blueprints share the primitive-metadata shape with `#Resource` and `#Trait`.** Blueprints are shipped by catalogs, FQN-keyed, and version in lockstep with the primitives they compose (enhancement 0001 D21). A divergent metadata shape would force every catalog tool to special-case Blueprints. The shared FQN regex and identical metadata layout keep every primitive-shaped artifact discoverable through the same machinery.
-- **Why Blueprints sit under Constructs and not Primitives.** A Blueprint adds no new vocabulary — its `spec` is the composition of fields its underlying Resources and Traits already declare. It is composition packaged for reuse, not a new noun. The categorical line is "does this introduce schema vocabulary?" — Resources and Traits do; Blueprints do not.
+- **Why Blueprints repeat the primitive-metadata shape of `#Resource` and `#Trait`.** Blueprints are shipped by catalogs, key-addressed, and version in lockstep with the primitives they compose (enhancement 0001 D21). A divergent metadata shape would force every catalog tool to special-case Blueprints. The shape is repeated rather than inherited from a shared parent, for the reason given at §2.2.
+- **Why Blueprints are classified as primitives, having previously sat under Constructs.** The old line was "does this introduce schema vocabulary?", and by it a Blueprint is not a primitive: its `spec` is the composition of fields its Resources and Traits already declare. Enhancement 0010 D44 replaces that line with the one the identity model actually turns on — *is this a building block a module attaches, whose `spec` is a surface modules write against?* A Blueprint is: a module names it, writes values under it, and is broken by a change to it exactly as it is by a change to a Resource. That is what earns the contract key and the additive-only promise the key gates, and neither follows from introducing vocabulary. Nothing else follows from the reclassification — the exclusion of `fulfilment` stands on its own structural ground (no transformer can demand a Blueprint), which makes a Blueprint a primitive that nothing demands rather than a non-primitive.
 - **Why `composedResources` is required and listed, while `composedTraits` is optional.** A Blueprint with no Resource composes nothing renderable. Traits modify Resources, so a Resource-only Blueprint (`headless-workload`-style) is meaningful; a Trait-only Blueprint is the same category error as a Trait with empty `appliesTo`.
 
 #### See also
@@ -428,8 +448,8 @@ A `#Platform` value is therefore a *spec* (what to pull, what to allow / deny) p
     // materialized twin.
     #composedTransformers?: #TransformerMap
     #matchers?: {
-        resources: [#FQNType]: [...#ComponentTransformer]
-        traits:    [#FQNType]: [...#ComponentTransformer]
+        resources: [#ContractFQNType]: [...#ComponentTransformer]
+        traits:    [#ContractFQNType]: [...#ComponentTransformer]
     }
 }
 
@@ -566,7 +586,7 @@ A `#Catalog` is the construct a catalog package exports to publish its primitive
 
 A `#Catalog` introduces no new vocabulary itself — like every other construct (§3), it organizes primitives into a structured whole. Where `#Module` carries a set of components to render, `#Catalog` carries a set of transformers to publish. Both are constructs; their difference is which artifact they ship.
 
-The catalog's identity is its `metadata.modulePath` — the complete CUE module path, `@vN` included — and its `metadata.fqn` is that path verbatim. The SemVer `metadata.version` is the catalog's *build*: it keys the transformers and stamps every primitive's provenance, but it is not part of the catalog's identity. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
+The catalog's identity is its `metadata.modulePath` — the complete CUE module path, `@vN` included — and its `metadata.fqn` is that path verbatim. The SemVer `metadata.version` is the catalog's *build*: it keys the transformers and stamps every member's provenance, but it is not part of the catalog's identity. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
 
 #### Shape
 
@@ -591,12 +611,12 @@ The catalog's identity is its `metadata.modulePath` — the complete CUE module 
 
     // Every entry's metadata.modulePath is stamped to
     //   "<catalog registryPath>/transformers"     // major split out, NOT re-appended
-    // and metadata.version is stamped to the catalog's version.
+    // and metadata.catalogVersion is stamped to the catalog's version.
     // Pattern enforced by the schema, not by author discipline.
-    #transformers: [#FQNType]: #ComponentTransformer & {
+    #transformers: [#ImplFQNType]: #ComponentTransformer & {
         metadata: {
-            modulePath: "\(M._ref.registryPath)/transformers"
-            version:    M.version
+            modulePath:     "\(M._ref.registryPath)/transformers"
+            catalogVersion: M.version
         }
     }
 }
@@ -611,19 +631,19 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 - `metadata.version` MUST be a concrete `#VersionType` and MUST have **no default**. A `#Catalog` evaluated with `version` unset MUST report an incomplete value naming the field. The former `*"0.0.0-dev"` default is removed.
 - `metadata.fqn` MUST equal `modulePath` and MUST be typed `#ModulePathType`. It MUST NOT interpolate `version`. Consumers MUST NOT supply it.
 - `metadata` MUST NOT assert that `version`'s major agrees with `modulePath`'s. A `#Catalog` declaring `modulePath: "…/opm@v1"` with `version: "2.0.0"` MUST validate. As with [`#Module`](#32-module), this is an **accepting** behaviour specified deliberately — see Rationale.
-- Every entry in `#transformers` MUST be keyed by a valid `#FQNType` (SemVer-suffixed primitive FQN). The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.version` to the catalog's version. The major MUST NOT be re-appended: a transformer is a primitive, and a primitive declares a `#PackagePathType`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
-- The pattern does NOT stamp `metadata.fqn` — fqn derives in the transformer's metadata from `modulePath/name/version`, and the map key already carries the transformer's own fqn by construction. Stamping it would be a no-op or a conflict.
+- Every entry in `#transformers` MUST be keyed by the transformer's own `metadata.fqn`, and the key is typed `#ImplFQNType`, so a contract-shaped key MUST be rejected. The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.catalogVersion` to the catalog's version. The major MUST NOT be re-appended: a transformer declares a `#PackagePathType`, which admits no `@vN`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
+- The pattern does NOT stamp `metadata.fqn`. Under enhancement 0010 D21 an `fqn` is authored at the definition site rather than derived, so there is no value for `#Catalog` to compute; the map key already carries the transformer's own `fqn`, and the agreement between the two is asserted at publish by `CatalogMemberFQNGate` rather than here.
 - Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
 
 #### Rationale
 
 - **Why a single `#Catalog` construct instead of a `#Module.#defines` block.** The pre-0001 design overloaded `#Module` to act as both a consumer artifact (declares components) and a publisher artifact (defines primitives). A catalog has no `#components` to render — it only publishes vocabulary. Collapsing both responsibilities into one type forced every catalog to ship the consumer surface (and vice versa). Splitting them gives `#Module` one role (consume) and `#Catalog` one role (publish). Both remain constructs — they organize primitives, they don't introduce schema vocabulary. See enhancement 0001 D19.
 - **Why the `M=metadata` field-label alias.** The pattern constraint on `#transformers` needs to reach the outer catalog's `modulePath` and `version` from inside the nested `metadata: { ... }` block of every entry. A bare `metadata.modulePath` reference inside the entry's own metadata walks to the closest parent field named `metadata` — the inner field itself — and self-embeds into a non-concrete interpolation. CUE's value-alias form (`metadata: M={...}`) does not carry across the nested constraint boundary; only the field-label alias form does. Experiment 09 in the enhancement validated both sound forms (hidden-mirror + label-alias); the label-alias is chosen here for inline locality. See enhancement 0001 D25.
-- **Why the pattern stamps `modulePath` + `version` but not `fqn`.** Stamping `modulePath` and `version` replaces the prior author-discipline rule ("every transformer's metadata must match the catalog's version") with a structural guarantee that `cue vet` enforces. The transformer's `metadata.fqn` derives in its own definition from those three fields, so stamping it would either be redundant (matches) or produce a conflict (author-supplied fqn diverges). Experiment 10 confirmed the asymmetry: a wrong `modulePath` or `version` fails vet loudly; trying to stamp fqn introduces conflicts on round-tripped FQNs.
+- **Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`.** Stamping the two replaces the prior author-discipline rule ("every transformer's metadata must match the catalog's version") with a structural guarantee that `cue vet` enforces. Experiment 10 confirmed the asymmetry: a wrong `modulePath` or build version fails vet loudly; stamping `fqn` introduces conflicts on round-tripped FQNs. Enhancement 0010 D21 then removed the derivation the stamp would have collided with — an `fqn` is now authored, so `#Catalog` has nothing to compute and the stamped `catalogVersion` is what keeps a transformer's authored key honest about the build it shipped in.
 - **Why catalogs don't enumerate Resources / Traits / Blueprints.** A transformer's `requiredResources` / `requiredTraits` already names every primitive the matcher needs to reach. Adding sibling `#resources` / `#traits` / `#blueprints` maps on `#Catalog` would duplicate that information and invite drift between the enumeration and the transitive set. If introspection demand surfaces later, the sibling maps are an additive extension — not a precondition.
 - **Why a catalog's `fqn` is its module path, and why the dedicated catalog-FQN type retired with it.** The old `fqn` was `modulePath@version`, which meant a catalog's identity moved on every release and its regex was not structurally disjoint from a primitive's `modulePath/name@version` — the two were distinguished by which field they appeared in, not by anything checkable. Making `fqn` the module path removes both problems at once: identity names the artifact rather than the release, and the type is the same `#ModulePathType` a `#Module` carries, so there is one path type per artifact kind instead of one per derivation. The catalog's *build* still has a home — `version` — and it is what keys the transformers.
 - **Why the `"0.0.0-dev"` default is gone.** It existed so `cue vet` was cheap in a source tree, and it made a checkout and a published artifact compute different values: the committed tree resolved `Version` to `0.0.0-dev`, so a local render demanded `…/transformers/deployment@0.0.0-dev` while the registry supplied `…/transformers/deployment@1.0.0`. A default that renders successfully while being wrong is worse than no value at all — an unset `version` is now an incomplete value that names the field, and the committed `identity/identity.cue` supplies the real one to checkout and artifact alike. See enhancement 0010 D5/D6.
-- **Why the transformer stamp drops the major instead of re-appending it.** The stamp builds a *package* path — `metadata.modulePath` on a `#ComponentTransformer` is a `#PackagePathType`, which admits no `@vN` (§2.1 Rationale). Re-appending the catalog's major would produce a value the primitive's own type rejects, and would key every published contract under a suffix no import statement writes.
+- **Why the transformer stamp drops the major instead of re-appending it.** The stamp builds a *package* path — `metadata.modulePath` on a `#ComponentTransformer` is a `#PackagePathType`, which admits no `@vN` (§2.1 Rationale). Re-appending the catalog's major would produce a value the transformer's own type rejects, and would key every published member under a suffix no import statement writes.
 - **Why `core` does not assert that a catalog's `version` major matches its path's.** Same holding as `#Module` (§3.2), taken first here: the relation is asserted in `identity/identity.cue` where both values are written, and re-deriving it in `core` tests the same relation one hop downstream. The asymmetry that this shape *is* what a consumer evaluates — `materialize` builds the catalog against `#Catalog`, while the identity package is never evaluated as a package by a consumer — is why the exposure is stated rather than assumed: a catalog with a non-conformant identity package carries no consumer-runnable check, and the skew surfaces at platform-subscription selection instead, in a platform author's file about a publisher's mistake. Accepted by enhancement 0010 D43, and closed by 0011's publish gates rather than here.
 
 #### See also
@@ -642,7 +662,7 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 
 A `#ComponentTransformer` translates a matched `#Component` into platform-specific output (e.g. Kubernetes manifests). It declares which primitives a Component must (or may) carry to be a candidate match, plus a `#transform` function that the runtime evaluates with concrete inputs.
 
-Transformers are catalog-versioned. The match algorithm is FQN-keyed: each entry in `requiredResources` / `requiredTraits` names the exact `#FQNType` (SemVer-suffixed) the Component must surface for the transformer to consider it.
+Transformers are catalog-versioned, and a transformer is an **adapter rather than a primitive** (§1): it carries no `apiVersion`, and its own key names the build it shipped in. The match algorithm is key-driven: each entry in `requiredResources` / `requiredTraits` names the exact contract key the Component must surface for the transformer to consider it.
 
 #### Shape
 
@@ -651,10 +671,17 @@ Transformers are catalog-versioned. The match algorithm is FQN-keyed: each entry
     kind: "ComponentTransformer"
 
     metadata: {
-        name!:       #NameType
-        modulePath!: #PackagePathType
-        version!:    #VersionType         // SemVer 2.0
-        fqn:         "\(modulePath)/\(name)@\(version)"
+        name!:           #NameType
+        modulePath!:     #PackagePathType
+        catalogVersion!: #VersionType     // SemVer 2.0 of the build it shipped in
+
+        // Authored by the declaring catalog, not derived here. Note the type:
+        // an IMPLEMENTATION key, not a contract key.
+        // e.g. ".../transformers/deployment-transformer@1.0.0"
+        fqn!: #ImplFQNType
+
+        // NO apiVersion. metadata is closed, so declaring one is
+        // `field not allowed` rather than a field nothing reads.
 
         description!: string              // required for catalog listings
         labels?:      #LabelsAnnotationsType
@@ -663,10 +690,10 @@ Transformers are catalog-versioned. The match algorithm is FQN-keyed: each entry
 
     requiredLabels?:    #LabelsAnnotationsType
     optionalLabels?:    #LabelsAnnotationsType
-    requiredResources?: [#FQNType]: #Resource
-    optionalResources?: [#FQNType]: #Resource
-    requiredTraits?:    [#FQNType]: #Trait
-    optionalTraits?:    [#FQNType]: #Trait
+    requiredResources?: [#ContractFQNType]: #Resource
+    optionalResources?: [#ContractFQNType]: #Resource
+    requiredTraits?:    [#ContractFQNType]: #Trait
+    optionalTraits?:    [#ContractFQNType]: #Trait
 
     readsContext?:  [...string]
     producesKinds?: [...string]
@@ -687,14 +714,20 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 
 - `kind` MUST be the literal string `"ComponentTransformer"`.
 - `metadata.description` MUST be present and non-empty (it is the description surface for catalog listings and tooling).
-- `metadata` follows the primitive-metadata shape (`name` + `modulePath` + `version` + computed `fqn`, plus optional `description` / `labels` / `annotations`) with `version` as SemVer 2.0; the computed `metadata.fqn` MUST match `#FQNType`.
-- Every map key under `requiredResources` / `optionalResources` / `requiredTraits` / `optionalTraits` MUST be a valid `#FQNType` string. The map value's `metadata.fqn` MUST equal the key.
+- `metadata` carries `name` + `modulePath` + `catalogVersion` + an authored `fqn`, plus optional `labels` / `annotations` and a required `description`. It is a shape of its own: no shared parent definition spans it and the primitive-metadata shape of §2.1, §2.2 and §3.3.
+- `metadata.fqn` MUST be authored by the declaring catalog and MUST match `#ImplFQNType` — the `path/name@<semver>` form. A contract-shaped key (`…@v1`) MUST be rejected here. As for the primitives, `core` MUST NOT derive the value and MUST NOT check it against `modulePath`, `name` and `catalogVersion`; `CatalogMemberFQNGate` asserts that at publish.
+- `metadata.catalogVersion` MUST be a SemVer 2.0 string. Unlike a primitive's, it IS this kind's key component.
+- `#ComponentTransformer` MUST NOT carry `metadata.apiVersion`. Declaring one MUST fail with a field-not-allowed error rather than being accepted and ignored.
+- `#ComponentTransformer` MUST NOT carry `metadata.#definitionName`. The three primitives retain it because each derives its `spec!` field key from it; a transformer has no `spec`, so nothing read it.
+- Every map key under `requiredResources` / `optionalResources` / `requiredTraits` / `optionalTraits` MUST be a `#ContractFQNType` and MUST equal the map value's `metadata.fqn`. A build-shaped key MUST be rejected: a transformer demands contracts, and no `#Resource` or `#Trait` can carry a key in that form.
 - A Transformer matches a Component when: all `requiredLabels` are present on the Component with matching values, every `requiredResources` FQN appears in the Component's `#resources`, and every `requiredTraits` FQN appears in the Component's `#traits`. The kernel matcher additionally unifies the consumer's primitive against the transformer's required slot at the same FQN; divergent definitions surface as a structured error per (component, FQN).
 - `#transform.output` MUST be either a single struct (one rendered resource per match) or a list of structs (N rendered resources per match). Other CUE kinds are rejected by the renderer.
 
 #### Rationale
 
-- **Why match is FQN-keyed and always unifies.** Two builds of the same primitive at distinct SemVers are different keys now (enhancement 0001 D5), so a transformer requiring `…@1.0.0` is structurally distinct from one requiring `…@1.0.1`. But within a single FQN, the consumer Component may carry a slightly different definition body (drift, partial override). Always unifying the consumer's primitive against the transformer's required slot ensures that drift surfaces as a structured `UnifyError` per (component, FQN) pair rather than as a render-time mystery. See enhancement 0001 D6.
+- **Why match is key-driven and always unifies.** A transformer names the contracts it demands by key, and two contract levels of one primitive (`…@v1beta1`, `…@v1`) are distinct keys, so a transformer demanding one is structurally distinct from one demanding the other. But within a single key, the consumer Component may carry a slightly different definition body (drift, partial override) — the two sides may even come from different catalog builds, which under enhancement 0010 D4 is now the normal case rather than an error. Always unifying the consumer's primitive against the transformer's required slot ensures that drift surfaces as a structured `UnifyError` per (component, key) pair rather than as a render-time mystery. See enhancement 0001 D6.
+- **Why a transformer carries no `apiVersion`, and why that is enforced by closedness rather than by omission.** There is nothing for the field to name: a transformer's inputs are other people's contracts and its output is platform objects, so "this transformer's contract major" has no referent, and no reader would consult it — its own key interpolates `catalogVersion`, and the matcher keys on the contracts it demands. The absence is also load-bearing rather than tidy. A publish gate phrased as "for every member, compare against the last published build shipping this name at this apiVersion" resolves for a transformer the moment it has one, and the additive-only rule then refuses *ordinary* catalog releases — changing rendering logic, dropping an emitted field and narrowing an output type are all routine transformer edits and all violations. That would invert the whole point of keying transformers on the build, which is that a transformer is free to change. Closing the shape makes the field inexpressible, so the exclusion survives the next person adding a field to "the identity shape" without remembering which kinds are primitives.
+- **Why the identity shape is repeated rather than inherited from one shared with the primitives.** A parent named after the primitives that also admits transformers hands every future field to transformers for free. That is the actual history of `apiVersion`, and `fulfilment` and `matchLabels` each had to be excluded by hand afterwards. Enhancement 0010 D44 splits the shape instead: the cost is repeating three field lines, and the benefit is that the next field added to primitives cannot reach an adapter by default. A kind-neutral parent naming neither category was available and rejected for reintroducing exactly that straddle under a vaguer name.
 - **Why labels participate in matching but are inherited from primitives.** Component labels are not authored on the Component itself — they unify upward from every attached `#Resource`, `#Trait`, and `#Blueprint` (§3.1). This means a label-based match (e.g. `requiredLabels: {"core.opmodel.dev/workload-type": "stateless"}`) is a stable structural predicate the catalog can stamp on the primitive once and rely on, not a user-supplied free-text field. Conflating Component labels with author-supplied metadata would invite typos and silent misrouting.
 - **Why `#transform.output` may be either a struct or a list.** Most transformers emit one rendered resource per match (`Deployment` per stateless workload, `Service` per network-expose Trait). Some emit a variable number derived from a Component-side map: a `ConfigMapTransformer` emits one `ConfigMap` per entry in a component's `config` map. A single shape would force the variable case into a struct-of-resources contortion; a list-only shape would force the single case into a one-element list. Two shapes is the smallest schema that doesn't lie.
 - **Why we don't allow free-form CUE inside the transformer's output.** The renderer dispatches on `cue.Kind` — struct vs list — and never inspects field bodies. This keeps the kernel's render path agnostic to apply-layer conventions: a Kubernetes transformer's output is whatever the apply layer (kubectl, controller, gitops bridge) interprets, not whatever shape the core schema happens to know. Per Principle I (Contract Stability), the core schema must not assume a particular target.

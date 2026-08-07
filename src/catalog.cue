@@ -36,11 +36,12 @@ package core
 //
 // The pattern constraint on `#transformers` stamps every entry's
 // `metadata.modulePath` to "\(_ref.registryPath)/transformers" — the MAJOR-FREE
-// path, because a primitive declares a #PackagePathType — and
-// `metadata.version` to the catalog's version. It does NOT stamp
-// `metadata.fqn` — fqn derives from modulePath/name/version, and the map
-// key already carries the transformer's own fqn. Author discipline replaced
-// by schema enforcement: D18 lockstep is enforced structurally.
+// path, because a transformer declares a #PackagePathType — and
+// `metadata.catalogVersion` to the catalog's version. It does NOT stamp
+// `metadata.fqn`: under enhancement 0010 D21 an fqn is AUTHORED at the
+// definition site rather than derived, and the map key already carries the
+// transformer's own fqn. D18 lockstep on the build stays structural, since
+// the stamp is what supplies the key's version component.
 //
 // `M=metadata` is a field-label alias (enhancement 0001 D25). It binds the
 // label `M` to the metadata field path so the pattern constraint can reach
@@ -86,12 +87,16 @@ package core
 		annotations?: #LabelsAnnotationsType
 	}
 
-	#transformers: [#FQNType]: #ComponentTransformer & {
+	#transformers: [#ImplFQNType]: #ComponentTransformer & {
 		metadata: {
-			// The major is split out and NOT re-appended: a transformer is a
-			// primitive, and a primitive declares a #PackagePathType.
+			// The major is split out and NOT re-appended: a transformer
+			// declares a #PackagePathType, which admits no "@vN".
 			modulePath: "\(M._ref.registryPath)/transformers"
-			version:    M.version
+
+			// The catalog's own version IS the build every member of it
+			// shipped in — enhancement 0010 D25's rename, stamped rather
+			// than authored per leaf.
+			catalogVersion: M.version
 		}
 	}
 }
