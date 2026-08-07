@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0-alpha.2](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.1...v2.0.0-alpha.2) (2026-08-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* every catalog member renames version to catalogVersion, every primitive adds apiVersion, and every fqn becomes authored. Re-keying the catalogs is catalogs-identity-authoring.
+
+### Features
+
+* split contract keys from implementation keys on catalog members ([#30](https://github.com/open-platform-model/core/issues/30)) ([3ba2fdb](https://github.com/open-platform-model/core/commit/3ba2fdbe5aadc1f41316bcf08ce808dbfeeef80a))
+
 ## [2.0.0-alpha.1](https://github.com/open-platform-model/core/compare/v1.1.0-alpha.1...v2.0.0-alpha.1) (2026-08-07)
 
 
