@@ -154,6 +154,8 @@ No map declared by `core` takes `#FQNType`. A map whose keys name contracts MUST
 
 A wrong-form key MUST be refused rather than merely failing to match, since an unmatched key surfaces as a transformer that renders nothing rather than as an error naming the key.
 
+What `core` enforces is the key's **form**, not its agreement with anything. That a demand map's key equals its own value's `metadata.fqn`, and that a matcher bucket's key equals the `metadata.fqn` of the contract its listed transformers demand, are invariants of whichever runtime writes them; `core` declares no constraint tying a key to its value.
+
 #### Scenario: A build-shaped key is refused in a demand map
 
 - **WHEN** a `#ComponentTransformer` declares `requiredResources` with the key `"opmodel.dev/catalogs/opm/resources/backup@1.2.0"`
@@ -164,7 +166,7 @@ A wrong-form key MUST be refused rather than merely failing to match, since an u
 - **WHEN** a `#TransformerMap` is keyed `"opmodel.dev/catalogs/opm/transformers/backup-transformer@v1"`
 - **THEN** validation fails with a field-not-allowed error
 
-#### Scenario: A matcher bucket is keyed by what a component surfaces
+#### Scenario: A matcher bucket rejects a build-shaped key
 
-- **WHEN** the kernel fills `#Platform.#matchers.resources`
-- **THEN** each key is a `#ContractFQNType`, equal to the `metadata.fqn` of the `#Resource` the listed transformers demand
+- **WHEN** `#Platform.#matchers.resources` is filled with the key `"opmodel.dev/catalogs/opm/resources/backup@1.2.0"`
+- **THEN** validation fails with a field-not-allowed error, because a matcher bucket is keyed by the contract a component surfaces
