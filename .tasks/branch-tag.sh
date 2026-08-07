@@ -80,10 +80,15 @@ fi
 #      highest prerelease. `1.1.0-dev.*` beats `1.0.0-alpha.3` on the base
 #      version alone, before prerelease identifiers are even consulted — so
 #      moving to the next minor makes it strictly worse, not better.
-#   2. Explicit range subscriptions (the opm-operator's platform registry
-#      filters) admit prereleases deliberately. They are unaffected by the
-#      `@vN` stable-preference rule, so a next-minor dev build wins them
-#      whenever that minor has no release of its own yet.
+#   2. RETIRED in v2.0.0-alpha.4, and kept here because it was a load-bearing
+#      half of the argument: explicit range subscriptions (the opm-operator's
+#      platform registry filters) admitted prereleases deliberately and were
+#      unaffected by the `@vN` stable-preference rule, so a next-minor dev
+#      build won any range whose minor had no release of its own. A #Platform
+#      subscription now names one build as a scalar `version` and resolves
+#      nothing, so no query of that kind can select a branch build by
+#      accident. Point 1 carries the conclusion on its own, unchanged.
+#      (docs/publishing.md carries the same retraction in prose.)
 #
 # So the branch build shares the base of the highest existing release and is
 # ranked below it there. SemVer 2.0 §11.4.3 is the lever: a numeric identifier
