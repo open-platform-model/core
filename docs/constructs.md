@@ -54,12 +54,11 @@ Resources ──┐
 Traits ─────┤──unify──▶ Component.spec
 Blueprints ─┘
 
-Component.matchLabels    ◀── unified from attached primitives' matchLabels
-Component.metadata.labels ─── descriptive; NOT unified, NOT matched on
-ComponentTransformer ── matches ──▶ Component (via matchLabels + definition FQNs)
+Component.metadata.labels ◀── inherited from attached primitives
+ComponentTransformer ── matches ──▶ Component (via labels + definition FQNs)
 ```
 
-Matching identity flows upward, categorisation does not. When a Resource, Trait or Blueprint declares `matchLabels` (e.g. `"opm.opmodel.dev/workload-type": "stateless"`), those keys unify wholesale onto any Component that attaches the primitive, and ComponentTransformers match Components on that field plus the FQNs of their attached primitives. `metadata.labels` is descriptive only — it carries categorisation such as `"resource.opmodel.dev/category"`, which legitimately differs between the primitives of one Component, so it is neither unified upward nor consulted by the matcher.
+Labels flow upward: when a Resource or Trait declares labels (e.g., `"core.opmodel.dev/workload-type": "stateless"`), they propagate onto any Component that includes that primitive. ComponentTransformers then match Components by these inherited labels plus the FQNs of their attached primitives.
 
 **CUE schema**: [`../src/component.cue`](../src/component.cue)
 
