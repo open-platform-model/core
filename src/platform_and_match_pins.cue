@@ -15,6 +15,15 @@ package core
 //
 // As there, the filename must NOT begin with an underscore: CUE skips such
 // files, and every pin below would then vet clean by never running.
+//
+// ONE RULE ABOUT THE PIN SHAPE, learned the hard way on this file. A pin MUST
+// force evaluation — len(), key indexing, or string interpolation. The
+// intuitive `_pin: <expr>` followed by `_pin: <literal>` asserts only that the
+// literal is a LEGAL value of the expression, which is always true when the
+// expression is an unset required field or a defaulted disjunction. Such a pin
+// cannot fail. Measured 2026-08-07: with #Component.matchLabels replaced by
+// `{}` — this change's centrepiece deleted — the unification-shaped pin below
+// reported its expected values unchanged and `cue vet` exited 0.
 
 // ─── Fixtures: three primitives split across the two label fields ───────────
 //
@@ -113,10 +122,18 @@ _pinMatchComponent: #Component & {
 
 // The union is wholesale: disjoint keys from a resource and a blueprint
 // combine, and the blueprint's answer satisfies the resource's required key.
-_pinMatchUnified: _pinMatchComponent.matchLabels & {
-	"opm.opmodel.dev/workload-type": "stateful"
-	"opm.opmodel.dev/tier":          "data"
+//
+// Read by INDEXING rather than by unifying a literal struct in. `matchLabels &
+// {…}` would pass on a component whose matchLabels is empty, because plain
+// struct unification ADDS the keys it is handed; indexing a key that is not
+// there is `undefined field`, and the count catches a key that should not be.
+_pinMatchUnifiedCount: len(_pinMatchComponent.matchLabels)
+_pinMatchUnifiedCount: 2
+_pinMatchUnified: {
+	workloadType: _pinMatchComponent.matchLabels["opm.opmodel.dev/workload-type"]
+	tier:         _pinMatchComponent.matchLabels["opm.opmodel.dev/tier"]
 }
+_pinMatchUnified: {workloadType: "stateful", tier: "data"}
 
 // Three DIFFERENT categorisation values on one component, and no conflict —
 // the case that broke every design that unified metadata.labels. Asserted by
@@ -161,8 +178,12 @@ _pinMatchLabelsUnrendered: [
 ]
 _pinMatchLabelsUnrendered: []
 
-// The whole rendered label set, pinned exactly. A weaker check would pass if
-// componentLabels grew a matching key under a name the filter above missed.
+// The whole rendered label set, pinned exactly.
+//
+// THIS PIN IS MASKED ON ITS OWN and the count beneath it is what makes the
+// pair effective: #TransformerContext.labels is an OPEN struct, so unifying it
+// with five literal keys adds them regardless of what the fold computed. Do
+// not delete _pinRenderedLabelsCount as redundant — it is the half that fails.
 _pinRenderedLabels: _pinRenderContext.labels & {
 	"app.kubernetes.io/name":           "jellyfin"
 	"app.kubernetes.io/instance":       "jellyfin"
@@ -177,7 +198,7 @@ _pinRenderedLabelsCount: 5
 
 // The default. A primitive that never mentions the field is catalog-fulfilled,
 // so nothing opts in by accident.
-_pinFulfilmentDefault: _pinMatchContainer.fulfilment
+_pinFulfilmentDefault: "\(_pinMatchContainer.fulfilment)"
 _pinFulfilmentDefault: "catalog"
 
 // The declaration this exists for: catalog_opm declares `backup` and ships
@@ -194,7 +215,7 @@ _pinProviderFulfilledTrait: #Trait & {
 	appliesTo: [_pinMatchContainer]
 	spec: backup: schedule: string
 }
-_pinProviderFulfilment: _pinProviderFulfilledTrait.fulfilment
+_pinProviderFulfilment: "\(_pinProviderFulfilledTrait.fulfilment)"
 _pinProviderFulfilment: "provider"
 
 // ─── Demand-side optionality ────────────────────────────────────────────────
@@ -214,8 +235,8 @@ _pinOptionalTraitComponent: #Component & {
 		statefulWorkload: replicas: 1
 	}
 }
-_pinOptionalTraitMarked: _pinOptionalTraitComponent.#optionalTraits["opmodel.dev/catalogs/opm/traits/backup@v1beta1"]
-_pinOptionalTraitMarked: true
+_pinOptionalTraitMarked: "\(_pinOptionalTraitComponent.#optionalTraits["opmodel.dev/catalogs/opm/traits/backup@v1beta1"])"
+_pinOptionalTraitMarked: "true"
 
 // Absence is the only spelling of "required": an unmarked trait has no entry,
 // rather than an entry reading false.
@@ -244,20 +265,20 @@ _pinPlatform: #Platform & {
 	}
 }
 
-_pinSubscriptionRelease:    _pinPlatform.#registry["opmodel.dev/catalogs/opm@v1"].version
+_pinSubscriptionRelease:    "\(_pinPlatform.#registry["opmodel.dev/catalogs/opm@v1"].version)"
 _pinSubscriptionRelease:    "1.2.0"
-_pinSubscriptionPrerelease: _pinPlatform.#registry["opmodel.dev/catalogs/kubernetes@v1"].version
+_pinSubscriptionPrerelease: "\(_pinPlatform.#registry["opmodel.dev/catalogs/kubernetes@v1"].version)"
 _pinSubscriptionPrerelease: "1.0.0-alpha.2"
-_pinSubscriptionEnabled:    _pinPlatform.#registry["opmodel.dev/catalogs/opm@v1"].enable
-_pinSubscriptionEnabled:    true
+_pinSubscriptionEnabled:    "\(_pinPlatform.#registry["opmodel.dev/catalogs/opm@v1"].enable)"
+_pinSubscriptionEnabled:    "true"
 
 // Two builds of one catalog is TWO PLATFORMS, and the map key is what makes
 // the alternative inexpressible rather than merely discouraged: a second
 // subscription under the same path unifies with the first, so declaring
 // "1.2.0" and "1.3.0" for one catalog is a conflict, not a second channel.
-_pinOneBuildPerPath: (_pinPlatform.#registry & {
+_pinOneBuildPerPath: "\((_pinPlatform.#registry & {
 	"opmodel.dev/catalogs/opm@v1": version: "1.2.0"
-})["opmodel.dev/catalogs/opm@v1"].version
+})["opmodel.dev/catalogs/opm@v1"].version)"
 _pinOneBuildPerPath: "1.2.0"
 
 // ─── MUST-FAIL cases ────────────────────────────────────────────────────────
@@ -346,6 +367,55 @@ _pinOneBuildPerPath: "1.2.0"
 //    daemon:   _failDaemonBlueprint
 //   }
 //   #instance: _pinInstanceFixture
+//  }
+
+// A component that INVENTS a matching key of its own. matchLabels is derived —
+// it is exactly the unification of the attached primitives' — so a key that
+// traces to no primitive is refused. This is the rule that makes a component
+// fragment a pure wrapper structural rather than conventional, and it binds
+// every #Component because CUE cannot tell a catalog fragment from a module
+// author's component: both are #Component values.
+//
+// Reported through the derivation check rather than at the key, because the
+// key itself is legal — what is illegal is where it came from:
+//   _failAuthoredMatchLabel._matchLabelsAreDerived:
+//     conflicting values false and true
+//
+// `close()` around the union does NOT produce this refusal (measured, cue
+// v0.17.1) — it admits the key silently, which is why the check is a size
+// comparison rather than the obvious spelling.
+//
+//  _failAuthoredMatchLabel: #Component & {
+//   metadata: name: "invented"
+//   #resources: container: _pinMatchContainer
+//   #blueprints: "opmodel.dev/catalogs/opm/blueprints/workload/stateful-workload@v1beta1": _pinMatchStateful
+//   matchLabels: "fragment.opmodel.dev/invented": "yes"
+//   #instance: _pinInstanceFixture
+//   spec: {
+//    container: image:           "jellyfin:1"
+//    statefulWorkload: replicas: 1
+//   }
+//  }
+
+// The same refusal from the other side: a component ANSWERING a required
+// matching key inline instead of attaching a blueprint that answers it. The
+// key is one a primitive declared, so nothing about the value is wrong — it
+// still fails, because a component contributes no matching identity at all:
+//   _failInlineAnsweredMatchLabel._matchLabelsAreDerived:
+//     conflicting values false and true
+//
+// This is the accepted cost of the rule binding every #Component. It was
+// measured against the fleet before being taken: `modules/**` carries ZERO
+// hand-set matching labels — every module composes a workload blueprint and
+// inherits — so the hatch this closes is one nobody uses. A module that needs
+// to answer the key attaches the blueprint that answers it.
+//
+//  _failInlineAnsweredMatchLabel: #Component & {
+//   metadata: name: "answered"
+//   #resources: container: _pinMatchContainer
+//   matchLabels: "opm.opmodel.dev/workload-type": "daemon"
+//   #instance: _pinInstanceFixture
+//   spec: container: image: "jellyfin:1"
 //  }
 
 // A REQUIRED matching key that no attached primitive answers. The property no

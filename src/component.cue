@@ -83,11 +83,11 @@ package core
 	// there is nothing to select between. `metadata.labels` is NOT unified
 	// upward (see there); the two fields never meet.
 	//
-	// A component FRAGMENT contributes nothing here of its own: a fragment is
-	// a pure wrapper that attaches primitives, and this value is exactly the
-	// unification of what it attached. That is what puts the matching label
-	// under the primitive's own additive-only promise instead of under a
-	// wrapper nobody versions.
+	// A component contributes NOTHING here of its own — see the derivation
+	// check below, which is what makes that structural rather than a
+	// convention. Every key traces to a primitive, which is what puts the
+	// matching label under the primitive's own additive-only promise instead
+	// of under a wrapper nobody versions.
 	//
 	// The comprehension iterates the attachment MAPS and embeds each
 	// primitive's matchLabels struct whole — it never iterates the labels
@@ -98,7 +98,11 @@ package core
 	// an unanswered key is reported as a missing required field.
 	//
 	// Measured in enhancement 0010 experiment 04 (D36).
-	matchLabels: {
+	//
+	// The union itself is hidden, because it is the PROVENANCE of the public
+	// field rather than a second value a consumer reads: matchLabels IS this,
+	// and the check underneath is what keeps it exactly this.
+	_matchLabelsFromPrimitives: {
 		for _, resource in #resources {
 			if resource.matchLabels != _|_ {resource.matchLabels}
 		}
@@ -113,6 +117,24 @@ package core
 			}
 		}
 	}
+	matchLabels: _matchLabelsFromPrimitives
+
+	// matchLabels is DERIVED, and this is the enforcement. Unification can
+	// only ever ADD to matchLabels, so a size difference is exactly "this
+	// component contributed a key of its own" — whether it invented one or
+	// answered a required one inline.
+	//
+	// IF THIS FIRES: put the key on the primitive that owns it, or attach a
+	// blueprint that answers it. A matching key written on a component — or on
+	// a catalog FRAGMENT, which is the same type, and which is why this binds
+	// every #Component rather than only fragments — sits outside the
+	// additive-only promise its contract key gates.
+	//
+	// `close()` around the union does NOT do this. Measured against cue
+	// v0.17.1: a closed comprehension still admits an authored key, so the
+	// obvious spelling would read as enforcement while enforcing nothing.
+	_matchLabelsAreDerived: len(matchLabels) == len(_matchLabelsFromPrimitives)
+	_matchLabelsAreDerived: true
 
 	// Instance context injected by the parent #Module via its #components
 	// pattern constraint. Hidden definition slot — module authors never set
