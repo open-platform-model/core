@@ -41,13 +41,13 @@
 
 ## 5. Schema-level test cases
 
-- [ ] 5.1 Positive: a subscription with a scalar `version`, including a prerelease selected with no flag.
-- [ ] 5.2 MUST FAIL: a subscription with `filter`; a subscription with no `version`.
-- [ ] 5.3 Positive: two primitives with disjoint `matchLabels` unify into one component; two primitives with differing `metadata.labels["*.opmodel.dev/category"]` values coexist without conflict. The second is the case that broke every rejected design — pin it.
-- [ ] 5.4 MUST FAIL: two primitives whose `matchLabels` disagree on one key, asserting the error names that key.
-- [ ] 5.5 Assert a **required** match label survives into the component unset, reporting a missing required field rather than an incomplete value. This is the property the filter designs could not preserve.
-- [ ] 5.6 MUST FAIL: `fulfilment` on a `#Blueprint`; a third enum value.
-- [ ] 5.7 Assert `matchLabels` does not appear in rendered output for a component that declares them.
+- [x] 5.1 Positive: a subscription with a scalar `version`, including a prerelease selected with no flag.
+- [x] 5.2 MUST FAIL: a subscription with `filter`; a subscription with no `version`.
+- [x] 5.3 Positive: two primitives with disjoint `matchLabels` unify into one component; two primitives with differing `metadata.labels["*.opmodel.dev/category"]` values coexist without conflict. The second is the case that broke every rejected design — pin it.
+- [x] 5.4 MUST FAIL: two primitives whose `matchLabels` disagree on one key, asserting the error names that key.
+- [x] 5.5 Assert a **required** match label survives into the component unset, reporting a missing required field rather than an incomplete value. This is the property the filter designs could not preserve.
+- [x] 5.6 MUST FAIL: `fulfilment` on a `#Blueprint`; a third enum value.
+- [x] 5.7 Assert `matchLabels` does not appear in rendered output for a component that declares them.
 
 ## 6. Generated artifacts and gates
 
