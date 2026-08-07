@@ -51,9 +51,9 @@
 
 ## 6. Generated artifacts and gates
 
-- [ ] 6.1 `task generate:index` — `#SubscriptionFilter` and `#LabelWorkloadType` removed.
-- [ ] 6.2 `.tasks/spec-tracked.txt` — no change expected; `#Platform`, `#Component` and the primitives are already tracked and `#SubscriptionFilter` was never listed. Confirm.
-- [ ] 6.3 `task check`.
+- [x] 6.1 `task generate:index` — `#SubscriptionFilter` and `#LabelWorkloadType` removed.
+- [x] 6.2 `.tasks/spec-tracked.txt` — no change expected; `#Platform`, `#Component` and the primitives are already tracked and `#SubscriptionFilter` was never listed. Confirm.
+- [x] 6.3 `task check`.
 
 ## 7. Close the loop
 
