@@ -339,12 +339,17 @@ _pinOneBuildPerPath: "1.2.0"
 // rather than an artifact of unrelated labels sharing a namespace. Vet-visible
 // because the container's required disjunction is narrowed to nothing — the
 // error is reported once per surviving disjunct, and both name the key:
-//   _failMatchLabelConflict.matchLabels."opm.opmodel.dev/workload-type":
+//   _failMatchLabelConflict._matchLabelsFromPrimitives."opm.opmodel.dev/workload-type":
 //     2 errors in empty disjunction:
-//   _failMatchLabelConflict.matchLabels."opm.opmodel.dev/workload-type":
+//   _failMatchLabelConflict._matchLabelsFromPrimitives."opm.opmodel.dev/workload-type":
 //     conflicting values "daemon" and "stateful"
-//   _failMatchLabelConflict.matchLabels."opm.opmodel.dev/workload-type":
+//   _failMatchLabelConflict._matchLabelsFromPrimitives."opm.opmodel.dev/workload-type":
 //     conflicting values "stateless" and "stateful"
+//
+// Reported against the HIDDEN union rather than against matchLabels: the two
+// blueprints meet there first, so the conflict is caught at its source. The
+// public field never forms. (_failBareContainer below still reports against
+// matchLabels, because a required field that is merely unanswered does form.)
 //
 //  _failDaemonBlueprint: #Blueprint & {
 //   metadata: {
