@@ -28,10 +28,10 @@
 
 ## 3. Fulfilment (`src/resource.cue`, `src/trait.cue`)
 
-- [ ] 3.1 Add `fulfilment: *"catalog" | "provider"` to `#Resource` and `#Trait`. Closed enum, defaulted — nothing opts in by accident.
-- [ ] 3.2 Add it to **neither** `#Blueprint` nor `#ComponentTransformer`. For `#Blueprint`, ensure the definition is closed so declaring it fails rather than being ignored.
-- [ ] 3.3 Update `SPEC.md` for both kinds, stating the single-provider rule and naming materialize as where it is enforced — `core` declares the intent and cannot count transformers across a platform.
-- [ ] 3.4 `task vet`.
+- [x] 3.1 Add `fulfilment: *"catalog" | "provider"` to `#Resource` and `#Trait`. Closed enum, defaulted — nothing opts in by accident.
+- [x] 3.2 Add it to **neither** `#Blueprint` nor `#ComponentTransformer`. For `#Blueprint`, ensure the definition is closed so declaring it fails rather than being ignored.
+- [x] 3.3 Update `SPEC.md` for both kinds, stating the single-provider rule and naming materialize as where it is enforced — `core` declares the intent and cannot count transformers across a platform.
+- [x] 3.4 `task vet`.
 
 ## 4. Demand-side optionality (`src/component.cue` + `SPEC.md` §`#Component`)
 

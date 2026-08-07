@@ -61,6 +61,20 @@ import (
 	// NOT rendered: matchLabels does not reach #TransformerContext (D36).
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateful"}
 
+	// NO fulfilment field, and the exclusion is STRUCTURAL rather than an
+	// omission: #ComponentTransformer carries requiredResources and
+	// requiredTraits and has no blueprint equivalent, so nothing can ever
+	// DEMAND a blueprint and the field would name a question no matcher
+	// asks. A blueprint's fulfilment is that of the contracts it composes,
+	// each of which declares its own.
+	//
+	// Because this struct is a definition it is CLOSED, so supplying
+	// `fulfilment` here is a `field not allowed` error rather than a field
+	// nothing reads — see the pinned case in platform_and_match_pins.cue.
+	// This is the same reasoning that keeps apiVersion off a transformer
+	// (enhancement 0010 D44): a shape that admits a field nobody reads hands
+	// every future field to the wrong kind for free.
+
 	// Resources that compose this blueprint (full references)
 	composedResources!: [...#Resource]
 

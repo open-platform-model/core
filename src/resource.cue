@@ -84,6 +84,38 @@ import (
 	// appears on no rendered object (D36).
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
 
+	// fulfilment: where this contract's implementation is expected to come
+	// from (enhancement 0010 D32).
+	//
+	//   "catalog"  — the declaring catalog implements it. Today's behaviour,
+	//                and the default, so nothing opts in by accident.
+	//   "provider" — the declaring catalog ships NO transformer for it,
+	//                deliberately, and a platform must carry EXACTLY ONE
+	//                transformer requiring this contract. Two is refused at
+	//                materialize naming both catalog paths and the contract
+	//                key; zero is an unresolved demand and fails the render.
+	//
+	// A declaration, not an enforcement: `core` cannot count transformers
+	// across a platform's materialized set, so the guard is the kernel's.
+	// Stating the intent here is what gives the kernel something to count
+	// against — today the concept cannot be expressed at all, and a
+	// transformerless contract is indistinguishable from an oversight.
+	//
+	// Deriving it instead was the obvious alternative and is not computable:
+	// the owning catalog cannot be read off an FQN, because the kind-segment
+	// count is not fixed (".../opm/resources" against
+	// ".../opm/blueprints/workload"), and it is fragile in principle — a
+	// catalog later adding a transformer would silently change the contract's
+	// character. Detecting competing providers by predicate equality was
+	// measured to have no false positives today and rejected for
+	// false-NEGATIVES on the real case: a k8up transformer requiring
+	// backup + schedule and a Velero transformer requiring backup alone are
+	// two providers of one contract, and their predicates differ.
+	//
+	// A closed enum rather than a boolean `providedExternally`, so a third
+	// fulfilment mode does not require a breaking rename.
+	fulfilment: *"catalog" | "provider"
+
 	// MUST be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition
 	spec!: (strings.ToCamel(metadata.#definitionName)): _
