@@ -68,21 +68,45 @@ A resource MUST NOT have a demand-side optionality marker.
 - **WHEN** a component declares two resources and the platform supplies a transformer for only one
 - **THEN** the render fails rather than emitting output for the satisfied one
 
-### Requirement: A trait demand carries an explicit opt-out
+### Requirement: A trait states its own optionality, and the attachment may override it
 
-`#Trait` demands MUST be required by default. A component MUST be able to mark a trait demand as optional. An unhandled trait without that marker MUST fail; only the opted-out case MUST degrade to a warning that continues.
+`#Trait` MUST carry `optional: bool`. `core` MUST NOT give it a default: the declaring catalog states the posture, and MUST state it as a *default* (`bool | *true` for advisory, `bool | *false` for load-bearing) rather than as a concrete value.
 
-#### Scenario: An unhandled trait without the marker fails
+A `#Component` MUST be able to override the declared posture at the attachment site, in either direction, without conflict. A `#Component` MUST NOT carry an optionality field of its own.
 
-- **WHEN** a component declares a trait no materialized transformer handles, with no opt-out
+#### Scenario: An unhandled load-bearing trait fails
+
+- **WHEN** a component declares a trait no materialized transformer handles, whose resolved `optional` is `false`
 - **THEN** the render fails, naming the trait
 
-#### Scenario: An unhandled trait with the marker warns
+#### Scenario: An unhandled advisory trait warns
 
-- **WHEN** the same component marks that trait demand optional
+- **WHEN** the same trait's resolved `optional` is `true`
 - **THEN** the render continues and a warning names the unhandled trait
 
-#### Scenario: Absence of the marker means required
+#### Scenario: A module overrules the catalog in either direction
 
-- **WHEN** a trait demand is declared with no optionality expressed
-- **THEN** it is required
+- **WHEN** a component attaches a trait the catalog declared `bool | *false` and writes `optional: true` at the attachment site
+- **THEN** the resolved value is `true`, with no conflict, and the catalog's own definition is unchanged
+- **AND** the same holds in reverse for a trait declared `bool | *true` and attached with `optional: false`
+
+### Requirement: A catalog may suggest a posture but may not decide it
+
+A published `#Trait` whose `optional` is never stated, or is pinned to a concrete value, MUST be refused at publish. `core` MUST ship the rule as a definition a publishing tool unifies against, so the diagnostic is CUE's own.
+
+This is enforced at publish rather than by the schema: CUE cannot express "this field may be given a default here but not a concrete value", because what distinguishes the two cases is who wrote it.
+
+#### Scenario: A posture stated as a default is accepted
+
+- **WHEN** a catalog publishes a trait declaring `optional: bool | *false`
+- **THEN** the gate passes
+
+#### Scenario: A pinned posture is refused
+
+- **WHEN** a catalog publishes a trait declaring `optional: false`
+- **THEN** publish fails, because no module could override it
+
+#### Scenario: An unstated posture is refused
+
+- **WHEN** a catalog publishes a trait that never mentions `optional`
+- **THEN** publish fails under concrete evaluation, naming the field

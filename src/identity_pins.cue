@@ -168,6 +168,35 @@ _pinInstanceSurvivesMajor:   _pinInstanceOnV2.metadata.uuid & _pinInstanceOnV3.m
 // The ownership label carries that uuid — it is the value the prune step reads.
 _pinInstanceOwnerLabel: _pinInstanceOnV2.metadata.labels["module-instance.opmodel.dev/uuid"] & "\(_pinInstanceOnV2.metadata.uuid)"
 
+// ─── The algorithm itself ───────────────────────────────────────────────────
+//
+// EVERY uuid pin above is RELATIVE: it asserts that two uuids agree, or that
+// they differ. Not one of them survives being asked whether the FORMULA is
+// still the formula, because both sides move together when it changes.
+// Measured 2026-08-07 against cue v0.17.1: changing OPMNamespace in types.cue
+// — the constant types.cue itself declares MUST remain immutable across all
+// versions — produces ZERO pin failures in this file.
+//
+// These two are absolute, and they are what make the formula a contract. A
+// module's uuid is what a registry dedupes on. An instance's is what the
+// operator's prune step compares against a live object's owner label, so a
+// silent change to it makes every upgrade skip the deletes it should perform,
+// leave the objects running, and report success — the exact failure D41 exists
+// to prevent, arrived at from a different direction.
+//
+// If one of these fails, the question is never "update the expected value". It
+// is whether the input changed (a fixture moved — check the pins above, which
+// will have failed too) or the ALGORITHM changed (nothing else failed — and
+// then the whole fleet's identities have moved and the change is breaking).
+//
+// SPEC.md §3.2 used to say `library` pinned a known uuid as this sentinel.
+// `library/opm/helper/synth/instance_test.go` does carry one, but it encodes
+// the PRE-D41 formula (it hashes the module's uuid, not its registryPath) and
+// sits behind the not-yet-done library-core-retarget slice. The constant lives
+// here, so the sentinel belongs here.
+_pinModuleV2UUIDAbsolute:     _pinModuleV2.metadata.uuid & "a48f489f-ebfc-579a-8d48-d658c12d3f2a"
+_pinInstanceOnV2UUIDAbsolute: _pinInstanceOnV2.metadata.uuid & "b6a249c2-6d12-5422-ae0b-ecf44cbbf8bf"
+
 // ─── Instance identity still distinguishes what it must ─────────────────────
 //
 // Without these, the survival pins above are satisfiable by an identity that

@@ -8,12 +8,13 @@ import (
 //
 // ComponentTransformers use label-based matching to determine which components they can handle.
 // A transformer matches a component when ALL of the following are true:
-//  1. ALL requiredLabels are present on the component with matching values
+//  1. ALL requiredLabels are present in the component's matchLabels with matching values
 //  2. ALL requiredResources FQNs exist in component #resources
 //  3. ALL requiredTraits FQNs exist in component #traits
 //
-// Component labels are inherited from the union of labels from all attached
-// #resources, #traits, and #policies definitions.
+// A component's matchLabels is the wholesale unification of its attached
+// #resources', #traits' and #blueprints' matchLabels. Matching does NOT read
+// metadata.labels on either side (enhancement 0010 D36).
 #ComponentTransformer: {
 	kind: "ComponentTransformer"
 
@@ -63,19 +64,23 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// Labels that a component MUST have to match this transformer.
-	// Component labels are inherited from the union of labels from all attached
-	// #resources, #traits, and #policies.
+	// Labels a component MUST carry in its matchLabels to match this
+	// transformer. Selection reads #Component.matchLabels — the wholesale
+	// unification of the attached primitives' matchLabels — and never
+	// metadata.labels on either side (enhancement 0010 D36).
 	//
 	// Example: A DeploymentTransformer requires stateless workloads:
-	//   requiredLabels: {"core.opmodel.dev/workload-type": "stateless"}
+	//   requiredLabels: {"opm.opmodel.dev/workload-type": "stateless"}
 	//
-	// The Container resource defines this label, so components with Container
-	// will have it. Transformers requiring "stateful" won't match.
+	// The key is the DECLARING CATALOG's, not `core`'s: a catalog's container
+	// resource declares the key in its own matchLabels (required, so the
+	// author must pick), and its workload blueprints answer it. Transformers
+	// requiring "stateful" won't match. `core` names no matching key, which
+	// is what lets a catalog introduce one without a `core` release.
 	requiredLabels?: #LabelsAnnotationsType
 
 	// Labels optionally used by this transformer - component MAY include these
-	// If not provided, defaults from the definition can be used
+	// in its matchLabels. If not provided, defaults from the definition can be used.
 	optionalLabels?: #LabelsAnnotationsType
 
 	// Resources required by this transformer - component MUST include these.
@@ -151,6 +156,17 @@ import (
 	#runtimeName!: #NameType
 
 	// Labels and annotations. These are inherited from the component and module metadata.
+	//
+	// #Component.matchLabels is DELIBERATELY absent from every fold below: a
+	// component's matching identity selects a transformer, it does not
+	// describe the objects that transformer emits, and folding it in would
+	// publish a catalog's private matching vocabulary onto every live object.
+	// The omission is a decision (enhancement 0010 D36), not an oversight —
+	// it is also visible, because rendered objects carried
+	// `core.opmodel.dev/workload-type` before this change and stop here. An
+	// opt-in render flag was demonstrated working in experiment 04 and
+	// deliberately not taken; adding it later is a struct-level guard on
+	// componentLabels and disturbs nothing else.
 	//
 	// - moduleLabels: labels from #moduleInstanceMetadata.labels (if defined)
 	// - moduleAnnotations: annotations from #moduleInstanceMetadata.annotations (if defined)
