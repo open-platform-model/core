@@ -448,8 +448,8 @@ A `#Platform` value is therefore a *spec* (what to pull, what to allow / deny) p
     // materialized twin.
     #composedTransformers?: #TransformerMap
     #matchers?: {
-        resources: [#FQNType]: [...#ComponentTransformer]
-        traits:    [#FQNType]: [...#ComponentTransformer]
+        resources: [#ContractFQNType]: [...#ComponentTransformer]
+        traits:    [#ContractFQNType]: [...#ComponentTransformer]
     }
 }
 
@@ -613,7 +613,7 @@ The catalog's identity is its `metadata.modulePath` — the complete CUE module 
     //   "<catalog registryPath>/transformers"     // major split out, NOT re-appended
     // and metadata.catalogVersion is stamped to the catalog's version.
     // Pattern enforced by the schema, not by author discipline.
-    #transformers: [#FQNType]: #ComponentTransformer & {
+    #transformers: [#ImplFQNType]: #ComponentTransformer & {
         metadata: {
             modulePath:     "\(M._ref.registryPath)/transformers"
             catalogVersion: M.version
@@ -631,7 +631,7 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 - `metadata.version` MUST be a concrete `#VersionType` and MUST have **no default**. A `#Catalog` evaluated with `version` unset MUST report an incomplete value naming the field. The former `*"0.0.0-dev"` default is removed.
 - `metadata.fqn` MUST equal `modulePath` and MUST be typed `#ModulePathType`. It MUST NOT interpolate `version`. Consumers MUST NOT supply it.
 - `metadata` MUST NOT assert that `version`'s major agrees with `modulePath`'s. A `#Catalog` declaring `modulePath: "…/opm@v1"` with `version: "2.0.0"` MUST validate. As with [`#Module`](#32-module), this is an **accepting** behaviour specified deliberately — see Rationale.
-- Every entry in `#transformers` MUST be keyed by the transformer's own `metadata.fqn` — an `#ImplFQNType` value, SemVer-suffixed. The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.catalogVersion` to the catalog's version. The major MUST NOT be re-appended: a transformer declares a `#PackagePathType`, which admits no `@vN`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
+- Every entry in `#transformers` MUST be keyed by the transformer's own `metadata.fqn`, and the key is typed `#ImplFQNType`, so a contract-shaped key MUST be rejected. The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.catalogVersion` to the catalog's version. The major MUST NOT be re-appended: a transformer declares a `#PackagePathType`, which admits no `@vN`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
 - The pattern does NOT stamp `metadata.fqn`. Under enhancement 0010 D21 an `fqn` is authored at the definition site rather than derived, so there is no value for `#Catalog` to compute; the map key already carries the transformer's own `fqn`, and the agreement between the two is asserted at publish by `CatalogMemberFQNGate` rather than here.
 - Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
 
@@ -690,10 +690,10 @@ Transformers are catalog-versioned, and a transformer is an **adapter rather tha
 
     requiredLabels?:    #LabelsAnnotationsType
     optionalLabels?:    #LabelsAnnotationsType
-    requiredResources?: [#FQNType]: #Resource
-    optionalResources?: [#FQNType]: #Resource
-    requiredTraits?:    [#FQNType]: #Trait
-    optionalTraits?:    [#FQNType]: #Trait
+    requiredResources?: [#ContractFQNType]: #Resource
+    optionalResources?: [#ContractFQNType]: #Resource
+    requiredTraits?:    [#ContractFQNType]: #Trait
+    optionalTraits?:    [#ContractFQNType]: #Trait
 
     readsContext?:  [...string]
     producesKinds?: [...string]
@@ -719,7 +719,7 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - `metadata.catalogVersion` MUST be a SemVer 2.0 string. Unlike a primitive's, it IS this kind's key component.
 - `#ComponentTransformer` MUST NOT carry `metadata.apiVersion`. Declaring one MUST fail with a field-not-allowed error rather than being accepted and ignored.
 - `#ComponentTransformer` MUST NOT carry `metadata.#definitionName`. The three primitives retain it because each derives its `spec!` field key from it; a transformer has no `spec`, so nothing read it.
-- Every map key under `requiredResources` / `optionalResources` / `requiredTraits` / `optionalTraits` MUST be a valid `#FQNType` string, and MUST equal the map value's `metadata.fqn`. Since those values are `#Resource` and `#Trait`, whose `fqn` is a `#ContractFQNType`, a demand is in practice contract-keyed; the declared key type stays the disjunction, which is what the maps carried before the contract/implementation split.
+- Every map key under `requiredResources` / `optionalResources` / `requiredTraits` / `optionalTraits` MUST be a `#ContractFQNType` and MUST equal the map value's `metadata.fqn`. A build-shaped key MUST be rejected: a transformer demands contracts, and no `#Resource` or `#Trait` can carry a key in that form.
 - A Transformer matches a Component when: all `requiredLabels` are present on the Component with matching values, every `requiredResources` FQN appears in the Component's `#resources`, and every `requiredTraits` FQN appears in the Component's `#traits`. The kernel matcher additionally unifies the consumer's primitive against the transformer's required slot at the same FQN; divergent definitions surface as a structured error per (component, FQN).
 - `#transform.output` MUST be either a single struct (one rendered resource per match) or a list of structs (N rendered resources per match). Other CUE kinds are rejected by the renderer.
 

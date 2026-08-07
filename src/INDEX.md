@@ -56,7 +56,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#ArtifactRef` | `types.cue` | ArtifactRef splits a complete module path into the OCI repository its tags live under and the major it declares |
 | `#BundleFQNType` | `types.cue` | BundleFQNType: FQN for #Bundle — path/name:vN (major version) Example: "opmodel |
 | `#ContractFQNType` | `types.cue` | ContractFQNType: what a module DEMANDS — path/name@vN, where vN is the primitive's own #APIVersionType (enhancement 0010 D4) |
-| `#FQNType` | `types.cue` | FQNType: either form, for the map shapes that hold both |
+| `#FQNType` | `types.cue` | FQNType: either form, for a consumer holding both |
 | `#ImplFQNType` | `types.cue` | ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of the build the definition shipped in (enhancement 0010 D4) |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |

@@ -75,7 +75,7 @@ package core
 	// (D14 — no kernel cache).
 	#composedTransformers?: #TransformerMap
 	#matchers?: {
-		resources: [#FQNType]: [...#ComponentTransformer]
-		traits: [#FQNType]: [...#ComponentTransformer]
+		resources: [#ContractFQNType]: [...#ComponentTransformer]
+		traits: [#ContractFQNType]: [...#ComponentTransformer]
 	}
 }

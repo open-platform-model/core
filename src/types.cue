@@ -166,9 +166,20 @@ import (
 // provenance an operator upgrading a catalog needs — which bytes are running.
 #ImplFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
-// FQNType: either form, for the map shapes that hold both. A field naming one
-// role narrows to that role's type instead — #Resource, #Trait and #Blueprint
-// take #ContractFQNType, #ComponentTransformer takes #ImplFQNType.
+// FQNType: either form, for a consumer holding both. Exported for that, and
+// deliberately unused inside `core`: every field and map key here names ONE
+// role and takes that role's type, which is what keeps a wrong-form key
+// inexpressible rather than merely unmatched.
+//
+//	#Resource / #Trait / #Blueprint  metadata.fqn         #ContractFQNType
+//	#ComponentTransformer            metadata.fqn         #ImplFQNType
+//	                                 required/optional*   #ContractFQNType  (it demands contracts)
+//	#TransformerMap, #Catalog        map keys             #ImplFQNType
+//	#Platform.#matchers              bucket keys          #ContractFQNType
+//
+// Before D4 split the type, all of those were one regex and the narrowing was
+// free. It is stated here because the disjunction is the only thing in the
+// file that would silently re-admit the other form.
 //
 // NOTE the deliberate visual collision with #ModulePathType, which also ends
 // "@v1". It is safe because the two namespaces never meet in one field: a

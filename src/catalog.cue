@@ -87,7 +87,7 @@ package core
 		annotations?: #LabelsAnnotationsType
 	}
 
-	#transformers: [#FQNType]: #ComponentTransformer & {
+	#transformers: [#ImplFQNType]: #ComponentTransformer & {
 		metadata: {
 			// The major is split out and NOT re-appended: a transformer
 			// declares a #PackagePathType, which admits no "@vN".

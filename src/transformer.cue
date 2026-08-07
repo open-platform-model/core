@@ -80,17 +80,17 @@ import (
 
 	// Resources required by this transformer - component MUST include these.
 	// Map key is the FQN, value is the Resource definition (provides access to #defaults).
-	requiredResources?: [#FQNType]: #Resource
+	requiredResources?: [#ContractFQNType]: #Resource
 
 	// Resources optionally used by this transformer - component MAY include these.
-	optionalResources?: [#FQNType]: #Resource
+	optionalResources?: [#ContractFQNType]: #Resource
 
 	// Traits required by this transformer - component MUST include these.
 	// Map key is the FQN, value is the Trait definition (provides access to #defaults).
-	requiredTraits?: [#FQNType]: #Trait
+	requiredTraits?: [#ContractFQNType]: #Trait
 
 	// Traits optionally used by this transformer - component MAY include these.
-	optionalTraits?: [#FQNType]: #Trait
+	optionalTraits?: [#ContractFQNType]: #Trait
 
 	// Catalog hints — purely informational; not used by the matcher.
 	// `readsContext` declares which #ctx paths the transformer reads (e.g. "runtime.cluster.domain").
@@ -122,7 +122,7 @@ import (
 }
 
 // Map of transformers by fully qualified name
-#TransformerMap: [#FQNType]: #ComponentTransformer
+#TransformerMap: [#ImplFQNType]: #ComponentTransformer
 
 // Provider context passed to transformers
 #TransformerContext: {

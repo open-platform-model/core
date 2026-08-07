@@ -589,3 +589,32 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //   }
 //   spec: backup: _
 //  }
+
+// A DEMAND keyed by a build. A transformer demands contracts, so the key type
+// is #ContractFQNType and no #Resource can ever carry a key in the build form.
+// Reported as a closedness failure rather than an out-of-bound, because the
+// offending string is a map KEY that matches no pattern constraint:
+//   _failBuildKeyedDemand.requiredResources.
+//     "opmodel.dev/catalogs/opm/resources/backup@1.2.0": field not allowed
+//
+//  _failBuildKeyedDemand: #ComponentTransformer & {
+//   metadata: {
+//    name:           "backup-transformer"
+//    description:    "renders a backup job"
+//    modulePath:     "opmodel.dev/catalogs/opm/transformers"
+//    catalogVersion: "1.2.0"
+//    fqn:            "opmodel.dev/catalogs/opm/transformers/backup-transformer@1.2.0"
+//   }
+//   requiredResources: "opmodel.dev/catalogs/opm/resources/backup@1.2.0": _pinContractKeyedResource
+//   #transform: {}
+//  }
+
+// The mirror: a transformer MAP keyed by a contract. #TransformerMap and
+// #Catalog.#transformers hold implementations, so they take #ImplFQNType:
+//   _failContractKeyedTransformerMap.
+//     "opmodel.dev/catalogs/opm/transformers/backup-transformer@v1":
+//     field not allowed
+//
+//  _failContractKeyedTransformerMap: #TransformerMap & {
+//   "opmodel.dev/catalogs/opm/transformers/backup-transformer@v1": _pinImplKeyedTransformer
+//  }
