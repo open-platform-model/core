@@ -45,76 +45,15 @@ import (
 		// Human-readable description of the definition
 		description?: string
 
-		// Optional metadata labels for CATEGORIZATION. Descriptive only —
-		// nothing selects on these, and they are never unified upward into a
-		// #Component. Matching lives in matchLabels below (enhancement 0010
-		// D36).
-		// Example: {"resource.opmodel.dev/category": "workload"}
+		// Optional metadata labels for categorization and filtering
+		// Labels are used by OPM for definition selection and matching
+		// Example: {"core.opmodel.dev/workload-type": "stateless"}
 		labels?: #LabelsAnnotationsType
 
 		// Optional metadata annotations for definition behavior hints (not used for categorization)
 		// Annotations provide additional metadata but are not used for selection
 		annotations?: #LabelsAnnotationsType
 	}
-
-	// matchLabels: this resource's MATCHING identity — the keys a
-	// #ComponentTransformer.requiredLabels predicate selects on. A #Component
-	// unifies its attached primitives' matchLabels WHOLESALE, so every key
-	// written here participates in matching and nothing else does.
-	//
-	// Deliberately not metadata.labels. The two were one field, and the
-	// upward union that implied cannot be built: categorisation labels
-	// legitimately disagree between primitives — "workload" on a container,
-	// "storage" on volumes, "config" on config maps — so a full union fails
-	// on the first real component. Every FILTERED union measured had to
-	// iterate, and CUE refuses to iterate a struct holding an unset required
-	// field, which forced dropping `!` from the one label a module author
-	// must pick. Separating the fields removes the filter and both costs.
-	//
-	// Because the union embeds structs rather than iterating them, a REQUIRED
-	// key survives it: a primitive MAY declare `matchLabels: "<key>"!: <disj>`
-	// and the component reports that field unset rather than silently
-	// carrying an incomplete value.
-	//
-	// `core` names no key here — the matching vocabulary belongs to the
-	// catalog that defines it, by construction rather than by `core` agreeing
-	// not to look at some keys.
-	//
-	// NOT rendered: matchLabels does not reach #TransformerContext, so it
-	// appears on no rendered object (D36).
-	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
-
-	// fulfilment: where this contract's implementation is expected to come
-	// from (enhancement 0010 D32).
-	//
-	//   "catalog"  — the declaring catalog implements it. Today's behaviour,
-	//                and the default, so nothing opts in by accident.
-	//   "provider" — the declaring catalog ships NO transformer for it,
-	//                deliberately, and a platform must carry EXACTLY ONE
-	//                transformer requiring this contract. Two is refused at
-	//                materialize naming both catalog paths and the contract
-	//                key; zero is an unresolved demand and fails the render.
-	//
-	// A declaration, not an enforcement: `core` cannot count transformers
-	// across a platform's materialized set, so the guard is the kernel's.
-	// Stating the intent here is what gives the kernel something to count
-	// against — today the concept cannot be expressed at all, and a
-	// transformerless contract is indistinguishable from an oversight.
-	//
-	// Deriving it instead was the obvious alternative and is not computable:
-	// the owning catalog cannot be read off an FQN, because the kind-segment
-	// count is not fixed (".../opm/resources" against
-	// ".../opm/blueprints/workload"), and it is fragile in principle — a
-	// catalog later adding a transformer would silently change the contract's
-	// character. Detecting competing providers by predicate equality was
-	// measured to have no false positives today and rejected for
-	// false-NEGATIVES on the real case: a k8up transformer requiring
-	// backup + schedule and a Velero transformer requiring backup alone are
-	// two providers of one contract, and their predicates differ.
-	//
-	// A closed enum rather than a boolean `providedExternally`, so a third
-	// fulfilment mode does not require a breaking rename.
-	fulfilment: *"catalog" | "provider"
 
 	// MUST be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition

@@ -48,13 +48,9 @@ Ask yourself:
         version!:     #MajorVersionType // e.g., "v1"
         fqn:          #FQNType          // computed: "{modulePath}/{name}@{version}"
         description?: string
-        labels?:      #LabelsAnnotationsType   // categorisation only
+        labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
-
-    // Matching identity — unified wholesale into every Component that
-    // attaches this primitive; what a transformer's requiredLabels selects on.
-    matchLabels?: #LabelsAnnotationsType
 
     // OpenAPIv3-compatible schema. The exposed field name is the camelCase
     // form of metadata.name (e.g., name "container" -> spec.container).
@@ -71,13 +67,11 @@ Ask yourself:
         modulePath:  "opmodel.dev/opm/resources/workload"
         version:     "v1"
         description: "A container definition for workloads"
-        // Categorisation only — descriptive, never matched on.
-        labels: "resource.opmodel.dev/category": "workload"
+        labels: {
+            "core.opmodel.dev/category":      "workload"
+            "core.opmodel.dev/workload-type": "stateless"
+        }
     }
-
-    // Matching identity — what a transformer's requiredLabels selects on.
-    // The key belongs to the declaring catalog; `core` names none.
-    matchLabels: "opm.opmodel.dev/workload-type": "stateless"
 
     spec: container: {
         image!:           string
@@ -90,7 +84,7 @@ Ask yourself:
 }
 ```
 
-The Resource's `matchLabels` unify wholesale into any Component that attaches it, and ComponentTransformers select on that field. `metadata.labels` stays where it is written: it carries categorisation, which legitimately differs between the primitives of one Component, so it is neither unified upward nor matched on.
+The Resource's labels propagate up to any Component that includes it — ComponentTransformers use these inherited labels for matching.
 
 **CUE schema**: [`../src/resource.cue`](../src/resource.cue)
 
@@ -131,13 +125,9 @@ Ask yourself:
         version!:     #MajorVersionType
         fqn:          #FQNType
         description?: string
-        labels?:      #LabelsAnnotationsType   // categorisation only
+        labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
-
-    // Matching identity — unified wholesale into every Component that
-    // attaches this primitive; what a transformer's requiredLabels selects on.
-    matchLabels?: #LabelsAnnotationsType
 
     // Resources this Trait can be applied to (full references).
     appliesTo!: [...#Resource]
@@ -213,13 +203,9 @@ Ask yourself:
         version!:     #MajorVersionType
         fqn:          #FQNType
         description?: string
-        labels?:      #LabelsAnnotationsType   // categorisation only
+        labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
-
-    // Matching identity — unified wholesale into every Component that
-    // attaches this primitive; what a transformer's requiredLabels selects on.
-    matchLabels?: #LabelsAnnotationsType
 
     composedResources!: [...#Resource]   // required composition
     composedTraits?:    [...#Trait]      // optional composition

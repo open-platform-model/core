@@ -64,7 +64,7 @@ The invariant: **a branch build must never be the version a query selects**, und
 It is tempting to lean on Go/CUE's rule that `@vN` ignores prereleases when a stable version exists, and let branch builds preview the next minor. Two things defeat that:
 
 1. **A major can live for a long time with no stable release.** `@v1` ships only `v1.0.0-alpha.N` today, so there is nothing for `@v1` to prefer and it must take the highest prerelease. `v1.0.0-dev.*` beats every `v1.0.0-alpha.N`, because prerelease identifiers compare lexically and `alpha` < `dev`. Moving the branch build to the next minor is *strictly worse*: `v1.1.0-dev.*` beats `v1.0.0-alpha.3` on the base version alone, before prerelease identifiers are consulted at all.
-2. ~~**Range subscriptions deliberately admit prereleases.**~~ **Retired in `v2.0.0-alpha.4`** — a `#Platform` subscription now names one build as a scalar `version` and resolves nothing, so no query of that kind can select a branch build by accident. It is kept here struck through rather than deleted because it was a load-bearing half of the original argument: while platform filters were ranges that admitted prereleases, a next-minor branch build won any range whose top minor had no release of its own. The conclusion below stands on point 1 alone, and stands unchanged.
+2. **Range subscriptions deliberately admit prereleases.** The opm-operator's platform registry filters are written as ranges precisely so they can pin alpha catalogs. The `@vN` stable-preference rule does not apply to them, so a next-minor branch build wins any range whose top minor has no release of its own yet — regardless of whether a stable release exists elsewhere.
 
 So the branch build shares the base version of the highest existing release and is ranked below it there. SemVer 2.0 §11.4.3 is the lever: *a numeric identifier always has lower precedence than an alphanumeric one at the same position*. Leading the prerelease with `0` puts every branch build under every named channel on that base:
 
@@ -115,7 +115,7 @@ Verified against CUE 0.16.1:
 | `cue mod get opmodel.dev/core@v0.4` | **highest release on v0.4** — branch builds sort below every named channel on that base, so they are never selected here |
 | `cue mod get opmodel.dev/core@v0.4.0-0.dev.<ts>.g<sha>` | exact pin |
 
-Platform subscriptions no longer resolve anything: since `v2.0.0-alpha.4` a `#Platform` names the catalog build it materializes as a scalar (`version: "1.0.0-alpha.7"`), so a branch build reaches a platform only by being written into it. The table above is therefore the whole of the selection surface — it governs `cue.mod` dependency resolution, and nothing else queries a range.
+The same holds for the opm-operator's range subscriptions: a range such as `>=1.0.0-alpha.1, <=1.0.0-alpha.7` admits prereleases deliberately, and still resolves to the highest *release* in the window rather than to whatever branch happened to build last.
 
 So two pin styles are blessed by this strategy:
 

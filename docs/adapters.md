@@ -77,15 +77,14 @@ Runtimes must populate `#runtimeName`; CUE evaluation fails if it is missing.
 
 ```text
 Component
-├── matchLabels:       {"opm.opmodel.dev/workload-type": "stateless"}
-│                      └─ unified from the attached primitives' matchLabels
+├── metadata.labels:   {"core.opmodel.dev/workload-type": "stateless", ...}
 ├── #resources:        {"...container@v1": ...}
 └── #traits:           {"...scaling@v1": ..., "...expose@v1": ...}
 
                               ▼ pipeline checks each ComponentTransformer:
 
 DeploymentTransformer (#ComponentTransformer)
-├── requiredLabels:    {"opm.opmodel.dev/workload-type": "stateless"}  ✓
+├── requiredLabels:    {"core.opmodel.dev/workload-type": "stateless"}  ✓
 ├── requiredResources: {"...container@v1": ...}                          ✓
 └── requiredTraits:    {}                                                ✓
                                                               → MATCH (emits Deployment)
