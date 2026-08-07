@@ -51,13 +51,17 @@ CUE module: `opmodel.dev/core@v2`
 | `#ComponentTransformer` | `transformer.cue` | #ComponentTransformer: Declares how to convert OPM components into platform-specific resources |
 | `#TransformerContext` | `transformer.cue` | Provider context passed to transformers |
 | `#TransformerMap` | `transformer.cue` | Map of transformers by fully qualified name |
+| `#APIVersionGated` | `types.cue` | APIVersionGated reports whether the additive-only promise binds at a given apiVersion (enhancement 0010 D34): false at alpha, which promises nothing and whose publish gate is off, true at beta and GA, which are gated in full |
+| `#APIVersionType` | `types.cue` | APIVersionType: a PRIMITIVE's contract level — the value its author moves when the primitive's shape breaks, independent of the catalog's module major and of the catalog's release SemVer (enhancement 0010 D4, D25) |
 | `#ArtifactRef` | `types.cue` | ArtifactRef splits a complete module path into the OCI repository its tags live under and the major it declares |
 | `#BundleFQNType` | `types.cue` | BundleFQNType: FQN for #Bundle — path/name:vN (major version) Example: "opmodel |
-| `#FQNType` | `types.cue` | FQNType: primitive definition FQN — path/name@semver Example: "opmodel |
+| `#ContractFQNType` | `types.cue` | ContractFQNType: what a module DEMANDS — path/name@vN, where vN is the primitive's own #APIVersionType (enhancement 0010 D4) |
+| `#FQNType` | `types.cue` | FQNType: either form, for the map shapes that hold both |
+| `#ImplFQNType` | `types.cue` | ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of the build the definition shipped in (enhancement 0010 D4) |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |
 | `#LabelsAnnotationsType` | `types.cue` |  |
-| `#MajorVersionType` | `types.cue` | MajorVersionType: major version prefix used in primitive FQNs Example: "v1", "v0" |
+| `#MajorVersionType` | `types.cue` | MajorVersionType: the identity-bearing version component of a CUE module path — what #ArtifactRef |
 | `#ModulePathType` | `types.cue` | ModulePathType: an artifact's complete CUE module path, major suffix mandatory |
 | `#NameType` | `types.cue` | NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars |
 | `#PackagePathType` | `types.cue` | PackagePathType: the path a *primitive* declares — a package path inside a module, carrying no major suffix |

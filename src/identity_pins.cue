@@ -11,7 +11,10 @@ package core
 //
 // MUST-FAIL cases are commented out with the exact error uncommenting yields.
 // A commented case is not self-verifying, so each was run once, in place, at
-// the commit that introduced it; the recorded error is what `task vet` printed.
+// the commit that introduced it; the recorded error is what `task vet` printed
+// — with one documented exception at the bottom of the file, a missing required
+// field, which no `cue vet` invocation reports and whose recorded error is
+// `cue export`'s. That exception names the command it was measured with.
 //
 // NOTE ON THE FILENAME: this file must NOT be named with a leading underscore.
 // CUE skips files whose name begins with "_", so an "_identity_pins.cue" would
@@ -107,6 +110,11 @@ _pinCatalogStamp: #Catalog & {
 			name:        "deployment"
 			description: "renders a Deployment"
 			modulePath:  "opmodel.dev/catalogs/opm/transformers"
+
+			// Authored, not derived (D21) — the stamp above supplies
+			// catalogVersion, and this value must agree with it. `core` no
+			// longer checks that; #CatalogMemberFQNGate does, at publish.
+			fqn: "opmodel.dev/catalogs/opm/transformers/deployment@1.2.0"
 		}
 		#transform: {}
 	}
@@ -227,12 +235,94 @@ _pinRef: #ArtifactRef & {
 
 _pinResourcePath: #Resource & {
 	metadata: {
-		name:       "config-maps"
-		modulePath: "opmodel.dev/catalogs/opm/resources"
-		version:    "1.2.0"
+		name:           "config-maps"
+		modulePath:     "opmodel.dev/catalogs/opm/resources"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.2.0"
+		fqn:            "opmodel.dev/catalogs/opm/resources/config-maps@v1beta1"
 	}
 	spec: configMaps: _
 }
+
+// ─── Primitive keying: a contract key and an implementation key (D4) ────────
+//
+// The three primitives carry a CONTRACT key, terminated by their own
+// apiVersion, and the adapter carries an IMPLEMENTATION key, terminated by the
+// build it shipped in. Every fqn below is AUTHORED (D21) — `core` computes
+// none of them.
+
+_pinContractKeyedResource: #Resource & {
+	metadata: {
+		name:           "backup"
+		modulePath:     "opmodel.dev/catalogs/opm/resources"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.2.0"
+		fqn:            "opmodel.dev/catalogs/opm/resources/backup@v1beta1"
+	}
+	spec: backup: _
+}
+
+// Same catalog, same name, same level — a TRAIT. The kind segment is what
+// keeps the two keys apart, which is why D21 retains it: a flat FQN would make
+// primitive names globally unique across all four kinds within one catalog,
+// and catalog_opm already ships a resource named `secrets`.
+_pinContractKeyedTrait: #Trait & {
+	metadata: {
+		name:           "backup"
+		modulePath:     "opmodel.dev/catalogs/opm/traits"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.2.0"
+		fqn:            "opmodel.dev/catalogs/opm/traits/backup@v1beta1"
+	}
+	spec: backup: _
+	appliesTo: [_pinContractKeyedResource]
+}
+
+_pinKindSegmentSeparatesKeys: _pinContractKeyedResource.metadata.fqn != _pinContractKeyedTrait.metadata.fqn
+_pinKindSegmentSeparatesKeys: true
+
+// A blueprint is a PRIMITIVE (D44) and carries a contract key on that basis.
+_pinContractKeyedBlueprint: #Blueprint & {
+	metadata: {
+		name:           "stateless-workload"
+		modulePath:     "opmodel.dev/catalogs/opm/blueprints/workload"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.2.0"
+		fqn:            "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1beta1"
+	}
+	spec: statelessWorkload: _
+	composedResources: [_pinContractKeyedResource]
+}
+
+// The adapter. NO apiVersion — see the MUST FAIL case at the bottom, which is
+// what makes the exclusion structural rather than remembered.
+_pinImplKeyedTransformer: #ComponentTransformer & {
+	metadata: {
+		name:           "backup-transformer"
+		description:    "renders a backup job"
+		modulePath:     "opmodel.dev/catalogs/opm/transformers"
+		catalogVersion: "1.2.0"
+		fqn:            "opmodel.dev/catalogs/opm/transformers/backup-transformer@1.2.0"
+	}
+	#transform: {}
+}
+
+// ─── The additive-only promise is readable off the level (D34) ──────────────
+//
+// Alpha promises nothing, so its publish gate is off; beta and GA are gated in
+// full. Asserted at all three rungs rather than at one, because a helper that
+// answered `false` unconditionally would satisfy the alpha case alone.
+//
+// Note what is NOT here: any comparison between two levels. The ladder is
+// interpreted, never ordered.
+_pinGatedAtAlpha: (#APIVersionGated & {apiVersion: "v1alpha1"}).gated
+_pinGatedAtAlpha: false
+
+_pinGatedAtBeta: (#APIVersionGated & {apiVersion: "v1beta1"}).gated
+_pinGatedAtBeta: true
+
+_pinGatedAtGA: (#APIVersionGated & {apiVersion: "v1"}).gated
+_pinGatedAtGA: true
 
 // ─── MUST VET CLEAN, deliberately (D43 / D45) ───────────────────────────────
 //
@@ -259,6 +349,48 @@ _pinCatalogMajorSkewAccepted: #Catalog & {
 		modulePath: "opmodel.dev/catalogs/opm@v1"
 		version:    "2.0.0"
 	}
+}
+
+// An authored fqn that disagrees with the primitive's OWN name — `restore`
+// against a resource named `backup` — is NOT refused by `core` (D21). This is
+// the trade the derivation removal made, not a gap: the check moves to
+// #CatalogMemberFQNGate at publish, which ships in the paired
+// `core-identity-package` change. Until it lands, nothing in this repo catches
+// this value.
+//
+// Left uncommented and passing for the same reason as the two cases above: if
+// the derivation is ever restored, this case must read as a CHANGE rather than
+// as a fix, and an uncommented passing case with no comment reads as an
+// oversight.
+_pinAuthoredFQNSkewAccepted: #Resource & {
+	metadata: {
+		name:           "backup"
+		modulePath:     "opmodel.dev/catalogs/opm/resources"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.2.0"
+		fqn:            "opmodel.dev/catalogs/opm/resources/restore@v1beta1"
+	}
+	spec: backup: _
+}
+
+// The same holding one level down, and the one that costs the most: a
+// catalogVersion that disagrees with the build named in a transformer's own
+// key. Measured 2026-07-27 as the reason `catalogVersion` was NOT dropped in
+// favour of authoring `fqn` alone — with nothing to interpolate, a catalog on
+// 1.2.0 shipping a key naming 1.1.0 passes `cue vet -c` at exit 0, and under
+// D4 that key is what a platform executes against permanently.
+//
+// Here the disagreement is still expressible, but the two values now sit side
+// by side in one struct where the gate can compare them.
+_pinTransformerBuildSkewAccepted: #ComponentTransformer & {
+	metadata: {
+		name:           "backup-transformer"
+		description:    "renders a backup job"
+		modulePath:     "opmodel.dev/catalogs/opm/transformers"
+		catalogVersion: "1.2.0"
+		fqn:            "opmodel.dev/catalogs/opm/transformers/backup-transformer@1.1.0"
+	}
+	#transform: {}
 }
 
 // ─── MUST FAIL ──────────────────────────────────────────────────────────────
@@ -322,16 +454,21 @@ _pinCatalogMajorSkewAccepted: #Catalog & {
 //   }
 //  }
 
-// A primitive path carrying a major:
-//   _failPrimitiveMajor.metadata.modulePath: invalid interpolation: invalid
-//     value "opmodel.dev/catalogs/opm/resources@v1"
+// A primitive path carrying a major. Reported against the FIELD rather than
+// through an interpolation, unlike the module cases above: with the fqn
+// derivation removed (D21), nothing in #Resource interpolates modulePath any
+// more, so the type is the only thing that fires:
+//   _failPrimitiveMajor.metadata.modulePath: invalid value
+//     "opmodel.dev/catalogs/opm/resources@v1"
 //     (out of bound =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$")
 //
 //  _failPrimitiveMajor: #Resource & {
 //   metadata: {
-//    name:       "config-maps"
-//    modulePath: "opmodel.dev/catalogs/opm/resources@v1"
-//    version:    "1.2.0"
+//    name:           "config-maps"
+//    modulePath:     "opmodel.dev/catalogs/opm/resources@v1"
+//    apiVersion:     "v1beta1"
+//    catalogVersion: "1.2.0"
+//    fqn:            "opmodel.dev/catalogs/opm/resources/config-maps@v1beta1"
 //   }
 //   spec: configMaps: _
 //  }
@@ -358,4 +495,97 @@ _pinCatalogMajorSkewAccepted: #Catalog & {
 //    version:      "2.4.1"
 //    registryPath: "opmodel.dev/modules/postgres@v2"
 //   }
+//  }
+
+// A build-shaped key on a PRIMITIVE. The demand side never names a build:
+//   _failPrimitiveBuildFQN.metadata.fqn: invalid value
+//     "opmodel.dev/catalogs/opm/resources/backup@1.1.0"
+//     (out of bound =~"…@v[0-9]+((alpha|beta)[0-9]+)?$")
+//
+//  _failPrimitiveBuildFQN: #Resource & {
+//   metadata: {
+//    name:           "backup"
+//    modulePath:     "opmodel.dev/catalogs/opm/resources"
+//    apiVersion:     "v1beta1"
+//    catalogVersion: "1.1.0"
+//    fqn:            "opmodel.dev/catalogs/opm/resources/backup@1.1.0"
+//   }
+//   spec: backup: _
+//  }
+
+// A contract-shaped key on the ADAPTER — the same refusal from the other side:
+//   _failTransformerContractFQN.metadata.fqn: invalid value
+//     "opmodel.dev/catalogs/opm/transformers/backup-transformer@v1"
+//     (out of bound =~"…@\\d+\\.\\d+\\.\\d+(-…)?(\\+…)?$")
+//
+//  _failTransformerContractFQN: #ComponentTransformer & {
+//   metadata: {
+//    name:           "backup-transformer"
+//    description:    "renders a backup job"
+//    modulePath:     "opmodel.dev/catalogs/opm/transformers"
+//    catalogVersion: "1.1.0"
+//    fqn:            "opmodel.dev/catalogs/opm/transformers/backup-transformer@v1"
+//   }
+//   #transform: {}
+//  }
+
+// A SemVer where a contract LEVEL belongs. The two spellings are the whole of
+// D4's split, so a build leaking into apiVersion must not be a near-miss that
+// the regex happens to admit:
+//   _failSemverAPIVersion.metadata.apiVersion: invalid value "1.2.0"
+//     (out of bound =~"^v[0-9]+((alpha|beta)[0-9]+)?$")
+//
+//  _failSemverAPIVersion: #Resource & {
+//   metadata: {
+//    name:           "backup"
+//    modulePath:     "opmodel.dev/catalogs/opm/resources"
+//    apiVersion:     "1.2.0"
+//    catalogVersion: "1.2.0"
+//    fqn:            "opmodel.dev/catalogs/opm/resources/backup@v1"
+//   }
+//   spec: backup: _
+//  }
+
+// apiVersion supplied on a TRANSFORMER. The one case in this file whose value
+// is the ERROR KIND rather than the refusal: a merely-unread field would pass
+// vet silently, and `field not allowed` is what proves the exclusion is
+// structural. Measured against cue v0.17.1 — it holds because `metadata` sits
+// inside a definition and is therefore closed:
+//   _failTransformerAPIVersion.metadata.apiVersion: field not allowed
+//
+//  _failTransformerAPIVersion: #ComponentTransformer & {
+//   metadata: {
+//    name:           "backup-transformer"
+//    description:    "renders a backup job"
+//    modulePath:     "opmodel.dev/catalogs/opm/transformers"
+//    catalogVersion: "1.2.0"
+//    fqn:            "opmodel.dev/catalogs/opm/transformers/backup-transformer@1.2.0"
+//    apiVersion:     "v1"
+//   }
+//   #transform: {}
+//  }
+
+// A primitive with apiVersion UNSET — and the one MUST-FAIL case in this file
+// that `task vet` does not catch. Measured 2026-08-07 against cue v0.17.1:
+// `cue vet ./...` and `cue vet -c ./...` both exit 0 on the case below, and
+// `cue eval` prints the field back as an unsatisfied constraint
+// (`apiVersion!: =~"^v[0-9]+…"`) rather than as an error. Only concrete
+// evaluation reports it:
+//
+//   $ cue export -e '_failMissingAPIVersion' ./...
+//   _failMissingAPIVersion.metadata.apiVersion: field is required but not present
+//
+// That is the correct surfacing — a consumer rendering a module evaluates
+// concretely and gets the error naming the field — but it means the `!` on
+// apiVersion is NOT gated by this repo's own vet run. Do not add a pin here
+// that appears to check it; there is no vet-visible form of this case.
+//
+//  _failMissingAPIVersion: #Resource & {
+//   metadata: {
+//    name:           "backup"
+//    modulePath:     "opmodel.dev/catalogs/opm/resources"
+//    catalogVersion: "1.2.0"
+//    fqn:            "opmodel.dev/catalogs/opm/resources/backup@v1beta1"
+//   }
+//   spec: backup: _
 //  }

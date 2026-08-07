@@ -14,9 +14,26 @@ import (
 		name!: #NameType // Example: "stateless-workload"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType                              // Example: "opmodel.dev/catalogs/opm/blueprints/workload"
-		version!:    #VersionType                                  // Example: "1.0.0"
-		fqn:         #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@1.0.0"
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/blueprints/workload"
+
+		// apiVersion: this contract's own level, and the only component of its
+		// key (enhancement 0010 D4). A blueprint carries one because it is a
+		// PRIMITIVE (D44): it composes resources and traits rather than
+		// introducing vocabulary, but a module attaches it and writes against
+		// its `spec`, so it earns the contract key and the additive-only
+		// promise that key gates.
+		apiVersion!: #APIVersionType // Example: "v1beta1"
+
+		// catalogVersion: the catalog build this definition shipped in.
+		// Provenance only (D25) — no contract key interpolates it.
+		catalogVersion!: #VersionType // Example: "1.0.0"
+
+		// fqn: AUTHORED by the catalog at the definition site, not derived here
+		// (enhancement 0010 D21), so fqn, modulePath and catalogVersion trace
+		// to one identity package and a release moves them together. `core` no
+		// longer refuses a value disagreeing with this definition's own fields;
+		// #CatalogMemberFQNGate asserts that agreement at publish.
+		fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1beta1"
 
 		// Human-readable description of the definition
 		description?: string

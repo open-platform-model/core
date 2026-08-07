@@ -55,9 +55,49 @@ import (
 // with no suffix and CUE resolves the major from cue.mod's deps.
 #PackagePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
 
-// MajorVersionType: major version prefix used in primitive FQNs
+// MajorVersionType: the identity-bearing version component of a CUE module
+// path — what #ArtifactRef.major reads off #ModulePathType.
 // Example: "v1", "v0"
+//
+// Left deliberately untouched by enhancement 0010 D4. #APIVersionType below is
+// its widened sibling, and the two are separate types because they type
+// different things: this one names a MODULE major, which the registry assigns
+// and an import statement carries; that one names a CONTRACT level, which a
+// primitive's author assigns and no address ever carries. A module major has
+// no alpha/beta rung to admit.
 #MajorVersionType: string & =~"^v[0-9]+$"
+
+// APIVersionType: a PRIMITIVE's contract level — the value its author moves
+// when the primitive's shape breaks, independent of the catalog's module major
+// and of the catalog's release SemVer (enhancement 0010 D4, D25).
+// Example: "v1alpha1", "v1beta2", "v2"
+//
+// Admits the Kubernetes ladder — vNalphaM, vNbetaM, vN — and D34 keys the
+// additive-only promise to the level, so the string states whether the
+// contract behind it promises anything. Read that with #APIVersionGated below.
+//
+// #MajorVersionType is the narrower sibling; see its comment for why the two
+// are not one type.
+#APIVersionType: string & =~"^v[0-9]+((alpha|beta)[0-9]+)?$"
+
+// APIVersionGated reports whether the additive-only promise binds at a given
+// apiVersion (enhancement 0010 D34): false at alpha, which promises nothing
+// and whose publish gate is off, true at beta and GA, which are gated in full.
+// Usage: (#APIVersionGated & {apiVersion: "v1beta1"}).gated => true
+//
+// This is the ONLY place in `core` the ladder is interpreted rather than
+// matched, and it introduces NO ordering: the level is read off one string and
+// is never compared against another. Match stays exact-key equality.
+//
+// A catalog's RELEASE version ("1.0.0-alpha.2") and a contract's LEVEL
+// ("v1beta1") are independent axes, and only the second is read here. Gating
+// on the catalog's prerelease instead is the plausible bug — both mainline
+// catalogs publish 1.0.0-alpha.* while carrying v1beta1 contracts, so the two
+// spellings disagree on every primitive currently shipping.
+#APIVersionGated: {
+	apiVersion!: #APIVersionType
+	gated:       !strings.Contains(apiVersion, "alpha")
+}
 
 // ArtifactRef splits a complete module path into the OCI repository its tags
 // live under and the major it declares. This is the one place in the schema a
@@ -93,16 +133,50 @@ import (
 // Semver 2.0
 #VersionType: string & =~"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
-// FQNType: primitive definition FQN — path/name@semver
-// Example: "opmodel.dev/catalogs/opm/traits/scaling@1.0.0"
-// Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@1.0.0"
-// Example: "github.com/myorg/traits/network/expose@2.1.0-rc.1"
+// ContractFQNType: what a module DEMANDS — path/name@vN, where vN is the
+// primitive's own #APIVersionType (enhancement 0010 D4). The key a #Resource,
+// #Trait and #Blueprint carries.
+// Example: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
+// Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1"
 //
-// Lifted from MAJOR-only (@vN) to SemVer 2.0 per enhancement 0001 D5:
-// two builds of the same primitive at adjacent versions must occupy
-// distinct keys so divergent definitions surface as structured errors
-// at match time rather than silently colliding on a MAJOR bucket.
-#FQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+// A catalog release does not move this key; only a breaking change to the
+// primitive's own shape does. That is what lets a contract declared in one
+// catalog be fulfilled by a transformer in another on an independent release
+// cadence — the failure D4 exists to fix, where `catalog_opm`'s transformerless
+// `backup` contract could only be matched by a provider that happened to have
+// compiled against the identical `catalog_opm` BUILD.
+//
+// The kind segment (/resources, /traits, /blueprints) is part of the authored
+// value and is retained deliberately: a flat FQN would make primitive names
+// globally unique across all four kinds within a catalog, and `catalog_opm`
+// already ships a resource named `secrets`.
+#ContractFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@v[0-9]+((alpha|beta)[0-9]+)?$"
+
+// ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of
+// the build the definition shipped in (enhancement 0010 D4). The key a
+// #ComponentTransformer carries. Unchanged from the form this type had under
+// the name #FQNType before D4 split it, so no transformer value moves.
+// Example: "opmodel.dev/catalogs/opm/transformers/deployment-transformer@1.0.0"
+// Example: "github.com/myorg/transformers/network/expose@2.1.0-rc.1"
+//
+// The build stays in this key for the reason enhancement 0001 D5 first lifted
+// it here: two builds of the same transformer at adjacent versions must occupy
+// distinct keys so divergent definitions surface as structured errors at match
+// time rather than silently colliding on a MAJOR bucket. It is also the
+// provenance an operator upgrading a catalog needs — which bytes are running.
+#ImplFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+
+// FQNType: either form, for the map shapes that hold both. A field naming one
+// role narrows to that role's type instead — #Resource, #Trait and #Blueprint
+// take #ContractFQNType, #ComponentTransformer takes #ImplFQNType.
+//
+// NOTE the deliberate visual collision with #ModulePathType, which also ends
+// "@v1". It is safe because the two namespaces never meet in one field: a
+// module path carries "@v1" as an ADDRESS a registry resolves, a contract FQN
+// carries it as a KEY a matcher compares. What must stay distinguishable is a
+// contract key from an implementation key, and "@v1" versus "@1.2.0" does that
+// at a glance and in the type.
+#FQNType: #ContractFQNType | #ImplFQNType
 
 // UUIDType: RFC 4122 UUID in standard format (lowercase hex)
 #UUIDType: string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"

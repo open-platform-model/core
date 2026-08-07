@@ -17,13 +17,42 @@ import (
 #ComponentTransformer: {
 	kind: "ComponentTransformer"
 
+	// A transformer's identity shape is its OWN — it deliberately shares no
+	// parent definition with the three primitives' (enhancement 0010 D44).
+	//
+	// It carries NO apiVersion, and the absence is load-bearing rather than an
+	// omission. Nothing would read one: this key interpolates catalogVersion,
+	// the matcher keys on the CONTRACTS a transformer demands rather than on
+	// the transformer, and the additive-only promise binds contracts. There is
+	// no value to assign either — a transformer's inputs are other people's
+	// contracts and its output is platform objects, so "this transformer's
+	// contract major" has no referent. Worse than useless: with an apiVersion
+	// present, the publish gate ("pull the last published build shipping this
+	// name at this apiVersion, assert additive") resolves for transformers too,
+	// and would then refuse ORDINARY catalog releases — changing rendering
+	// logic, dropping an emitted field and narrowing an output type are all
+	// normal transformer edits.
+	//
+	// Because this struct sits inside a definition it is CLOSED, so supplying
+	// `apiVersion` here is a `field not allowed` error rather than a field
+	// nothing reads. That is what makes the exclusion structural instead of
+	// remembered — see the pinned case in identity_pins.cue.
 	metadata: {
 		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/transformers"
-		version!:    #VersionType     // Example: "1.0.0"
 		name!:       #NameType        // Example: "deployment-transformer"
-		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		fqn: #FQNType & "\(modulePath)/\(name)@\(version)" // Example: "opmodel.dev/catalogs/opm/transformers/deployment-transformer@1.0.0"
+		// catalogVersion: the catalog build this transformer shipped in. Unlike
+		// a primitive's, it IS this key's own source component (D4) — an
+		// operator upgrading a catalog is choosing new rendering logic and
+		// needs to know which bytes are running.
+		catalogVersion!: #VersionType // Example: "1.0.0"
+
+		// fqn: AUTHORED by the catalog at the definition site, not derived here
+		// (enhancement 0010 D21). #ImplFQNType, not #ContractFQNType: what a
+		// platform EXECUTES is keyed by its build. #CatalogMemberFQNGate
+		// asserts the agreement with modulePath, name and catalogVersion at
+		// publish.
+		fqn!: #ImplFQNType // Example: "opmodel.dev/catalogs/opm/transformers/deployment-transformer@1.0.0"
 
 		description!: string // A brief description of what this transformer produces
 
