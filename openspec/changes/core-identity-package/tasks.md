@@ -46,7 +46,7 @@
 
 ## 5. Close the loop
 
-- [ ] 5.1 `enhancements/0011/plan.yaml`: slice `core-identity-package` → `status: done`, `openspec_ref: core/core-identity-package`.
-- [ ] 5.2 Same commit: `history` event in `enhancements/0011/config.yaml` citing that ref.
-- [ ] 5.3 `task enhancements:plan:graph ID=0011` and `task enhancements:index`.
-- [ ] 5.4 Confirm `task enhancements:plan:ready ID=0010` now shows `core-alpha-release` as reachable once the other two core slices are also done — this slice is one of its four dependencies and the only one owned by `0011`.
+- [x] 5.1 `enhancements/0011/plan.yaml`: slice `core-identity-package` → `status: done`, `openspec_ref: core/core-identity-package`.
+- [x] 5.2 Same commit: `history` event in `enhancements/0011/config.yaml` citing that ref.
+- [x] 5.3 `task enhancements:plan:graph ID=0011` and `task enhancements:index`.
+- [x] 5.4 Confirm `task enhancements:plan:ready ID=0010` now shows `core-alpha-release` as reachable once the other two core slices are also done — this slice is one of its four dependencies and the only one owned by `0011`.
