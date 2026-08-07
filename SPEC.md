@@ -420,9 +420,11 @@ Implementation: [`blueprint.cue`](src/blueprint.cue).
 
 #### Definition
 
-A `#Platform` is a path-keyed registry of *subscriptions* to catalogs plus the kernel-filled materialization slots the matcher uses at compile time. Authors write the subscription map; the kernel's `Materialize` step resolves every subscription against the OCI registry, indexes the transformers it pulls into `#composedTransformers`, and computes a `#matchers` reverse index from primitive FQN to candidate transformer.
+A `#Platform` is a path-keyed registry of *subscriptions* to catalogs plus the kernel-filled materialization slots the matcher uses at compile time. Authors write the subscription map; each subscription names one catalog build, and the kernel's `Materialize` step pulls exactly that build, indexes the transformers it carries into `#composedTransformers`, and computes a `#matchers` reverse index from primitive FQN to candidate transformer.
 
-A `#Platform` value is therefore a *spec* (what to pull, what to allow / deny) plus a place for the kernel to write its materialization output. The match-time evaluation runs against the materialized twin, not the raw spec.
+A `#Platform` value is therefore a *spec* (which catalog builds to pull) plus a place for the kernel to write its materialization output. The match-time evaluation runs against the materialized twin, not the raw spec.
+
+There is no resolution step: the platform file **is** the resolution. Nothing in a subscription requires a query against a registry to determine which build was selected.
 
 #### Shape
 
@@ -454,14 +456,8 @@ A `#Platform` value is therefore a *spec* (what to pull, what to allow / deny) p
 }
 
 #Subscription: {
-    enable:  bool | *true
-    filter?: #SubscriptionFilter
-}
-
-#SubscriptionFilter: {
-    range?: string             // SemVer constraint expression
-    allow?: [...#VersionType]
-    deny?:  [...#VersionType]
+    enable:   bool | *true
+    version!: #VersionType     // the single build this subscription materializes
 }
 ```
 
@@ -474,17 +470,24 @@ Implementation: [`platform.cue`](src/platform.cue).
 - `type` MUST be present. The value is informational at this stage — the matcher does not consult it.
 - `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). Since enhancement 0010 D1 that type carries a terminal `@vN`, so a key names one major of one catalog (`"opmodel.dev/catalogs/opm@v1"`) and a platform MAY subscribe to two majors of the same catalog as two distinct entries. One subscription per key is enforced by CUE map semantics; multi-channel-per-key is intentionally not expressible.
 - `#Subscription.enable` defaults to `true`. When `false`, the kernel SHOULD skip materialization for that path; primitives owned by the path do not surface on the platform.
-- `#SubscriptionFilter.range`, when present, MUST be a SemVer constraint expression parseable Go-side (the kernel uses Masterminds/semver). An unparseable expression surfaces as a structured `MaterializeError` against the offending subscription path.
-- Filter resolution order: `range` restricts the candidate set, `allow` force-includes specific SemVers, `deny` force-excludes them. The final survivor set is materialized.
+- `#Subscription.version` MUST be present and MUST be a SemVer 2.0 string (`#VersionType`). It names the **single** catalog build the subscription materializes. A subscription with no `version` MUST report a missing required field; it MUST NOT fall back to the highest published build.
+- A prerelease build MUST be selectable by naming it in `version` (e.g. `"1.0.0-alpha.2"`). There MUST be no opt-in flag for prereleases and no maturity inference from the string.
+- Selection MUST NOT require a resolution step against a registry: the declared value is the selected value. Publishing a newer build MUST NOT move an existing platform's selection, and no lockfile is consulted.
+- The subscription filter (the definition formerly named `SubscriptionFilter`, reached through `#Subscription.filter`) is **removed** in `v2.0.0-alpha.4`, together with `range`, `allow`, `deny`, the prerelease flag and the highest-published default. A subscription declaring `filter` MUST be rejected as a field not allowed.
+- A `#Platform` MUST NOT be able to express two builds of one catalog. CUE map semantics collapse two subscriptions under one path to one key. Two builds of one catalog is two platforms.
 - `#composedTransformers` and `#matchers` are kernel-filled output slots. Authors MUST NOT supply them; doing so would let an author override what the registry actually published. Both are optional at the CUE level because the spec value carries them empty.
 
 #### Rationale
 
-- **Why subscriptions instead of inline module registrations.** The pre-0001 design forced a platform to embed concrete `#Module` values keyed by an arbitrary author-chosen `Id`. That meant: (a) the platform spec bundled the entire transitive content of every catalog it consumed, not just the intent to consume it; (b) multi-tenant platforms couldn't express "pull a SemVer range from this catalog, force-include this fix" without authoring every concrete version inline. Subscriptions move pull intent into a small declarative shape (path + filter) and let the kernel materialize against the registry. See enhancement 0001 D13.
+- **Why subscriptions instead of inline module registrations.** The pre-0001 design forced a platform to embed concrete `#Module` values keyed by an arbitrary author-chosen `Id`, so the platform spec bundled the entire transitive content of every catalog it consumed rather than the intent to consume it. Subscriptions move pull intent into a small declarative shape (path + build) and let the kernel materialize against the registry. See enhancement 0001 D13.
 - **Why the registry map is path-keyed, not Id-keyed.** A catalog has exactly one CUE module path. Keying on path lets CUE's map-uniqueness semantics enforce "one subscription per catalog" structurally — two declarations at the same key unify, divergent declarations fail. Id-keying admitted "two subscriptions for the same catalog under different names" silently, which is meaningless and a common author error.
 - **Why `#composedTransformers` and `#matchers` are optional kernel-filled slots, not CUE comprehensions.** Materialize pulls remote artifacts from OCI — it cannot be a pure CUE comprehension over an in-memory `#registry`. Modeling these as optional fields lets the CUE-level spec remain valid without materialization, while the materialized twin (built by the kernel after fetching) carries the populated values. The alternative — making them required — would force every author to construct a "materialized" view in CUE by hand, defeating the purpose. See enhancement 0001 D14.
 - **Why `#knownResources` and `#knownTraits` are removed.** Both were eager projections that flattened every catalog's primitives into a flat map on the platform. They duplicated information the matcher could (and now does) reach transitively via each transformer's required/optional maps. Removing them eliminates a sync point that always lagged the materialized transformer set.
-- **Why the filter has three independent levers (`range` + `allow` + `deny`).** Real upgrade flows mix continuous and discrete decisions: "track 1.x" is a range; "but pin 1.4.2 because 1.5 has a regression" is an allow; "skip 1.4.0 — it was yanked" is a deny. Modeling all three lets a platform team express the upgrade policy without dropping into imperative escape hatches. The ordered resolution (range → allow → deny) gives deterministic results when the levers overlap.
+- **Why a subscription names one build, and why the filter that used to select it is gone.** The filter's empty-filter default resolved to the highest SemVer published for the path, and that default *is* a float: it moves on the next catalog release whether or not a constraint was written. Ranges without a lockfile is the one combination that cannot be made reproducible, and every ecosystem shipping ranges ships a lock beside them; OPM shipped ranges and recorded its resolution in an in-memory map whose only non-test consumer was an integration harness and whose own doc comment told callers they MUST NOT branch on it. Collapsing to a scalar makes catalog selection a pure function of committed source: **git-identical inputs materialize identical catalog bytes** on any day, from any machine, with no lockfile, because the platform file is the resolution. The breadth the filter bought was load-bearing only under the *old* build-keyed contracts, where a platform had to cover the authorship history of its installed fleet; enhancement 0010 D4 moved the contract key off the build and took that requirement with it. See enhancement 0010 D37.
+- **Why the field is a scalar and not a one-element list.** Widening back to multi-build becomes a breaking rename rather than a list relaxation, and that cost is recorded here rather than discovered later — because every use of breadth collapses on inspection. *Union coverage* (build `1.0.0` ships transformers A and B, build `1.2.0` ships A only, listing both yields `A@1.2.0` + `B@1.0.0`) is the one case breadth uniquely served, and it describes a catalog that made a breaking change without saying so: the dropped transformer must fail the render loudly, and the fix belongs to the catalog author. *Gradual migration* does not structurally exist — under D4 a module demands resources and traits and never a transformer, so no module can stay on the old build. *Two API versions of one contract* ship side by side in a single build; that is what contract keys are for (§2.1). *Testing a new build beside the old* is two platforms, already expressible, naming both behaviours. Newest-wins tie-breaking was defensible and rejected: it makes listing two builds indistinguishable from listing one in every case except the dropped-transformer catalog bug — silent arbitration bought to serve the one scenario that should fail loudly.
+- **Why not ranges plus a lockfile, which is strictly more expressive.** It is more machinery for the same guarantee, and the asymmetry decides it: reintroducing `range` alongside a recorded resolution takes nothing away from a platform that already names its build, while an established floating default cannot be withdrawn cheaply once platforms depend on it. The expressive answer stays available; the float does not.
+- **Why a catalog upgrade is now a manual edit, and why that is not a regression.** For platforms that live in git and reconcile continuously, an upgrade that appears in a diff and gets reviewed is the correct interaction — the alternative is a version that changes because someone else published. Automating the bump is enhancement 0004's subject, and it is additive to this shape.
+- **Why a prerelease needs no flag.** The filter inferred maturity from the version string and gated prereleases behind an opt-in, which made "select `1.0.0-alpha.2`" a two-part statement whose second part was about a *class* of builds rather than the one selected. With a scalar there is one statement: the build is selected by being written down. Both mainline catalogs publish `1.0.0-alpha.*` today, so the gate was load-bearing against the fleet's own normal case.
 
 #### See also
 

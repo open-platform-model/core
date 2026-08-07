@@ -8,12 +8,12 @@
 
 ## 1. Subscription (`src/platform.cue` + `SPEC.md` §`#Platform`)
 
-- [ ] 1.1 Delete `#SubscriptionFilter` entirely (`:16-20`) — `range`, `allow`, `deny`, and its doc comment's resolution-order block.
-- [ ] 1.2 Replace `#Subscription.filter?` with `version!: #VersionType`. Keep `enable` unchanged.
-- [ ] 1.3 Rewrite `#Subscription`'s doc comment. The current note that "multi-channel-per-path is not expressible at this stage" becomes the permanent rule rather than a staging limitation — two builds of one catalog is two platforms.
-- [ ] 1.4 Rewrite `#Platform`'s doc comment: the kernel no longer "resolves every subscription's filter against the OCI registry", it pulls the named build.
-- [ ] 1.5 Update `SPEC.md` §`#Platform` — Shape, Constraints, and a *Why* covering reproducibility: git-identical inputs materialize identical bytes because the platform file is the resolution.
-- [ ] 1.6 `task vet`.
+- [x] 1.1 Delete `#SubscriptionFilter` entirely (`:16-20`) — `range`, `allow`, `deny`, and its doc comment's resolution-order block.
+- [x] 1.2 Replace `#Subscription.filter?` with `version!: #VersionType`. Keep `enable` unchanged.
+- [x] 1.3 Rewrite `#Subscription`'s doc comment. The current note that "multi-channel-per-path is not expressible at this stage" becomes the permanent rule rather than a staging limitation — two builds of one catalog is two platforms.
+- [x] 1.4 Rewrite `#Platform`'s doc comment: the kernel no longer "resolves every subscription's filter against the OCI registry", it pulls the named build.
+- [x] 1.5 Update `SPEC.md` §`#Platform` — Shape, Constraints, and a *Why* covering reproducibility: git-identical inputs materialize identical bytes because the platform file is the resolution.
+- [x] 1.6 `task vet`.
 
 ## 2. Match labels (`src/component.cue`, `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue`, `src/transformer.cue`)
 
