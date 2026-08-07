@@ -66,9 +66,14 @@ Examples: `Container`, `Volume`, `ConfigMap`, `Secret`.
         fqn!: #ContractFQNType
 
         description?: string
-        labels?:      #LabelsAnnotationsType
+        labels?:      #LabelsAnnotationsType   // categorisation only; never unified upward
         annotations?: #LabelsAnnotationsType
     }
+
+    // The matching identity a transformer selects on. Unified WHOLESALE into
+    // every #Component that attaches this Resource.
+    // e.g. {"opm.opmodel.dev/workload-type": "stateless"}
+    matchLabels?: #LabelsAnnotationsType
 
     // MUST be OpenAPIv3-compatible, namespaced under camelCase(name).
     spec!: (strings.ToCamel(metadata.#definitionName)): _
@@ -86,6 +91,11 @@ Implementation: [`resource.cue`](src/resource.cue).
 - `metadata.catalogVersion` MUST be a SemVer 2.0 string (`#VersionType`) naming the catalog build the definition shipped in. It is **provenance**: it MUST NOT appear in `metadata.fqn`, and no match compares it.
 - `metadata.fqn` MUST be authored by the declaring catalog and MUST match `#ContractFQNType` — the `path/name@vN` form, where `vN` is an `#APIVersionType`. `core` MUST NOT derive it, and MUST NOT refuse a value that disagrees with this Resource's own `modulePath`, `name` or `apiVersion`; that agreement is asserted at publish by `CatalogMemberFQNGate`, not here. (That gate is authored alongside this change and is not yet a definition in `src/`; both land in the same alpha.)
 - The authored `fqn` MUST retain its kind segment (`/resources`), so that a Resource and a Trait sharing a name at one `apiVersion` occupy distinct keys.
+- `metadata.labels` carries **categorisation** and MUST NOT participate in matching. It MUST NOT be unified upward into a `#Component`.
+- `matchLabels` carries this Resource's **matching identity** — the keys a `#ComponentTransformer.requiredLabels` predicate selects on (§4.1). Every key declared here participates in matching; no filter, prefix rule or key list applies.
+- A Resource MAY declare a `matchLabels` key as **required** (`"key"!: …`). The requirement MUST survive into every `#Component` that attaches the Resource, and an unanswered key MUST be reported as a missing required field rather than yielding an incomplete value (§3.1).
+- `core` MUST NOT name a matching label key. The vocabulary belongs to the catalog that declares it; a catalog MUST be able to introduce a matching key with no change to `core`.
+- `matchLabels` MUST NOT be rendered. It MUST NOT reach `#TransformerContext.componentLabels` and MUST NOT appear on any rendered object.
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
 
 #### Rationale
@@ -97,6 +107,9 @@ Implementation: [`resource.cue`](src/resource.cue).
 - **Why a primitive's path is `#PackagePathType` and not the `#ModulePathType` an artifact declares.** Enhancement 0010 D1 makes `#ModulePathType` an artifact's *complete* CUE module path, `@vN` included, so that `#Module` and `#Catalog` can be addressed by reading one field. A primitive inherits nothing useful from that suffix: it is a package *inside* a module, and its major is structurally redundant — a `@vN` module publishes only `vN.*` tags, so a primitive already stating its catalog's build version has already stated its catalog's major. It is also not a path anyone writes, since a consumer imports `opmodel.dev/catalogs/opm/resources` with no suffix and CUE resolves the major from `cue.mod`'s `deps`. An earlier revision of D1 widened one shared type for both; every field typed with it then inherited a major with no referent, and D20 (merged into D1) split it in two instead.
 - **Why `catalogVersion` is kept at all, once it is out of the key.** It is the provenance both ends of a match read, and it is what lets a diagnostic say "this platform's provider was built against `1.0.0`; this module needs `1.3.0`" when two shapes are compatible but the provider lags. Dropping it would leave a contract stating what it promises and nothing about where it came from. It stays exact SemVer rather than a major prefix for the reason enhancement 0001 D5 first lifted it there — a major-only build stamp lets two divergent definitions coexist under one bucket — and that concern now lands on `#ComponentTransformer` (§4.1), which still keys on it.
 - **Why the field was renamed from `version`.** Once a primitive carries two versions, an unqualified `version` names neither: a reader has to know which of the contract level and the build it means, at every site that reads it. `catalogVersion` says which. `moduleVersion` was rejected on collision — "module" already denotes three things in OPM (`#Module`, the CUE module, the module path), so on a primitive it reads as the version of the `#Module`, which is a different field on a different construct.
+- **Why matching has its own field instead of riding on `metadata.labels`.** The two were one field, and the upward union that implied *cannot be built*. Measured against the real catalog (enhancement 0010, experiment 04): a full union fails on `resource.opmodel.dev/category`, which takes `workload` on Container, `storage` on Volumes and `config` on ConfigMaps — the spec's own sentence ("conflicts MUST fail at unification") guarantees it on the first real component, and `catalog_opm` fails at its `StatefulWorkload` blueprint fragment before reaching a module at all. So a filter is a precondition rather than a refinement, and every filtered union must **iterate**; CUE refuses to iterate a struct holding an unset required field (`missing required field in for comprehension`), so each filter forced dropping `!` from the container's workload type — degrading "the author must pick" from a required field into an incomplete value. Separating the fields removes the filter and all three of its costs at once: the structs unify wholesale so the `!` survives, categorisation labels never meet structurally rather than meeting behind a filter that agrees not to look, and a genuine disagreement becomes a meaningful conflict (`conflicting values "daemon" and "stateful"`) instead of an artifact of unrelated labels sharing a namespace. It also removes an asymmetry that already existed: `#ComponentTransformer` declared its matching *demand* in a dedicated field (§4.1) while only the component side declared matching *supply* inside `metadata.labels`. See enhancement 0010 D36.
+- **Why `core` names no matching key.** The constant `core` used to export for it — `LabelWorkloadType`, holding `"core.opmodel.dev/workload-type"` — is **deleted**; the vocabulary is owned by the catalog that declares it, under the name `opm.opmodel.dev/workload-type` for `catalog_opm`. Measured 2026-08-01, the constant had **zero readers** across `catalog_opm`, `catalog_kubernetes`, `library`, `cli`, `opm-operator` and `modules` — every one of them wrote the literal string — so naming it here bought nothing and cost a `core` release for any catalog wanting a new matching key. A prefix filter over `metadata.labels` was the alternative that keeps working, and it keeps ownership in `core` by construction: it silently drops any key outside the namespace `core` blesses. With a dedicated field there is no namespace to bless.
+- **Why `matchLabels` is not rendered.** A component's matching identity selects a transformer; it does not describe the objects that transformer emits. Folding it into `#TransformerContext.componentLabels` would publish a catalog's matching vocabulary onto every live object, and the render fold is the wrong place to decide that. The consequence is stated rather than hidden: rendered objects carry `core.opmodel.dev/workload-type` today via that fold and stop carrying it here. An opt-in flag was demonstrated working (experiment 04, `v_render`) and deliberately not taken — it is a four-line struct-level guard, additive whenever the question of where the flag lives is answered.
 - **Why `spec` is namespaced under the definition's camelCase name.** When multiple primitives unify into a `#Component` (§3.1), their `spec` fields merge. Namespacing under the definition name prevents field-name collisions — two primitives both defining `port` would clash at the root but coexist under `container.port` and `service.port`. This pushes naming collisions to *definition time* (caught by CUE unification) rather than *deployment time* (silent merge).
 - **Why we don't allow free-form CUE inside `spec`.** OpenAPI v3 is the contract surface for non-CUE consumers — Kubernetes CRDs, web UIs, kubectl plugins. CUE templating (`for`, `if`, comprehensions) would tie the schema to a CUE evaluator and exclude every consumer that uses the schema through generated bindings. Per Principle II (Type Safety First), this constraint is in the schema rather than relying on downstream rejection.
 
@@ -133,9 +146,13 @@ Examples: `scaling`, `health-check`, `network-expose`.
         fqn!: #ContractFQNType
 
         description?: string
-        labels?:      #LabelsAnnotationsType
+        labels?:      #LabelsAnnotationsType   // categorisation only; never unified upward
         annotations?: #LabelsAnnotationsType
     }
+
+    // The matching identity a transformer selects on. Unified WHOLESALE into
+    // every #Component that attaches this Trait.
+    matchLabels?: #LabelsAnnotationsType
 
     // MUST be OpenAPIv3-compatible, namespaced under camelCase(name).
     spec!: (strings.ToCamel(metadata.#definitionName)): _
@@ -152,6 +169,7 @@ Implementation: [`trait.cue`](src/trait.cue).
 - `kind` MUST be the literal string `"Trait"`.
 - `metadata.name`, `metadata.modulePath`, `metadata.apiVersion`, `metadata.catalogVersion` and `metadata.fqn` follow the same rules as `#Resource` (§2.1): the key is `#ContractFQNType`, authored by the catalog and terminated by `apiVersion`; `catalogVersion` is SemVer 2.0 provenance that no key interpolates.
 - The authored `fqn` MUST retain its kind segment (`/traits`). A Trait and a Resource sharing a name at one `apiVersion` MUST NOT collide.
+- `metadata.labels` and `matchLabels` follow the same rules as `#Resource` (§2.1): categorisation stays in `metadata.labels` and is never unified upward; matching lives in `matchLabels`, is unified wholesale into the attaching `#Component`, MAY carry required keys, and is never rendered.
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
 - `appliesTo` MUST list at least one `#Resource`. A Trait that applies to nothing is a category error.
 - A Trait attached to a `#Component` whose `#resources` do not include any entry in `appliesTo` MUST fail at CUE unification.
@@ -189,6 +207,9 @@ Unlike a primitive, a Component does not introduce new schema. Its `spec` is the
     metadata: {
         name!:        #NameType
         resourceName: *name | #NameType     // defaults to metadata.name; override cascade
+
+        // Descriptive. NOT unified from the attached primitives, and nothing
+        // matches on them. These are the labels that reach rendered output.
         labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
@@ -196,6 +217,26 @@ Unlike a primitive, a Component does not introduce new schema. Its `spec` is the
     #resources:   #ResourceMap
     #traits?:     #TraitMap
     #blueprints?: #BlueprintMap
+
+    // This component's matching identity: the wholesale unification of every
+    // attached primitive's matchLabels. The comprehension iterates the
+    // attachment MAPS and embeds each labels struct whole — it never iterates
+    // the labels, which is what lets a required key survive.
+    matchLabels: {
+        for _, resource in #resources {
+            if resource.matchLabels != _|_ { resource.matchLabels }
+        }
+        if #traits != _|_ {
+            for _, trait in #traits {
+                if trait.matchLabels != _|_ { trait.matchLabels }
+            }
+        }
+        if #blueprints != _|_ {
+            for _, blueprint in #blueprints {
+                if blueprint.matchLabels != _|_ { blueprint.matchLabels }
+            }
+        }
+    }
 
     // Instance context injected by the parent #Module's #components pattern
     // constraint. Hidden — authors never set this directly.
@@ -229,13 +270,19 @@ Implementation: [`component.cue`](src/component.cue).
 - A `#Trait` MUST only be attached to a Component whose Resources are listed in the Trait's `appliesTo`. Conflict surfaces at CUE unification time.
 - Conflicting field definitions between attached primitives MUST fail at definition time. Consumers MUST NOT add post-hoc conflict resolution.
 - `spec` is closed (`close(...)`). Consumers MUST NOT add fields to a Component's `spec` beyond what its primitives contribute.
-- `metadata.labels` and `metadata.annotations` unify from every attached primitive. Conflicts MUST fail at unification.
+- `metadata.labels` and `metadata.annotations` are **descriptive** and MUST NOT be unified from the attached primitives. Nothing selects on them.
+- `matchLabels` MUST be the unification of the `matchLabels` of every attached Resource, Trait and Blueprint, with no filter, no key prefix rule and no key list. Two primitives declaring disjoint keys MUST combine; two primitives declaring one key with different values MUST fail with a conflicting-values error naming that key.
+- A required `matchLabels` key contributed by a primitive MUST survive into the Component as required. A Component that attaches such a primitive without answering the key MUST report a **missing required field**, not an incomplete value.
+- A Component **fragment** — a wrapper a catalog ships that attaches primitives — MUST NOT declare `matchLabels` of its own. A Component's matching identity MUST be exactly the unification of what it attaches.
+- `matchLabels` MUST NOT be rendered: it MUST NOT reach `#TransformerContext.componentLabels`, and no rendered object MUST carry its keys.
 
 #### Rationale
 
 - **Why `spec` is computed via `_allFields` rather than authored.** Authoring `spec` directly would let a Component contradict the schemas its primitives declare. Computing it from the primitives' specs makes the primitives the single source of schema truth: a Component is exactly the sum of what it composes, nothing more, nothing less.
 - **Why the spec is hidden behind `#resources` / `#traits` / `#blueprints` rather than flattened at the Component root.** If the primitives' specs flattened into the Component's root, the parent `#Module` definition would have to be opened (`...`) to accept arbitrary fields, which would defeat schema validation at the Module boundary. The hashed-field indirection (`#resources`, etc.) preserves Module-level closedness. This is recorded directly as a comment in [`component.cue:49-50`](src/component.cue) because future contributors hit it the moment they try to simplify the layout.
-- **Why labels and annotations unify from primitives rather than being authored.** Same principle as `spec`: the primitives are the source of truth. A Component that contradicted its primitives' labels would be a lie about what's deployed. Per Principle II (Type Safety First), CUE catches the conflict at unification time rather than waiting for a runtime mismatch.
+- **Why matching identity unifies upward but `metadata.labels` does not.** The principle behind the old rule was right — the primitives are the source of truth about what a Component *is*, and a Component contradicting them would be a lie about what is deployed — but it was applied to a field that also carries categorisation, and those two jobs pull in opposite directions: `resource.opmodel.dev/category` is `workload` on Container, `storage` on Volumes and `config` on ConfigMaps, so the union the rule demanded fails on the first real component (§2.1 Rationale). Splitting the jobs lets each take the rule it needs. `matchLabels` unifies wholesale, and a conflict there is a real modelling error worth failing on. `metadata.labels` stops unifying, because two primitives categorised differently is not a disagreement about anything.
+- **Why the union is a comprehension over the attachment maps and never over the labels.** Embedding each primitive's `matchLabels` struct whole is what preserves a required key: CUE will not iterate a struct holding an unset required field, so any `for k, v` over the labels — which every *filtered* union needs — forces primitives to drop `!` and degrades "the author must pick a workload type" into an incomplete value that renders. Iterating the maps is safe because the required field sits inside a value, not at the level being iterated. This is the mechanical fact the whole design turns on, and it is why no key list or prefix rule may be reintroduced here as a "small" refinement.
+- **Why the old claim is deleted rather than corrected.** `metadata.labels` was documented as "unified from all attached resources, traits, and blueprints" in both the schema comment and this specification, and **no code anywhere performed that union** — not in this definition, and not in the kernel, which reads `metadata.labels` off the Component value. What made label matching work in practice was catalogs writing the label onto a component *fragment* by hand. That is the thing this change removes: a fragment is a pure wrapper, the label lives on the primitive, and it falls under the primitive's own additive-only promise rather than under a wrapper nobody versions.
 - **Why `resourceName` is a cascade on `metadata`, not a top-level field.** The default case ("the rendered resource shares the component's id") is by far the common one; authors should not have to write it. The override case ("rename the rendered resource without renaming the component") needs to be cheap because real deployments hit it constantly (legacy resource names, multi-instance suffixing). A `*name | #NameType` disjunction-default does both with one line and zero ceremony.
 - **Why `#names` lives on the Component and `#ctx.components` is a projection.** Two principles. (1) The component is the thing that owns its identity — the value that ultimately renders is the one that says what its name is. (2) Projection-not-computation means there is only one place to look when reading or debugging a name; the module-level view is a comprehension, not an alternate calculation. See enhancement 0001 D2.
 - **Why `#instance` is hidden and module-injected, not author-supplied.** Components are reusable across instances — the same component definition can be embedded in many `#ModuleInstance` values targeting different namespaces. If `#instance` were authored on the component, every instance would have to fork the component just to rewrite identity, which defeats reusability. Module-side injection via the `#components` pattern constraint keeps the instance identity flowing through a single wiring point. See enhancement 0001 D3.
@@ -378,9 +425,14 @@ Examples: `stateless-workload`, `stateful-workload`, `cronjob`.
         fqn!: #ContractFQNType
 
         description?: string
-        labels?:      #LabelsAnnotationsType
+        labels?:      #LabelsAnnotationsType   // categorisation only; never unified upward
         annotations?: #LabelsAnnotationsType
     }
+
+    // The matching identity a transformer selects on. Unified WHOLESALE into
+    // every #Component that attaches this Blueprint — typically where the
+    // workload-type key its composed Resource declares becomes concrete.
+    matchLabels?: #LabelsAnnotationsType
 
     composedResources!: [...#Resource]
     composedTraits?:    [...#Trait]
@@ -397,6 +449,7 @@ Implementation: [`blueprint.cue`](src/blueprint.cue).
 - `kind` MUST be the literal string `"Blueprint"`.
 - `metadata` follows the primitive-metadata shape (`name` + `modulePath` + `apiVersion` + `catalogVersion` + authored `fqn`, plus optional `description` / `labels` / `annotations`), under the same rules as `#Resource` (§2.1) and `#Trait` (§2.2): the key is a `#ContractFQNType` terminated by `apiVersion`, and `catalogVersion` is SemVer 2.0 provenance.
 - The authored `fqn` MUST retain its kind segment (`/blueprints`, plus any grouping segments the catalog uses beneath it).
+- `metadata.labels` and `matchLabels` follow the same rules as `#Resource` (§2.1). A Blueprint is where a required matching key declared by a composed Resource is typically **answered**: attaching the Blueprint is what completes the component's matching identity.
 - `#Blueprint` MUST NOT carry a `fulfilment` field. A `#ComponentTransformer` declares `requiredResources` and `requiredTraits` and has no blueprint equivalent, so nothing can demand a Blueprint and the field would be unreachable.
 - `composedResources` MUST list at least one `#Resource`. A Blueprint that composes nothing is a category error.
 - `composedTraits` is optional. A Trait listed here MUST have a `#Resource` from `composedResources` in its `appliesTo`, otherwise unification fails.
@@ -691,6 +744,7 @@ Transformers are catalog-versioned, and a transformer is an **adapter rather tha
         annotations?: #LabelsAnnotationsType
     }
 
+    // Selected against #Component.matchLabels — never against metadata.labels.
     requiredLabels?:    #LabelsAnnotationsType
     optionalLabels?:    #LabelsAnnotationsType
     requiredResources?: [#ContractFQNType]: #Resource
@@ -723,7 +777,7 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - `#ComponentTransformer` MUST NOT carry `metadata.apiVersion`. Declaring one MUST fail with a field-not-allowed error rather than being accepted and ignored.
 - `#ComponentTransformer` MUST NOT carry `metadata.#definitionName`. The three primitives retain it because each derives its `spec!` field key from it; a transformer has no `spec`, so nothing read it.
 - Every map key under `requiredResources` / `optionalResources` / `requiredTraits` / `optionalTraits` MUST be a `#ContractFQNType` and MUST equal the map value's `metadata.fqn`. A build-shaped key MUST be rejected: a transformer demands contracts, and no `#Resource` or `#Trait` can carry a key in that form.
-- A Transformer matches a Component when: all `requiredLabels` are present on the Component with matching values, every `requiredResources` FQN appears in the Component's `#resources`, and every `requiredTraits` FQN appears in the Component's `#traits`. The kernel matcher additionally unifies the consumer's primitive against the transformer's required slot at the same FQN; divergent definitions surface as a structured error per (component, FQN).
+- A Transformer matches a Component when: all `requiredLabels` are present in the Component's **`matchLabels`** with matching values, every `requiredResources` FQN appears in the Component's `#resources`, and every `requiredTraits` FQN appears in the Component's `#traits`. `requiredLabels` MUST be evaluated against `#Component.matchLabels` (§3.1) and MUST NOT be evaluated against `metadata.labels` on either side. The kernel matcher additionally unifies the consumer's primitive against the transformer's required slot at the same FQN; divergent definitions surface as a structured error per (component, FQN).
 - `#transform.output` MUST be either a single struct (one rendered resource per match) or a list of structs (N rendered resources per match). Other CUE kinds are rejected by the renderer.
 
 #### Rationale
@@ -731,7 +785,7 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - **Why match is key-driven and always unifies.** A transformer names the contracts it demands by key, and two contract levels of one primitive (`…@v1beta1`, `…@v1`) are distinct keys, so a transformer demanding one is structurally distinct from one demanding the other. But within a single key, the consumer Component may carry a slightly different definition body (drift, partial override) — the two sides may even come from different catalog builds, which under enhancement 0010 D4 is now the normal case rather than an error. Always unifying the consumer's primitive against the transformer's required slot ensures that drift surfaces as a structured `UnifyError` per (component, key) pair rather than as a render-time mystery. See enhancement 0001 D6.
 - **Why a transformer carries no `apiVersion`, and why that is enforced by closedness rather than by omission.** There is nothing for the field to name: a transformer's inputs are other people's contracts and its output is platform objects, so "this transformer's contract major" has no referent, and no reader would consult it — its own key interpolates `catalogVersion`, and the matcher keys on the contracts it demands. The absence is also load-bearing rather than tidy. A publish gate phrased as "for every member, compare against the last published build shipping this name at this apiVersion" resolves for a transformer the moment it has one, and the additive-only rule then refuses *ordinary* catalog releases — changing rendering logic, dropping an emitted field and narrowing an output type are all routine transformer edits and all violations. That would invert the whole point of keying transformers on the build, which is that a transformer is free to change. Closing the shape makes the field inexpressible, so the exclusion survives the next person adding a field to "the identity shape" without remembering which kinds are primitives.
 - **Why the identity shape is repeated rather than inherited from one shared with the primitives.** A parent named after the primitives that also admits transformers hands every future field to transformers for free. That is the actual history of `apiVersion`, and `fulfilment` and `matchLabels` each had to be excluded by hand afterwards. Enhancement 0010 D44 splits the shape instead: the cost is repeating three field lines, and the benefit is that the next field added to primitives cannot reach an adapter by default. A kind-neutral parent naming neither category was available and rejected for reintroducing exactly that straddle under a vaguer name.
-- **Why labels participate in matching but are inherited from primitives.** Component labels are not authored on the Component itself — they unify upward from every attached `#Resource`, `#Trait`, and `#Blueprint` (§3.1). This means a label-based match (e.g. `requiredLabels: {"core.opmodel.dev/workload-type": "stateless"}`) is a stable structural predicate the catalog can stamp on the primitive once and rely on, not a user-supplied free-text field. Conflating Component labels with author-supplied metadata would invite typos and silent misrouting.
+- **Why the label predicate reads `matchLabels` and not `metadata.labels`.** A label match must be a stable structural predicate the catalog stamps on a primitive once and relies on — not a free-text field a module author can typo into a silent misroute. `matchLabels` is that field: it unifies upward from every attached primitive (§3.1), it carries nothing but matching keys, and a primitive can declare one of them *required* so the author is forced to answer rather than allowed to omit. `metadata.labels` cannot be it, because it also carries categorisation that legitimately differs between primitives (§2.1 Rationale). The two sides of the match now have the same shape: this transformer declares its demand in a dedicated field, and the component declares its supply in one — an asymmetry that existed from the start, since `requiredLabels` was never `metadata.labels` on the transformer either.
 - **Why `#transform.output` may be either a struct or a list.** Most transformers emit one rendered resource per match (`Deployment` per stateless workload, `Service` per network-expose Trait). Some emit a variable number derived from a Component-side map: a `ConfigMapTransformer` emits one `ConfigMap` per entry in a component's `config` map. A single shape would force the variable case into a struct-of-resources contortion; a list-only shape would force the single case into a one-element list. Two shapes is the smallest schema that doesn't lie.
 - **Why we don't allow free-form CUE inside the transformer's output.** The renderer dispatches on `cue.Kind` — struct vs list — and never inspects field bodies. This keeps the kernel's render path agnostic to apply-layer conventions: a Kubernetes transformer's output is whatever the apply layer (kubectl, controller, gitops bridge) interprets, not whatever shape the core schema happens to know. Per Principle I (Contract Stability), the core schema must not assume a particular target.
 

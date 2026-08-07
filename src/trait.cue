@@ -35,15 +35,25 @@ import (
 		// Human-readable description of the definition
 		description?: string
 
-		// Optional metadata labels for categorization and filtering
-		// Labels are used by OPM for definition selection and matching
-		// Example: {"core.opmodel.dev/workload-type": "stateless"}
+		// Optional metadata labels for CATEGORIZATION. Descriptive only —
+		// nothing selects on these, and they are never unified upward into a
+		// #Component (enhancement 0010 D36).
+		// Example: {"trait.opmodel.dev/category": "network"}
 		labels?: #LabelsAnnotationsType
 
 		// Optional metadata annotations for definition behavior hints (not used for categorization)
 		// Annotations provide additional metadata but are not used for selection
 		annotations?: #LabelsAnnotationsType
 	}
+
+	// matchLabels: this trait's MATCHING identity — the keys a
+	// #ComponentTransformer.requiredLabels predicate selects on, unified
+	// wholesale into every #Component that attaches this trait. Separate from
+	// metadata.labels, which carries categorisation and is never unified
+	// upward; see #Resource.matchLabels for why the two cannot be one field.
+	//
+	// NOT rendered: matchLabels does not reach #TransformerContext (D36).
+	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
 
 	// MUST be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition

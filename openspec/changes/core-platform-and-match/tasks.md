@@ -17,14 +17,14 @@
 
 ## 2. Match labels (`src/component.cue`, `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue`, `src/transformer.cue`)
 
-- [ ] 2.1 Add `matchLabels` to `#Resource`, `#Trait` and `#Blueprint`.
-- [ ] 2.2 Add `matchLabels` to `#Component` as the wholesale unification of its attached primitives'. **No filter, no key list, no iteration** — iteration is what forced dropping `!` from required match labels in every rejected design.
-- [ ] 2.3 Leave `metadata.labels` alone on all four. Delete the "unified from all attached resources, traits, and blueprints" claim from `#Component.metadata.labels`' doc comment (`component.cue:19-21`) — it is about to be false.
-- [ ] 2.4 Point `#ComponentTransformer.requiredLabels` at `matchLabels`.
-- [ ] 2.5 Verify `matchLabels` does **not** reach `#TransformerContext.componentLabels` (`transformer.cue:147-157`). This is a deliberate omission; add a comment saying so, or it reads as an oversight.
-- [ ] 2.6 Delete `#LabelWorkloadType` (`component.cue:4`). Measured 2026-08-01: zero readers across all six consuming repos — all write the literal string.
-- [ ] 2.7 Update `SPEC.md` — the existing claim that matching unions `metadata.labels` becomes wrong and must be rewritten, not merely supplemented.
-- [ ] 2.8 `task vet`.
+- [x] 2.1 Add `matchLabels` to `#Resource`, `#Trait` and `#Blueprint`.
+- [x] 2.2 Add `matchLabels` to `#Component` as the wholesale unification of its attached primitives'. **No filter, no key list, no iteration** — iteration is what forced dropping `!` from required match labels in every rejected design.
+- [x] 2.3 Leave `metadata.labels` alone on all four. Delete the "unified from all attached resources, traits, and blueprints" claim from `#Component.metadata.labels`' doc comment (`component.cue:19-21`) — it is about to be false.
+- [x] 2.4 Point `#ComponentTransformer.requiredLabels` at `matchLabels`.
+- [x] 2.5 Verify `matchLabels` does **not** reach `#TransformerContext.componentLabels` (`transformer.cue:147-157`). This is a deliberate omission; add a comment saying so, or it reads as an oversight.
+- [x] 2.6 Delete `#LabelWorkloadType` (`component.cue:4`). Measured 2026-08-01: zero readers across all six consuming repos — all write the literal string.
+- [x] 2.7 Update `SPEC.md` — the existing claim that matching unions `metadata.labels` becomes wrong and must be rewritten, not merely supplemented.
+- [x] 2.8 `task vet`.
 
 ## 3. Fulfilment (`src/resource.cue`, `src/trait.cue`)
 

@@ -38,15 +38,28 @@ import (
 		// Human-readable description of the definition
 		description?: string
 
-		// Optional metadata labels for categorization and filtering
-		// Labels are used by OPM for definition selection and matching
-		// Example: {"core.opmodel.dev/workload-type": "stateless"}
+		// Optional metadata labels for CATEGORIZATION. Descriptive only —
+		// nothing selects on these, and they are never unified upward into a
+		// #Component (enhancement 0010 D36).
+		// Example: {"blueprint.opmodel.dev/category": "workload"}
 		labels?: #LabelsAnnotationsType
 
 		// Optional metadata annotations for definition behavior hints (not used for categorization)
 		// Annotations provide additional metadata but are not used for selection
 		annotations?: #LabelsAnnotationsType
 	}
+
+	// matchLabels: this blueprint's MATCHING identity — the keys a
+	// #ComponentTransformer.requiredLabels predicate selects on, unified
+	// wholesale into every #Component that attaches this blueprint. A
+	// blueprint is where the workload-type key is typically CONCRETE: it
+	// composes a container that declares the key required and answers it, so
+	// attaching the blueprint is what makes the component's matching identity
+	// complete. Separate from metadata.labels; see #Resource.matchLabels for
+	// why the two cannot be one field.
+	//
+	// NOT rendered: matchLabels does not reach #TransformerContext (D36).
+	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateful"}
 
 	// Resources that compose this blueprint (full references)
 	composedResources!: [...#Resource]

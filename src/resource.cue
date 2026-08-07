@@ -45,15 +45,44 @@ import (
 		// Human-readable description of the definition
 		description?: string
 
-		// Optional metadata labels for categorization and filtering
-		// Labels are used by OPM for definition selection and matching
-		// Example: {"core.opmodel.dev/workload-type": "stateless"}
+		// Optional metadata labels for CATEGORIZATION. Descriptive only —
+		// nothing selects on these, and they are never unified upward into a
+		// #Component. Matching lives in matchLabels below (enhancement 0010
+		// D36).
+		// Example: {"resource.opmodel.dev/category": "workload"}
 		labels?: #LabelsAnnotationsType
 
 		// Optional metadata annotations for definition behavior hints (not used for categorization)
 		// Annotations provide additional metadata but are not used for selection
 		annotations?: #LabelsAnnotationsType
 	}
+
+	// matchLabels: this resource's MATCHING identity — the keys a
+	// #ComponentTransformer.requiredLabels predicate selects on. A #Component
+	// unifies its attached primitives' matchLabels WHOLESALE, so every key
+	// written here participates in matching and nothing else does.
+	//
+	// Deliberately not metadata.labels. The two were one field, and the
+	// upward union that implied cannot be built: categorisation labels
+	// legitimately disagree between primitives — "workload" on a container,
+	// "storage" on volumes, "config" on config maps — so a full union fails
+	// on the first real component. Every FILTERED union measured had to
+	// iterate, and CUE refuses to iterate a struct holding an unset required
+	// field, which forced dropping `!` from the one label a module author
+	// must pick. Separating the fields removes the filter and both costs.
+	//
+	// Because the union embeds structs rather than iterating them, a REQUIRED
+	// key survives it: a primitive MAY declare `matchLabels: "<key>"!: <disj>`
+	// and the component reports that field unset rather than silently
+	// carrying an incomplete value.
+	//
+	// `core` names no key here — the matching vocabulary belongs to the
+	// catalog that defines it, by construction rather than by `core` agreeing
+	// not to look at some keys.
+	//
+	// NOT rendered: matchLabels does not reach #TransformerContext, so it
+	// appears on no rendered object (D36).
+	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
 
 	// MUST be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition
