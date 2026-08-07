@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.0-alpha.1](https://github.com/open-platform-model/core/compare/v1.1.0-alpha.1...v2.0.0-alpha.1) (2026-08-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* the module path moves from `opmodel.dev/core@v1` to `opmodel.dev/core@v2`. Every consumer rewrites its `import` statements as well as its `cue.mod` dependency — `library`, `cli`, `opm-operator`, `catalog_opm`, `catalog_kubernetes`, `catalog_opm_experimental`, `modules` and `releases`.
+* **schema:** #ModuleRelease->#ModuleInstance, #ModuleReleaseMap-> #ModuleInstanceMap, #ReleaseIdentity->#InstanceIdentity, #ctx.release-> #ctx.instance, #Component.#release->#instance, transformer #moduleRelease*-> #moduleInstance*; wire kind "ModuleRelease"->"ModuleInstance"; label domain module-release.opmodel.dev/*->module-instance.opmodel.dev/*. The CUE module advances opmodel.dev/core@v0->@v1 (every downstream import re-pins to @v1) and ships on the v1.0.0-alpha.N prerelease line.
+
+### Features
+
+* move the CUE module to opmodel.dev/core@v2 ([#27](https://github.com/open-platform-model/core/issues/27)) ([de60225](https://github.com/open-platform-model/core/commit/de6022534beb575f4274a5372a55e20fbca12fc0))
+* **schema:** rename #ModuleRelease family to #ModuleInstance ([#17](https://github.com/open-platform-model/core/issues/17)) ([a03a88b](https://github.com/open-platform-model/core/commit/a03a88badfd882dcfb8216f1c4c9f4073aa522bd))
+
+
+### Bug Fixes
+
+* allow snake_case catalog module paths; stop injecting stale opm-secrets ([#24](https://github.com/open-platform-model/core/issues/24)) ([7500c5d](https://github.com/open-platform-model/core/commit/7500c5d9ce779a57ccd60fd0feedc39fd7319712))
+* **cue:** pin language version to v0.17.0-alpha.1 ([#20](https://github.com/open-platform-model/core/issues/20)) ([40daf05](https://github.com/open-platform-model/core/commit/40daf05eb3aee238c4eda7c42caeaca54f52b441))
+
 ## [1.0.0-alpha.3](https://github.com/open-platform-model/core/compare/v1.0.0-alpha.2...v1.0.0-alpha.3) (2026-07-27)
 
 
