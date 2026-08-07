@@ -8,7 +8,7 @@ package core
 //   package opm
 //
 //   import (
-//       c  "opmodel.dev/core@v1"
+//       c  "opmodel.dev/core@v2"
 //       id "opmodel.dev/catalogs/opm/identity"
 //       t  "opmodel.dev/catalogs/opm/transformers"
 //   )

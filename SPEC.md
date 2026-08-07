@@ -2,7 +2,7 @@
 
 **Status**: Living document. Authored alongside the schema and gated by `task spec:check`.
 **Source of truth**: When this document and the `.cue` files disagree, **the schema wins**. File an issue.
-**Module**: `opmodel.dev/core@v1`
+**Module**: `opmodel.dev/core@v2`
 
 This specification is the normative reference for the OPM core schema — what each construct is, what constraints it enforces, and why those constraints take the form they do. It is the companion to the schema files (`*.cue`) and to the tutorial-flavoured material in `docs/`. The `.cue` files carry the contract; the `docs/` carry the explanation for newcomers; this specification carries the *rationale* for anyone evolving the schema.
 
