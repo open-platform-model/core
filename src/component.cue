@@ -37,7 +37,6 @@ package core
 	// Blueprints applied to this component
 	#blueprints?: #BlueprintMap
 
-
 	// NO demand-side optionality marker for RESOURCES, and the absence is a
 	// decision (D28): a component does not attach a resource it can do
 	// without. Every declared resource is a demand the platform must satisfy,
