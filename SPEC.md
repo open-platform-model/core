@@ -28,6 +28,7 @@ OPM Core distinguishes three categories of definition:
 - **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Blueprint` (specified at §3.3, whose section number is retained so existing cross-references keep resolving), `#Secret`. Each carries its own `metadata`, its own contract-keyed identity, and a `spec` schema namespaced under a camelCase form of its name. A primitive is a building block a `#Module` attaches and writes values against, so each carries an `apiVersion` and the additive-only promise that level gates.
 - **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Module`, `#Platform`, `#ModuleInstance`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleInstance`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
 - **Adapters** (§4) — types that translate the model into target runtime form without participating in composition: `#ComponentTransformer`.
+- **Publish gates** (§5) — definitions a publishing tool unifies an artifact against, so that the diagnostic an author reads is CUE's own rather than a hand-rolled comparison that drifts from the schema: `#TraitOptionalGate`. A gate is not part of any artifact; it is a rule about artifacts, shipped in the same module as the shapes it constrains (enhancement 0011 D21/D22).
 
 The Primitive/Construct split exists because primitives are what a module *attaches and writes against*, and constructs are what *carries* them. A platform team publishes primitives from a catalog on its own release cadence; an application team uses constructs to assemble what a catalog published. The dividing question is not "does this introduce vocabulary?" — under that reading `#Blueprint` sat with the constructs, even though a module names a blueprint and writes values under its `spec` exactly as it does for a resource, and is broken by a change to it exactly as it is. What the split has to track is which definitions carry a **contract key** and the additive-only promise it gates (enhancement 0010 D44), and that is decided by whether a module writes against the thing.
 
@@ -169,6 +170,12 @@ Examples: `scaling`, `health-check`, `network-expose`.
     // As #Resource: "catalog" (default) or "provider".
     fulfilment: *"catalog" | "provider"
 
+    // Whether an unhandled demand for this Trait fails the render or warns.
+    // NO DEFAULT — the declaring catalog states the posture as a default
+    // (`bool | *true` / `bool | *false`), and a module overrides it at the
+    // attachment site. #TraitOptionalGate holds catalogs to that at publish.
+    optional: bool
+
     // MUST be OpenAPIv3-compatible, namespaced under camelCase(name).
     spec!: (strings.ToCamel(metadata.#definitionName)): _
 
@@ -185,6 +192,10 @@ Implementation: [`trait.cue`](src/trait.cue).
 - `metadata.name`, `metadata.modulePath`, `metadata.apiVersion`, `metadata.catalogVersion` and `metadata.fqn` follow the same rules as `#Resource` (§2.1): the key is `#ContractFQNType`, authored by the catalog and terminated by `apiVersion`; `catalogVersion` is SemVer 2.0 provenance that no key interpolates.
 - The authored `fqn` MUST retain its kind segment (`/traits`). A Trait and a Resource sharing a name at one `apiVersion` MUST NOT collide.
 - `metadata.labels` and `matchLabels` follow the same rules as `#Resource` (§2.1): categorisation stays in `metadata.labels` and is never unified upward; matching lives in `matchLabels`, is unified wholesale into the attaching `#Component`, MAY carry required keys, and is never rendered.
+- `optional` MUST be present and MUST be a `bool`. **`core` MUST NOT give it a default.** The declaring catalog MUST state the posture, and MUST state it as a *default* (`bool | *true` for advisory, `bool | *false` for load-bearing) rather than as a concrete value.
+- A `#Component` MUST be able to override the declared posture at the **attachment site** (`#traits: (FQN): SomeTrait & {optional: true}`), in either direction, without conflict. This follows from the posture being a default: narrowing a default is never a conflict, narrowing a concrete value always is.
+- An override at the attachment site MUST NOT move the catalog's own value. The attachment narrows a copy, not the shipped definition.
+- A Trait that never states `optional` is an **incomplete value**, and a Trait whose catalog pinned `optional` to a concrete value is **unoverridable**. Both MUST be refused at publish by `#TraitOptionalGate` (§5.1) — the schema cannot express "you may suggest but not decide" in a single field.
 - `fulfilment` follows the same rules as `#Resource` (§2.1) — a closed `*"catalog" | "provider"` enum, enforced at materialize rather than by this schema. `backup` is the contract the field exists for: `catalog_opm` declares the Trait and ships nothing that renders it.
 - `spec` MUST be present, MUST have exactly one top-level field, and that field's name MUST equal `camelCase(metadata.name)`. The schema under that field MUST be expressible in OpenAPI v3.
 - `appliesTo` MUST list at least one `#Resource`. A Trait that applies to nothing is a category error.
@@ -194,6 +205,9 @@ Implementation: [`trait.cue`](src/trait.cue).
 
 - **Why `appliesTo` is required and listed.** Traits modify the surface of specific Resources. Without `appliesTo` an author could attach `scaling` to a `Volume` and produce nonsense; with it, the mismatch surfaces at unification time rather than render time. The list shape lets a single Trait apply to a family of related Resources (e.g. `scaling` applies to `Container` and `Job`) without forcing N Trait copies.
 - **Why Traits repeat the primitive-metadata shape (`name` + `modulePath` + `apiVersion` + `catalogVersion` + authored `fqn`, plus optional `description` / `labels` / `annotations`) rather than sharing a parent definition with `#Resource` and `#Blueprint`.** Both are vocabulary primitives that catalogs version and publish, and the kernel matcher walks both via the same key-shaped lookup, so the shape must agree — but it is repeated, not inherited. A single parent naming three kinds is what admitted `#ComponentTransformer` as a fourth, and a shape named after three things that admits a fourth hands every future field to that fourth for free: `apiVersion` is the field that actually landed there, and `fulfilment` and `matchLabels` each had to be kept off transformers by hand. Enhancement 0010 D44 buys structural exclusion for the price of repeating four field lines. See §4.1 for the adapter's own shape.
+- **Why optionality is a property of the Trait, and why `core` states no default for it.** Optionality is really a property of the *(trait, component)* pair: `backup` on a throwaway cache is advisory, and on a database it is the entire point. The catalog knows the common case and the module knows its own, so both need a say — which means the catalog's statement has to be a *recommendation* rather than a ruling. A default is exactly that in CUE: a module narrowing it is never a conflict, so the demand side always has the last word. `core` therefore declares the field and no default at all, because a default here would be a third opinion competing with the catalog's, and two defaults do not compose — restating one annihilates both, leaving `bool | true | false`, incomplete, with no default and a diagnostic that never says why. See enhancement 0010 D46.
+- **Why the earlier demand-side marker was dropped.** The first revision of this change put the opt-out on `#Component` as a set keyed by contract FQN, on the reading that D28's "lives on the demand side" forbade a field on `#Trait`. It made the author write the FQN twice, once to attach and once to mark, and it gave the trait author — who knows whether a trait is advisory — no way to say so. Moving the field onto `#Trait` writes the FQN once, puts the switch where the author is already looking, and preserves the demand side's last word through the default rather than through the field's location.
+- **Why the "may suggest, not decide" rule lives in a publish gate rather than in the schema.** CUE has no way to say "this field may be given a default here but not a concrete value". A catalog can always write `optional: false`, and a module then cannot override it. `#TraitOptionalGate` (§5.1) is where that becomes checkable, and it follows the mechanism enhancement 0011 D21/D22 established for identity: the schema is the contract, CUE is the engine that checks contracts, and the author reads CUE's own error rather than a hand-rolled comparison.
 - **Why we don't allow free-form CUE inside `spec`.** Same as `#Resource` (§2.1) — the OpenAPI v3 contract surface is for non-CUE consumers.
 
 #### See also
@@ -233,11 +247,6 @@ Unlike a primitive, a Component does not introduce new schema. Its `spec` is the
     #resources:   #ResourceMap
     #traits?:     #TraitMap
     #blueprints?: #BlueprintMap
-
-    // Trait demands this component can do without: a marker SET keyed by the
-    // same contract FQN #traits is keyed by. No `false` — absence is the only
-    // spelling of "required". Resources have no counterpart, deliberately.
-    #optionalTraits?: [#ContractFQNType]: true
 
     // This component's matching identity: the wholesale unification of every
     // attached primitive's matchLabels. The comprehension iterates the
@@ -306,9 +315,8 @@ Implementation: [`component.cue`](src/component.cue).
 - `matchLabels` MUST NOT be rendered: it MUST NOT reach `#TransformerContext.componentLabels`, and no rendered object MUST carry its keys.
 - Every resource a Component declares is a **required demand**. A demanded resource FQN that no transformer in the platform supplies MUST fail the render, naming the unresolved FQN. A Component whose resource set is only partly satisfied MUST NOT render output for the satisfied part.
 - A Component MUST NOT have a demand-side optionality marker for resources. There is no field to declare one.
-- A trait demand is **required by default**. A Component MAY mark a trait demand optional by naming its contract FQN in `#optionalTraits`. An unhandled trait *without* the marker MUST fail the render, naming the trait; only the marked case MUST degrade to a warning that continues.
-- A key in `#optionalTraits` that is **not** a key of `#traits` is accepted, not rejected. It marks nothing, so the trait it was meant to excuse stays required and the render fails naming that trait — the mistake surfaces as the failure it was trying to avoid rather than as a silent downgrade. This is stated as accepted behaviour rather than as a rule nothing enforces: the schema does not cross-check the two maps.
-- `#optionalTraits` values MUST be the literal `true`. There is exactly one spelling of "optional" and no spelling of "required" other than absence.
+- A trait demand's optionality is `#Trait.optional` (§2.2), stated by the declaring catalog and overridable by this Component at the **attachment site**: `#traits: (FQN): SomeTrait & {optional: true}`. A Component carries **no** optionality field of its own.
+- An unhandled trait whose resolved `optional` is `false` MUST fail the render, naming the trait; one resolved `true` MUST degrade to a warning that continues.
 - Enforcement of the three rules above is the kernel's — a schema cannot see which transformers a platform materialized. `core` states the demand; the render decides whether it was met.
 
 #### Rationale
@@ -318,7 +326,7 @@ Implementation: [`component.cue`](src/component.cue).
 - **Why matching identity unifies upward but `metadata.labels` does not.** The principle behind the old rule was right — the primitives are the source of truth about what a Component *is*, and a Component contradicting them would be a lie about what is deployed — but it was applied to a field that also carries categorisation, and those two jobs pull in opposite directions: `resource.opmodel.dev/category` is `workload` on Container, `storage` on Volumes and `config` on ConfigMaps, so the union the rule demanded fails on the first real component (§2.1 Rationale). Splitting the jobs lets each take the rule it needs. `matchLabels` unifies wholesale, and a conflict there is a real modelling error worth failing on. `metadata.labels` stops unifying, because two primitives categorised differently is not a disagreement about anything.
 - **Why the union is a comprehension over the attachment maps and never over the labels.** Embedding each primitive's `matchLabels` struct whole is what preserves a required key: CUE will not iterate a struct holding an unset required field, so any `for k, v` over the labels — which every *filtered* union needs — forces primitives to drop `!` and degrades "the author must pick a workload type" into an incomplete value that renders. Iterating the maps is safe because the required field sits inside a value, not at the level being iterated. This is the mechanical fact the whole design turns on, and it is why no key list or prefix rule may be reintroduced here as a "small" refinement.
 - **Why an unmet demand is an error at all.** It was not. A demanded FQN with no bucket recorded a `MissingFQN` that no production code read, and a bucket that existed but disqualified every candidate recorded *nothing*. So a Component carrying a container and a backup trait, on a platform with no backup provider, matched the deployment transformer, was not `Unmatched`, rendered successfully, and had no backup. Under the contract model that is not an edge case but the routine failure, because a contract's provider is now expected to come from a different catalog on a different release cadence (§2.1). Making the demand required by default is what turns "your backup silently did not exist" into a render that names the trait.
-- **Why the trait opt-out is a marker set beside `#traits`, and not any of the three alternatives.** Enhancement 0010 D28 fixes that there is exactly one opt-out, that it lives on the demand side, and that its absence means required; the spelling is this change's, and it is recorded here rather than only in the schema. **Not a field on `#Trait`:** a trait definition is shipped by a catalog and shared by every component that attaches it, so optionality declared there is a supply-side statement about somebody else's component — `optionalTraits` on `#ComponentTransformer` is the supply side, already exists, and this is its demand-side counterpart. **Not a second attachment map** (`#optionalTraits: #TraitMap`, attach-and-mark in one statement, no FQN repeated): catalogs ship component *fragments* that attach traits into `#traits`, and a module author who wants one of those optional cannot move where the fragment put it — a marker is writable beside a fragment, a rival map is not. **Not a list of FQNs:** two fragments unifying into one Component fail on list unification while map keys merge, and a set makes a duplicate marker a no-op rather than an error. The accepted cost is that the FQN is written twice, once to attach and once to mark; a mistyped key marks nothing and leaves the trait required, so the mistake surfaces as the render failure it was trying to avoid rather than as a silent downgrade.
+- **Why the Component carries no optionality field at all.** An earlier revision of this change put a marker set here, keyed by contract FQN beside `#traits`, reading D28's "the opt-out lives on the demand side" as forbidding a field on `#Trait`. It cost the author the FQN twice — once to attach, once to mark — and gave the trait's own author no way to say whether the trait is advisory, which is the thing they actually know. Putting the field on `#Trait` and having the catalog state it *as a default* keeps the demand side's last word (a module narrowing a default is never a conflict) while writing the FQN once, at the attachment the author is already looking at. See §2.2 and enhancement 0010 D46.
 - **Why resources get no optionality marker, and why that asymmetry is real rather than convenient.** A component does not attach a resource it can do without — a resource is a thing that must exist, and a component whose container has no transformer has nothing to deploy. A trait modifies something that renders regardless, so "render it without the advisory behaviour, and say so" is a coherent outcome for a trait and an incoherent one for a resource. Giving resources the marker too was considered and rejected on that ground: it would let a module declare a resource it does not mean, which is the same class of statement as an empty-filter default that resolves to whatever was published last (§3.4).
 - **Why the derivation is enforced, and why the rule binds every Component rather than only fragments.** Stating that a fragment must not declare `matchLabels` and leaving it unchecked reproduces the defect this section already corrects once: a rule written down that nothing performs. And the enforcement cannot be narrowed to fragments, because **CUE has no way to name one** — a catalog's wrapper and a module author's component are the same type, so any schema-level rule binds both. The obvious spelling does not work either: `close()` around the union still admits an authored key (measured, cue v0.17.1), so it would read as enforcement while enforcing nothing. A size comparison against the hidden union does work, because unification can only ever add. The cost is that a Component can no longer answer a required matching key inline; it attaches a blueprint that answers it. That cost was measured against the fleet before being taken — `modules/**` carries **zero** hand-set matching labels, because every module composes a workload blueprint and inherits — so the hatch this closes is one nobody uses, and the error names the component rather than appearing later as a transformer that mysteriously did not match.
 - **Why the old claim is deleted rather than corrected.** `metadata.labels` was documented as "unified from all attached resources, traits, and blueprints" in both the schema comment and this specification, and **no code anywhere performed that union** — not in this definition, and not in the kernel, which reads `metadata.labels` off the Component value. What made label matching work in practice was catalogs writing the label onto a component *fragment* by hand. That is the thing this change removes: a fragment is a pure wrapper, the label lives on the primitive, and it falls under the primitive's own additive-only promise rather than under a wrapper nobody versions.
@@ -835,3 +843,57 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - Requires: [`#Resource`](#21-resource), [`#Trait`](#22-trait)
 - Discovered via: [`#Catalog`](#36-catalog)
 
+---
+
+## 5. Publish Gates
+
+### 5.1 `#TraitOptionalGate`
+
+#### Definition
+
+`#TraitOptionalGate` is the rule `opm catalog publish` unifies every published `#Trait`'s `optional` field against. It exists because `#Trait.optional` has to be *statable by the catalog* and *overridable by the module*, and CUE has no way to say "you may give this field a default here, but not a concrete value". The gate is where that becomes checkable.
+
+It is not part of any artifact. A catalog does not carry it, a module never sees it, and nothing in a rendered value derives from it — it is a rule about artifacts, shipped beside the shape it constrains so that both move in one release.
+
+#### Shape
+
+```cue
+#TraitOptionalGate: {
+    // The value under test: some published Trait's `optional`.
+    optional: bool
+
+    // RULE 1 — the catalog stated a posture. Interpolation forces the
+    // disjunction to its default, so a Trait that never mentions `optional`
+    // fails here. Visible only under `cue vet -c`.
+    _stated: "\(optional)"
+
+    // RULE 2 — and did not PIN it. Both arms must remain admissible, so a
+    // concrete value — which no module could override — is refused. Visible
+    // under plain `cue vet`.
+    _overridable: ((optional & true) != _|_) && ((optional & false) != _|_)
+    _overridable: true
+}
+```
+
+Implementation: [`trait.cue`](src/trait.cue).
+
+#### Constraints
+
+- A publishing tool MUST unify **every** published `#Trait`'s `optional` against this gate, and MUST surface CUE's own error rather than reformulating it.
+- The gate MUST be given the **field**, not the Trait. `#TraitOptionalGate & {trait: SomeTrait}` would draw the Trait's `spec` into concreteness checking, and a `spec` is a schema that MUST NOT be concrete.
+- The gate MUST be unified into a **non-hidden** value. `cue vet -c` does not check hidden fields, so a gate placed in a `_`-prefixed field passes while checking nothing.
+- The check MUST be run with concrete evaluation (`cue vet -c` or equivalent). Rule 2 fails under plain `cue vet`; **rule 1 does not** — an unstated posture is an incomplete value, not a wrong one.
+- A Trait whose catalog states `optional: bool | *true` or `optional: bool | *false` MUST pass. A Trait that never states `optional` MUST fail rule 1. A Trait whose catalog writes a concrete `optional: true` or `optional: false` MUST fail rule 2.
+
+#### Rationale
+
+- **Why a gate rather than a schema constraint.** The property is "a catalog may supply a default but not a value", and CUE cannot express it in a field: a field admits a concrete value or it does not, and `#Trait.optional` must admit one — that is exactly what a module writes at the attachment site. What distinguishes the two cases is *who wrote it*, which the schema cannot see and a publish-time check can.
+- **Why it unifies rather than compares.** Same mechanism enhancement 0011 D21/D22 chose for identity: a hand-rolled expected-versus-found comparison is a second statement of the rule that drifts from the first. Unifying against a shipped definition keeps one statement, and the author reads CUE's error at the field.
+- **Why the two rules are stated separately even though both are about `optional`.** They fail differently and are caught by different invocations, and a reader who knows only one of them will build a check that misses the other. Rule 2 is a conflict between two concrete booleans, which plain `cue vet` reports. Rule 1 is an incomplete value, which it does not. A gate that ran without `-c` would enforce half of itself silently.
+- **Why the gate takes a `bool` and not a `#Trait`.** Narrowing the input to the one field is what keeps the gate from demanding that a Trait's `spec` be concrete. It also makes the gate reusable against any `bool` a future rule wants the same property from, without teaching it about Traits.
+
+#### See also
+
+- Gates: [`#Trait`](#22-trait) — the field this constrains and where the posture is documented
+- Sibling gate: `CatalogMemberFQNGate` (enhancement 0011 D22, forthcoming in `core`)
+- Design source: enhancement 0010 D46

@@ -70,6 +70,7 @@ _pinMatchExpose: #Trait & {
 		fqn:            "opmodel.dev/catalogs/opm/traits/expose@v1beta1"
 		labels: "trait.opmodel.dev/category": "network"
 	}
+	optional: bool | *true
 	appliesTo: [_pinMatchContainer]
 	spec: expose: port: int
 }
@@ -212,6 +213,7 @@ _pinProviderFulfilledTrait: #Trait & {
 		fqn:            "opmodel.dev/catalogs/opm/traits/backup@v1beta1"
 	}
 	fulfilment: "provider"
+	optional:   bool | *false
 	appliesTo: [_pinMatchContainer]
 	spec: backup: schedule: string
 }
@@ -220,28 +222,109 @@ _pinProviderFulfilment: "provider"
 
 // ─── Demand-side optionality ────────────────────────────────────────────────
 
-// A component that can do without its backup trait. The marker names the same
-// contract key the attachment is keyed by; the value has one legal spelling.
+// The catalog's posture, stated as a DEFAULT so it recommends rather than
+// rules. `backup` is load-bearing, `expose` is advisory.
+_pinTraitPostureRequired: "\(_pinProviderFulfilledTrait.optional)"
+_pinTraitPostureRequired: "false"
+_pinTraitPostureAdvisory: "\(_pinMatchExpose.optional)"
+_pinTraitPostureAdvisory: "true"
+
+// THE PROPERTY THE WHOLE SHAPE EXISTS FOR: a module overrides the catalog at
+// the attachment site, in BOTH directions, and neither is a conflict. This is
+// what a concrete value on the trait would have made impossible.
 _pinOptionalTraitComponent: #Component & {
-	metadata: name:                                                                        "jellyfin"
-	#resources: container:                                                                 _pinMatchContainer
-	#traits: "opmodel.dev/catalogs/opm/traits/backup@v1beta1":                             _pinProviderFulfilledTrait
-	#optionalTraits: "opmodel.dev/catalogs/opm/traits/backup@v1beta1":                     true
+	metadata: name:        "jellyfin"
+	#resources: container: _pinMatchContainer
+	#traits: {
+		// the catalog says required; this component can do without it
+		"opmodel.dev/catalogs/opm/traits/backup@v1beta1": _pinProviderFulfilledTrait & {optional: true}
+		// the catalog says advisory; this component insists on it
+		"opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinMatchExpose & {optional: false}
+	}
 	#blueprints: "opmodel.dev/catalogs/opm/blueprints/workload/stateful-workload@v1beta1": _pinMatchStateful
 	#instance: _pinInstanceFixture
 	spec: {
 		container: image:           "jellyfin:1"
 		backup: schedule:           "@daily"
+		expose: port:               8096
 		statefulWorkload: replicas: 1
 	}
 }
-_pinOptionalTraitMarked: "\(_pinOptionalTraitComponent.#optionalTraits["opmodel.dev/catalogs/opm/traits/backup@v1beta1"])"
-_pinOptionalTraitMarked: "true"
+_pinTraitOptOutAtAttachment: "\(_pinOptionalTraitComponent.#traits["opmodel.dev/catalogs/opm/traits/backup@v1beta1"].optional)"
+_pinTraitOptOutAtAttachment: "true"
+_pinTraitOptInAtAttachment:  "\(_pinOptionalTraitComponent.#traits["opmodel.dev/catalogs/opm/traits/expose@v1beta1"].optional)"
+_pinTraitOptInAtAttachment:  "false"
 
-// Absence is the only spelling of "required": an unmarked trait has no entry,
-// rather than an entry reading false.
-_pinUnmarkedTraitAbsent: _pinMatchComponent.#optionalTraits == _|_
-_pinUnmarkedTraitAbsent: true
+// ...and the catalog's own value is untouched by either override — the
+// attachment narrows a copy, not the shipped definition.
+_pinTraitPostureUnmoved: "\(_pinProviderFulfilledTrait.optional)"
+_pinTraitPostureUnmoved: "false"
+
+// ─── The publish gate ───────────────────────────────────────────────────────
+//
+// Both fixtures state a posture as a default, so both pass.
+//
+// THESE PINS ARE HIDDEN, WHICH COSTS RULE 1 ITS TEETH HERE, and the trade is
+// deliberate. The gate must be unified into a NON-hidden value to be checked
+// by `cue vet -c` — but a non-hidden top-level field in this package SHIPS to
+// every consumer of the published module, and this file's whole premise is
+// that an importing package evaluates none of it. So publish gets the
+// non-hidden application (see #TraitOptionalGate's doc comment) and this file
+// keeps the hidden one: rule 2 is still gated here, because it is visible
+// under plain vet, and rule 1 is recorded as a MUST-FAIL case below with the
+// command it was measured with.
+_pinGateTraitPostureRequired: #TraitOptionalGate & {optional: _pinProviderFulfilledTrait.optional}
+_pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.optional}
+
+// ─── MUST-FAIL: the two rules the gate exists for ───────────────────────────
+
+// RULE 2 — a catalog PINS `optional` to a concrete value. No module could ever
+// override it, so the catalog would decide for everyone. Visible under plain
+// `cue vet`, because both arms of the check are concrete booleans:
+//   _failGatePinned._overridable: conflicting values false and true
+//
+//  _failPinnedOptional: #Trait & {
+//   metadata: {
+//    name:           "security-context"
+//    modulePath:     "opmodel.dev/catalogs/opm/traits"
+//    apiVersion:     "v1beta1"
+//    catalogVersion: "1.0.0"
+//    fqn:            "opmodel.dev/catalogs/opm/traits/security-context@v1beta1"
+//   }
+//   optional: false
+//   appliesTo: [_pinMatchContainer]
+//   spec: securityContext: runAsUser: int
+//  }
+//  _failGatePinned: #TraitOptionalGate & {optional: _failPinnedOptional.optional}
+
+// RULE 1 — a catalog never states a posture at all. THE THIRD CASE IN THIS
+// REPO THAT PLAIN `cue vet` DOES NOT REPORT, and the one that dictates how
+// publish invokes the gate. Measured 2026-08-07 against cue v0.17.1:
+//
+//   $ cue vet ./...        # exits 0 — nothing reported
+//   $ cue vet -c ./...
+//   failGateUnstated.optional: incomplete value bool
+//
+// TWO CONDITIONS, both required. The `-c` flag, because an unstated posture is
+// an INCOMPLETE value rather than a wrong one. And a NON-HIDDEN application —
+// note the case below is `failGateUnstated`, not `_failGateUnstated` — because
+// `cue vet -c` does not check hidden fields, so the same case parked in a
+// `_`-prefixed slot exits 0 and gates nothing. That is why the positive gate
+// pins above are hidden and this one is not, and why the gate's own doc
+// comment states the requirement rather than leaving it to be rediscovered.
+//
+//  _failUnstatedOptional: #Trait & {
+//   metadata: {
+//    name:           "expose-unstated"
+//    modulePath:     "opmodel.dev/catalogs/opm/traits"
+//    apiVersion:     "v1beta1"
+//    catalogVersion: "1.0.0"
+//    fqn:            "opmodel.dev/catalogs/opm/traits/expose-unstated@v1beta1"
+//   }
+//   appliesTo: [_pinMatchContainer]
+//   spec: exposeUnstated: port: int
+//  }
+//  failGateUnstated: #TraitOptionalGate & {optional: _failUnstatedOptional.optional}
 
 // ─── Subscription: one build, named ─────────────────────────────────────────
 

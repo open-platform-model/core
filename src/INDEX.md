@@ -46,6 +46,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#SecretType` | `schemas.cue` |  |
 | `#Trait` | `trait.cue` | #Trait: Defines additional behavior or characteristics that can be attached to components |
 | `#TraitMap` | `trait.cue` |  |
+| `#TraitOptionalGate` | `trait.cue` | #TraitOptionalGate: what `opm catalog publish` unifies against, once per published #Trait, to hold catalogs to the two rules #Trait |
 | `#ComponentTransformer` | `transformer.cue` | #ComponentTransformer: Declares how to convert OPM components into platform-specific resources |
 | `#TransformerContext` | `transformer.cue` | Provider context passed to transformers |
 | `#TransformerMap` | `transformer.cue` | Map of transformers by fully qualified name |
