@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0-alpha.3](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.2...v2.0.0-alpha.3) (2026-08-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* scalar subscription version, derived matchLabels, contract fulfilment ([#36](https://github.com/open-platform-model/core/issues/36))
+* scalar subscription version, derived matchLabels, contract fulfilment ([#33](https://github.com/open-platform-model/core/issues/33))
+
+### Features
+
+* scalar subscription version, derived matchLabels, contract fulfilment ([#33](https://github.com/open-platform-model/core/issues/33)) ([0070d41](https://github.com/open-platform-model/core/commit/0070d411b9230a539a204b67abfa9e353b5c867e))
+* scalar subscription version, derived matchLabels, contract fulfilment ([#36](https://github.com/open-platform-model/core/issues/36)) ([c51f833](https://github.com/open-platform-model/core/commit/c51f833f2356faae1122866f6d3ea23afb9ffdff))
+
 ## [2.0.0-alpha.2](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.1...v2.0.0-alpha.2) (2026-08-07)
 
 
