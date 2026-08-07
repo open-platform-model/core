@@ -37,6 +37,46 @@ package core
 	// Blueprints applied to this component
 	#blueprints?: #BlueprintMap
 
+	// Trait demands this component can do without. A key here names a trait
+	// this component attaches — the same #ContractFQNType the #traits map is
+	// keyed by — and says the render MAY continue when no materialized
+	// transformer handles it, with a warning naming the trait. Absence is the
+	// only spelling of "required": there is no `false`, so a trait cannot be
+	// marked required twice or un-marked by a later unification.
+	//
+	// Enhancement 0010 D28 fixes that there is exactly ONE opt-out, that it
+	// lives on the DEMAND side, and that its absence means required. The
+	// spelling is this change's: a marker SET beside the attachment map,
+	// rather than a second attachment map or a field on #Trait.
+	//
+	//   - Not a field on #Trait: a trait definition is shipped by a catalog
+	//     and shared across every component that attaches it, so optionality
+	//     declared there is a SUPPLY-side statement about somebody else's
+	//     component. `optionalTraits` on #ComponentTransformer is the supply
+	//     side and already exists; this is its demand-side counterpart.
+	//   - Not a second attachment map: catalogs ship component FRAGMENTS that
+	//     attach traits into #traits, and a module author who wants one of
+	//     them optional cannot move where the fragment put it. A marker set
+	//     is writable beside a fragment; a rival map is not.
+	//   - Not a list: two fragments unifying into one component would fail on
+	//     list unification, while map keys merge. A set is also the shape
+	//     that makes a duplicate marker a no-op rather than an error.
+	//
+	// The cost is that the FQN is written twice — once to attach, once to
+	// mark. A mistyped key marks nothing, and the trait it meant to excuse
+	// stays required, so the mistake surfaces as the render failure it was
+	// trying to avoid rather than as a silent downgrade.
+	//
+	// Enforced by the kernel, which is what reports an unhandled trait; the
+	// schema states the intent.
+	#optionalTraits?: [#ContractFQNType]: true
+
+	// NO demand-side optionality marker for RESOURCES, and the absence is a
+	// decision (D28): a component does not attach a resource it can do
+	// without. Every declared resource is a demand the platform must satisfy,
+	// and an unsupplied one fails the render. Traits differ because a trait
+	// can be advisory — it modifies something that renders regardless.
+
 	// This component's MATCHING identity: the wholesale unification of every
 	// attached primitive's matchLabels. No filter, no key list, no prefix
 	// rule — every key a primitive puts there exists to be matched on, so

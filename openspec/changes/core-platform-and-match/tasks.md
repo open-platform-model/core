@@ -35,9 +35,9 @@
 
 ## 4. Demand-side optionality (`src/component.cue` + `SPEC.md` §`#Component`)
 
-- [ ] 4.1 Choose and implement the trait opt-out spelling. `0010` D28 fixes that there is exactly one, that it lives on the demand side, and that its absence means required — the spelling is this change's to pick, so record the choice in `SPEC.md` Rationale rather than only in the schema.
-- [ ] 4.2 Add **no** optionality marker for resources. A component does not attach a resource it can do without.
-- [ ] 4.3 `task vet`.
+- [x] 4.1 Choose and implement the trait opt-out spelling. `0010` D28 fixes that there is exactly one, that it lives on the demand side, and that its absence means required — the spelling is this change's to pick, so record the choice in `SPEC.md` Rationale rather than only in the schema.
+- [x] 4.2 Add **no** optionality marker for resources. A component does not attach a resource it can do without.
+- [x] 4.3 `task vet`.
 
 ## 5. Schema-level test cases
 
