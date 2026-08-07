@@ -8,7 +8,7 @@ A published version is immutable. A tag CI did not build is a tag nobody reviewe
 
 #### Scenario: A release is cut by merging the release PR
 
-- **WHEN** the accumulated release PR for `v1.0.0-alpha.4` is merged
+- **WHEN** the accumulated release PR for `v2.0.0-alpha.2` is merged
 - **THEN** the tag and GitHub Release are created, and the `publish-cue` job pushes the module
 
 #### Scenario: A failed publish is not repaired by hand
@@ -16,21 +16,44 @@ A published version is immutable. A tag CI did not build is a tag nobody reviewe
 - **WHEN** the `publish-cue` job fails
 - **THEN** the failure is fixed and the job re-run, and no local `cue mod publish` is issued against the registry
 
-### Requirement: A break inside the alpha line does not move the module path
+### Requirement: A pre-stable break defaults to advancing the prerelease, and crossing a major is a separate decision
 
-While `opmodel.dev/core@v1` has published no stable `v1.0.0`, a breaking schema change MUST land as a prerelease advance on the `@v1` line rather than as a module-major bump. The module path MUST NOT move.
+A breaking schema change on a pre-stable major line MUST either advance the prerelease on that line or bump the module major, and it MUST state in its proposal which it does and why. Advancing the prerelease with the module path unmoved is the **default**, not an absolute.
 
-This holds only while the line is pre-stable. Once `v1.0.0` ships, a breaking revision bumps the module major.
+A change MUST bump the module major when the break is one a consumer cannot absorb by re-reading the same import path: when the meaning of an existing field changes, when values every published artifact declares are refused, or when a derived identity consumers store moves. Pre-stable licence makes staying on the line *permissible*; it does not make it correct.
 
-#### Scenario: A breaking change advances the alpha counter
+Crossing a major MUST be deliberate and MUST be stated in the proposal, because it changes every consumer's retarget from a dependency bump into an import rewrite. It requires two edits in the **same** commit: `src/cue.mod/module.cue`'s `module:` line, and a `Release-As: X.0.0-alpha.1` footer forcing the version — `versioning: prerelease` advances the prerelease counter within a major and never crosses one on its own. `cue mod publish` refuses a tag whose major disagrees with the declared module path, so the two cannot land apart.
 
-- **WHEN** `feat!:` commits reshape published definitions and no stable `v1.0.0` exists
-- **THEN** the release is `v1.0.0-alpha.N+1`, and consumers retarget by a dependency bump rather than an import rewrite
+#### Scenario: An absorbable break advances the prerelease counter
 
-#### Scenario: Rollback is a re-pin
+- **WHEN** `feat!:` commits reshape published definitions, no stable `vX.0.0` exists, and consumers can absorb the break by re-reading the same import path
+- **THEN** the release is `vX.0.0-alpha.N+1`, the module path is unmoved, and consumers retarget by a dependency bump
 
-- **WHEN** a consumer needs to reverse a retarget before it has merged its own changes
-- **THEN** re-pinning to the previous alpha restores the prior behaviour, with no import path change
+#### Scenario: An unabsorbable break bumps the module major
+
+- **WHEN** a change redefines what an existing field means, refuses values every published artifact declares, or moves a derived identity consumers store
+- **THEN** the module path moves to the next major, the version is forced to `X.0.0-alpha.1` by a `Release-As:` footer, and the proposal states the import-rewrite cost
+
+#### Scenario: The declared major and the tag cannot disagree
+
+- **WHEN** a release is tagged at a major the `module:` line does not declare
+- **THEN** `cue mod publish` refuses it, and the release fails rather than publishing a mislabelled artifact
+
+#### Scenario: Rollback across a major is an import rewrite
+
+- **WHEN** a consumer needs to reverse a retarget that crossed a major
+- **THEN** it restores the previous import path as well as the version pin, and the previous major stays resolvable indefinitely, because a published tag names fixed bytes permanently
+
+### Requirement: A partial tag on the line is not a retarget target
+
+A tag that carries only some of the changes a cut is defined to publish MUST NOT be retargeted to by any consumer. Publication makes a tag resolvable; it does not make it complete.
+
+`v2.0.0-alpha.1` is exactly this case: it was published by the major bump and carries `core-identity-shape` alone, without the contract keying, platform surface or identity package. A resolvable partial tag is more hazardous than no tag, because nothing in the registry distinguishes it from a complete one.
+
+#### Scenario: A consumer re-pins to a partial alpha
+
+- **WHEN** a consumer re-pins to an alpha published before every slice of the cut has landed
+- **THEN** it compiles against an incomplete schema, and the failure surfaces as missing constructs rather than as a version error
 
 ### Requirement: The published schema is internally coherent before it is tagged
 
@@ -65,5 +88,5 @@ After publication, the released version MUST be verified by resolving it from a 
 
 #### Scenario: A scratch consumer compiles against the new release
 
-- **WHEN** a fresh tree adds `opmodel.dev/core@v1` at the published version and evaluates a minimal `#Module`
+- **WHEN** a fresh tree adds `opmodel.dev/core@v2` at the published version and evaluates a minimal `#Module`
 - **THEN** it resolves and evaluates, confirming the artifact is complete as published rather than only as built

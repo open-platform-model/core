@@ -16,7 +16,7 @@ Four independent `SPEC.md` edits leave a document that is correct section by sec
 
 - **Re-litigating any of the four changes.** If the pass finds a design problem rather than an inconsistency, that is a new change, not an edit here.
 - **Any downstream retarget.** `library-core-retarget` and everything behind it.
-- **A stable `v1.0.0`.** This is `alpha.4`. When the alpha line ends is a separate decision.
+- **A stable `v2.0.0`.** This is `v2.0.0-alpha.2`. When the alpha line ends is a separate decision.
 - **Publishing by hand.** `cue mod publish` against a live registry is never run manually.
 
 ## Decisions
@@ -32,13 +32,13 @@ Not a re-review. Four questions, each targeting a way independent edits diverge:
 
 ### Examples are evaluated, not read
 
-Every worked shape in `SPEC.md` and `docs/` goes through `cue vet`. Reading an example for plausibility is how a stale one survives: the failures this catches are exactly the ones that look right — a `modulePath` missing its new `@v1`, an FQN in the pre-split form, a `version` field on a primitive.
+Every worked shape in `SPEC.md` and `docs/` goes through `cue vet`. Reading an example for plausibility is how a stale one survives: the failures this catches are exactly the ones that look right — a `modulePath` missing its new major suffix, an FQN in the pre-split form, a `version` field on a primitive.
 
 `enhancements/0010/schemas/examples.cue` is the reference for the target shapes and is already vetted; the check here is that this repo's own examples agree with what shipped, which is not the same claim.
 
 ### The release goes through release-please
 
-`feat!:` commits have accumulated across the four changes, so release-please has a PR open. Merging it tags `v1.0.0-alpha.4` and runs the `publish-cue` job, gated on `release_created == 'true'`, in the workflow run triggered by the human merging — which is why it is not subject to GitHub's `GITHUB_TOKEN` tag-trigger suppression.
+`feat!:` commits have accumulated across the four changes, so release-please has a PR open. Merging it tags `v2.0.0-alpha.2` and runs the `publish-cue` job, gated on `release_created == 'true'`, in the workflow run triggered by the human merging — which is why it is not subject to GitHub's `GITHUB_TOKEN` tag-trigger suppression.
 
 Nothing here runs `cue mod publish`. The one-line reason it matters: a manual publish produces a tag CI did not build, from a tree nobody reviewed, and the registry is append-only.
 
@@ -50,8 +50,8 @@ This change contributes no schema edit. Its commits are `docs:` for the `SPEC.md
 
 **The pass finds a design problem, not an inconsistency.** The likely candidates are the two places the four changes touch one field from opposite directions — the primitive kinds, edited by both `core-primitive-keying` and `core-platform-and-match`, and `SPEC.md`'s taxonomy lines. If that happens, the alpha waits. Cutting a tag over a known incoherence to keep a schedule is the one failure this change exists to prevent, and the tag is immutable once pushed.
 
-**The rollback window closes downstream, not here.** Re-pinning to `alpha.3` stays available for every consumer until it merges its retarget. So the real point of no return is `library-core-retarget`, and treating this cut as the irreversible step under-weights what follows it.
+**The rollback window closes downstream, not here.** Re-pinning to `opmodel.dev/core@v1` at `v1.1.0-alpha.1` stays available for every consumer until it merges its retarget, though it is now an import rewrite rather than a version pin. So the real point of no return is `library-core-retarget`, and treating this cut as the irreversible step under-weights what follows it.
 
-**Publishing an alpha that no consumer has compiled against.** Nothing downstream has been retargeted at cut time — that is the ordering, not an oversight — so the first real compile of the new schema happens after the tag exists. The mitigation is that `library-core-retarget` is deliberately behaviour-free: re-pin, fix breakage, regenerate testdata. If it turns into a design conversation, that is the signal a schema change was wrong, and the response is `alpha.5` rather than an amended `alpha.4`.
+**Publishing an alpha that no consumer has compiled against.** Nothing downstream has been retargeted at cut time — that is the ordering, not an oversight — so the first real compile of the new schema happens after the tag exists. The mitigation is that `library-core-retarget` is deliberately behaviour-free: re-pin, fix breakage, regenerate testdata. If it turns into a design conversation, that is the signal a schema change was wrong, and the response is `alpha.3` rather than an amended `alpha.2`.
 
 **Four changes' `SPEC.md` sections were written without seeing each other.** Accepted by construction — the slices are sequential and each was correct in isolation. This pass is the compensating control, and its value depends entirely on being done as a fresh read of the whole document rather than a diff review of the four sets of edits.
