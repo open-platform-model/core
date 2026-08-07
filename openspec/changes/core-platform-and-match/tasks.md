@@ -57,6 +57,6 @@
 
 ## 7. Close the loop
 
-- [ ] 7.1 `enhancements/0010/plan.yaml`: slice `core-platform-and-match` → `status: done`, `openspec_ref: core/core-platform-and-match`.
-- [ ] 7.2 Same commit: `history` event citing that ref. Record the trait opt-out spelling chosen in 4.1 — D28 explicitly left it to the implementing slice, so the entry has no record of it until this event.
-- [ ] 7.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index`.
+- [x] 7.1 `enhancements/0010/plan.yaml`: slice `core-platform-and-match` → `status: done`, `openspec_ref: core/core-platform-and-match`.
+- [x] 7.2 Same commit: `history` event citing that ref. Record the trait opt-out spelling chosen in 4.1 — D28 explicitly left it to the implementing slice, so the entry has no record of it until this event.
+- [x] 7.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index`.
