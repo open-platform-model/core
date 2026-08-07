@@ -6,7 +6,7 @@ context: |
   ## Core Principles (Canonical Schema)
 
   This repo defines and publishes the Open Platform Model **core schema** as a versioned CUE
-  module (`opmodel.dev/core@v1`). It is the source of truth for OPM: every OPM artifact is typed
+  module (`opmodel.dev/core@v2`). It is the source of truth for OPM: every OPM artifact is typed
   against these definitions, and `library`, `catalog`, `cli`, `opm-operator`, `modules` and the
   deployment repositories all consume it as a published dependency — never by filesystem path.
   This is a pure CUE repository. There is no Go code here.
@@ -50,12 +50,18 @@ context: |
 
   ### IV. Single Package, Single Major
   - `src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the
-    import path is `opmodel.dev/core@v1` with no per-version subdirectory.
-  - A breaking schema revision bumps the module major (`@v1` → `@v2`). It does not add a sibling
+    import path is `opmodel.dev/core@v2` with no per-version subdirectory.
+  - A breaking schema revision bumps the module major (`@v2` → `@v3`). It does not add a sibling
     package or a versioned subdirectory.
-  - `@v1` currently ships `v1.0.0-alpha.N` prereleases. The stable compatibility promise has not
+  - `@v2` currently ships `v2.0.0-alpha.N` prereleases. The stable compatibility promise has not
     started, so a break lands in the alpha line with the module path unmoved. Do not treat that as
     permanent licence — say so explicitly in the proposal when a change relies on it.
+  - Crossing a major is a deliberate, separately-decided act, not something an alpha break implies.
+    It edits `src/cue.mod/module.cue`'s `module:` line and forces the version with a
+    `Release-As: X.0.0-alpha.1` footer in the SAME commit — `cue mod publish` rejects a tag whose
+    major disagrees with the declared module path, so the two can never land apart. It also costs
+    every consumer an import rewrite rather than a dependency bump, which is the difference a
+    proposal MUST state.
   - Pin `language: version: "v0.17.0"` in `cue.mod/module.cue`. That is a consumer floor, not a
     toolchain pin: a module declaring `vX` is rejected by every `cue` older than `vX`.
 
@@ -114,7 +120,7 @@ context: |
   needs or hides a change consumers needed to see.
   - `feat:` (minor) — new construct, new field, additive schema surface.
   - `fix:` (patch) — wrong constraint, broken default, definition behaving wrong.
-  - `feat!:` / `BREAKING CHANGE:` (advances `-alpha.N` on `@v1`) — removing or renaming a
+  - `feat!:` / `BREAKING CHANGE:` (advances `-alpha.N` on `@v2`) — removing or renaming a
     definition, tightening a published constraint.
   - `refactor:`, `docs:`, `style:`, `chore:`, `test:`, `ci:`, `build:` — no release.
   - **Rule of thumb**: if the published CUE schema is byte-identical before and after, it is not a
@@ -136,7 +142,7 @@ rules:
     - "Updates when: Scope changes, intent clarifies, approach fundamentally shifts"
     - Name every downstream consumer the change reaches (`library`, `cli`, `opm-operator`, the
       catalogs, `modules`) and what each of them has to do about it.
-    - State whether this is MAJOR/MINOR/PATCH per Principle I, and whether it relies on `@v1`
+    - State whether this is MAJOR/MINOR/PATCH per Principle I, and whether it relies on `@v2`
       still being in prerelease (Principle IV).
     - Breaking changes MUST be called out explicitly with downstream migration cost — a tightened
       constraint counts as breaking even when nothing is removed.

@@ -2,7 +2,9 @@
 
 This document describes how `opmodel.dev/core` is published to its OCI registry: the stable release flow (already in place) and the branch-build flow (to be implemented). The focus is the *strategy* — tag format, determinism guarantees, and how consumers resolve them. Implementation (Taskfile, CI) follows once this is agreed.
 
-> **Note (enhancement 0002 D13).** The module advanced to `opmodel.dev/core@v1` and now ships its main channel as `v1.0.0-alpha.N` prereleases (release-please `prerelease` mode). The `@v0.x` import paths and the stable-`vX.Y.Z`-vs-branch-`-dev` framing in the worked examples below **predate that cutover** and are retained to illustrate the resolution *mechanics*; the concrete version strings are stale. How branch `-dev` tags coexist with `-alpha` release tags now that `MAJOR=1` — previously a tracked follow-up — is resolved in [Pre-stable: why branch builds carry a leading `0`](#pre-stable-why-branch-builds-carry-a-leading-0).
+> **Note (enhancement 0010).** The module advanced to `opmodel.dev/core@v2` and now ships its main channel as `v2.0.0-alpha.N` prereleases (release-please `prerelease` mode). The `@v1` line is retired at `v1.1.0-alpha.1`, and the earlier `@v0.x` import paths and the stable-`vX.Y.Z`-vs-branch-`-dev` framing in the worked examples below **predate both cutovers** — they are retained to illustrate the resolution *mechanics*; the concrete version strings are stale. How branch `-dev` tags coexist with `-alpha` release tags once `MAJOR ≥ 1` is resolved in [Pre-stable: why branch builds carry a leading `0`](#pre-stable-why-branch-builds-carry-a-leading-0).
+>
+> **A major bump is an import rewrite, not a dep bump.** `@v1` and `@v2` are distinct modules to CUE and to the registry: they resolve independently, both remain resolvable forever, and a consumer moves by editing its `import` statements as well as its `deps`. That asymmetry is the whole cost of crossing a major, and it is why the alpha line exists to absorb breaks that do not need one.
 
 ## Goal
 
@@ -119,10 +121,10 @@ So two pin styles are blessed by this strategy:
 
 ```cue
 // Track the release channel
-deps: "opmodel.dev/core@v1": v: "v1.0.0-alpha.3"
+deps: "opmodel.dev/core@v2": v: "v2.0.0-alpha.1"
 
 // Follow a specific branch build — exact pin only, by design
-deps: "opmodel.dev/core@v1": v: "v1.0.0-0.dev.1785961206.g6b10e87"
+deps: "opmodel.dev/core@v2": v: "v2.0.0-0.dev.1785961206.g6b10e87"
 ```
 
 There is deliberately no range-based "track latest dev" pin. Consuming an unreleased build is an explicit act: query the OCI tag list, pick the tag, write it down. See [Why branch builds carry a leading `0`](#why-branch-builds-carry-a-leading-0).

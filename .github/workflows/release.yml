@@ -60,7 +60,7 @@ jobs:
           set -euo pipefail
           # version output is X.Y.Z or X.Y.Z-alpha.N (no leading v).
           VERSION="v${{ needs.release-please.outputs.version }}"
-          echo "Publishing opmodel.dev/core@v1 at ${VERSION}"
+          echo "Publishing opmodel.dev/core@v2 at ${VERSION}"
           cue vet ./...
           cue mod publish "${VERSION}"
           echo "Published opmodel.dev/core ${VERSION}"

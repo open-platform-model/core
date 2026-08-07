@@ -1,6 +1,6 @@
 # core — Definition Index
 
-CUE module: `opmodel.dev/core@v1`
+CUE module: `opmodel.dev/core@v2`
 
 ---
 
