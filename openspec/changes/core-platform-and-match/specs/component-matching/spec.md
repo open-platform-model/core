@@ -62,11 +62,23 @@ Because `matchLabels` unifies wholesale rather than by iteration, a primitive MU
 - **WHEN** a component with non-empty `matchLabels` is rendered
 - **THEN** no rendered object carries those keys, and `componentLabels` is unchanged by them
 
-### Requirement: A component fragment declares no matching identity of its own
+### Requirement: A component's matching identity is exactly what it attaches
 
-Component fragments MUST be pure wrappers that attach primitives. A fragment MUST NOT declare `matchLabels` directly.
+A `#Component` MUST NOT contribute a `matchLabels` key of its own, and declaring one MUST fail. This binds every `#Component` — both the wrapper *fragments* a catalog ships and a module author's own components. The schema cannot distinguish the two, and does not try: a fragment and a component are the same type.
+
+A required matching key MUST be answered by attaching a primitive or blueprint that supplies it, not by declaring it on the component.
 
 #### Scenario: A fragment's matching identity comes only from what it attaches
 
 - **WHEN** a fragment attaches a set of primitives
 - **THEN** the resulting component's `matchLabels` is exactly the unification of those primitives', with nothing contributed by the fragment
+
+#### Scenario: An invented key is refused
+
+- **WHEN** a component declares a `matchLabels` key that no attached primitive declares
+- **THEN** evaluation fails, because the component's matching identity is derived rather than authored
+
+#### Scenario: Answering a required key inline is refused
+
+- **WHEN** a component attaches a primitive declaring a required matching key and answers that key on the component itself
+- **THEN** evaluation fails; the key is answered by attaching a blueprint that supplies it

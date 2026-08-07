@@ -1,49 +1,44 @@
 package core
 
-// #SubscriptionFilter narrows the set of catalog builds a #Platform pulls
-// from a subscribed registry path. All three fields are optional; when
-// every field is absent the kernel selects the highest SemVer published
-// for the path.
-//
-// Resolution order (D10):
-//   1. `range` restricts the candidate set to SemVers satisfying the
-//      constraint expression (e.g. ">=1.0.0 <2.0.0"). Parsed Go-side by
-//      the kernel via Masterminds/semver (D11).
-//   2. `allow` force-includes specific SemVers regardless of `range`.
-//   3. `deny` force-excludes specific SemVers from the survivor set.
-//
-// Introduced by enhancement 0001 (D13).
-#SubscriptionFilter: {
-	range?: string // SemVer constraint expression
-	allow?: [...#VersionType] // force-include specific versions
-	deny?: [...#VersionType] // force-exclude specific versions
-}
-
 // #Subscription declares that a #Platform pulls primitives from a catalog
-// published at a given CUE module path. The map key on #Platform.#registry
-// carries the path; #Subscription carries the enable flag and the optional
-// filter.
+// published at a given CUE module path, and names the single build it pulls.
+// The map key on #Platform.#registry carries the path; #Subscription carries
+// the enable flag and the version.
 //
-// One subscription per catalog path is enforced by CUE map semantics
-// (D13). Multi-channel-per-path (e.g. RC + stable on the same platform)
-// is not expressible at this stage; if needed later it lands as an
-// additive extension that changes the key shape.
+// `version` is required and scalar: the value written IS the value
+// materialized. No range to resolve, no allow/deny to arbitrate, no
+// highest-published default. Catalog selection is therefore a pure function
+// of committed source — git-identical inputs materialize identical catalog
+// bytes on any day, from any machine, with no lockfile. A prerelease is
+// selected by being written down; there is no maturity inference and no flag
+// to opt into one (enhancement 0010 D37).
+//
+// One subscription per catalog path, enforced by CUE map semantics (D13).
+// Two builds of one catalog is TWO PLATFORMS — the permanent rule, not a
+// staging limitation. Every use of breadth collapses on inspection: union
+// coverage across builds describes a catalog that dropped a transformer
+// without saying so, which must fail loudly rather than be papered over;
+// gradual migration does not structurally exist, because a module demands
+// contracts and never a transformer (D4); two API versions of one contract
+// already ship side by side in a single build; and testing a new build
+// beside the old is two platforms, which names both behaviours and costs
+// nothing hidden.
 #Subscription: {
-	enable:  bool | *true
-	filter?: #SubscriptionFilter
+	enable:   bool | *true
+	version!: #VersionType // Example: "1.2.0", "1.0.0-alpha.2"
 }
 
 // #Platform — path-keyed registry of catalog subscriptions plus
 // kernel-filled materialization slots.
 //
 // Authors write #registry. The kernel's Materialize step (library-side)
-// resolves every subscription's filter against the OCI registry, pulls
-// the selected builds, indexes top-level #ComponentTransformer values
-// into #composedTransformers, and computes a #matchers reverse index.
-// The CUE-level #Platform value is therefore a spec; the kernel
-// populates the materialization slots on a separate MaterializedPlatform
-// twin (D14 — Materialize is explicit and caller-driven; the kernel
-// holds no cache).
+// pulls the build each subscription NAMES — there is nothing to resolve,
+// because the platform file is the resolution — indexes top-level
+// #ComponentTransformer values into #composedTransformers, and computes a
+// #matchers reverse index. The CUE-level #Platform value is therefore a
+// spec; the kernel populates the materialization slots on a separate
+// MaterializedPlatform twin (D14 — Materialize is explicit and
+// caller-driven; the kernel holds no cache).
 //
 // Reshaped by enhancement 0001 (supersedes the prior Id-keyed
 // #ModuleRegistration model). #knownResources / #knownTraits removed:
