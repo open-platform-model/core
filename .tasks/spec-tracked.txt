@@ -16,3 +16,5 @@
 #Platform
 #ModuleInstance
 #TraitOptionalGate
+#IdentityPackage
+#CatalogMemberFQNGate

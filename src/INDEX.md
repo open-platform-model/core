@@ -21,6 +21,8 @@ CUE module: `opmodel.dev/core@v2`
 | `#Catalog` | `catalog.cue` | #Catalog: top-level catalog definition |
 | `#Component` | `component.cue` |  |
 | `#ComponentMap` | `component.cue` |  |
+| `#CatalogMemberFQNGate` | `identity_package.cue` | CatalogMemberFQNGate is the rule a publishing tool unifies every catalog member against — primitive OR transformer — to check that what the catalog AUTHORED agrees with what its identity package IMPLIES |
+| `#IdentityPackage` | `identity_package.cue` | IdentityPackage is the shape an artifact's committed identity package must match — the two values a release moves, plus everything that derives from them |
 | `#Module` | `module.cue` | #Module: The portable application blueprint created by developers and/or platform teams |
 | `#ModuleMap` | `module.cue` |  |
 | `#ComponentNames` | `module_context.cue` | #ComponentNames is the shape of the per-component computed-names projection |

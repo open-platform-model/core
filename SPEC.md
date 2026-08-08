@@ -28,7 +28,7 @@ OPM Core distinguishes three categories of definition:
 - **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Blueprint` (specified at §3.3, whose section number is retained so existing cross-references keep resolving), `#Secret`. Each carries its own `metadata`, its own contract-keyed identity, and a `spec` schema namespaced under a camelCase form of its name. A primitive is a building block a `#Module` attaches and writes values against, so each carries an `apiVersion` and the additive-only promise that level gates.
 - **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Module`, `#Platform`, `#ModuleInstance`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleInstance`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
 - **Adapters** (§4) — types that translate the model into target runtime form without participating in composition: `#ComponentTransformer`.
-- **Publish gates** (§5) — definitions a publishing tool unifies an artifact against, so that the diagnostic an author reads is CUE's own rather than a hand-rolled comparison that drifts from the schema: `#TraitOptionalGate`. A gate is not part of any artifact; it is a rule about artifacts, shipped in the same module as the shapes it constrains (enhancement 0011 D21/D22).
+- **Publish gates** (§5) — definitions a publishing tool unifies an artifact against, so that the diagnostic an author reads is CUE's own rather than a hand-rolled comparison that drifts from the schema: `#TraitOptionalGate`, `#IdentityPackage`, `#CatalogMemberFQNGate`. A gate is not part of any artifact; it is a rule about artifacts, shipped in the same module as the shapes it constrains (enhancement 0011 D21/D22). `#IdentityPackage` (§5.2) sits here for the same reason the other two do — a publishing tool unifies it and nothing in `core` does — even though it is, uniquely among them, the shape of a file an artifact commits rather than a rule about values an artifact carries. Nothing in `core` or `library` unifies against any of the three; until the `cli` slices land, they are shipped surface with no enforcement behind them.
 
 The Primitive/Construct split exists because primitives are what a module *attaches and writes against*, and constructs are what *carries* them. A platform team publishes primitives from a catalog on its own release cadence; an application team uses constructs to assemble what a catalog published. The dividing question is not "does this introduce vocabulary?" — under that reading `#Blueprint` sat with the constructs, even though a module names a blueprint and writes values under its `spec` exactly as it does for a resource, and is broken by a change to it exactly as it is. What the split has to track is which definitions carry a **contract key** and the additive-only promise it gates (enhancement 0010 D44), and that is decided by whether a module writes against the thing.
 
@@ -96,7 +96,7 @@ Implementation: [`resource.cue`](src/resource.cue).
 - `metadata.modulePath` MUST be a `#PackagePathType` — a package path inside a module, carrying no `@vN` major suffix. A value carrying one MUST be rejected. This is the type `#ModulePathType` carried before enhancement 0010 D1, so no primitive value shipped by any catalog changes.
 - `metadata.apiVersion` MUST be an `#APIVersionType` — `vN`, `vNalphaM` or `vNbetaM`. It is this Resource's own **contract level** and the only version component of its key. A catalog release MUST NOT move it; a breaking change to this Resource's `spec` MUST.
 - `metadata.catalogVersion` MUST be a SemVer 2.0 string (`#VersionType`) naming the catalog build the definition shipped in. It is **provenance**: it MUST NOT appear in `metadata.fqn`, and no match compares it.
-- `metadata.fqn` MUST be authored by the declaring catalog and MUST match `#ContractFQNType` — the `path/name@vN` form, where `vN` is an `#APIVersionType`. `core` MUST NOT derive it, and MUST NOT refuse a value that disagrees with this Resource's own `modulePath`, `name` or `apiVersion`; that agreement is asserted at publish by `CatalogMemberFQNGate`, not here. (That gate is authored alongside this change and is not yet a definition in `src/`; both land in the same alpha.)
+- `metadata.fqn` MUST be authored by the declaring catalog and MUST match `#ContractFQNType` — the `path/name@vN` form, where `vN` is an `#APIVersionType`. `core` MUST NOT derive it, and MUST NOT refuse a value that disagrees with this Resource's own `modulePath`, `name` or `apiVersion`; that agreement is asserted at publish by [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3), not here.
 - The authored `fqn` MUST retain its kind segment (`/resources`), so that a Resource and a Trait sharing a name at one `apiVersion` occupy distinct keys.
 - `metadata.labels` carries **categorisation** and MUST NOT participate in matching. It MUST NOT be unified upward into a `#Component`.
 - `matchLabels` carries this Resource's **matching identity** — the keys a `#ComponentTransformer.requiredLabels` predicate selects on (§4.1). Every key declared here participates in matching; no filter, prefix rule or key list applies.
@@ -111,7 +111,7 @@ Implementation: [`resource.cue`](src/resource.cue).
 #### Rationale
 
 - **Why `kind` is a fixed string and not implicit from the type.** CUE definitions do not carry type information at runtime. Downstream tools walking a rendered tree need a discriminator to route handlers; `kind` is that discriminator. Removing it would force every consumer to do structural detection, which is brittle.
-- **Why `fqn` is authored rather than computed, and what replaces the check that lost.** It was computed as `"\(modulePath)/\(name)@\(version)"`, which made a wrong value inexpressible. Enhancement 0010 D21 removes the derivation because the three parts no longer have one source: `fqn`, `modulePath` and `catalogVersion` are all supplied by the catalog's `identity/` package, and deriving one of them here means a release moves them by two edits in two places instead of one. Two alternatives were measured and rejected — dropping `catalogVersion` and authoring only `fqn` lets a catalog on `1.2.0` ship a key naming `1.1.0` at `cue vet -c` exit 0, and deriving `catalogVersion` back out of `fqn` is a CUE cycle. Enforcement therefore **moves** rather than disappearing: `CatalogMemberFQNGate` asserts the agreement at publish. The window in which nothing checks it is real inside this repo and closes in the same alpha; the cost of the trade — a visible, overridable value at the definition site — is the author's, and is accepted for one identity source.
+- **Why `fqn` is authored rather than computed, and what replaces the check that lost.** It was computed as `"\(modulePath)/\(name)@\(version)"`, which made a wrong value inexpressible. Enhancement 0010 D21 removes the derivation because the three parts no longer have one source: `fqn`, `modulePath` and `catalogVersion` are all supplied by the catalog's `identity/` package, and deriving one of them here means a release moves them by two edits in two places instead of one. Two alternatives were measured and rejected — dropping `catalogVersion` and authoring only `fqn` lets a catalog on `1.2.0` ship a key naming `1.1.0` at `cue vet -c` exit 0, and deriving `catalogVersion` back out of `fqn` is a CUE cycle. Enforcement therefore **moves** rather than disappearing: [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3) asserts the agreement at publish. The window in which nothing checks it is real — the gate ships here but nothing in `core` or `library` unifies against it, so the window closes when `cli`'s publish pipeline lands, not when the definition does; the cost of the trade — a visible, overridable value at the definition site — is the author's, and is accepted for one identity source.
 - **Why the key carries `apiVersion` and not `catalogVersion`.** A module's demand and a platform's supply must match on an *equal* key, and under the previous scheme both keys interpolated the catalog build they compiled against. `catalog_opm` declares contracts it ships no transformer for — `backup` is one — so the fulfilling transformer comes from a provider catalog pinned to whichever `catalog_opm` build *it* compiled against. Equal keys were then reachable only by rebuilding both sides in lockstep, and every `catalog_opm` release broke `backup` until that happened. Keying the demand on the contract's own level (enhancement 0010 D4) makes the key survive a release of the catalog that declares it, which is the only thing that decouples the two release cadences. Subscription breadth cannot substitute: subscribing to every `catalogs/opm` build supplies every build's own transformers, and `backup` has none in any of them.
 - **Why the level follows the Kubernetes ladder rather than a bare major.** `vNalphaM | vNbetaM | vN` lets the additive-only promise bind at beta and GA and stay off at alpha (enhancement 0010 D34), so a contract can state that it promises nothing yet without leaving the versioning scheme. A bare `vN` would force either a promise on every contract from its first day or no promise anywhere. `#APIVersionGated` reads that off the string; nothing compares two levels, so no ordering enters the schema.
 - **Why a primitive's path is `#PackagePathType` and not the `#ModulePathType` an artifact declares.** Enhancement 0010 D1 makes `#ModulePathType` an artifact's *complete* CUE module path, `@vN` included, so that `#Module` and `#Catalog` can be addressed by reading one field. A primitive inherits nothing useful from that suffix: it is a package *inside* a module, and its major is structurally redundant — a `@vN` module publishes only `vN.*` tags, so a primitive already stating its catalog's build version has already stated its catalog's major. It is also not a path anyone writes, since a consumer imports `opmodel.dev/catalogs/opm/resources` with no suffix and CUE resolves the major from `cue.mod`'s `deps`. An earlier revision of D1 widened one shared type for both; every field typed with it then inherited a major with no referent, and D20 (merged into D1) split it in two instead.
@@ -430,7 +430,7 @@ Implementation: [`module.cue`](src/module.cue).
 - **Why `name` is snake_case and the path's leaf must equal it.** There used to be three spellings of one name: kebab `name`, a derived `nameSnakeCase`, and the path's leaf — a third, independently authored value that was *supposed* to equal one of the other two with nothing saying which or checking either. A module is a CUE package, a CUE package name is inferred from its path leaf, and package names cannot contain hyphens; so exactly one of those spellings was ever usable, and the schema now names it. Collapsing to one spelling deletes the derived `nameSnakeCase` field and the kebab-to-snake helper behind it, and turns the leaf agreement into a constraint expressible over a single field. Constraining only the leaf, and not the whole path, is what keeps `github.com/open-platform-model/...` expressible. See enhancement 0010 D8.
 - **Why `fqn` is a field rather than a recombination, and why the version left it.** The old `fqn` interpolated `version`, so `SHA1(OPMNamespace, fqn)` moved on every release — and `#ModuleInstance.metadata.uuid` derived from it, which put a moving value in the `module-instance.opmodel.dev/uuid` ownership label. The operator skips deleting any live object whose owner label disagrees with the instance UUID it recorded, so every upgrade silently orphaned whatever the new render stopped emitting *and reported success*. Making `fqn` the path fixes the cause rather than the symptom: identity that names the artifact stops tracking the release. The formula over it is untouched, so every module's UUID moves exactly once — which is what makes this a breaking change and why the fleet republishes once.
 - **Why `registryPath` is exposed rather than recomputed at each use.** It is the major-free identity of the module *lineage*, and it has two independent callers: `#ModuleInstance` derives its own `fqn` from it (so instance identity survives a major bump), and it is the OCI repository every address-composition site in `cli` and `library` collapses into. Computing it once in `#ArtifactRef` and naming it here is what makes "nothing is recombined" checkable rather than implied. Substituting a full module path fails structurally instead of silently yielding a third identity — as a conflict against the derived value, since `registryPath` is computed rather than authored. The `#PackagePathType` on it declares the intent at the field site; it cannot fire alone, because the split's left half is `@`-free by construction.
-- **Why `core` does not assert that `version`'s major matches the path's.** The relation is asserted in the artifact's own `identity/identity.cue`, where both values are written — so a failure names the file the author has open. Re-deriving it here would test the same relation over the same two values one hop downstream, and `core` cannot reach the identity package's own `VersionMajor` to compare against: it cannot import a consumer's package. The exposure this accepts is real and bounded: a module whose identity package is absent or non-conformant carries no consumer-runnable major check, which enhancement 0011's publish gates (D8/D12/D21) close instead. This is written down because the constraint's *absence* is a decision (0010 D45, transposing D43 from `#Catalog`) — restoring it should read as a change, not as a fix.
+- **Why `core` does not assert that `version`'s major matches the path's.** The relation is asserted in the artifact's own `identity/identity.cue`, where both values are written — so a failure names the file the author has open. `core` ships the shape that file must match, [`#IdentityPackage`](#52-identitypackage) (§5.2), and its `VersionMajor` is now the *only* statement of the relation anywhere in the schema. Re-deriving it here would test the same relation over the same two values one hop downstream, and `core` cannot reach the identity package's own `VersionMajor` to compare against: it cannot import a consumer's package. The exposure this accepts is real and bounded: a module whose identity package is absent or non-conformant carries no consumer-runnable major check, which enhancement 0011's publish gates (D8/D12/D21) close instead. This is written down because the constraint's *absence* is a decision (0010 D45, transposing D43 from `#Catalog`) — restoring it should read as a change, not as a fix.
 - **Why `uuid` is computed via `SHA1(OPMNamespace, fqn)` rather than authored or random.** Per Principle III (Determinism), two evaluations of the same `fqn` MUST yield the same identity. A registry, controller, or cluster can dedupe modules by uuid without coordinating an ID allocator. **The drift sentinel for the algorithm itself lives in [`identity_pins.cue`](src/identity_pins.cue)**, which pins a known module uuid and a known instance uuid as absolute values. It has to be absolute: every other uuid pin asserts that two uuids agree or differ, and both sides move together when the formula moves, so changing `OPMNamespace` — the constant [`types.cue`](src/types.cue) declares immutable across all versions — produced no failure at all until those two pins existed. An earlier revision of this rationale placed the sentinel in `library/`'s fixture harness; the helper there encodes the pre-D41 formula and belongs to a slice that has not landed, and the constant lives here in any case.
 - **Why `#config` is bare `_` and not a typed schema.** The configuration shape is per-module — every module's contract is different. Constraining `#config` at the core layer would either force a one-size-fits-all schema (too narrow) or accept everything (no value). The OpenAPI-v3 constraint is enforced by the downstream renderer, which has the context to apply it cleanly.
 - **Why no CUE templating in `#config`.** The config schema is the module's *public contract*. It travels with the published module via the OCI registry and is read by non-CUE consumers — web UIs rendering forms, kubectl plugins generating prompts, generated bindings in other languages. CUE templating would tie the schema to a CUE evaluator and exclude every one of those consumers. Per Principle I (Contract Stability), the schema must not assume a particular consumer.
@@ -735,7 +735,7 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 - `metadata.fqn` MUST equal `modulePath` and MUST be typed `#ModulePathType`. It MUST NOT interpolate `version`. Consumers MUST NOT supply it.
 - `metadata` MUST NOT assert that `version`'s major agrees with `modulePath`'s. A `#Catalog` declaring `modulePath: "…/opm@v1"` with `version: "2.0.0"` MUST validate. As with [`#Module`](#32-module), this is an **accepting** behaviour specified deliberately — see Rationale.
 - Every entry in `#transformers` MUST be keyed by the transformer's own `metadata.fqn`, and the key is typed `#ImplFQNType`, so a contract-shaped key MUST be rejected. The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.catalogVersion` to the catalog's version. The major MUST NOT be re-appended: a transformer declares a `#PackagePathType`, which admits no `@vN`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
-- The pattern does NOT stamp `metadata.fqn`. Under enhancement 0010 D21 an `fqn` is authored at the definition site rather than derived, so there is no value for `#Catalog` to compute; the map key already carries the transformer's own `fqn`, and the agreement between the two is asserted at publish by `CatalogMemberFQNGate` rather than here.
+- The pattern does NOT stamp `metadata.fqn`. Under enhancement 0010 D21 an `fqn` is authored at the definition site rather than derived, so there is no value for `#Catalog` to compute; the map key already carries the transformer's own `fqn`, and the agreement between the two is asserted at publish by [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3) rather than here.
 - Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
 
 #### Rationale
@@ -747,7 +747,7 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 - **Why a catalog's `fqn` is its module path, and why the dedicated catalog-FQN type retired with it.** The old `fqn` was `modulePath@version`, which meant a catalog's identity moved on every release and its regex was not structurally disjoint from a primitive's `modulePath/name@version` — the two were distinguished by which field they appeared in, not by anything checkable. Making `fqn` the module path removes both problems at once: identity names the artifact rather than the release, and the type is the same `#ModulePathType` a `#Module` carries, so there is one path type per artifact kind instead of one per derivation. The catalog's *build* still has a home — `version` — and it is what keys the transformers.
 - **Why the `"0.0.0-dev"` default is gone.** It existed so `cue vet` was cheap in a source tree, and it made a checkout and a published artifact compute different values: the committed tree resolved `Version` to `0.0.0-dev`, so a local render demanded `…/transformers/deployment@0.0.0-dev` while the registry supplied `…/transformers/deployment@1.0.0`. A default that renders successfully while being wrong is worse than no value at all — an unset `version` is now an incomplete value that names the field, and the committed `identity/identity.cue` supplies the real one to checkout and artifact alike. See enhancement 0010 D5/D6.
 - **Why the transformer stamp drops the major instead of re-appending it.** The stamp builds a *package* path — `metadata.modulePath` on a `#ComponentTransformer` is a `#PackagePathType`, which admits no `@vN` (§2.1 Rationale). Re-appending the catalog's major would produce a value the transformer's own type rejects, and would key every published member under a suffix no import statement writes.
-- **Why `core` does not assert that a catalog's `version` major matches its path's.** Same holding as `#Module` (§3.2), taken first here: the relation is asserted in `identity/identity.cue` where both values are written, and re-deriving it in `core` tests the same relation one hop downstream. The asymmetry that this shape *is* what a consumer evaluates — `materialize` builds the catalog against `#Catalog`, while the identity package is never evaluated as a package by a consumer — is why the exposure is stated rather than assumed: a catalog with a non-conformant identity package carries no consumer-runnable check, and the skew surfaces at platform-subscription selection instead, in a platform author's file about a publisher's mistake. Accepted by enhancement 0010 D43, and closed by 0011's publish gates rather than here.
+- **Why `core` does not assert that a catalog's `version` major matches its path's.** Same holding as `#Module` (§3.2), taken first here: the relation is asserted in `identity/identity.cue` — against [`#IdentityPackage`](#52-identitypackage) (§5.2), which is where it is now stated exactly once — and re-deriving it in `core` tests the same relation one hop downstream. The asymmetry that this shape *is* what a consumer evaluates — `materialize` builds the catalog against `#Catalog`, while the identity package is never evaluated as a package by a consumer — is why the exposure is stated rather than assumed: a catalog with a non-conformant identity package carries no consumer-runnable check at all. Enhancement 0010 D43 accepted that exposure on the understanding that a skew still surfaced at platform-subscription selection, in a platform author's file about a publisher's mistake; the scalar-subscription reshape has since removed that check, so the exposure is now wider than D43 recorded — see §5.2's Rationale. It is closed by 0011's publish gates rather than here.
 
 #### See also
 
@@ -819,7 +819,7 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - `kind` MUST be the literal string `"ComponentTransformer"`.
 - `metadata.description` MUST be present and non-empty (it is the description surface for catalog listings and tooling).
 - `metadata` carries `name` + `modulePath` + `catalogVersion` + an authored `fqn`, plus optional `labels` / `annotations` and a required `description`. It is a shape of its own: no shared parent definition spans it and the primitive-metadata shape of §2.1, §2.2 and §3.3.
-- `metadata.fqn` MUST be authored by the declaring catalog and MUST match `#ImplFQNType` — the `path/name@<semver>` form. A contract-shaped key (`…@v1`) MUST be rejected here. As for the primitives, `core` MUST NOT derive the value and MUST NOT check it against `modulePath`, `name` and `catalogVersion`; `CatalogMemberFQNGate` asserts that at publish.
+- `metadata.fqn` MUST be authored by the declaring catalog and MUST match `#ImplFQNType` — the `path/name@<semver>` form. A contract-shaped key (`…@v1`) MUST be rejected here. As for the primitives, `core` MUST NOT derive the value and MUST NOT check it against `modulePath`, `name` and `catalogVersion`; [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3) asserts that at publish.
 - `metadata.catalogVersion` MUST be a SemVer 2.0 string. Unlike a primitive's, it IS this kind's key component.
 - `#ComponentTransformer` MUST NOT carry `metadata.apiVersion`. Declaring one MUST fail with a field-not-allowed error rather than being accepted and ignored.
 - `#ComponentTransformer` MUST NOT carry `metadata.#definitionName`. The three primitives retain it because each derives its `spec!` field key from it; a transformer has no `spec`, so nothing read it.
@@ -895,5 +895,153 @@ Implementation: [`trait.cue`](src/trait.cue).
 #### See also
 
 - Gates: [`#Trait`](#22-trait) — the field this constrains and where the posture is documented
-- Sibling gate: `CatalogMemberFQNGate` (enhancement 0011 D22, forthcoming in `core`)
+- Sibling gates: [`#IdentityPackage`](#52-identitypackage), [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate)
 - Design source: enhancement 0010 D46
+
+---
+
+### 5.2 `#IdentityPackage`
+
+#### Definition
+
+`#IdentityPackage` is the shape an artifact's committed `identity/identity.cue` must match. Every OPM artifact — module or catalog — carries one, and it holds the two values a release moves: the artifact's complete module path and its SemVer. Everything else about the artifact's identity derives from those two.
+
+It is a gate rather than a construct, and it is the one gate that is also a file shape: an artifact *has* an identity package, but `core` never sees it. The file deliberately imports nothing within its own module, so it sits at the bottom of that module's import graph and cannot create a cycle; validation is performed **externally**, by a publishing tool loading the package and unifying the loaded value against this definition. Shipping the definition here does not change what an identity file imports.
+
+#### Shape
+
+```cue
+#IdentityPackage: {
+    // The two authored fields. Written by tooling, located by these field
+    // names rather than by a marker attribute.
+    ModulePath!: #ModulePathType   // byte-identical to cue.mod's `module:`
+    Version!:    #VersionType
+
+    _ref: #ArtifactRef & {modulePath: ModulePath}
+
+    RegistryPath: _ref.registryPath   // "opmodel.dev/catalogs/opm"
+    Major:        _ref.major          // "v1"
+
+    // Derived from Version, then asserted equal to the path's major.
+    // Unification is the check.
+    VersionMajor: "v" + strings.SplitN(Version, ".", 2)[0]
+    VersionMajor: Major
+
+    // Exactly one prefix per catalog member kind. No major re-appended.
+    kindPrefix: {
+        resources:    RegistryPath + "/resources"
+        traits:       RegistryPath + "/traits"
+        blueprints:   RegistryPath + "/blueprints"
+        transformers: RegistryPath + "/transformers"
+    }
+}
+```
+
+Implementation: [`identity_package.cue`](src/identity_package.cue).
+
+#### Constraints
+
+- Exactly two fields MUST be authored: `ModulePath` and `Version`. `RegistryPath`, `Major`, `VersionMajor` and `kindPrefix` MUST be derived, and an artifact MUST NOT be required to author them.
+- `ModulePath` MUST match `#ModulePathType` — the major suffix is mandatory. It MUST be byte-identical to the `module:` field of the artifact's `cue.mod/module.cue`.
+- `RegistryPath` and `Major` MUST be projected through `#ArtifactRef` (§ — see [`types.cue`](src/types.cue)), not by a second decomposition performed here.
+- `VersionMajor` MUST be derived from `Version` and MUST equal `Major`. A disagreeing pair MUST be refused, and the error MUST name `VersionMajor` — the derived field where the two authored values meet.
+- **This MUST be the only assertion of that relation in the schema.** Neither `#Module.metadata` (§3.2) nor `#Catalog.metadata` (§3.6) asserts it.
+- `kindPrefix` MUST enumerate exactly four keys — `resources`, `traits`, `blueprints`, `transformers` — each `RegistryPath` plus exactly one segment. It MUST be an enumerated struct, not a pattern constraint, so that each key is reachable by field selection.
+- `kindPrefix` values MUST NOT carry a major suffix: a catalog member declares a `#PackagePathType`.
+- The definition MUST be expressible using only CUE builtins, so that an artifact's `identity/identity.cue` can stay free of intra-module imports.
+- `core` MUST NOT require an identity file to import `core`, and MUST NOT ship a procedural comparator for this shape. A consumer unifies and surfaces CUE's own error.
+
+#### Rationale
+
+- **Why the version/path major relation is asserted here and nowhere else.** Enhancement 0010 D40 originally had `core` assert it independently on `#Module` and `#Catalog`; D43 removed that for `#Catalog` and D45 for `#Module`, both naming publish-side validation against this definition as what replaces it — and `identity_pins.cue` keeps those two cases deliberately vetting clean so the trade reads as a decision rather than a gap. The consequence is that this assertion is not a redundant copy of a check living elsewhere: there is nothing left to copy. It also has no backstop beneath it. D43 and D45 were written when a skew still resurfaced at the platform's subscription-selection major check; the scalar-subscription reshape then removed that shape, and nothing in `#Platform` (§3.4) or `#Subscription` relates a subscription's `version` to the `@vN` its `#registry` key carries. What survives is a materialize-time registry resolution failure — a `@v1` module publishes `v1.*` tags, so a `2.0.0` request simply does not resolve — which names a missing tag rather than the mistake that produced it. Delete this assertion and the relation leaves the system outright.
+- **Why it is asserted at the point the values are written.** `ModulePath` and `Version` are both authored in this one file, so a conflict names the file the author has open. An assertion one hop downstream — in `#Module` or `#Catalog` — tests the same relation over the same two values while pointing at a file that only consumed them.
+- **Why exactly two fields are authored.** Every derived value is one more thing a release could move out of step. Tooling writes `ModulePath` and `Version`; a publisher who never learns that `RegistryPath` exists cannot get it wrong. It is also what makes the decomposition happen once: `#ArtifactRef` is the schema's single module-path splitting site, and projecting through it here is what keeps this definition from becoming a second one.
+- **Why `kindPrefix` is enumerated rather than a pattern constraint.** `[Kind=string]: RegistryPath + "/" + Kind` reads as the more general form and is unusable: `id.kindPrefix.resources` yields `undefined field`, because a pattern constrains keys that already exist rather than generating them. Measured in `enhancements/0011/experiments/01`, finding (b). The enumeration is not a convenience for the common case — it is a complete statement of the catalog's key space, and `#CatalogMemberFQNGate` (§5.3) builds both a member's path and its key from the same value.
+- **Why no grouping segment is admitted beneath a kind prefix.** One prefix per kind is what lets a member's declared path be checked by equality rather than by a prefix test that would accept any depth. `catalog_opm`'s five blueprints sit at `…/blueprints/workload` today and must move up one segment (enhancement 0010 D42) — that cost is the point, not a side effect.
+- **Why validation is external, and why we don't have `identity.cue` import `core` and embed this definition.** Embedding it would make plain `cue vet` catch non-conformance with no tooling at all, which is genuinely attractive and is the first thing a reader proposes. It is excluded because it puts the schema module at the bottom of every catalog's import graph — the exact position the identity package exists to keep clear — to buy a check that works fine from outside. If the import-free invariant is ever revisited this becomes the better design, and enhancement 0010 D43's recommended follow-on (identity files embedding the shipped definition, so `VersionMajor` comes from the definition rather than from an author remembering to write it) becomes available with it.
+- **Why we don't ship a Go-side expected-versus-found check beside it.** It is a second statement of the contract, and two statements drift. It also produces a *worse* diagnostic on the interesting cases: a wrong type or an out-of-bound value is not a missing field, and enhancement 0011 D8 frames the refusal as "this tree is not a conformant catalog" rather than "this field lacks an attribute". Unification is what makes that sentence true.
+
+#### See also
+
+- Derives through: [`#ArtifactRef`](src/types.cue) — the single module-path decomposition site
+- Consumed by: [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) — takes an identity package as input
+- Relation removed from: [`#Module`](#32-module), [`#Catalog`](#36-catalog) — see each section's Rationale on the absent major check
+- Design source: enhancement 0011 D21, resting on enhancement 0010 D5, D40, D42, D43, D45
+
+---
+
+### 5.3 `#CatalogMemberFQNGate`
+
+#### Definition
+
+`#CatalogMemberFQNGate` is the rule a publishing tool unifies every catalog member against — `#Resource`, `#Trait`, `#Blueprint` or `#ComponentTransformer` — to check that what the catalog **authored** agrees with what its identity package **implies**.
+
+Renamed from `#PrimitiveFQNGate` (enhancement 0010 D44) — a transformer is a catalog member and is in scope, but it is not a primitive.
+
+It takes an identity package, the member's kind and name, and the three values the catalog actually wrote: `declaredFQN`, `declaredModulePath` and `declaredCatalogVersion`. Each of those is then declared a second time as the value identity implies, and unification does the comparing. The gate is not part of any member's own definition; a member evaluated on its own still carries whatever `fqn` its catalog authored.
+
+#### Shape
+
+```cue
+#CatalogMemberFQNGate: {
+    identity!: #IdentityPackage
+    kind!:     "resources" | "traits" | "blueprints" | "transformers"
+    name!:     #NameType
+
+    // What the catalog actually authored.
+    declaredFQN!:            #FQNType
+    declaredModulePath!:     #PackagePathType
+    declaredCatalogVersion!: #VersionType
+
+    // Optional at the top level, required for the three primitive kinds.
+    // A transformer declares none.
+    declaredAPIVersion?: #APIVersionType
+    if kind != "transformers" {
+        declaredAPIVersion!: #APIVersionType
+    }
+
+    // What identity implies. Second declarations — unification is the check.
+    declaredModulePath:     identity.kindPrefix[kind]
+    declaredCatalogVersion: identity.Version
+
+    // The transformer arm is selected before declaredAPIVersion is reached,
+    // which is what spares the absent optional.
+    _keyVersion: [
+        if kind == "transformers" {identity.Version},
+        declaredAPIVersion,
+    ][0]
+
+    declaredFQN: identity.kindPrefix[kind] + "/" + name + "@" + _keyVersion
+}
+```
+
+Implementation: [`identity_package.cue`](src/identity_package.cue).
+
+#### Constraints
+
+- A publishing tool MUST unify **every** catalog member against this gate, and MUST surface CUE's own error rather than reformulating it.
+- `declaredModulePath` MUST equal `identity.kindPrefix[kind]`. A member one segment deeper, or one declaring another catalog's path, MUST be refused.
+- `declaredCatalogVersion` MUST equal `identity.Version`.
+- `declaredFQN` MUST equal `identity.kindPrefix[kind] + "/" + name + "@" + v`, where `v` is `declaredAPIVersion` for `resources`, `traits` and `blueprints`, and `identity.Version` for `transformers` (enhancement 0010 D4).
+- `declaredAPIVersion` MUST be optional at the top level and MUST be required when `kind` is not `"transformers"`. A transformer with the field absent MUST resolve with no error about it; a primitive omitting it MUST report `declaredAPIVersion` as a required field that is not present.
+- `apiVersion` MUST NOT be checked against identity. Nothing implies it.
+- `kind` MUST be one of the four catalog member kinds. Any other value MUST be refused by the closed enum.
+- This gate MUST NOT be embedded in `#Resource`, `#Trait`, `#Blueprint` or `#ComponentTransformer`.
+- A member evaluated without the gate MUST retain the `fqn` its catalog authored, with no derivation applied.
+
+#### Rationale
+
+- **Why this gate exists at all.** Enhancement 0010 states the catalog-member path and FQN rule four times — D17, D21, D25, D42 — and implements it nowhere. This is the single enforcement point all four delegate to. D21 in particular *removed* `core`'s `fqn` derivation for every catalog member and accepted a measured loss to do it: a catalog on `1.2.0` shipping `fqn: "…/secrets@1.1.0"` passes `cue vet -c` at exit 0. Under D4 that key is what a platform executes against permanently, so the trade is only honest if the gate is real.
+- **Why it unifies rather than comparing, and what a string comparison would discard.** The discarded information is measurable. A blueprint one segment too deep fails on **both** `declaredModulePath` and `declaredFQN`, and the second arrives wrapped as `2 errors in empty disjunction` because `#FQNType` is a disjunction of the contract and implementation forms — so the author is told which arm rejected the value and why. An expected-versus-found comparison in Go reports one string mismatch and throws the rest away, while also being a second statement of a rule that then drifts from this one.
+- **Why the gate is not embedded in the member definitions.** Expressing it inside `#Resource` and its peers would re-derive `fqn` inside `core` and undo enhancement 0010 D21 — and that removal is what lets a contract declared in one catalog be fulfilled by a transformer in another on an independent release cadence. It would also drag a member's `spec` — which is a schema and MUST NOT be concrete — into a check that has nothing to do with it. Unifying the gate is the check; the derivation stays out.
+- **Why `declaredAPIVersion` is conditionally rather than unconditionally required.** A transformer carries no `apiVersion` at all (§4.1), so requiring it here unconditionally would force every transformer in every catalog to author a value nothing reads. The conditional works because of evaluation order, which was measured rather than assumed (2026-08-03, cue v0.17.1): `_keyVersion`'s transformer arm is selected **before** `declaredAPIVersion` is reached, so the absent optional is never evaluated. Reversing the two list elements would break it.
+- **Why `apiVersion` is deliberately not checked against identity.** Nothing implies it. A primitive's contract level is a judgement its author makes about that primitive's own shape, independent of the catalog's module major and of the catalog's release SemVer (enhancement 0010 D4, D25) — that independence is the entire point of the field. A gate that derived it would be asserting a relation that does not exist.
+- **Why transformers are in scope rather than primitives only.** Enhancement 0010 D44 records that the four-kind scope survives the primitive/adapter split: D17's path rule binds a transformer's package path exactly as it binds a primitive's, and a transformer's build-keyed FQN is precisely what D21's stale-literal failure applies to. Only the gate's name changed; its scope did not.
+- **Why the kind segment is retained in the FQN rather than flattened.** A flat FQN would make member names globally unique across all four kinds within one catalog, and `catalog_opm` already ships a resource named `secrets`. The segment is what keeps a resource and a trait of the same name at distinct keys (enhancement 0010 D21).
+
+#### See also
+
+- Takes: [`#IdentityPackage`](#52-identitypackage)
+- Gates: [`#Resource`](#21-resource), [`#Trait`](#22-trait), [`#Blueprint`](#33-blueprint), [`#ComponentTransformer`](#41-componenttransformer) — each section's `metadata.fqn` constraint delegates here
+- Sibling gate: [`#TraitOptionalGate`](#51-traitoptionalgate)
+- Design source: enhancement 0011 D22, resting on enhancement 0010 D4, D17, D21, D25, D42, D44
