@@ -102,11 +102,16 @@ import (
 	// transformerless contract is indistinguishable from an oversight.
 	//
 	// Deriving it instead was the obvious alternative and is not computable:
-	// the owning catalog cannot be read off an FQN, because the kind-segment
-	// count is not fixed (".../opm/resources" against
-	// ".../opm/blueprints/workload"), and it is fragile in principle — a
-	// catalog later adding a transformer would silently change the contract's
-	// character. Detecting competing providers by predicate equality was
+	// the owning catalog cannot be read off an FQN. The original reason was an
+	// unfixed kind-segment count (".../opm/resources" against
+	// ".../opm/blueprints/workload"); enhancement 0010 D42 has since made every
+	// kind exactly one segment, so the conclusion now rests on a different
+	// obstacle — a member declares a #PackagePathType, which carries NO major,
+	// while a catalog's identity is its #ModulePathType, registryPath PLUS
+	// "@vN". Stripping name and kind off a member FQN therefore recovers the
+	// registryPath and never the major, and a registryPath does not name a
+	// catalog. It is fragile in principle too — a catalog later adding a
+	// transformer would silently change the contract's character. Detecting competing providers by predicate equality was
 	// measured to have no false positives today and rejected for
 	// false-NEGATIVES on the real case: a k8up transformer requiring
 	// backup + schedule and a Velero transformer requiring backup alone are

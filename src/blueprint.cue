@@ -14,7 +14,12 @@ import (
 		name!: #NameType // Example: "stateless-workload"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/blueprints/workload"
+		// Exactly "<catalog registryPath>/blueprints" — one segment per kind,
+		// no grouping segment beneath it (enhancement 0010 D42).
+		// #CatalogMemberFQNGate compares this against
+		// #IdentityPackage.kindPrefix.blueprints by EQUALITY, so a blueprint
+		// filed one segment deeper is refused at publish.
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/blueprints"
 
 		// apiVersion: this contract's own level, and the only component of its
 		// key (enhancement 0010 D4). A blueprint carries one because it is a
@@ -33,7 +38,7 @@ import (
 		// to one identity package and a release moves them together. `core` no
 		// longer refuses a value disagreeing with this definition's own fields;
 		// #CatalogMemberFQNGate asserts that agreement at publish.
-		fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1beta1"
+		fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
 
 		// Human-readable description of the definition
 		description?: string

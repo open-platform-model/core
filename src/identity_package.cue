@@ -66,11 +66,18 @@ import (
 	//
 	// So this is NOT a redundant check duplicating one on #Module or #Catalog.
 	// There is nothing left to duplicate, and there is no downstream backstop
-	// either. 0010 D43/D45 were written when a skew still resurfaced at the
-	// platform's subscription-selection check; the scalar-subscription collapse
-	// then removed that shape, and nothing in #Platform / #Subscription relates
-	// a subscription's `version` to the "@vN" its #registry key carries
-	// (measured 2026-08-07 against src/). What is left is a materialize-time
+	// either. 0010 D43/D45 were written against a platform-side
+	// subscription-selection major check — and that check HAS NEVER EXISTED IN
+	// `core`. It was NOT removed by the scalar-subscription collapse; an
+	// earlier revision of this comment said so and was wrong. Measured
+	// 2026-08-08: no such assertion appears at any commit of src/, and the
+	// pre-collapse subscription filter carried only range/allow/deny. Nothing
+	// in #Platform / #Subscription relates a subscription's `version` to the
+	// "@vN" its #registry key carries, and nothing ever did. The distinction
+	// is about ownership rather than exposure: an unbuilt check has an owner
+	// (the platform-side major-agreement check belongs to `library`'s
+	// subscription-collapse work, not yet started), where a deleted one would
+	// be a regression nobody holds. What is left today is a materialize-time
 	// registry resolution failure naming a tag — a "@v1" module publishes v1.*
 	// tags, so a 2.0.0 request simply does not resolve. That names the symptom,
 	// not the mistake.
