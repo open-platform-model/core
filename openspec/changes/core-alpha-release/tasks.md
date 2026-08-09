@@ -69,15 +69,37 @@ Read the whole document start to finish. Four questions, in order.
 
 ## 5. Cut the release
 
-- [ ] 5.1 Merge the release-please PR. This tags `v2.0.0-alpha.2` and triggers `publish-cue`.
-- [ ] 5.2 **Do not run `cue mod publish` by hand**, under any circumstance, including a failed CI job. A failed publish is debugged and re-run in CI.
-- [ ] 5.3 Confirm the GitHub Release exists and the `publish-cue` job succeeded.
-- [ ] 5.4 Verify the published artifact resolves: from a scratch tree, add `opmodel.dev/core@v2` at `v2.0.0-alpha.2` and evaluate a minimal `#Module` in the new shape. This is the first real compile of the new schema by a consumer.
+- [x] 5.1 Merge the release-please PR. This tags `v2.0.0-alpha.2` and triggers `publish-cue`.
+- [x] 5.2 **Do not run `cue mod publish` by hand**, under any circumstance, including a failed CI job. A failed publish is debugged and re-run in CI.
+- [x] 5.3 Confirm the GitHub Release exists and the `publish-cue` job succeeded.
+- [x] 5.4 Verify the published artifact resolves: from a scratch tree, add `opmodel.dev/core@v2` at `v2.0.0-alpha.2` and evaluate a minimal `#Module` in the new shape. This is the first real compile of the new schema by a consumer.
+
+- **5.1 / 5.3** Cut as **`v2.0.0-alpha.4`** (see the deviation note at §1). The coherence pass merged first as core#41, so `ccb01b8` sits *beneath* the release commit `489baaa` and the tag carries it — the ordering the `schema-release` spec requires ("a stale cross-reference blocks the cut"). Tag `v2.0.0-alpha.4` exists, the GitHub pre-release exists, and both jobs in the release run report success: `Release Please` and `Publish opmodel.dev/core`.
+- **5.2** No manual publish was issued at any point.
+- **5.4** Verified from a scratch module (`example.com/scratch@v0`, no relation to this repo) resolving **from ghcr.io anonymously**, not from the local registry — `CUE_REGISTRY='opmodel.dev=ghcr.io/open-platform-model,registry.cue.works'`. `cue mod get` pinned `v2.0.0-alpha.4` and a minimal `#Module` in the new shape evaluated clean.
+
+  Taken further than a smoke test, because this is the first consumer compile and D41 is what the cut exists to deliver. Against the **published** artifact, under `cue vet -c`:
+
+  | Invariant | Result |
+  | --- | --- |
+  | Module uuid unchanged when only `version` moves | `c3b82fcc…` == `c3b82fcc…` ✓ |
+  | Module uuid moves when the path's **major** moves | `c3b82fcc…` ≠ `f3325ef4…` ✓ |
+  | Instance uuid survives a version change | `c89b2087…` == `c89b2087…` ✓ |
+  | Instance uuid survives a **major** change | `c89b2087…` == `c89b2087…` ✓ |
+
+  That is D41 in both halves — artifact identity distinguishes majors and nothing finer; instance identity is reached by neither. `alpha.4`'s own payload was exercised too: `#IdentityPackage` and `#CatalogMemberFQNGate` are both reachable by a consumer, `VersionMajor` derives `"v1"`, and `kindPrefix` returns exactly one segment per kind — confirming the flat-path rule this pass corrected §3.3 to state.
 
 ## 6. Close the loop
 
-- [ ] 6.1 `enhancements/0010/plan.yaml`: slice `core-alpha-release` → `status: done`, `openspec_ref: core/core-alpha-release`.
-- [ ] 6.2 Same commit: `history` event citing that ref and the published version.
-- [ ] 6.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index`.
-- [ ] 6.4 Confirm `task enhancements:plan:ready ID=0010` now surfaces `library-core-retarget` and `docs-catalog-contract`.
-- [ ] 6.5 Record the rollback boundary where the next slice will see it: re-pinning to `opmodel.dev/core@v1` at `v1.1.0-alpha.1` stays available until `library-core-retarget` merges — an import rewrite now, not a version pin. Put it in the `history` event, not only here.
+- [x] 6.1 `enhancements/0010/plan.yaml`: slice `core-alpha-release` → `status: done`, `openspec_ref: core/core-alpha-release`.
+- [x] 6.2 Same commit: `history` event citing that ref and the published version.
+- [x] 6.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index`.
+- [x] 6.4 Confirm `task enhancements:plan:ready ID=0010` now surfaces `library-core-retarget` and `docs-catalog-contract`.
+- [x] 6.5 Record the rollback boundary where the next slice will see it: re-pinning to `opmodel.dev/core@v1` at `v1.1.0-alpha.1` stays available until `library-core-retarget` merges — an import rewrite now, not a version pin. Put it in the `history` event, not only here.
+
+- **6.1 / 6.2** Both in one commit, as required — `plan.yaml` and `history` must never disagree about what has landed. The slice is closed as **done-differently** rather than rescoped, which is the question the 2026-08-07 event deliberately left open; the event says so explicitly so the resolution is not left to inference. The slice's `concern` was also corrected: it still claimed to be the single cut point.
+- **6.3** `PLAN.md`, `INDEX.md` and `GRAPH.md` regenerated. `task vet` passes across all six entries; `task check ID=0010` clean.
+- **6.4** Confirmed — both are now ready, and nothing else is.
+- **6.5** In the `history` event, not only here, and stated as an **import rewrite**: every `import "opmodel.dev/core@v1"` becomes the v2 line alongside the `cue.mod` edit, and `task update-deps` cannot perform it, because resolving a new major is not the same operation as raising a version within one.
+
+**One extra fix, found by doing 6.4.** `library-core-retarget`'s own `concern` read *"Re-pin to `v1.0.0-alpha.4`"* — a version on the line this enhancement's identity reshape retired, and "re-pin" for what is now a major crossing. The next slice is the one slice that must not be wrong about this, and `plan:ready` prints that text as the first thing its implementer reads. Corrected in place to name the v2 line, `v2.0.0-alpha.4`, and the import rewrite. Same class of defect as the seven the coherence pass found, caught one slice downstream.
