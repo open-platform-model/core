@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-alpha.4](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.3...v2.0.0-alpha.4) (2026-08-09)
+
+
+### Features
+
+* ship the identity-package and catalog-member publish gates ([#38](https://github.com/open-platform-model/core/issues/38)) ([4b96f49](https://github.com/open-platform-model/core/commit/4b96f49e92aa6b5f3b9fa096058b27c6b6adc5aa))
+
 ## [2.0.0-alpha.3](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.2...v2.0.0-alpha.3) (2026-08-07)
 
 
