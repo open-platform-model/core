@@ -26,28 +26,35 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
 
 ```cue
 #ComponentTransformer: {
-    apiVersion: #ApiVersion
-    kind:       "ComponentTransformer"
+    // NO apiVersion. A transformer is an ADAPTER, not a primitive: its inputs
+    // are other people's contracts and its output is platform objects, so
+    // "this transformer's contract level" has no referent. `metadata` is
+    // closed, so declaring one is `field not allowed`.
+    kind: "ComponentTransformer"
 
     metadata: {
-        name!:        #NameType         // e.g., "deployment-transformer"
-        modulePath!:  #PackagePathType  // e.g., "opmodel.dev/opm/transformers/kubernetes"
-        version!:     #MajorVersionType
-        fqn:          #FQNType          // computed
+        name!:           #NameType         // e.g., "deployment-transformer"
+        modulePath!:     #PackagePathType  // e.g., "opmodel.dev/catalogs/opm/transformers"
+        catalogVersion!: #VersionType      // SemVer of the build it shipped in
+
+        // Authored by the declaring catalog. An IMPLEMENTATION key — keyed on
+        // the build, not on a contract level.
+        fqn!:         #ImplFQNType  // e.g., ".../transformers/deployment@1.0.0"
         description!: string
         labels?:      #LabelsAnnotationsType   // categorization, not matching
         annotations?: #LabelsAnnotationsType
     }
 
-    // Matching criteria — ALL must be satisfied.
-    requiredLabels?:    #LabelsAnnotationsType  // Component must carry these
-    requiredResources:  [FQN=string]: #Resource // Component must include these
-    requiredTraits:     [FQN=string]: #Trait    // Component must include these
+    // Matching criteria — ALL must be satisfied. Labels are selected against
+    // #Component.matchLabels, never against metadata.labels.
+    requiredLabels?:    #LabelsAnnotationsType         // Component must carry these
+    requiredResources?: [#ContractFQNType]: #Resource  // Component must include these
+    requiredTraits?:    [#ContractFQNType]: #Trait     // Component must include these
 
     // Optional definitions — used if present, defaults applied otherwise.
     optionalLabels?:    #LabelsAnnotationsType
-    optionalResources:  [FQN=string]: #Resource
-    optionalTraits:     [FQN=string]: #Trait
+    optionalResources?: [#ContractFQNType]: #Resource
+    optionalTraits?:    [#ContractFQNType]: #Trait
 
     // The transform function — takes a Component, produces ONE platform resource.
     #transform: {
@@ -59,7 +66,7 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
 
 // TransformerMap is the union surface for all transformer adapters
 // (today: #ComponentTransformer; future: #ModuleTransformer).
-#TransformerMap: [#FQNType]: #ComponentTransformer
+#TransformerMap: [#ImplFQNType]: #ComponentTransformer
 ```
 
 ### TransformerContext

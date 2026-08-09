@@ -81,10 +81,10 @@ _pinMatchExpose: #Trait & {
 _pinMatchStateful: #Blueprint & {
 	metadata: {
 		name:           "stateful-workload"
-		modulePath:     "opmodel.dev/catalogs/opm/blueprints/workload"
+		modulePath:     "opmodel.dev/catalogs/opm/blueprints"
 		apiVersion:     "v1beta1"
 		catalogVersion: "1.0.0"
-		fqn:            "opmodel.dev/catalogs/opm/blueprints/workload/stateful-workload@v1beta1"
+		fqn:            "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1"
 		labels: "blueprint.opmodel.dev/category": "workload"
 	}
 	matchLabels: {
@@ -110,8 +110,8 @@ _pinMatchComponent: #Component & {
 		container: _pinMatchContainer
 		volumes:   _pinMatchVolumes
 	}
-	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1":                             _pinMatchExpose
-	#blueprints: "opmodel.dev/catalogs/opm/blueprints/workload/stateful-workload@v1beta1": _pinMatchStateful
+	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1":                    _pinMatchExpose
+	#blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1": _pinMatchStateful
 	#instance: _pinInstanceFixture
 	spec: {
 		container: image: "jellyfin:1"
@@ -241,7 +241,7 @@ _pinOptionalTraitComponent: #Component & {
 		// the catalog says advisory; this component insists on it
 		"opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinMatchExpose & {optional: false}
 	}
-	#blueprints: "opmodel.dev/catalogs/opm/blueprints/workload/stateful-workload@v1beta1": _pinMatchStateful
+	#blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1": _pinMatchStateful
 	#instance: _pinInstanceFixture
 	spec: {
 		container: image:           "jellyfin:1"
@@ -437,10 +437,10 @@ _pinOneBuildPerPath: "1.2.0"
 //  _failDaemonBlueprint: #Blueprint & {
 //   metadata: {
 //    name:           "daemon-workload"
-//    modulePath:     "opmodel.dev/catalogs/opm/blueprints/workload"
+//    modulePath:     "opmodel.dev/catalogs/opm/blueprints"
 //    apiVersion:     "v1beta1"
 //    catalogVersion: "1.0.0"
-//    fqn:            "opmodel.dev/catalogs/opm/blueprints/workload/daemon-workload@v1beta1"
+//    fqn:            "opmodel.dev/catalogs/opm/blueprints/daemon-workload@v1beta1"
 //   }
 //   matchLabels: "opm.opmodel.dev/workload-type": "daemon"
 //   composedResources: [_pinMatchContainer]
@@ -476,7 +476,7 @@ _pinOneBuildPerPath: "1.2.0"
 //  _failAuthoredMatchLabel: #Component & {
 //   metadata: name: "invented"
 //   #resources: container: _pinMatchContainer
-//   #blueprints: "opmodel.dev/catalogs/opm/blueprints/workload/stateful-workload@v1beta1": _pinMatchStateful
+//   #blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1": _pinMatchStateful
 //   matchLabels: "fragment.opmodel.dev/invented": "yes"
 //   #instance: _pinInstanceFixture
 //   spec: {
@@ -537,10 +537,10 @@ _pinOneBuildPerPath: "1.2.0"
 //  _failBlueprintFulfilment: #Blueprint & {
 //   metadata: {
 //    name:           "stateless-workload"
-//    modulePath:     "opmodel.dev/catalogs/opm/blueprints/workload"
+//    modulePath:     "opmodel.dev/catalogs/opm/blueprints"
 //    apiVersion:     "v1beta1"
 //    catalogVersion: "1.0.0"
-//    fqn:            "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1beta1"
+//    fqn:            "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
 //   }
 //   fulfilment: "provider"
 //   composedResources: [_pinMatchContainer]

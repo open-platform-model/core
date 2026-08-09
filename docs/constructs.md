@@ -24,14 +24,21 @@ Resources, Traits, and Blueprints each define independent `spec` schemas (each n
 
 ```cue
 #Component: {
-    apiVersion: #ApiVersion
-    kind:       "Component"
+    kind: "Component"
 
     metadata: {
-        name!:        #NameType
-        labels?:      #LabelsAnnotationsType  // unified from attached primitives
-        annotations?: #LabelsAnnotationsType  // unified from attached primitives
+        name!: #NameType
+        // Descriptive ONLY. NOT unified from the attached primitives, and
+        // nothing matches on them. These are the labels that reach rendered
+        // output. Matching lives in `matchLabels` below.
+        labels?:      #LabelsAnnotationsType
+        annotations?: #LabelsAnnotationsType
     }
+
+    // This Component's matching identity: the wholesale unification of every
+    // attached primitive's matchLabels. DERIVED — a Component that declares a
+    // key of its own is refused.
+    matchLabels: _   // = unification of the attached primitives' matchLabels
 
     #resources:  #ResourceMap     // required — at least one
     #traits?:    #TraitMap        // optional behavioral modifiers
@@ -81,13 +88,12 @@ Modules enforce a clear separation between the configuration **contract** (`#con
 
 ```cue
 #Module: {
-    apiVersion: #ApiVersion
-    kind:       "Module"
+    kind: "Module"
 
     metadata: {
         name!:        #SnakeNameType   // e.g., "my_app"; the leaf of modulePath
-        modulePath:   #ModulePathType  // e.g., "example.com/modules/my_app@v1"
-        version:      #VersionType     // SemVer 2.0
+        modulePath!:  #ModulePathType  // e.g., "example.com/modules/my_app@v1"
+        version!:     #VersionType     // SemVer 2.0
         fqn:          #ModulePathType  // the module path, verbatim
         registryPath: #PackagePathType // computed: modulePath with @vN stripped
         uuid:         #UUIDType        // UUIDv5 of fqn under OPMNamespace
@@ -120,8 +126,10 @@ End-user ──deploys──▶ ModuleInstance (concrete values into #config)
 ```cue
 basicModule: core.#Module & {
     metadata: {
-        name:       "basic-module"
-        modulePath: "example.com/modules"
+        // snake_case, and it MUST equal the leaf of modulePath.
+        name:       "basic_module"
+        // The COMPLETE CUE module path, "@vN" included.
+        modulePath: "example.com/modules/basic_module@v1"
         version:    "0.1.0"
     }
 
@@ -178,12 +186,11 @@ The instance's `components` are the module's own, verbatim — core synthesises 
 
 ```cue
 #ModuleInstance: {
-    apiVersion: #ApiVersion
-    kind:       "ModuleInstance"
+    kind: "ModuleInstance"
 
     metadata: {
         name!:        #NameType        // instance name
-        namespace!:   string           // target environment
+        namespace!:   #NameType        // target environment
         fqn:          string           // "{module.registryPath}:{name}:{namespace}"
         uuid:         #UUIDType        // UUIDv5 of fqn — no module version, no major
         labels?:      #LabelsAnnotationsType

@@ -23,8 +23,8 @@ import (
 // D45 deleted `core`'s version-major assertion from #Catalog and #Module on the
 // strength of the one #IdentityPackage makes, so _failIdentityMajorSkew below
 // is the only place that relation is checked anywhere in the system — see the
-// note on that case for why the downstream backstop D43/D45 assumed no longer
-// exists either.
+// note on that case for why the downstream backstop D43/D45 assumed was never
+// built in the first place.
 //
 // NOTE ON THE FILENAME: this file must NOT be named with a leading underscore.
 // CUE skips files whose name begins with "_", so an
@@ -173,10 +173,14 @@ _pinContractAndImplKeysDiffer: true
 // so if it stops firing, NOTHING in the system checks the relation.
 //
 // D43/D45 recorded a downstream backstop for that exposure — the platform's
-// subscription-selection major check. It no longer exists: the scalar-
-// subscription collapse removed that shape, and measured 2026-08-07 against
-// src/, nothing in #Platform or #Subscription relates a subscription's
-// `version` to the "@vN" its #registry key carries. The residue is a
+// subscription-selection major check. It was NEVER BUILT in `core`, rather
+// than built and then removed: an earlier revision of this note blamed the
+// scalar-subscription collapse and was wrong. Measured 2026-08-08, no such
+// assertion appears at any commit of src/, and the pre-collapse
+// subscription filter carried only range/allow/deny. Nothing in #Platform or
+// #Subscription relates a subscription's `version` to the "@vN" its #registry
+// key carries, and nothing ever did; the platform-side check is owned by
+// `library`'s subscription-collapse work, not yet started. The residue is a
 // materialize-time registry resolution failure naming a tag that does not
 // resolve, which is a symptom rather than a diagnosis. Treat this case as
 // having no safety net beneath it.

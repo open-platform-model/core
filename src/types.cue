@@ -137,7 +137,7 @@ import (
 // primitive's own #APIVersionType (enhancement 0010 D4). The key a #Resource,
 // #Trait and #Blueprint carries.
 // Example: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
-// Example: "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1"
+// Example: "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1"
 //
 // A catalog release does not move this key; only a breaking change to the
 // primitive's own shape does. That is what lets a contract declared in one

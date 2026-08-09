@@ -1,6 +1,8 @@
 # OPM Primitives
 
-Primitives are schema contracts — independently authored building blocks that share the same shape: `metadata` (carrying `name`, `modulePath`, `version`, computed `fqn`) plus a `spec` (OpenAPIv3-compatible schema, namespaced under the definition's camelCase name). They are composed into [Constructs](constructs.md).
+Primitives are schema contracts — independently authored building blocks that share the same shape: `metadata` (carrying `name`, `modulePath`, `apiVersion`, `catalogVersion` and an authored `fqn`) plus a `spec` (OpenAPIv3-compatible schema, namespaced under the definition's camelCase name). They are composed into [Constructs](constructs.md).
+
+A primitive carries **two** versions, and they answer different questions. `apiVersion` is the contract's own level (`v1`, `v1beta1`, `v1alpha1`) — the only version component of its key, moved when the primitive's `spec` breaks. `catalogVersion` is the SemVer of the catalog build the definition shipped in — provenance, which no key interpolates. `fqn` is **authored** by the declaring catalog rather than computed here, and `#CatalogMemberFQNGate` checks it against the catalog's identity package at publish. See [SPEC.md §2.1](../SPEC.md) for the normative rules.
 
 A Primitive:
 
@@ -39,14 +41,16 @@ Ask yourself:
 
 ```cue
 #Resource: {
-    apiVersion: #ApiVersion
-    kind:       "Resource"
+    kind: "Resource"
 
     metadata: {
-        name!:        #NameType         // e.g., "container"
-        modulePath!:  #PackagePathType  // e.g., "opmodel.dev/opm/resources/workload"
-        version!:     #MajorVersionType // e.g., "v1"
-        fqn:          #FQNType          // computed: "{modulePath}/{name}@{version}"
+        name!:           #NameType         // e.g., "container"
+        modulePath!:     #PackagePathType  // e.g., "opmodel.dev/catalogs/opm/resources"
+        apiVersion!:     #APIVersionType   // contract level, e.g., "v1beta1"
+        catalogVersion!: #VersionType      // build provenance, e.g., "1.0.0"
+
+        // Authored by the declaring catalog, not derived here.
+        fqn!:         #ContractFQNType  // e.g., ".../resources/container@v1beta1"
         description?: string
         labels?:      #LabelsAnnotationsType   // categorisation only
         annotations?: #LabelsAnnotationsType
@@ -55,6 +59,9 @@ Ask yourself:
     // Matching identity — unified wholesale into every Component that
     // attaches this primitive; what a transformer's requiredLabels selects on.
     matchLabels?: #LabelsAnnotationsType
+
+    // Where this contract's implementation comes from.
+    fulfilment: *"catalog" | "provider"
 
     // OpenAPIv3-compatible schema. The exposed field name is the camelCase
     // form of metadata.name (e.g., name "container" -> spec.container).
@@ -67,10 +74,12 @@ Ask yourself:
 ```cue
 #ContainerResource: core.#Resource & {
     metadata: {
-        name:        "container"
-        modulePath:  "opmodel.dev/opm/resources/workload"
-        version:     "v1"
-        description: "A container definition for workloads"
+        name:           "container"
+        modulePath:     "opmodel.dev/catalogs/opm/resources"
+        apiVersion:     "v1beta1"
+        catalogVersion: "1.0.0"
+        fqn:            "opmodel.dev/catalogs/opm/resources/container@v1beta1"
+        description:    "A container definition for workloads"
         // Categorisation only — descriptive, never matched on.
         labels: "resource.opmodel.dev/category": "workload"
     }
@@ -122,22 +131,30 @@ Ask yourself:
 
 ```cue
 #Trait: {
-    apiVersion: #ApiVersion
-    kind:       "Trait"
+    kind: "Trait"
 
     metadata: {
-        name!:        #NameType
-        modulePath!:  #PackagePathType
-        version!:     #MajorVersionType
-        fqn:          #FQNType
-        description?: string
-        labels?:      #LabelsAnnotationsType   // categorisation only
-        annotations?: #LabelsAnnotationsType
+        name!:           #NameType
+        modulePath!:     #PackagePathType  // e.g., "opmodel.dev/catalogs/opm/traits"
+        apiVersion!:     #APIVersionType   // contract level
+        catalogVersion!: #VersionType      // build provenance
+        fqn!:            #ContractFQNType  // authored by the declaring catalog
+        description?:    string
+        labels?:         #LabelsAnnotationsType   // categorisation only
+        annotations?:    #LabelsAnnotationsType
     }
 
     // Matching identity — unified wholesale into every Component that
     // attaches this primitive; what a transformer's requiredLabels selects on.
     matchLabels?: #LabelsAnnotationsType
+
+    fulfilment: *"catalog" | "provider"
+
+    // Whether an unhandled demand for this Trait fails the render or warns.
+    // NO DEFAULT in core — the declaring catalog states the posture AS A
+    // DEFAULT (`bool | *true` advisory, `bool | *false` load-bearing), and a
+    // module overrides it at the attachment site.
+    optional: bool
 
     // Resources this Trait can be applied to (full references).
     appliesTo!: [...#Resource]
@@ -159,11 +176,17 @@ Trait → appliesTo → Resource
 ```cue
 #ScalingTrait: core.#Trait & {
     metadata: {
-        name:        "scaling"
-        modulePath:  "opmodel.dev/opm/traits/workload"
-        version:     "v1"
-        description: "Scaling behavior for a workload"
+        name:           "scaling"
+        modulePath:     "opmodel.dev/catalogs/opm/traits"
+        apiVersion:     "v1beta1"
+        catalogVersion: "1.0.0"
+        fqn:            "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
+        description:    "Scaling behavior for a workload"
     }
+
+    // Load-bearing: an unhandled scaling demand should fail the render.
+    // Stated as a DEFAULT so a module can override it at the attachment site.
+    optional: bool | *false
 
     appliesTo: [#ContainerResource]
 
@@ -204,18 +227,25 @@ Ask yourself:
 
 ```cue
 #Blueprint: {
-    apiVersion: #ApiVersion
-    kind:       "Blueprint"
+    kind: "Blueprint"
 
     metadata: {
         name!:        #NameType
-        modulePath!:  #PackagePathType
-        version!:     #MajorVersionType
-        fqn:          #FQNType
-        description?: string
-        labels?:      #LabelsAnnotationsType   // categorisation only
-        annotations?: #LabelsAnnotationsType
+        // Exactly "<catalog registryPath>/blueprints" — one segment per kind,
+        // with NO grouping segment beneath it. A blueprint filed deeper is
+        // refused at publish by #CatalogMemberFQNGate.
+        modulePath!:     #PackagePathType  // e.g., "opmodel.dev/catalogs/opm/blueprints"
+        apiVersion!:     #APIVersionType   // contract level
+        catalogVersion!: #VersionType      // build provenance
+        fqn!:            #ContractFQNType  // authored by the declaring catalog
+        description?:    string
+        labels?:         #LabelsAnnotationsType   // categorisation only
+        annotations?:    #LabelsAnnotationsType
     }
+
+    // NOTE: a Blueprint carries no `fulfilment` field — the definition is
+    // closed, so declaring one is `field not allowed`. Nothing can demand a
+    // Blueprint, so the field would be unreachable.
 
     // Matching identity — unified wholesale into every Component that
     // attaches this primitive; what a transformer's requiredLabels selects on.
@@ -233,10 +263,12 @@ Ask yourself:
 ```cue
 #StatelessWorkloadBlueprint: core.#Blueprint & {
     metadata: {
-        name:        "stateless-workload"
-        modulePath:  "opmodel.dev/opm/blueprints/workload"
-        version:     "v1"
-        description: "A stateless workload pattern"
+        name:           "stateless-workload"
+        modulePath:     "opmodel.dev/catalogs/opm/blueprints"
+        apiVersion:     "v1beta1"
+        catalogVersion: "1.0.0"
+        fqn:            "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
+        description:    "A stateless workload pattern"
     }
 
     composedResources: [#ContainerResource]

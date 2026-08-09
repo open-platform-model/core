@@ -314,10 +314,10 @@ _pinKindSegmentSeparatesKeys: true
 _pinContractKeyedBlueprint: #Blueprint & {
 	metadata: {
 		name:           "stateless-workload"
-		modulePath:     "opmodel.dev/catalogs/opm/blueprints/workload"
+		modulePath:     "opmodel.dev/catalogs/opm/blueprints"
 		apiVersion:     "v1beta1"
 		catalogVersion: "1.2.0"
-		fqn:            "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1beta1"
+		fqn:            "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
 	}
 	spec: statelessWorkload: _
 	composedResources: [_pinContractKeyedResource]
