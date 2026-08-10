@@ -497,7 +497,7 @@ Implementation: [`blueprint.cue`](src/blueprint.cue).
 
 - `kind` MUST be the literal string `"Blueprint"`.
 - `metadata` follows the primitive-metadata shape (`name` + `modulePath` + `apiVersion` + `catalogVersion` + authored `fqn`, plus optional `description` / `labels` / `annotations`), under the same rules as `#Resource` (§2.1) and `#Trait` (§2.2): the key is a `#ContractFQNType` terminated by `apiVersion`, and `catalogVersion` is SemVer 2.0 provenance.
-- The authored `fqn` MUST retain its kind segment (`/blueprints`), and that segment MUST be the **last** one before the name: a Blueprint's `modulePath` is exactly `<catalog registryPath>/blueprints`, with no grouping segment beneath it. A Blueprint one segment deeper MUST be refused by [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3), which compares against `#IdentityPackage.kindPrefix.blueprints` by equality rather than by a prefix test (§5.2). `catalog_opm`'s blueprints sat at `…/blueprints/workload` and move up one segment; that cost is the point of enhancement 0010 D42, not a side effect of it.
+- The authored `fqn` MUST retain its kind segment (`/blueprints`), and that segment MUST be the **last** one before the name — the filing segment never enters the key. A Blueprint's `modulePath` is exactly `<catalog registryPath>/blueprints/<apiVersion>`: one base segment per kind, plus one version segment derived from this Blueprint's own `apiVersion`, and never an arbitrary grouping segment (enhancement 0010 D42 as amended by D49). A Blueprint filed flat, or under any segment other than its own `apiVersion`, MUST be refused by [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3), which compares against `#IdentityPackage.kindPrefix.blueprints + "/" + apiVersion` by equality rather than by a prefix test (§5.2). `catalog_opm`'s blueprints sat at `…/blueprints/workload` — an arbitrary grouping D42 removed; D49 replaces the flat filing D42 chose with the derived version segment, which cannot drift from the key it is computed from.
 - `metadata.labels` and `matchLabels` follow the same rules as `#Resource` (§2.1). A Blueprint is where a required matching key declared by a composed Resource is typically **answered**: attaching the Blueprint is what completes the component's matching identity.
 - `#Blueprint` MUST NOT carry a `fulfilment` field. A `#ComponentTransformer` declares `requiredResources` and `requiredTraits` and has no blueprint equivalent, so nothing can demand a Blueprint and the field would be unreachable. Declaring it MUST fail with a **field-not-allowed** error — the definition is closed, so the exclusion is structural rather than a field nothing reads. A Blueprint's fulfilment is that of the contracts it composes, each of which declares its own.
 - `composedResources` MUST list at least one `#Resource`. A Blueprint that composes nothing is a category error.
@@ -929,7 +929,9 @@ It is a gate rather than a construct, and it is the one gate that is also a file
     VersionMajor: "v" + strings.SplitN(Version, ".", 2)[0]
     VersionMajor: Major
 
-    // Exactly one prefix per catalog member kind. No major re-appended.
+    // Exactly one BASE prefix per catalog member kind. No major re-appended.
+    // Contract kinds file one derived apiVersion segment beneath it (D49);
+    // the gate performs that derivation, not this map.
     kindPrefix: {
         resources:    RegistryPath + "/resources"
         traits:       RegistryPath + "/traits"
@@ -948,7 +950,7 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 - `RegistryPath` and `Major` MUST be projected through `#ArtifactRef` (§ — see [`types.cue`](src/types.cue)), not by a second decomposition performed here.
 - `VersionMajor` MUST be derived from `Version` and MUST equal `Major`. A disagreeing pair MUST be refused, and the error MUST name `VersionMajor` — the derived field where the two authored values meet.
 - **This MUST be the only assertion of that relation in the schema.** Neither `#Module.metadata` (§3.2) nor `#Catalog.metadata` (§3.6) asserts it.
-- `kindPrefix` MUST enumerate exactly four keys — `resources`, `traits`, `blueprints`, `transformers` — each `RegistryPath` plus exactly one segment. It MUST be an enumerated struct, not a pattern constraint, so that each key is reachable by field selection.
+- `kindPrefix` MUST enumerate exactly four keys — `resources`, `traits`, `blueprints`, `transformers` — each `RegistryPath` plus exactly one segment. It MUST be an enumerated struct, not a pattern constraint, so that each key is reachable by field selection. The per-member apiVersion filing segment (enhancement 0010 D49) MUST NOT appear in this map — it is derived by `#CatalogMemberFQNGate` (§5.3) from each member's own `apiVersion`, and a map of base prefixes stays complete precisely because the only admitted extra segment is computable from the member.
 - `kindPrefix` values MUST NOT carry a major suffix: a catalog member declares a `#PackagePathType`.
 - The definition MUST be expressible using only CUE builtins, so that an artifact's `identity/identity.cue` can stay free of intra-module imports.
 - `core` MUST NOT require an identity file to import `core`, and MUST NOT ship a procedural comparator for this shape. A consumer unifies and surfaces CUE's own error.
@@ -959,7 +961,7 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 - **Why it is asserted at the point the values are written.** `ModulePath` and `Version` are both authored in this one file, so a conflict names the file the author has open. An assertion one hop downstream — in `#Module` or `#Catalog` — tests the same relation over the same two values while pointing at a file that only consumed them.
 - **Why exactly two fields are authored.** Every derived value is one more thing a release could move out of step. Tooling writes `ModulePath` and `Version`; a publisher who never learns that `RegistryPath` exists cannot get it wrong. It is also what makes the decomposition happen once: `#ArtifactRef` is the schema's single module-path splitting site, and projecting through it here is what keeps this definition from becoming a second one.
 - **Why `kindPrefix` is enumerated rather than a pattern constraint.** `[Kind=string]: RegistryPath + "/" + Kind` reads as the more general form and is unusable: `id.kindPrefix.resources` yields `undefined field`, because a pattern constrains keys that already exist rather than generating them. Measured in `enhancements/0011/experiments/01`, finding (b). The enumeration is not a convenience for the common case — it is a complete statement of the catalog's key space, and `#CatalogMemberFQNGate` (§5.3) builds both a member's path and its key from the same value.
-- **Why no grouping segment is admitted beneath a kind prefix.** One prefix per kind is what lets a member's declared path be checked by equality rather than by a prefix test that would accept any depth. `catalog_opm`'s five blueprints sit at `…/blueprints/workload` today and must move up one segment (enhancement 0010 D42) — that cost is the point, not a side effect.
+- **Why no arbitrary grouping segment is admitted beneath a kind prefix, and why the apiVersion segment is.** One base prefix per kind is what lets a member's declared path be checked by equality rather than by a prefix test that would accept any depth — `catalog_opm`'s five blueprints once sat at `…/blueprints/workload`, and removing that was the point of enhancement 0010 D42. D49 amends the rule without surrendering the property: the one segment now admitted beneath a contract kind's prefix is the member's own `apiVersion`, which the gate *derives* from the key rather than reading from the author, so filing location and key cannot drift — the failure mode D42 banned grouping segments to prevent. What the segment buys is disjoint packages for coexisting versions of one contract: without it, the first coexistence forces the version into the shipped CUE identifier and ripples to every importer for a change that changed no shape.
 - **Why validation is external, and why we don't have `identity.cue` import `core` and embed this definition.** Embedding it would make plain `cue vet` catch non-conformance with no tooling at all, which is genuinely attractive and is the first thing a reader proposes. It is excluded because it puts the schema module at the bottom of every catalog's import graph — the exact position the identity package exists to keep clear — to buy a check that works fine from outside. If the import-free invariant is ever revisited this becomes the better design, and enhancement 0010 D43's recommended follow-on (identity files embedding the shipped definition, so `VersionMajor` comes from the definition rather than from an author remembering to write it) becomes available with it.
 - **Why we don't ship a Go-side expected-versus-found check beside it.** It is a second statement of the contract, and two statements drift. It also produces a *worse* diagnostic on the interesting cases: a wrong type or an out-of-bound value is not a missing field, and enhancement 0011 D8 frames the refusal as "this tree is not a conformant catalog" rather than "this field lacks an attribute". Unification is what makes that sentence true.
 
@@ -968,7 +970,7 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 - Derives through: [`#ArtifactRef`](src/types.cue) — the single module-path decomposition site
 - Consumed by: [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) — takes an identity package as input
 - Relation removed from: [`#Module`](#32-module), [`#Catalog`](#36-catalog) — see each section's Rationale on the absent major check
-- Design source: enhancement 0011 D21, resting on enhancement 0010 D5, D40, D42, D43, D45
+- Design source: enhancement 0011 D21, resting on enhancement 0010 D5, D40, D42, D43, D45, D49
 
 ---
 
@@ -1003,7 +1005,12 @@ It takes an identity package, the member's kind and name, and the three values t
     }
 
     // What identity implies. Second declarations — unification is the check.
-    declaredModulePath:     identity.kindPrefix[kind]
+    // A contract kind files one segment beneath its prefix, under the
+    // member's own apiVersion (D49); a transformer files at the prefix.
+    declaredModulePath: [
+        if kind == "transformers" {identity.kindPrefix[kind]},
+        identity.kindPrefix[kind] + "/" + declaredAPIVersion,
+    ][0]
     declaredCatalogVersion: identity.Version
 
     // The transformer arm is selected before declaredAPIVersion is reached,
@@ -1013,6 +1020,7 @@ It takes an identity package, the member's kind and name, and the three values t
         declaredAPIVersion,
     ][0]
 
+    // The key does NOT carry the filing segment (D49).
     declaredFQN: identity.kindPrefix[kind] + "/" + name + "@" + _keyVersion
 }
 ```
@@ -1022,9 +1030,9 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 #### Constraints
 
 - A publishing tool MUST unify **every** catalog member against this gate, and MUST surface CUE's own error rather than reformulating it.
-- `declaredModulePath` MUST equal `identity.kindPrefix[kind]`. A member one segment deeper, or one declaring another catalog's path, MUST be refused.
+- `declaredModulePath` MUST equal `identity.kindPrefix[kind] + "/" + declaredAPIVersion` for `resources`, `traits` and `blueprints`, and `identity.kindPrefix[kind]` for `transformers` (enhancement 0010 D49). A contract member filed flat, one filed under any segment other than its own `apiVersion`, or a member declaring another catalog's path, MUST each be refused.
 - `declaredCatalogVersion` MUST equal `identity.Version`.
-- `declaredFQN` MUST equal `identity.kindPrefix[kind] + "/" + name + "@" + v`, where `v` is `declaredAPIVersion` for `resources`, `traits` and `blueprints`, and `identity.Version` for `transformers` (enhancement 0010 D4).
+- `declaredFQN` MUST equal `identity.kindPrefix[kind] + "/" + name + "@" + v`, where `v` is `declaredAPIVersion` for `resources`, `traits` and `blueprints`, and `identity.Version` for `transformers` (enhancement 0010 D4). The FQN MUST NOT carry the apiVersion filing segment: the key space stays flat while filing is versioned (D49).
 - `declaredAPIVersion` MUST be optional at the top level and MUST be required when `kind` is not `"transformers"`. A transformer with the field absent MUST resolve with no error about it; a primitive omitting it MUST report `declaredAPIVersion` as a required field that is not present.
 - `apiVersion` MUST NOT be checked against identity. Nothing implies it.
 - `kind` MUST be one of the four catalog member kinds. Any other value MUST be refused by the closed enum.
@@ -1038,6 +1046,7 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 - **Why the gate is not embedded in the member definitions.** Expressing it inside `#Resource` and its peers would re-derive `fqn` inside `core` and undo enhancement 0010 D21 — and that removal is what lets a contract declared in one catalog be fulfilled by a transformer in another on an independent release cadence. It would also drag a member's `spec` — which is a schema and MUST NOT be concrete — into a check that has nothing to do with it. Unifying the gate is the check; the derivation stays out.
 - **Why `declaredAPIVersion` is conditionally rather than unconditionally required.** A transformer carries no `apiVersion` at all (§4.1), so requiring it here unconditionally would force every transformer in every catalog to author a value nothing reads. The conditional works because of evaluation order, which was measured rather than assumed (2026-08-03, cue v0.17.1): `_keyVersion`'s transformer arm is selected **before** `declaredAPIVersion` is reached, so the absent optional is never evaluated. Reversing the two list elements would break it.
 - **Why `apiVersion` is deliberately not checked against identity.** Nothing implies it. A primitive's contract level is a judgement its author makes about that primitive's own shape, independent of the catalog's module major and of the catalog's release SemVer (enhancement 0010 D4, D25) — that independence is the entire point of the field. A gate that derived it would be asserting a relation that does not exist.
+- **Why the filing segment is derived rather than authored, and why transformers don't carry one.** The apiVersion segment (enhancement 0010 D49) is computed from `declaredAPIVersion` — the same field the key interpolates — so a member cannot file under a segment its key does not imply; an authored segment would reopen exactly the drift D42 closed. Transformers file at the base prefix because they have no `apiVersion` to derive from (D44), and the conditional reuses `_keyVersion`'s measured evaluation order: the transformer arm is selected before the absent optional is reached.
 - **Why transformers are in scope rather than primitives only.** Enhancement 0010 D44 records that the four-kind scope survives the primitive/adapter split: D17's path rule binds a transformer's package path exactly as it binds a primitive's, and a transformer's build-keyed FQN is precisely what D21's stale-literal failure applies to. Only the gate's name changed; its scope did not.
 - **Why the kind segment is retained in the FQN rather than flattened.** A flat FQN would make member names globally unique across all four kinds within one catalog, and `catalog_opm` already ships a resource named `secrets`. The segment is what keeps a resource and a trait of the same name at distinct keys (enhancement 0010 D21).
 
@@ -1046,4 +1055,4 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 - Takes: [`#IdentityPackage`](#52-identitypackage)
 - Gates: [`#Resource`](#21-resource), [`#Trait`](#22-trait), [`#Blueprint`](#33-blueprint), [`#ComponentTransformer`](#41-componenttransformer) — each section's `metadata.fqn` constraint delegates here
 - Sibling gate: [`#TraitOptionalGate`](#51-traitoptionalgate)
-- Design source: enhancement 0011 D22, resting on enhancement 0010 D4, D17, D21, D25, D42, D44
+- Design source: enhancement 0011 D22, resting on enhancement 0010 D4, D17, D21, D25, D42, D44, D49

@@ -95,12 +95,17 @@ import (
 	// off. The major is NOT re-appended — a catalog member declares a
 	// #PackagePathType (enhancement 0010 D1).
 	//
-	// EXACTLY ONE PREFIX PER KIND, with no grouping subdirectory beneath any of
-	// them (enhancement 0010 D42). This map is a COMPLETE statement of the
-	// catalog's key space, not a convenience for the common case:
-	// #CatalogMemberFQNGate unifies a member's declared path with
-	// kindPrefix[kind] and builds its key from the same value, so a member one
-	// segment deeper is refused rather than tolerated.
+	// EXACTLY ONE BASE PREFIX PER KIND, with no ARBITRARY grouping
+	// subdirectory beneath any of them (enhancement 0010 D42). A CONTRACT
+	// kind's members file exactly one segment beneath the prefix, under the
+	// member's own apiVersion — a segment DERIVED from the member's key, so
+	// filing and key cannot drift (enhancement 0010 D49, amending D42); a
+	// transformer files at the prefix itself, having no apiVersion (D44). This
+	// map plus that derivation is a COMPLETE statement of the catalog's key
+	// space, not a convenience for the common case: #CatalogMemberFQNGate
+	// unifies a member's declared path with the derived filing path and builds
+	// its key from kindPrefix[kind] directly, so a member under a segment its
+	// key does not imply is refused rather than tolerated.
 	//
 	// ENUMERATED RATHER THAN A PATTERN CONSTRAINT, and the difference is not
 	// stylistic. `[Kind=string]: RegistryPath + "/" + Kind` is unusable at the
@@ -124,9 +129,9 @@ import (
 // as the value identity implies. Unification does the comparing, so the author
 // reads CUE's own diagnostic.
 //
-// It is the enforcement point four decisions delegate to. Enhancement 0010 D17,
-// D21, D25 and D42 all state the catalog-member path and FQN rule and implement
-// it nowhere; D21 in particular REMOVED `core`'s fqn derivation for every
+// It is the enforcement point five decisions delegate to. Enhancement 0010 D17,
+// D21, D25, D42 and D49 all state the catalog-member path and FQN rule and
+// implement it nowhere; D21 in particular REMOVED `core`'s fqn derivation for every
 // catalog member, accepting a measured loss — a catalog on 1.2.0 shipping
 // `fqn: ".../secrets@1.1.0"` passes `cue vet -c` at exit 0 — explicitly in
 // exchange for this gate. Under D4 a wrong key is permanent: modules match
@@ -163,8 +168,16 @@ import (
 	}
 
 	// What identity/identity.cue implies. The path must sit under THIS catalog
-	// (enhancement 0010 D17); the provenance must name THIS build.
-	declaredModulePath:     identity.kindPrefix[kind]
+	// (enhancement 0010 D17), and a CONTRACT kind files one segment beneath
+	// its kind prefix, under the member's own apiVersion — derived from the
+	// key, so filing and key cannot drift (enhancement 0010 D49). A
+	// transformer files at the prefix itself (no apiVersion, D44); its arm is
+	// selected before declaredAPIVersion is reached, the same measured
+	// ordering _keyVersion relies on. The provenance must name THIS build.
+	declaredModulePath: [
+		if kind == "transformers" {identity.kindPrefix[kind]},
+		identity.kindPrefix[kind] + "/" + declaredAPIVersion,
+	][0]
 	declaredCatalogVersion: identity.Version
 
 	// The key is interpolated from the CONTRACT for the three primitive kinds
@@ -181,6 +194,9 @@ import (
 		declaredAPIVersion,
 	][0]
 
+	// The KEY does not carry the filing segment: the apiVersion reaches a
+	// contract key once, as its "@vN" suffix, never as a path component
+	// (enhancement 0010 D49). Filing is versioned; the key space stays flat.
 	declaredFQN: identity.kindPrefix[kind] + "/" + name + "@" + _keyVersion
 
 	// NOTE what is absent: apiVersion is NOT checked against identity. Nothing

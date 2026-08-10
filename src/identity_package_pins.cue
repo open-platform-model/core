@@ -93,16 +93,30 @@ _pinKindPrefixCarriesNoMajor: [false, false, false, false]
 
 // ─── #CatalogMemberFQNGate: one conformant member per kind ──────────────────
 
-// A resource. The key is built from the member's OWN apiVersion, not from the
-// catalog's build (enhancement 0010 D4).
+// A resource, filed under its own apiVersion (enhancement 0010 D49). The key
+// is built from the member's OWN apiVersion, not from the catalog's build
+// (enhancement 0010 D4) — and note the KEY carries no filing segment.
 _pinGateResource: #CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
 	name:                   "config-maps"
-	declaredModulePath:     "opmodel.dev/catalogs/opm/resources"
+	declaredModulePath:     "opmodel.dev/catalogs/opm/resources/v1beta1"
 	declaredAPIVersion:     "v1beta1"
 	declaredCatalogVersion: "1.2.0"
 	declaredFQN:            "opmodel.dev/catalogs/opm/resources/config-maps@v1beta1"
+}
+
+// A GA raw-family member of the same kind, filing under a DIFFERENT segment of
+// the same prefix — per-member apiVersion is what made the filing segment
+// derived content rather than grouping (enhancement 0010 D48, D49).
+_pinGateResourceGA: #CatalogMemberFQNGate & {
+	identity:               _pinIdentityCatalog
+	kind:                   "resources"
+	name:                   "k8s-deployment"
+	declaredModulePath:     "opmodel.dev/catalogs/opm/resources/v1"
+	declaredAPIVersion:     "v1"
+	declaredCatalogVersion: "1.2.0"
+	declaredFQN:            "opmodel.dev/catalogs/opm/resources/k8s-deployment@v1"
 }
 
 // A trait. Same catalog, same build, a different kind segment — which is what
@@ -111,24 +125,33 @@ _pinGateTrait: #CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "traits"
 	name:                   "scaling"
-	declaredModulePath:     "opmodel.dev/catalogs/opm/traits"
+	declaredModulePath:     "opmodel.dev/catalogs/opm/traits/v1beta1"
 	declaredAPIVersion:     "v1beta1"
 	declaredCatalogVersion: "1.2.0"
 	declaredFQN:            "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
 }
 
-// A blueprint, at the FLAT path enhancement 0010 D42 requires. Note what is
-// absent: the "/workload" grouping segment catalog_opm ships today. The
-// MUST-FAIL case below is the one that makes moving it mandatory.
+// A blueprint, at the versioned path enhancement 0010 D49 requires. Note what
+// is absent: an ARBITRARY grouping segment like the "/workload" catalog_opm
+// once shipped (D42's must-fail case below) — the only admitted segment is the
+// member's own apiVersion.
 _pinGateBlueprint: #CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "blueprints"
 	name:                   "stateless-workload"
-	declaredModulePath:     "opmodel.dev/catalogs/opm/blueprints"
+	declaredModulePath:     "opmodel.dev/catalogs/opm/blueprints/v1beta1"
 	declaredAPIVersion:     "v1beta1"
 	declaredCatalogVersion: "1.2.0"
 	declaredFQN:            "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
 }
+
+// The filing segment never enters the key (enhancement 0010 D49): filing is
+// versioned, the key space stays flat.
+_pinKeyOmitsFilingSegment: [
+	strings.Contains(_pinGateResource.declaredFQN, "/v1beta1/"),
+	strings.Contains(_pinGateResourceGA.declaredFQN, "/v1/"),
+]
+_pinKeyOmitsFilingSegment: [false, false]
 
 // The ADAPTER, and DIRECTION ONE of the conditional optional: declaredAPIVersion
 // is ABSENT and the case vets clean. Its key is interpolated from the BUILD
@@ -194,13 +217,15 @@ _pinContractAndImplKeysDiffer: true
 //   Version:    "3.0.0"
 //  }
 
-// catalog_opm's blueprint path AS SHIPPED TODAY, one segment deeper than
-// kindPrefix.blueprints. This is the case enhancement 0010 D42 exists for, and
-// it is what makes moving those five blueprints up a segment mandatory rather
-// than tidy.
+// An ARBITRARY grouping segment — catalog_opm's blueprint path as it once
+// shipped, "/workload" where the member's apiVersion belongs. This is the case
+// enhancement 0010 D42 exists for, and D49's amendment keeps it failing: the
+// only segment the filing derivation produces is the member's own apiVersion,
+// so "/workload" conflicts with "/v1beta1". Re-measured 2026-08-10 under the
+// D49 gate.
 //
 // It fails on BOTH fields, because the gate builds the path and the key from
-// the same value. The declaredFQN one arrives WRAPPED as "2 errors in empty
+// the same identity. The declaredFQN one arrives WRAPPED as "2 errors in empty
 // disjunction" — #FQNType is a disjunction of the contract and implementation
 // forms, so CUE reports the failure of each arm. That wrapper is precisely the
 // diagnostic a hand-rolled string comparison in Go would have discarded, and it
@@ -210,7 +235,7 @@ _pinContractAndImplKeysDiffer: true
 //     ".../blueprints/stateless-workload@v1beta1" and
 //     ".../blueprints/workload/stateless-workload@v1beta1"
 //   _failGateGroupedBlueprint.declaredModulePath: conflicting values
-//     "opmodel.dev/catalogs/opm/blueprints" and
+//     "opmodel.dev/catalogs/opm/blueprints/v1beta1" and
 //     "opmodel.dev/catalogs/opm/blueprints/workload"
 //   _failGateGroupedBlueprint.declaredFQN: invalid value
 //     ".../blueprints/workload/stateless-workload@v1beta1"
@@ -226,6 +251,25 @@ _pinContractAndImplKeysDiffer: true
 //   declaredFQN:            "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1beta1"
 //  }
 
+// The OTHER half of the D49 filing pin — a contract member filing FLAT at its
+// kind prefix, the shape that was conformant before D49 and is refused after
+// it. A transformer filing flat stays conformant (_pinGateTransformer above);
+// only the three contract kinds carry the derived segment. Measured
+// 2026-08-10:
+//   _failGateFlatContractMember.declaredModulePath: conflicting values
+//     "opmodel.dev/catalogs/opm/resources/v1beta1" and
+//     "opmodel.dev/catalogs/opm/resources"
+//
+//  _failGateFlatContractMember: #CatalogMemberFQNGate & {
+//   identity:               _pinIdentityCatalog
+//   kind:                   "resources"
+//   name:                   "config-maps"
+//   declaredModulePath:     "opmodel.dev/catalogs/opm/resources"
+//   declaredAPIVersion:     "v1beta1"
+//   declaredCatalogVersion: "1.2.0"
+//   declaredFQN:            "opmodel.dev/catalogs/opm/resources/config-maps@v1beta1"
+//  }
+
 // A stale provenance value — the catalog moved to 1.2.0 and a member still
 // names the build before it:
 //   _failGateStaleCatalogVersion.declaredCatalogVersion: conflicting values
@@ -235,7 +279,7 @@ _pinContractAndImplKeysDiffer: true
 //   identity:               _pinIdentityCatalog
 //   kind:                   "resources"
 //   name:                   "secrets"
-//   declaredModulePath:     "opmodel.dev/catalogs/opm/resources"
+//   declaredModulePath:     "opmodel.dev/catalogs/opm/resources/v1beta1"
 //   declaredAPIVersion:     "v1beta1"
 //   declaredCatalogVersion: "1.1.0"
 //   declaredFQN:            "opmodel.dev/catalogs/opm/resources/secrets@v1beta1"
@@ -266,14 +310,17 @@ _pinContractAndImplKeysDiffer: true
 //  }
 
 // A member declaring ANOTHER catalog's path — enhancement 0010 D17's rule, and
-// what a member copied wholesale between catalogs looks like:
+// what a member copied wholesale between catalogs looks like. The case files
+// at the foreign catalog's VERSIONED path so it isolates the foreign-path
+// failure rather than compounding it with a missing filing segment.
+// Re-measured 2026-08-10 under the D49 gate:
 //   _failGateForeignPath.declaredFQN: 2 errors in empty disjunction:
 //   _failGateForeignPath.declaredFQN: conflicting values
 //     "opmodel.dev/catalogs/opm/resources/config-maps@v1beta1" and
 //     "example.com/catalogs/other/resources/config-maps@v1beta1"
 //   _failGateForeignPath.declaredModulePath: conflicting values
-//     "opmodel.dev/catalogs/opm/resources" and
-//     "example.com/catalogs/other/resources"
+//     "opmodel.dev/catalogs/opm/resources/v1beta1" and
+//     "example.com/catalogs/other/resources/v1beta1"
 //   _failGateForeignPath.declaredFQN: invalid value
 //     "example.com/catalogs/other/resources/config-maps@v1beta1"
 //     (out of bound =~"…@\\d+\\.\\d+\\.\\d+(-…)?(\\+…)?$")
@@ -282,7 +329,7 @@ _pinContractAndImplKeysDiffer: true
 //   identity:               _pinIdentityCatalog
 //   kind:                   "resources"
 //   name:                   "config-maps"
-//   declaredModulePath:     "example.com/catalogs/other/resources"
+//   declaredModulePath:     "example.com/catalogs/other/resources/v1beta1"
 //   declaredAPIVersion:     "v1beta1"
 //   declaredCatalogVersion: "1.2.0"
 //   declaredFQN:            "example.com/catalogs/other/resources/config-maps@v1beta1"
@@ -305,7 +352,7 @@ _pinContractAndImplKeysDiffer: true
 //   identity:               _pinIdentityCatalog
 //   kind:                   "components"
 //   name:                   "config-maps"
-//   declaredModulePath:     "opmodel.dev/catalogs/opm/components"
+//   declaredModulePath:     "opmodel.dev/catalogs/opm/components/v1beta1"
 //   declaredAPIVersion:     "v1beta1"
 //   declaredCatalogVersion: "1.2.0"
 //   declaredFQN:            "opmodel.dev/catalogs/opm/components/config-maps@v1beta1"
@@ -313,13 +360,15 @@ _pinContractAndImplKeysDiffer: true
 
 // DIRECTION THREE of the conditional optional — a PRIMITIVE omitting
 // declaredAPIVersion — and the one MUST-FAIL case in this file that `task vet`
-// does not catch. Measured 2026-08-07 against cue v0.17.1: `cue vet ./...` AND
-// `cue vet -c ./...` both exit 0 on the case below. A missing required field is
-// an incomplete value, not a wrong one, so only concrete evaluation reports it:
+// does not catch. Measured 2026-08-07 and re-measured 2026-08-10 under the D49
+// gate, cue v0.17.1: `cue vet ./...` AND `cue vet -c ./...` both exit 0 on the
+// case below. A missing required field is an incomplete value, not a wrong
+// one, so only concrete evaluation reports it:
 //
 //   $ cue export -e '_failGateMissingAPIVersion' ./...
 //   _failGateMissingAPIVersion.declaredAPIVersion: field is required but not present
 //   _failGateMissingAPIVersion.declaredFQN: 2 errors in empty disjunction:
+//   _failGateMissingAPIVersion.declaredModulePath: required field missing: declaredAPIVersion
 //   _failGateMissingAPIVersion._keyVersion: required field missing: declaredAPIVersion
 //
 // That is the correct surfacing — the publishing tool evaluates concretely and
@@ -328,7 +377,9 @@ _pinContractAndImplKeysDiffer: true
 // it; there is no vet-visible form of this case. The same exception, for the
 // same reason, is recorded at the bottom of identity_pins.cue.
 //
-// Note the SECOND line: _keyVersion names the missing field too. That is the
+// Note the TWO derived-field lines: under D49 both declaredModulePath (the
+// filing segment) and _keyVersion (the key) name the missing field — the two
+// places the apiVersion reaches, each reporting its absence. That is the
 // conditional working as designed — the transformer arm was not selected, so
 // evaluation reached the optional and found nothing. It is also why
 // _pinGateTransformer above vets clean: there the arm IS selected, and the
@@ -338,7 +389,7 @@ _pinContractAndImplKeysDiffer: true
 //   identity:               _pinIdentityCatalog
 //   kind:                   "resources"
 //   name:                   "config-maps"
-//   declaredModulePath:     "opmodel.dev/catalogs/opm/resources"
+//   declaredModulePath:     "opmodel.dev/catalogs/opm/resources/v1beta1"
 //   declaredCatalogVersion: "1.2.0"
 //   declaredFQN:            "opmodel.dev/catalogs/opm/resources/config-maps@v1beta1"
 //  }

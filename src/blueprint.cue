@@ -14,12 +14,14 @@ import (
 		name!: #NameType // Example: "stateless-workload"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		// Exactly "<catalog registryPath>/blueprints" — one segment per kind,
-		// no grouping segment beneath it (enhancement 0010 D42).
-		// #CatalogMemberFQNGate compares this against
-		// #IdentityPackage.kindPrefix.blueprints by EQUALITY, so a blueprint
-		// filed one segment deeper is refused at publish.
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/blueprints"
+		// Exactly "<catalog registryPath>/blueprints/<apiVersion>" — one base
+		// segment per kind and one version segment beneath it, DERIVED from
+		// this blueprint's own apiVersion, never an arbitrary grouping
+		// (enhancement 0010 D42 as amended by D49). #CatalogMemberFQNGate
+		// compares this against kindPrefix.blueprints + "/" + apiVersion by
+		// EQUALITY, so a blueprint filed flat or under any other segment is
+		// refused at publish. The version segment never enters the fqn.
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/blueprints/v1beta1"
 
 		// apiVersion: this contract's own level, and the only component of its
 		// key (enhancement 0010 D4). A blueprint carries one because it is a

@@ -13,7 +13,7 @@ import (
 		name!: #NameType // Example: "container"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/resources"
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/resources/v1beta1" (kind prefix + this resource's own apiVersion, 0010 D49)
 
 		// apiVersion: this contract's own level, and the only component of its
 		// key (enhancement 0010 D4). Moved when this resource's shape breaks —
