@@ -4,6 +4,10 @@ on:
   push:
     branches: [v1]
   pull_request:
+  # Dispatched by release.yml onto the release-please branch — a PR created
+  # with GITHUB_TOKEN never fires pull_request, so the required check on the
+  # protected v1 branch needs this route.
+  workflow_dispatch:
 
 jobs:
   ci:
