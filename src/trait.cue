@@ -12,7 +12,7 @@ import (
 		name!: #NameType // Example: "scaling"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/traits"
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/traits/v1beta1" (kind prefix + this trait's own apiVersion, 0010 D49)
 
 		// apiVersion: this contract's own level, and the only component of its
 		// key (enhancement 0010 D4). Moved when this trait's shape breaks — a
