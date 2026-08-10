@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# core/ commit-msg hook — refuse a bare @mention in a commit message.
+# core/ commit-msg hook — refuse a bare @mention or forbidden AI attribution
+# in a commit message.
 #
 # Source of truth: core/.tasks/hooks/commit-msg (installed by `task hooks:install`,
 # which symlinks .git/hooks/commit-msg to this file).
@@ -25,6 +26,11 @@
 #   AT_MENTION_OK=1 git commit ...
 #
 # Full rule: CLAUDE.md § "Never Write a Bare `@name` Into GitHub Text"
+#
+# Attribution (no bypass): the only AI attribution allowed is the exact plain
+# trailer `Co-Authored-By: Claude <noreply@anthropic.com>`. Session IDs/URLs,
+# generated-with footers, and model-versioned AI co-author lines are refused.
+# Full rule: CLAUDE.md § "Commit and PR Attribution — Plain Co-Author Line Only"
 
 set -euo pipefail
 
@@ -38,31 +44,57 @@ body=$(sed -e '/^#/d' -e '/^diff --git /,$d' "$msg_file")
 # start of line, whitespace, quote, backtick, paren, `>` — is a boundary GitHub
 # accepts, which is why quoting does not help.
 hits=$(printf '%s\n' "$body" | grep -nE '(^|[^A-Za-z0-9])@[A-Za-z0-9]' || true)
-
-if [[ -z "$hits" ]]; then
-  exit 0
-fi
-
 if [[ "${AT_MENTION_OK:-}" == "1" ]]; then
+  hits=""
+fi
+
+# --- AI attribution (no bypass) ------------------------------------------
+# Allowed, exactly: Co-Authored-By: Claude <noreply@anthropic.com>
+ai='claude|anthropic|copilot|openai|chatgpt|gemini|codex|aider|devin|cursor|windsurf'
+
+session=$(printf '%s\n' "$body" | grep -inE 'claude-session[[:space:]]*:|claude\.ai/code/session' || true)
+
+generated=$(printf '%s\n' "$body" | grep -inE 'generated[[:space:]]+with' | grep -iE "${ai}|🤖" || true)
+
+coauthor=$(printf '%s\n' "$body" | grep -inE '^[[:space:]]*co-authored-by:' \
+  | grep -iE "$ai" \
+  | grep -ivF 'co-authored-by: claude <noreply@anthropic.com>' || true)
+
+if [[ -z "$hits" && -z "$session" && -z "$generated" && -z "$coauthor" ]]; then
   exit 0
 fi
 
-cat >&2 <<EOF
-ERROR: commit message contains a bare @mention.
-
-GitHub will turn each of these into a link to a real user account, and a pushed
-commit message can never be edited:
-
-$(printf '%s\n' "$hits" | sed 's/^/  /')
-
-Fix it one of these ways:
-  • Glue the @ to its path      opmodel.dev/core@v2      (safe)
-  • Drop the @ entirely         "the v2 line", "major v2"
-  • NOT quoting or backticks    "@v2", '@v2', \`@v2\`     (still mentions)
-
-If you genuinely mean to mention a GitHub user:
-    AT_MENTION_OK=1 git commit ...
-
-Rule: CLAUDE.md § "Never Write a Bare \`@name\` Into GitHub Text"
-EOF
+{
+  echo "ERROR: commit message violates the mention/attribution rules."
+  echo
+  if [[ -n "$hits" ]]; then
+    echo "Bare @mention — GitHub links each of these to a real user account, and a"
+    echo "pushed commit message can never be edited:"
+    printf '%s\n' "$hits" | sed 's/^/  /'
+    echo
+    echo "  • Glue the @ to its path      opmodel.dev/core@v2      (safe)"
+    echo "  • Drop the @ entirely         \"the v2 line\", \"major v2\""
+    echo "  • NOT quoting or backticks    \"@v2\", '@v2', \`@v2\`     (still mentions)"
+    echo "  • Real mention intended?      AT_MENTION_OK=1 git commit ..."
+    echo "  Rule: CLAUDE.md § \"Never Write a Bare \`@name\` Into GitHub Text\""
+    echo
+  fi
+  if [[ -n "$session" ]]; then
+    echo "Session identifier — never allowed, no bypass:"
+    printf '%s\n' "$session" | sed 's/^/  /'
+    echo
+  fi
+  if [[ -n "$generated" ]]; then
+    echo "AI generated-with footer — never allowed, no bypass:"
+    printf '%s\n' "$generated" | sed 's/^/  /'
+    echo
+  fi
+  if [[ -n "$coauthor" ]]; then
+    echo "AI co-author trailer in a non-plain form. The only allowed AI attribution is"
+    echo "exactly:  Co-Authored-By: Claude <noreply@anthropic.com>"
+    printf '%s\n' "$coauthor" | sed 's/^/  /'
+    echo
+  fi
+  echo "Rule: CLAUDE.md § \"Commit and PR Attribution — Plain Co-Author Line Only\""
+} >&2
 exit 1
