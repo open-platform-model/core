@@ -153,7 +153,7 @@ Releases are driven entirely by commit message types (Conventional Commits). Use
 | `fix:`                            | patch                           | yes          | wrong constraint, broken default, definition behaving wrong   |
 | `perf:`                           | patch                           | yes          | schema compile-time / evaluation cost improvements            |
 | `revert:`                         | patch                           | yes          | undo of a prior released change                               |
-| `feat!:` / `BREAKING CHANGE:`     | prerelease (advances `-alpha.N` on `@v2`) | yes | removing/renaming a definition, tightening a published constraint |
+| `feat!:` / `feat(scope)!:` / `BREAKING CHANGE:` | prerelease (advances `-alpha.N` on `@v2`) | yes | removing/renaming a definition, tightening a published constraint |
 | `refactor:`                       | none                            | hidden       | moving files, renaming internal-only identifiers, restructuring |
 | `docs:`                           | none                            | hidden       | README, design notes, comments — anything consumers don't see  |
 | `style:`                          | none                            | hidden       | formatting-only changes (run `task fmt`)                       |
@@ -166,6 +166,7 @@ Examples:
 - Moving `*.cue` files between directories with no content change → `refactor:`
 - Adding a new `#Component` or expanding a definition's field set → `feat:`
 - Tightening a regex constraint already in a published definition → `feat!:` (consumers may now fail validation)
+- **With a scope, the `!` goes after the scope: `feat(identity)!:`.** The form `feat!(identity):` is NOT valid Conventional Commits syntax — release-please fails to parse it, silently classifies the commit as non-user-facing, and cuts no release (measured 2026-08-10: core PR 45 merged as `feat!(identity): …` and release-please reported "No user facing commits found"). The commit-msg hook does not catch this; check the subject by eye.
 - Loosening a regex constraint → `fix:` (was rejecting things it should have accepted)
 - Editing `SPEC.md` only → `docs:`
 - Editing `Taskfile.yml`, hooks, workflows → `chore:` or `ci:`
