@@ -61,13 +61,26 @@ The schema is the source of truth for OPM. Every OPM artifact is typed against t
 
 This is a pure CUE repository: schema definitions plus the tooling to validate and publish them. No Go code.
 
+## Branch model (read before committing)
+
+| Branch | Module line | Purpose |
+| --- | --- | --- |
+| `main` | `opmodel.dev/core@v2` | Living development line (v2.0.0-alpha.N prereleases → stable v2). All new schema work, including the enhancement 0010/0011 identity and publishing reshape. |
+| `v1` | `opmodel.dev/core@v1` | **Protected maintenance branch** — the stable v1 line (`v1.1.0`+). release-please targets that branch and `versioning: always-bump-patch` pins it to 1.1.x patch releases; the `@v1` module path additionally refuses any tag outside major 1 at publish. |
+
+**You are on `main`.** Fixes needed by consumers still pinning `opmodel.dev/core@v1`
+(the v1 catalogs and the v1 module fleet) belong on the `v1` branch, not here.
+**Never merge `main` into `v1`** — the identity reshape must not leak into the v1
+contract. The `v1` branch carries its own copy of this file with the mirror-image
+warning.
+
 ## Repository Rules
 
 - Authority is this file and `Taskfile.yml`. If they disagree with anything below, they win.
 - Keep changes small. Split broad requests into tiny, independently verifiable steps.
 - The schema is a published contract. A breaking change to the `core` package is a breaking change for every consumer — prefer additive evolution.
 - Never run `cue mod publish` against a live registry manually — let CI publish.
-- The CUE module is on major `@v2`, currently shipping `v2.0.0-alpha.N` prereleases (enhancement 0010 — the identity reshape graduated the schema off the `@v1` line, which is retired at `v1.1.0-alpha.1`). release-please runs in prerelease mode (`prerelease: true`, `prerelease-type: "alpha"`, `bump-minor-pre-major: false` in `release-please-config.json`); a `feat!:` advances the alpha counter **within** the major — it does not bump the major. Crossing a major is a deliberate act: edit `src/cue.mod/module.cue`'s `module:` line and force the version with a `Release-As: X.0.0-alpha.1` footer in the same commit. The two must land together, or `cue mod publish` rejects the tag as not matching the declared major. A future stable cut drops the `-alpha` suffix.
+- The CUE module is on major `@v2`, currently shipping `v2.0.0-alpha.N` prereleases (enhancement 0010 — the identity reshape moved the schema off the `@v1` line, which lives on as the protected `v1` maintenance branch, stable at `v1.1.0`). release-please runs in prerelease mode (`prerelease: true`, `prerelease-type: "alpha"`, `bump-minor-pre-major: false` in `release-please-config.json`); a `feat!:` advances the alpha counter **within** the major — it does not bump the major. Crossing a major is a deliberate act: edit `src/cue.mod/module.cue`'s `module:` line and force the version with a `Release-As: X.0.0-alpha.1` footer in the same commit. The two must land together, or `cue mod publish` rejects the tag as not matching the declared major. A future stable cut drops the `-alpha` suffix.
 
 ## Entrypoint
 
