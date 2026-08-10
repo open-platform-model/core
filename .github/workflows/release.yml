@@ -9,6 +9,7 @@ permissions:
   contents: write
   pull-requests: write
   packages: write
+  actions: write
 
 env:
   CUE_VERSION: 'v0.17.1'
@@ -30,6 +31,21 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # A PR created with GITHUB_TOKEN never triggers pull_request workflows,
+      # so the required CI check would sit pending forever on the protected
+      # main branch. workflow_dispatch events are exempt from that suppression
+      # — dispatch CI onto the release branch so the check run lands on the PR
+      # head SHA. Runs on every push to main so an updated release PR is
+      # re-checked too; if no release branch exists there is nothing to do.
+      - name: Trigger required CI on the release PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ci.yml \
+            --repo "${{ github.repository }}" \
+            --ref "release-please--branches--main--components--core" \
+            || echo "no open release branch - nothing to trigger"
 
   publish-cue:
     name: Publish opmodel.dev/core
