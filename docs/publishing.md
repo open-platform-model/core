@@ -156,7 +156,7 @@ Full transcript of the resolver tests is in the design conversation; not duplica
 
 - `.tasks/branch-tag.sh` — pure shell function that prints the tag for HEAD. Reads the major from `src/cue.mod/module.cue` and `NEXT_MINOR` from the highest stable `vMAJOR.*.*` git tag (falls back to `0` if no stable release exists yet for the current major). Refuses to run on `main` or against a dirty worktree.
 - `task branch-tag` — prints the tag without side effects.
-- `task publish:branch` — runs `task check` then `cue mod publish $TAG` from `src/`. Honours `CUE_REGISTRY`, so the same command publishes to a local registry (`localhost:5099+insecure`) or GHCR depending on the environment.
+- `task publish:branch` — runs `task check` then `cue mod publish $TAG` from `src/`. Honours `CUE_REGISTRY`, so the same command publishes to the workspace local registry (`localhost:5000+insecure`) or GHCR depending on the environment. In CI this is the sanctioned `-dev.*` pre-release path; a laptop publish is a gated exception (Registry Policy rule 2, workspace root `CLAUDE.md`).
 - `.github/workflows/branch-publish.yml` — fires on `push` to any branch except `main`. Skipped on forks (no `packages: write`). Calls `task publish:branch` after logging into GHCR with `GITHUB_TOKEN`.
 
 ## Follow-ups (not yet implemented)
