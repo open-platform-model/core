@@ -125,8 +125,10 @@ context: |
   - `refactor:`, `docs:`, `style:`, `chore:`, `test:`, `ci:`, `build:` — no release.
   - **Rule of thumb**: if the published CUE schema is byte-identical before and after, it is not a
     `feat:` or a `fix:`.
-  - Never add AI attribution, co-author trailers, generated-with footers, or session IDs/URLs to a
-    commit message, PR title, PR body, issue or review comment. See `CLAUDE.md`.
+  - AI attribution: an optional plain `Co-Authored-By: Claude <noreply@anthropic.com>` trailer is
+    the only allowed form — never generated-with footers, model-versioned co-author lines, or
+    session IDs/URLs in a commit message, PR title, PR body, issue or review comment. See
+    `CLAUDE.md`.
 
   ## Validation Gates (before merge)
   1. `task fmt:check` — CUE files are formatted.
