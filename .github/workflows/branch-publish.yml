@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore:
       - main
+      # v1 is a release branch (release-please targets it) — dev tags come
+      # from topic branches only.
+      - v1
 
 permissions:
   contents: read

@@ -30,13 +30,26 @@ The schema is the source of truth for OPM. Every OPM artifact is typed against t
 
 This is a pure CUE repository: schema definitions plus the tooling to validate and publish them. No Go code.
 
+## Branch model (read before committing)
+
+| Branch | Module line | Purpose |
+| --- | --- | --- |
+| `main` | `opmodel.dev/core@v2` | Living development line (v2.0.0-alpha.N prereleases → stable v2). All new schema work, including the enhancement 0010/0011 identity and publishing reshape. |
+| `v1` | `opmodel.dev/core@v1` | **Protected maintenance branch** — the stable v1 line (`v1.1.0`+). release-please targets this branch and `versioning: always-bump-patch` pins it to 1.x patch releases; the `@v1` module path additionally refuses any tag outside major 1 at publish. |
+
+**You are on `v1`.** Maintenance fixes only: no new definitions, no shape changes, no
+constraint tightening — a consumer pinning `opmodel.dev/core@v1` must never be broken by
+a release from this branch. Every merged fix releases the next `1.1.x` patch
+automatically. **Never merge `main` into this branch** — the v2 line's identity reshape
+must not leak into v1. The living schema is on `main`.
+
 ## Repository Rules
 
 - Authority is this file and `Taskfile.yml`. If they disagree with anything below, they win.
 - Keep changes small. Split broad requests into tiny, independently verifiable steps.
 - The schema is a published contract. A breaking change to the `core` package is a breaking change for every consumer — prefer additive evolution.
 - Never run `cue mod publish` against a live registry manually — let CI publish.
-- The CUE module is on major `@v1`, currently shipping `v1.0.0-alpha.N` prereleases (enhancement 0002 D13 — the `#ModuleRelease`→`#ModuleInstance` rename graduated the schema off the retired `@v0` line). release-please runs in prerelease mode (`prerelease: true`, `prerelease-type: "alpha"`, `bump-minor-pre-major: false` in `release-please-config.json`); a `feat!:` advances the alpha counter. A future stable cut drops the `-alpha` suffix; a later breaking revision bumps the module major (`@v1` → `@v2`).
+- The CUE module is on major `@v1`, stable as of `v1.1.0` (graduated from the `v1.x-alpha.N` prerelease train). release-please runs with `versioning: always-bump-patch` in `release-please-config.json`: every releasable commit on this branch produces the next `1.1.x` patch, and no commit type — `feat!:` included — can cross the major. Breaking work belongs on `main` (the `@v2` line); see the Branch model section.
 
 ## Entrypoint
 

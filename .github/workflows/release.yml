@@ -1,9 +1,14 @@
 name: Release
 
+# v1 maintenance line: release-please targets the v1 branch and is pinned to
+# the 1.x patch line by `versioning: always-bump-patch` (no commit type can
+# cross the major). The module path major (@v1) additionally gates the publish
+# — a tag outside major 1 is refused by `cue mod publish`. The v2 line lives
+# on main.
 on:
   push:
     branches:
-      - main
+      - v1
 
 permissions:
   contents: write
@@ -30,6 +35,7 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          target-branch: v1
 
   publish-cue:
     name: Publish opmodel.dev/core
