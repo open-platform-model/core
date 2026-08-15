@@ -205,3 +205,11 @@ rules:
     - Include `task generate:index` as a task whenever definitions are added, removed or renamed,
       or the tree under `src/` changes.
     - Include the validation gates as final tasks (`task check`, or the four individually).
+    - "NEVER include delivery operations as tasks: no committing, pushing, branching,
+      opening or merging PRs, tagging, cutting releases, and no commit-message or PR-body
+      hygiene checks. tasks.md covers implementation and verification only — delivery
+      happens afterwards under the repo's normal git workflow and needs no spelling out.
+      (The SPEC.md same-commit pairing rule above is an atomicity constraint on how a
+      schema task lands, not a commit task to schedule.) Sole exception: a change whose
+      stated deliverable is itself a release or publishing operation; there those steps
+      ARE the implementation."
