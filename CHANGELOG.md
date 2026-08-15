@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0-alpha.5](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.4...v2.0.0-alpha.5) (2026-08-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **identity:** file contract kinds under a derived apiVersion segment ([#46](https://github.com/open-platform-model/core/issues/46))
+
+### Features
+
+* **identity:** file contract kinds under a derived apiVersion segment ([#46](https://github.com/open-platform-model/core/issues/46)) ([786284b](https://github.com/open-platform-model/core/commit/786284b8ecf36ab4428f5b1b97bff1517feda020))
+
 ## [2.0.0-alpha.4](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.3...v2.0.0-alpha.4) (2026-08-09)
 
 
