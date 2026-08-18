@@ -1056,3 +1056,103 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 - Gates: [`#Resource`](#21-resource), [`#Trait`](#22-trait), [`#Blueprint`](#33-blueprint), [`#ComponentTransformer`](#41-componenttransformer) — each section's `metadata.fqn` constraint delegates here
 - Sibling gate: [`#TraitOptionalGate`](#51-traitoptionalgate)
 - Design source: enhancement 0011 D22, resting on enhancement 0010 D4, D17, D21, D25, D42, D44, D49
+
+---
+
+## 6. Layering Contract — Defaults and Narrowing
+
+### 6.1 Definition
+
+This section is a behavioral contract, not a construct. It states which authoring layer may
+write which kind of value — bounds, narrowing constraints, defaults (`*`), or concrete data —
+onto a component field, so that the composed value is deterministic and every layer's
+contribution survives.
+
+CUE cannot enforce this contract. Unification is commutative, associative, and idempotent: the
+lattice deliberately erases *where* a constraint came from, so "the blueprint's default beats
+the trait's" is inexpressible in the language (see the CUE spec's default rules, M0–M3/U0–U2,
+and upstream discussion cue-lang/cue#2159). The rules below are therefore specification,
+enforced socially in catalogs today and by `cli` publish/vet gates later. Each rule carries an
+identifier (`L1`…) for those gates to cite.
+
+The contract rests on two measured CUE behaviors (cue v0.17.1):
+
+1. **Concrete data beats a default.** `(*"A" | string) & "B"` → `"B"`. The marked disjunct is
+   eliminated; the unmarked arm accepts the data. This is what makes an author's explicit value
+   win without any precedence machinery.
+2. **Two differing defaults annihilate.** `(*"A" | string) & (*"B" | string)` → the defaults
+   unify to bottom and are discarded (spec rule U2); the value degrades to an unresolved
+   disjunction and fails concreteness at render. A default is therefore a resource a field can
+   carry **once** across the whole composition.
+
+### 6.2 The layers
+
+| Layer | Question it answers | May write | MUST NOT write |
+| --- | --- | --- | --- |
+| `#Trait` / `#Resource` schema | What values exist at all? | bounds (types, disjunctions, ranges) | defaults (`*`) |
+| `#Blueprint` | What does this target kind accept, and what is a good starting value? | narrowing conjunctions; at most one field-level default per field | widening; whole-struct defaults |
+| Module author — `#config` | What is this module's configurable surface? | defaults (`*`) on its own fields | — |
+| Module author — `#components` | What does this module want? | concrete data; references to `#config` | defaults (`*`) written directly onto component fields |
+| `#ComponentTransformer` | Author and blueprint both silent — now what? | absence-keyed fallbacks (`if spec.x != _|_` with a local default) | writes into component `spec` |
+
+The resulting precedence — author data > blueprint default > transformer fallback — is not a
+feature of any construct. It falls out of behavior 1 (data eliminates the blueprint's marked
+arm) going up, and absence falling through to the transformer going down.
+
+### 6.3 Constraints
+
+- **L1** — A primitive's `spec` schema MUST NOT mark a default. A primitive is shared by every
+  target kind; a default there is a global claim no type-agnostic layer is entitled to make,
+  and it permanently spends the field's one default slot (behavior 2).
+- **L2** — A `#Blueprint` MAY conjoin narrowing constraints onto composed fields. Narrowing
+  MUST be subtractive: every value the blueprint admits MUST be admitted by the primitive's
+  schema. (Subtractive unification cannot be violated accidentally in CUE — a widening attempt
+  conflicts — so the gate obligation is on catalogs offering values a target kind rejects.)
+- **L3** — A `#Blueprint` MAY mark at most one default per field, and it MUST be field-level
+  (on a leaf), never a whole-struct default. A whole-struct marked disjunct is eliminated in
+  its entirety by any author override of any one field, silently discarding the remaining
+  defaults.
+- **L4** — A module author MAY mark defaults only inside `#config`. Component field values in
+  `#components` MUST be concrete data or references.
+- **L5** — A reference that carries an unresolved default MUST NOT flow into a component field
+  that is blueprint-defaulted. The two defaults annihilate (behavior 2) and the module fails
+  concreteness at render with an error pointing at neither author. When the destination is
+  defaulted, the module MUST pass resolved data — for strings, interpolation (`"\(#config.x)"`)
+  forces resolution. Gate candidate: a `#components` value with `hasDefault=true` whose
+  destination also carries a default.
+- **L6** — A `#ComponentTransformer` MUST derive fallbacks from field absence
+  (`if #component.spec.x != _|_`) and MUST NOT unify values back into a component's `spec`.
+  The transformer is the only layer that knows the target kind, so kind-dependent defaults
+  live here — or are delegated to the platform runtime by omitting the field entirely.
+
+### 6.4 Rationale
+
+- **Why primitives publish bounds and never defaults.** The default for a field is almost
+  always kind-dependent (an update strategy means different things to a Deployment and a
+  StatefulSet), and the primitive is the one layer that does not know the kind. Upstream CUE
+  guidance is the same rule stated generally: a consumer cannot override a base schema's `*`,
+  only collide with it — publish bounds, let the leaf default.
+- **Why exactly one `*` per field.** Behavior 2. Defaults do not layer, override, or shadow;
+  they unify, and unification of differing defaults is annihilation. Any design that needs
+  "the closer default wins" is asking for provenance the lattice erases by construction.
+- **Why the author's layer is `#config`.** The module author is entitled to defaults — theirs
+  is the layer closest to intent. `#config` is where those defaults resolve against instance
+  values *before* the result crosses into the composition, so by the time a value reaches a
+  component field it is data (behavior 1) and cleanly beats any blueprint default. Writing
+  `*` directly onto component fields instead would meet the blueprint's `*` and annihilate
+  (L5).
+- **Why transformers default by absence.** An absent field is the only signal that both the
+  author and the blueprint declined to decide. A transformer that instead unified a value into
+  the component would make the field present for every downstream consumer, destroying the
+  signal it read — and would put render-time machinery into the authoring-time contract.
+- **Why this is specification rather than schema.** Every rule above is about *which layer* a
+  value came from, and CUE's evaluation model deliberately cannot see that. The enforcement
+  point is the toolchain: catalog publish gates for L1–L3, module vet gates for L4–L5,
+  transformer review for L6.
+
+### 6.5 See also
+
+- Narrows: [`#Trait`](#22-trait), [`#Blueprint`](#33-blueprint) — the constructs whose
+  authoring this section constrains
+- Executes the fallback arm: [`#ComponentTransformer`](#41-componenttransformer)
+- Enforcement model precedent: §5 publish gates — shipped surface, toolchain-enforced
