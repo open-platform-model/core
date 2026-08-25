@@ -17,8 +17,11 @@ package core
 		// cue v0.17.1 a failed validated default degrades to a bare
 		// `incomplete value` that never names the offending string, and it
 		// leaves resourceName non-concrete so the guard below cannot run.
-		// _resourceNameDefaultFits carries the length check instead.
-		resourceName: *"\(#instance.name)-\(name)" | #NameType
+		// _resourceNameDefaultFits carries the length check instead. The
+		// error() arm is reported only when every other arm fails, replacing
+		// the nested empty-disjunction output an explicit invalid name would
+		// otherwise produce.
+		resourceName: *"\(#instance.name)-\(name)" | #NameType | error("resourceName \"\(resourceName)\" is not a DNS label (lowercase alphanumerics and hyphens, 1-63 runes)")
 
 		// Component labels — descriptive metadata for this component, and the
 		// labels that reach rendered output via #TransformerContext.
@@ -120,12 +123,19 @@ package core
 	// The default resource name, and the assertion that it fits a DNS label
 	// when it is the name in use. Both operands are #NameType, so the only
 	// way the concatenation can fail is the 63-rune bound; naming the
-	// string in the diagnostic is the point (enhancement 0019 D16). Guarded
-	// so an explicit override, which #NameType already validates, is never
-	// measured against the default.
+	// string, its length and the remedy in the diagnostic is the point
+	// (enhancement 0019 D16). Guarded so an explicit override, which
+	// #NameType already validates, is never measured against the default.
+	// len is exact here: #NameType admits ASCII only.
+	//
+	// The error MUST live on this hidden field. Writing it onto
+	// metadata.resourceName inside the guard (the how-to's assertion shape)
+	// creates a cycle through the field the guard reads, and cue v0.17.1
+	// resolves it by silently not applying the comprehension: the overlong
+	// name exports clean.
 	_resourceNameDefault: "\(#instance.name)-\(metadata.name)"
-	if metadata.resourceName == _resourceNameDefault {
-		_resourceNameDefaultFits: _resourceNameDefault & #NameType
+	if metadata.resourceName == _resourceNameDefault && len(_resourceNameDefault) > 63 {
+		_resourceNameDefaultFits: error("default resourceName \"\(_resourceNameDefault)\" is \(len(_resourceNameDefault)) runes, over the 63-rune DNS label limit: shorten the instance or component name, or set metadata.resourceName explicitly")
 	}
 
 	// Single source of truth for this component's computed names. `resourceName`
