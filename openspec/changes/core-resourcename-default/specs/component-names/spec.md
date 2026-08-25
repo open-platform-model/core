@@ -22,7 +22,8 @@
 #### Scenario: Invalid explicit resource name is refused
 
 - **WHEN** a component sets `metadata.resourceName: "Bad_Name"`
-- **THEN** validation fails at `metadata.resourceName` with `#NameType`'s regex bound in the diagnostic
+- **THEN** validation fails at `metadata.resourceName` with a single custom message naming `"Bad_Name"` and the DNS-label rule (lowercase alphanumerics and hyphens, 1-63 runes)
+- **AND** the diagnostic does not expose the default arm (no "conflicting values" line mentioning the instance-qualified default)
 
 ### Requirement: DNS variants follow the resource name
 
@@ -40,12 +41,12 @@
 
 ### Requirement: An overlong default refuses the render legibly
 
-When no `resourceName` is authored and `"\(#instance.name)-\(metadata.name)"` exceeds 63 runes, the component MUST fail validation, and the diagnostic MUST name the offending concatenated string and the violated bound. An explicit `resourceName` MUST NOT be subject to that check.
+When no `resourceName` is authored and `"\(#instance.name)-\(metadata.name)"` exceeds 63 runes, the component MUST fail validation, and the diagnostic MUST name the offending concatenated string, its length in runes, the 63-rune limit, and the remedy (shorten the instance or component name, or set `metadata.resourceName`). An explicit `resourceName` MUST NOT be subject to that check.
 
 #### Scenario: Overlong default is refused with the string in the diagnostic
 
 - **WHEN** an instance named with 40 runes holds a component named with 30 runes and no `resourceName`
-- **THEN** validation fails with a diagnostic containing the 71-rune concatenation and `strings.MaxRunes(63)`
+- **THEN** validation fails with a diagnostic containing the 71-rune concatenation, `71 runes`, `63-rune` and `set metadata.resourceName explicitly`
 - **AND** the diagnostic is not a bare `incomplete value` naming only `#NameType`'s constraints
 
 #### Scenario: Overlong default escaped by an explicit name

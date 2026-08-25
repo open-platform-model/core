@@ -34,6 +34,12 @@ Constraints that shape the design:
 **Decision**: The last spelling.
 **Rationale**: D16's requirement is the outcome (an overlong concatenation refuses the render, legibly) and the caveat it records is exactly the measured failure of the validated form. Unifying the default branch with `#NameType` is what makes the guard non-evaluable, so the assertion carries the validation instead, and it can only ever catch the length bound because both operands are already `#NameType`. The unvalidated spelling D16 rejected was rejected *without* the assertion; with it, nothing ships silently. This refines the mechanism in D16, not the decision; the note goes into the delivery log summary rather than a revision of the entry.
 
+### Diagnostics through the built-in `error()`
+**Context**: With the guarded assertion in place, the overlong diagnostic read `does not satisfy strings.MaxRunes(63)` and an explicit invalid name produced nine nested "empty disjunction / invalid interpolation" lines, one of them `conflicting values "shop-web" and "Bad_Name"`, which exposes the interpolated default arm and reads as nonsense to an author. The user asked whether `error()` (CUE v0.14+, under the v0.17.0 floor) could make both clearer.
+**Explored**: Three placements on cue v0.17.1. (V1) `error(...)` as a last disjunction arm on `resourceName` plus `error(...)` as the value of the hidden `_resourceNameDefaultFits` under a guard extended with `&& len(_resourceNameDefault) > 63`. (V2) V1's assertion with the plain disjunction. (V3) the how-to's assertion shape, `metadata: resourceName: error(...)` inside the guard.
+**Decision**: V1.
+**Rationale**: V1 turns the overlong case into one sentence naming the string, its length and the remedy, and the invalid-explicit case into a single message naming the value and the DNS-label rule; the disjunction's error arm is only reported when every other arm fails, so the default and override paths are untouched (all pass cases re-measured identical). V3 is a trap: the guard reads `metadata.resourceName`, writing to it inside the same comprehension is a cycle, and cue v0.17.1 resolves it by not applying the comprehension at all, silently, so the overlong name exports clean. The assertion therefore stays on the hidden field, and the doc comment and SPEC rationale say why. `len` is exact because `#NameType` admits ASCII only.
+
 ### Guard semantics
 **Context**: The guard compares `metadata.resourceName` to the concatenation; an author who writes the default value explicitly hits the assertion too.
 **Explored**: The `sameexplicit` case above.
@@ -59,18 +65,20 @@ Constraints that shape the design:
 		// `incomplete value` that never names the offending string, and it
 		// leaves resourceName non-concrete so the guard below cannot run.
 		// _resourceNameDefaultFits carries the length check instead.
-		resourceName: *"\(#instance.name)-\(name)" | #NameType
+		resourceName: *"\(#instance.name)-\(name)" | #NameType | error("resourceName \"\(resourceName)\" is not a DNS label (lowercase alphanumerics and hyphens, 1-63 runes)")
 	}
 
 	// The default resource name, and the assertion that it fits a DNS label
 	// when it is the name in use. Both operands are #NameType, so the only
 	// way the concatenation can fail is the 63-rune bound; naming the
-	// string in the diagnostic is the point (0019 D16). Guarded so an
-	// explicit override, which #NameType already validates, is never
-	// measured against the default.
+	// string, its length and the remedy is the point (0019 D16). Guarded so
+	// an explicit override, which #NameType already validates, is never
+	// measured against the default. The error MUST live on this hidden
+	// field: written onto metadata.resourceName it cycles through the guard
+	// and is silently dropped (measured, cue v0.17.1).
 	_resourceNameDefault: "\(#instance.name)-\(metadata.name)"
-	if metadata.resourceName == _resourceNameDefault {
-		_resourceNameDefaultFits: _resourceNameDefault & #NameType
+	if metadata.resourceName == _resourceNameDefault && len(_resourceNameDefault) > 63 {
+		_resourceNameDefaultFits: error("default resourceName \"\(_resourceNameDefault)\" is \(len(_resourceNameDefault)) runes, over the 63-rune DNS label limit: shorten the instance or component name, or set metadata.resourceName explicitly")
 	}
 ```
 
@@ -79,8 +87,8 @@ Constraints that shape the design:
 ## SPEC.md changes (`## #Component`)
 
 - Shape: `resourceName: *"\(#instance.name)-\(name)" | #NameType  // defaults to <instance>-<component>; override cascade`, plus the two hidden fields with a one-line comment.
-- Constraints: replace "defaults to `metadata.name`" with the instance-qualified default; add "When no `resourceName` is authored and the default exceeds 63 runes, the component MUST fail validation with a diagnostic naming the concatenation; an explicit `resourceName` is validated by `#NameType` alone."
-- Rationale: rewrite the "Why `resourceName` is a cascade" bullet's default case (the common case is now the qualified name, and why: collision between two instances of one module in a namespace, agreement with what fleets render, the Helm fullname convention); add "Why the default branch is not unified with `#NameType`" with the measured v0.17.1 behaviour.
+- Constraints: replace "defaults to `metadata.name`" with the instance-qualified default; add "When no `resourceName` is authored and the default exceeds 63 runes, the component MUST fail validation with a diagnostic naming the concatenation, its length, the limit and the remedy; an explicit `resourceName` is validated by `#NameType` alone and reported with a single custom message."
+- Rationale: rewrite the "Why `resourceName` is a cascade" bullet's default case (the common case is now the qualified name, and why: collision between two instances of one module in a namespace, agreement with what fleets render, the Helm fullname convention); add "Why the default branch is not unified with `#NameType`" with the measured v0.17.1 behaviour; add "Why the diagnostics are `error()` calls, and why the assertion is a hidden field" recording the V3 trap.
 
 ## Risks / Trade-offs
 
