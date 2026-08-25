@@ -6,11 +6,19 @@ package core
 	metadata: {
 		name!: #NameType
 
-		// Per-component resource-name override. Defaults to metadata.name; an
-		// explicit value wins via the disjunction-default cascade. Introduced by
-		// enhancement 0001 (D2): #names reads from here to compute the rendered
-		// resource name and its DNS variants.
-		resourceName: *name | #NameType
+		// Per-component resource-name override. Defaults to the
+		// instance-qualified name `<instance>-<component>` (enhancement 0019
+		// D16), the name every rendered primary object already carries; an
+		// explicit value wins via the disjunction-default cascade. #names reads
+		// from here to compute the rendered resource name and its DNS variants
+		// (enhancement 0001 D2).
+		//
+		// The default branch is deliberately NOT unified with #NameType: on
+		// cue v0.17.1 a failed validated default degrades to a bare
+		// `incomplete value` that never names the offending string, and it
+		// leaves resourceName non-concrete so the guard below cannot run.
+		// _resourceNameDefaultFits carries the length check instead.
+		resourceName: *"\(#instance.name)-\(name)" | #NameType
 
 		// Component labels — descriptive metadata for this component, and the
 		// labels that reach rendered output via #TransformerContext.
@@ -108,6 +116,17 @@ package core
 	//
 	// Was: #release: #ReleaseIdentity (renamed in enhancement 0002)
 	#instance: #InstanceIdentity
+
+	// The default resource name, and the assertion that it fits a DNS label
+	// when it is the name in use. Both operands are #NameType, so the only
+	// way the concatenation can fail is the 63-rune bound; naming the
+	// string in the diagnostic is the point (enhancement 0019 D16). Guarded
+	// so an explicit override, which #NameType already validates, is never
+	// measured against the default.
+	_resourceNameDefault: "\(#instance.name)-\(metadata.name)"
+	if metadata.resourceName == _resourceNameDefault {
+		_resourceNameDefaultFits: _resourceNameDefault & #NameType
+	}
 
 	// Single source of truth for this component's computed names. `resourceName`
 	// reads straight from metadata (cascade lives there); DNS variants derive
