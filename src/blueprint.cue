@@ -68,6 +68,25 @@ import (
 	// NOT rendered: matchLabels does not reach #TransformerContext (D36).
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateful"}
 
+	// nameConstraint: the name rule a kind this primitive renders enforces on
+	// the owning component's metadata.resourceName (enhancement 0019 D21);
+	// top when the primitive is indifferent, which is the default and costs
+	// nothing. #Component collects every attached primitive's slot into one
+	// conjunction and asserts the resolved name against it, so the primitive
+	// that introduces a dot-hostile kind is the one that declares the rule
+	// and core carries no per-kind knowledge.
+	//
+	// A hidden DEFINITION field, deliberately not optional and never guarded
+	// on presence: measured on cue v0.17.1, `x.#nameConstraint != _|_` is
+	// false for a non-concrete value, so an optional slot behind an existence
+	// guard silently never propagates while the code reads correctly.
+	//
+	// MAY be computed from this primitive's own fields (0019 D23): the
+	// catalog's container resource declares #NameType when its own
+	// workload-type key reads "stateful" and top otherwise, in list-index
+	// form so a default arm cannot win over the concrete one.
+	#nameConstraint: _
+
 	// NO fulfilment field, and the exclusion is STRUCTURAL rather than an
 	// omission: #ComponentTransformer carries requiredResources and
 	// requiredTraits and has no blueprint equivalent, so nothing can ever

@@ -9,6 +9,23 @@ import (
 // NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars
 #NameType: string & =~"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
 
+// ObjectNameType: RFC 1123 DNS subdomain — dot-separated DNS labels, max 253
+// runes. What the API server admits for most metadata.name (Deployment,
+// DaemonSet, ConfigMap, Secret, StorageClass, CSIDriver, CRD, APIService;
+// measured by server-side dry-run, enhancement 0019 experiment 09). The
+// ceiling of an explicit #Component.metadata.resourceName (0019 D20). Never
+// the type of anything that composes into DNS: a dot in a label position is
+// not an unusual name but a different FQDN, which is why #NameType keeps
+// guarding #instance.name, namespace and #Component.metadata.name.
+#ObjectNameType: string & =~"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$" & strings.MinRunes(1) & strings.MaxRunes(253)
+
+// ServiceNameType: RFC 1035 DNS label — #NameType with an alphabetic first
+// rune. Service metadata.name refuses a leading digit at apply, which
+// #NameType admits ("1prod-web" vets clean and is refused by the server);
+// this type refuses it at vet. Declared by the catalog's Expose trait as its
+// #nameConstraint and as the type of the Service name field (0019 D20, D22).
+#ServiceNameType: string & =~"^[a-z]([a-z0-9-]*[a-z0-9])?$" & strings.MinRunes(1) & strings.MaxRunes(63)
+
 // SnakeNameType: snake_case name — lowercase alphanumeric with underscores.
 // Same character budget as #NameType; differs only in the separator (`_`
 // instead of `-`), making it a valid CUE identifier (and thus a usable CUE

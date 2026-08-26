@@ -13,15 +13,20 @@ package core
 		// from here to compute the rendered resource name and its DNS variants
 		// (enhancement 0001 D2).
 		//
-		// The default branch is deliberately NOT unified with #NameType: on
-		// cue v0.17.1 a failed validated default degrades to a bare
-		// `incomplete value` that never names the offending string, and it
-		// leaves resourceName non-concrete so the guard below cannot run.
-		// _resourceNameDefaultFits carries the length check instead. The
-		// error() arm is reported only when every other arm fails, replacing
-		// the nested empty-disjunction output an explicit invalid name would
-		// otherwise produce.
-		resourceName: *"\(#instance.name)-\(name)" | #NameType | error("resourceName \"\(resourceName)\" is not a DNS label (lowercase alphanumerics and hyphens, 1-63 runes)")
+		// The override's ceiling is #ObjectNameType (0019 D20): a DNS subdomain,
+		// dots admitted, 253 runes, because that is what the kinds most
+		// components render accept for metadata.name. The default can never
+		// carry a dot or exceed 127 runes, since both halves are #NameType
+		// labels; only an explicit override can meet a dot-hostile primitive's
+		// #nameConstraint, asserted by _nameFits below.
+		//
+		// The default branch is deliberately NOT unified with a type: on cue
+		// v0.17.1 a failed validated default degrades to a bare `incomplete
+		// value` that never names the offending string. The error() arm is
+		// reported only when every other arm fails, replacing the nested
+		// empty-disjunction output an explicit invalid name would otherwise
+		// produce.
+		resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("resourceName \"\(resourceName)\" is not a DNS subdomain (lowercase alphanumerics, hyphens and dots, 1-253 runes)")
 
 		// Component labels — descriptive metadata for this component, and the
 		// labels that reach rendered output via #TransformerContext.
@@ -120,23 +125,54 @@ package core
 	// Was: #release: #ReleaseIdentity (renamed in enhancement 0002)
 	#instance: #InstanceIdentity
 
-	// The default resource name, and the assertion that it fits a DNS label
-	// when it is the name in use. Both operands are #NameType, so the only
-	// way the concatenation can fail is the 63-rune bound; naming the
-	// string, its length and the remedy in the diagnostic is the point
-	// (enhancement 0019 D16). Guarded so an explicit override, which
-	// #NameType already validates, is never measured against the default.
-	// len is exact here: #NameType admits ASCII only.
+	// Every attached primitive's #nameConstraint, unified into one conjunction
+	// (enhancement 0019 D21); top when none declares one. Collected
+	// UNCONDITIONALLY — comprehensions over the three attachment maps, no
+	// existence guard — because on cue v0.17.1 `x.#nameConstraint != _|_` is
+	// false for a non-concrete value and a guarded spelling silently never
+	// propagates (0019 experiment 09). Unifying top is the identity, so an
+	// indifferent primitive costs nothing.
 	//
-	// The error MUST live on this hidden field. Writing it onto
-	// metadata.resourceName inside the guard (the how-to's assertion shape)
-	// creates a cycle through the field the guard reads, and cue v0.17.1
-	// resolves it by silently not applying the comprehension: the overlong
-	// name exports clean.
-	_resourceNameDefault: "\(#instance.name)-\(metadata.name)"
-	if metadata.resourceName == _resourceNameDefault && len(_resourceNameDefault) > 63 {
-		_resourceNameDefaultFits: error("default resourceName \"\(_resourceNameDefault)\" is \(len(_resourceNameDefault)) runes, over the 63-rune DNS label limit: shorten the instance or component name, or set metadata.resourceName explicitly")
+	// COST: this is a second walk over the attachment maps beside
+	// _matchLabelsFromPrimitives, paid per component at every evaluation.
+	// Measured (0019 experiment 12, cue v0.17.1): 0.15-0.22 ms per component,
+	// linear in component count, the walk itself rather than any primitive's
+	// conditional; 0.5-2% of the per-component render cost experiment 07
+	// measured. Small today, but it scales with components times attached
+	// primitives, so a module with many components each attaching many
+	// primitives pays it in full on every render. If render times grow with
+	// module complexity, re-measure this walk before the transformers.
+	_nameConstraints: _
+	for _, resource in #resources {_nameConstraints: resource.#nameConstraint}
+	if #traits != _|_ {
+		for _, trait in #traits {_nameConstraints: trait.#nameConstraint}
 	}
+	if #blueprints != _|_ {
+		for _, blueprint in #blueprints {_nameConstraints: blueprint.#nameConstraint}
+	}
+
+	// The assertion: the RESOLVED resourceName satisfies every attached
+	// constraint. Refuses naming the string, the violated bound and the
+	// constraint type's definition site. Two spellings that read as
+	// equivalent are wrong, both measured on cue v0.17.1 (0019 experiment 11):
+	//
+	//   - Unifying _nameConstraints into metadata.resourceName, or writing
+	//     `metadata.resourceName & _nameConstraints` here WITHOUT the
+	//     interpolation: the constraint distributes into the disjunction's
+	//     default arm, a default that fails it drops out, and the value is a
+	//     bare non-concrete constraint. Unified into the field that surfaces
+	//     as an illegible `non-concrete value` error; on this hidden field it
+	//     surfaces as NOTHING — every default-arm refusal is silently admitted.
+	//     The interpolation forces the default to a string first, and
+	//     `string & C` is either that string or an error naming it.
+	//   - Wrapping this in `if (... & C) == _|_ { _x: error(...) }` to add a
+	//     remedy sentence: `(incomplete & C) == _|_` is TRUE while
+	//     #instance.name is unresolved, so the guard fires on this bare
+	//     definition and every consumer refuses.
+	//
+	// So the diagnostic cannot name the attached primitive or a remedy; the
+	// type site in the trace (#NameType, #ServiceNameType) is the pointer.
+	_nameFits: "\(metadata.resourceName)" & _nameConstraints
 
 	// Single source of truth for this component's computed names. `resourceName`
 	// reads straight from metadata (cascade lives there); DNS variants derive
