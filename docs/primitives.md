@@ -60,6 +60,11 @@ Ask yourself:
     // attaches this primitive; what a transformer's requiredLabels selects on.
     matchLabels?: #LabelsAnnotationsType
 
+    // The name rule a kind this primitive renders enforces on the owning
+    // Component's resourceName; top (no rule) by default. May be computed
+    // from the primitive's own fields. Collected and asserted by #Component.
+    #nameConstraint: _
+
     // Where this contract's implementation comes from.
     fulfilment: *"catalog" | "provider"
 
@@ -100,6 +105,8 @@ Ask yourself:
 ```
 
 The Resource's `matchLabels` unify wholesale into any Component that attaches it, and ComponentTransformers select on that field. `metadata.labels` stays where it is written: it carries categorisation, which legitimately differs between the primitives of one Component, so it is neither unified upward nor matched on.
+
+A primitive that renders a kind with a stricter name rule than the default declares it on `#nameConstraint`: the Expose trait declares `#ServiceNameType` (a Service name is the first FQDN label, so no dots and an alphabetic lead), the stateful-workload blueprint and the Namespace resource declare `#NameType` (a pod-DNS or FQDN label: no dots, 63 runes), and the container resource computes `#NameType` from its own `workload-type` key when it reads `stateful`. The Component collects every attached primitive's rule and refuses a `resourceName` any of them rejects at `cue vet`, naming the string and the bound, so the rule lives on the primitive that introduces the kind and core carries no per-kind list.
 
 **CUE schema**: [`../src/resource.cue`](../src/resource.cue)
 
@@ -147,6 +154,11 @@ Ask yourself:
     // Matching identity — unified wholesale into every Component that
     // attaches this primitive; what a transformer's requiredLabels selects on.
     matchLabels?: #LabelsAnnotationsType
+
+    // The name rule a kind this primitive renders enforces on the owning
+    // Component's resourceName; top (no rule) by default. May be computed
+    // from the primitive's own fields. Collected and asserted by #Component.
+    #nameConstraint: _
 
     fulfilment: *"catalog" | "provider"
 
@@ -250,6 +262,11 @@ Ask yourself:
     // Matching identity — unified wholesale into every Component that
     // attaches this primitive; what a transformer's requiredLabels selects on.
     matchLabels?: #LabelsAnnotationsType
+
+    // The name rule a kind this primitive renders enforces on the owning
+    // Component's resourceName; top (no rule) by default. May be computed
+    // from the primitive's own fields. Collected and asserted by #Component.
+    #nameConstraint: _
 
     composedResources!: [...#Resource]   // required composition
     composedTraits?:    [...#Trait]      // optional composition

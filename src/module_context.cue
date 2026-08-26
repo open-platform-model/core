@@ -23,7 +23,10 @@ package core
 //
 // Introduced by enhancement 0001 (D1, D2).
 #ComponentNames: {
-	resourceName!: #NameType
+	// #ObjectNameType, not #NameType: an explicit resourceName may carry dots
+	// and run to 253 runes (enhancement 0019 D20), and this projection must
+	// admit whatever #Component.metadata.resourceName admits.
+	resourceName!: #ObjectNameType
 	dns: {
 		short!: string // "<resourceName>"
 		local!: string // "<resourceName>.<namespace>"

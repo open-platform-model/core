@@ -65,7 +65,9 @@ CUE module: `opmodel.dev/core@v2`
 | `#MajorVersionType` | `types.cue` | MajorVersionType: the identity-bearing version component of a CUE module path — what #ArtifactRef |
 | `#ModulePathType` | `types.cue` | ModulePathType: an artifact's complete CUE module path, major suffix mandatory |
 | `#NameType` | `types.cue` | NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars |
+| `#ObjectNameType` | `types.cue` | ObjectNameType: RFC 1123 DNS subdomain — dot-separated DNS labels, max 253 runes |
 | `#PackagePathType` | `types.cue` | PackagePathType: the path a *primitive* declares — a package path inside a module, carrying no major suffix |
+| `#ServiceNameType` | `types.cue` | ServiceNameType: RFC 1035 DNS label — #NameType with an alphabetic first rune |
 | `#SnakeNameType` | `types.cue` | SnakeNameType: snake_case name — lowercase alphanumeric with underscores |
 | `#UUIDType` | `types.cue` | UUIDType: RFC 4122 UUID in standard format (lowercase hex) |
 | `#VersionType` | `types.cue` | Semver 2 |

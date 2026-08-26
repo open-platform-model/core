@@ -1,8 +1,4 @@
-## Purpose
-
-Defines how a `#Component` computes its rendered resource name and DNS variants: the `metadata.resourceName` cascade, its instance-qualified default, the explicit override, and the subdomain ceiling on an explicit name. `#names` is the single source of truth every consumer reads; `#Module.#ctx.components` is a projection of it (enhancement 0019 D16).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: The resource name defaults to the instance-qualified name
 
@@ -34,19 +30,15 @@ Defines how a `#Component` computes its rendered resource name and DNS variants:
 - **THEN** validation fails at `metadata.resourceName` with a single custom message naming `"Bad_Name"` and the DNS-subdomain rule (lowercase alphanumerics, hyphens and dots, 1-253 runes)
 - **AND** the diagnostic does not expose the default arm (no "conflicting values" line mentioning the instance-qualified default)
 
-### Requirement: DNS variants follow the resource name
+## REMOVED Requirements
 
-`#names.dns.short` MUST equal `#names.resourceName`; `#names.dns.local` MUST be `"\(resourceName).\(#instance.namespace)"`; `#names.dns.fqdn` MUST be `"\(resourceName).\(#instance.namespace).svc.\(#instance.clusterDomain)"`. The variants MUST NOT carry a second copy of the instance name.
+### Requirement: An overlong default refuses the render legibly
 
-#### Scenario: Default-named service DNS
+**Reason**: The override ceiling is now `#ObjectNameType` (253 runes). Both operands of the default are `#NameType` labels of at most 63 runes, so the concatenation is at most 127 runes and can never exceed the ceiling; the guard has no reachable failure. A default between 64 and 127 runes is a valid object name for every kind that is not dot-restricted, and the dot-restricted kinds now refuse it through their primitive's `#nameConstraint` (name-constraints), which names the string and the 63-rune bound.
 
-- **WHEN** component `web` of instance `shop` in namespace `prod` sets no `resourceName` and the cluster domain is the default
-- **THEN** `#names.dns.fqdn` is `"shop-web.prod.svc.cluster.local"` and `#names.dns.local` is `"shop-web.prod"`
+**Migration**: None for authors: every input the guard refused is either admitted (a 64-to-127-rune default on a subdomain kind) or refused by the constraint the rendering primitive declares once the catalog sweep ships. Consumers that pinned the guard's diagnostic text drop the pin.
 
-#### Scenario: Overridden service DNS
-
-- **WHEN** the same component sets `metadata.resourceName: "storefront"`
-- **THEN** `#names.dns.fqdn` is `"storefront.prod.svc.cluster.local"`
+## ADDED Requirements
 
 ### Requirement: The default cannot overflow the ceiling
 

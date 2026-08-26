@@ -28,12 +28,23 @@ Resources, Traits, and Blueprints each define independent `spec` schemas (each n
 
     metadata: {
         name!: #NameType
+        // The rendered object's name. Defaults to "<instance>-<name>"; an
+        // explicit value wins and may be a full DNS subdomain (dots, up to
+        // 253 runes) unless an attached primitive's #nameConstraint narrows
+        // it, in which case the Component refuses the name at vet.
+        resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType
         // Descriptive ONLY. NOT unified from the attached primitives, and
         // nothing matches on them. These are the labels that reach rendered
         // output. Matching lives in `matchLabels` below.
         labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
+
+    // Computed names, the single source of truth every consumer reads:
+    // resourceName plus its DNS variants (short, local, fqdn) derived from
+    // the instance the parent #Module injects. #Module.#ctx.components
+    // projects this block per component.
+    #names: { resourceName: string, dns: { short: string, local: string, fqdn: string } }
 
     // This Component's matching identity: the wholesale unification of every
     // attached primitive's matchLabels. DERIVED — a Component that declares a
