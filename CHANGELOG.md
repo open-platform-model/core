@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.0-alpha.6](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2026-08-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **component:** metadata.resourceName's override ceiling widens from #NameType to the new #ObjectNameType (DNS subdomain, 253 runes), and the overlong-default guard is retired as unreachable. #Resource, #Trait and #Blueprint gain a hidden #nameConstraint slot (top by default) that #Component collects and asserts against the resolved name on a hidden field, so a name a rendering primitive rejects is refused at vet. Inert until a catalog declares a constraint. #ComponentNames.resourceName follows the field's ceiling. Adds #ServiceNameType (DNS-1035).
+* **component:** #Component.metadata.resourceName now defaults to "<instance>-<component>" instead of the bare component name, so #names.resourceName and #names.dns.* change for every component that does not set resourceName explicitly. This is the name every rendered primary object already carries, so rendered output does not move; the computed name now agrees with it. New refusal: an instance name plus component name whose concatenation exceeds 63 runes fails validation, naming the string.
+
+### Features
+
+* **component:** default resourceName to the instance-qualified name ([#51](https://github.com/open-platform-model/core/issues/51)) ([cd4f4be](https://github.com/open-platform-model/core/commit/cd4f4be6590b34c58d7446268c5c511d5a349b80))
+* **component:** name types and per-primitive #nameConstraint ([#52](https://github.com/open-platform-model/core/issues/52)) ([164038c](https://github.com/open-platform-model/core/commit/164038cbc70ebe4f350710a4662840e0e0dcabdb))
+* **openspec:** wire enhancement delivery-log declarations into the workflow ([a11aefc](https://github.com/open-platform-model/core/commit/a11aefcf1d4a58116a1b2e9f362bfc0bb385a156))
+
 ## [2.0.0-alpha.5](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.4...v2.0.0-alpha.5) (2026-08-15)
 
 
