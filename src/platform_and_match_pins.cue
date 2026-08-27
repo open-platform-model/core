@@ -202,8 +202,9 @@ _pinRenderedLabelsCount: 5
 _pinFulfilmentDefault: "\(_pinMatchContainer.fulfilment)"
 _pinFulfilmentDefault: "catalog"
 
-// The declaration this exists for: catalog_opm declares `backup` and ships
-// nothing that renders it. Today that is indistinguishable from an oversight.
+// The declaration this exists for: a catalog declares `backup` (hypothetical;
+// no catalog ships it today) and nothing renders it. Today that is
+// indistinguishable from an oversight.
 _pinProviderFulfilledTrait: #Trait & {
 	metadata: {
 		name:           "backup"

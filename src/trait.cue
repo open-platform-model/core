@@ -56,22 +56,9 @@ import (
 	// upward. NOT rendered (D36). See SPEC.md § 2.2.
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
 
-	// WHY the primitive declares it: #Component collects every attached
-	// primitive's slot into one conjunction and asserts the resolved name
-	// against it, so the primitive that introduces a dot-hostile kind is the
-	// one that declares the rule and core carries no per-kind knowledge.
-	// Unifying top costs nothing.
-	//
-	// WHY not optional and never guarded on presence: measured on cue
-	// v0.17.1, `x.#nameConstraint != _|_` is false for a non-concrete value,
-	// so an optional slot behind an existence guard silently never propagates
-	// while the code reads correctly.
-	//
-	// WHY it may be computed (0019 D23): the catalog's container resource
-	// declares #NameType when its own workload-type key reads "stateful" and
-	// top otherwise, in list-index form so a default arm cannot win over the
-	// concrete one. SPEC.md § 2.2 Rationale, which points at #Resource
-	// (§ 2.1) for the argument.
+	// WHY: see #Resource.#nameConstraint. The rule and its measured pitfalls are
+	// stated once there (SPEC.md § 2.1 Rationale, "Why the primitive declares
+	// the name rule and the component asserts it"); this slot is the same slot.
 
 	// nameConstraint: the name rule a kind this primitive renders enforces on
 	// the owning component's metadata.resourceName (enhancement 0019 D21);
@@ -82,9 +69,9 @@ import (
 
 	// WHY it exists on a trait: see #Resource.fulfilment for why it is
 	// declared rather than derived, and why the guard is the kernel's.
-	// `backup` is the case this exists for: catalog_opm declares the trait
-	// and ships nothing that renders it, which is today indistinguishable
-	// from having forgotten to.
+	// `backup` (hypothetical: no catalog ships it today) is the case this
+	// exists for: a catalog declares the trait and ships nothing that renders
+	// it, which is today indistinguishable from having forgotten to.
 
 	// fulfilment: where this contract's implementation is expected to come
 	// from. "catalog" (the default) means the declaring catalog implements

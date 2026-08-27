@@ -6,24 +6,16 @@ package core
 	metadata: {
 		name!: #NameType
 
-		// WHY the default and the ceiling: the default is the name every
-		// rendered primary object already carries (enhancement 0019 D16), and
-		// #names reads from here to compute the rendered resource name and its
-		// DNS variants (enhancement 0001 D2). The override's ceiling is
-		// #ObjectNameType (0019 D20) because that is what the kinds most
-		// components render accept for metadata.name. The default can never
-		// carry a dot or exceed 127 runes, since both halves are #NameType
-		// labels; only an explicit override can meet a dot-hostile primitive's
-		// #nameConstraint, asserted by _nameFits below.
-		//
 		// WHY the default branch is deliberately NOT unified with a type: on cue
 		// v0.17.1 a failed validated default degrades to a bare `incomplete
 		// value` that never names the offending string. The error() arm is
 		// reported only when every other arm fails, replacing the nested
 		// empty-disjunction output an explicit invalid name would otherwise
-		// produce. SPEC.md § 3.1 Rationale, "Why the default branch is not
-		// unified with a type" and "Why the override ceiling is a subdomain
-		// and not a label".
+		// produce. The default (0019 D16), its 127-rune bound and the
+		// #ObjectNameType ceiling (0019 D20): SPEC.md § 3.1 Rationale, "Why the
+		// default branch is not unified with a type", "Why there is no length
+		// guard on the default any more" and "Why the override ceiling is a
+		// subdomain and not a label".
 
 		// Per-component resource-name override. Defaults to the
 		// instance-qualified name `<instance>-<component>`; an explicit value
@@ -116,20 +108,13 @@ package core
 
 	matchLabels: _matchLabelsFromPrimitives
 
-	// WHY a length comparison: unification can only ever ADD to matchLabels,
-	// so a size difference is exactly "this component contributed a key of
-	// its own" — whether it invented one or answered a required one inline.
-	//
-	// A matching key written on a component — or on a catalog FRAGMENT, which
-	// is the same type, and which is why this binds every #Component rather
-	// than only fragments — sits outside the additive-only promise its
-	// contract key gates.
-	//
-	// `close()` around the union does NOT do this. Measured against cue
-	// v0.17.1: a closed comprehension still admits an authored key, so the
-	// obvious spelling would read as enforcement while enforcing nothing.
-	// SPEC.md § 3.1 Rationale, "Why the derivation is enforced, and why the
-	// rule binds every Component rather than only fragments".
+	// WHY not `close()` around the union: measured against cue v0.17.1, a
+	// closed comprehension still admits an authored key, so the obvious
+	// spelling would read as enforcement while enforcing nothing. Why a
+	// length comparison works, and why this binds every #Component rather
+	// than only catalog fragments: SPEC.md § 3.1 Rationale, "Why the
+	// derivation is enforced, and why the rule binds every Component rather
+	// than only fragments".
 
 	// matchLabels is DERIVED, and this is the enforcement: a size difference
 	// between the union and the field is exactly "this component contributed
@@ -179,26 +164,14 @@ package core
 	}
 
 	// WHY this exact spelling: two spellings that read as equivalent are
-	// wrong, both measured on cue v0.17.1 (0019 experiment 11):
-	//
-	//   - Unifying _nameConstraints into metadata.resourceName, or writing
-	//     `metadata.resourceName & _nameConstraints` here WITHOUT the
-	//     interpolation: the constraint distributes into the disjunction's
-	//     default arm, a default that fails it drops out, and the value is a
-	//     bare non-concrete constraint. Unified into the field that surfaces
-	//     as an illegible `non-concrete value` error; on this hidden field it
-	//     surfaces as NOTHING — every default-arm refusal is silently admitted.
-	//     The interpolation forces the default to a string first, and
-	//     `string & C` is either that string or an error naming it.
-	//   - Wrapping this in `if (... & C) == _|_ { _x: error(...) }` to add a
-	//     remedy sentence: `(incomplete & C) == _|_` is TRUE while
-	//     #instance.name is unresolved, so the guard fires on this bare
-	//     definition and every consumer refuses.
-	//
-	// So the diagnostic cannot name the attached primitive or a remedy; the
-	// type site in the trace (#NameType, #ServiceNameType) is the pointer.
-	// SPEC.md § 3.1 Rationale, "Why the constraint is asserted on a hidden
-	// field rather than unified into `resourceName`".
+	// wrong, both measured on cue v0.17.1 (0019 experiment 11). Without the
+	// interpolation the constraint distributes into the default arm and a
+	// failing default is silently admitted; an `error()` guard fires on the
+	// bare definition because `(incomplete & C) == _|_` is true while
+	// #instance.name is unresolved. The full refutation, and why the
+	// diagnostic cannot carry a remedy: SPEC.md § 3.1 Rationale, "Why the
+	// constraint is asserted on a hidden field rather than unified into
+	// `resourceName`".
 
 	// The assertion: the RESOLVED resourceName satisfies every attached
 	// constraint. Refuses naming the string, the violated bound and the
