@@ -186,7 +186,7 @@ Every `//` block that ends on the line directly above a field or definition is t
 2. **`// WHY ...` block above the doc comment, separated from it by one blank line.** State a rationale once: a paragraph that restates a SPEC.md Rationale bullet collapses to that bullet's title in the closing pointer, and when several definitions share one rule, one carries the WHY block and the others a two-line pointer to it. Rationale that must stay next to the code: measured evaluator behavior, refuted spellings, `Was:` history. Reads in natural order (why, then what, then the field); the blank line is load-bearing, and closing it merges the two into one over-limit doc comment that `task docs:check` reports.
 3. **`SPEC.md` Rationale.** The full argument, which `core-schema-edit` already requires.
 
-`task docs:check` fails on every doc comment over 6 lines. `*_pins.cue` fixture files are exempt; hidden `_` fields in schema files are not. Details and a before/after example in `.claude/skills/core-schema-edit/SKILL.md` § Writing comments.
+`task docs:check` fails on every doc comment over 6 lines. The script `.tasks/doc-check.sh` is kept byte-identical with `catalog_opm`'s copy; `task docs:lint` at the workspace root checks it. `*_pins.cue` fixture files are exempt; hidden `_` fields in schema files are not. Details and a before/after example in `.claude/skills/core-schema-edit/SKILL.md` § Writing comments.
 
 ## Working Style for Agents
 
