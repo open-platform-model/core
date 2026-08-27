@@ -64,6 +64,13 @@ tasks:
     cmds:
       - bash .tasks/spec-check.sh "$(pwd)"
 
+  ## Doc comment length
+
+  docs:check:
+    desc: Report doc comments over 6 lines in src/*.cue (warn-only until the sweep lands)
+    cmds:
+      - bash .tasks/doc-check.sh src
+
   ## Git hooks
 
   hooks:install:
@@ -127,9 +134,10 @@ tasks:
   ## Aggregate
 
   check:
-    desc: Format check, vet, INDEX freshness, and SPEC inventory
+    desc: Format check, vet, INDEX freshness, SPEC inventory, and doc-comment report
     cmds:
       - task: fmt:check
       - task: vet
       - task: generate:index:check
       - task: spec:check
+      - task: docs:check

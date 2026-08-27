@@ -46,6 +46,9 @@ jobs:
       - name: Verify SPEC.md inventory matches CUE
         run: task spec:check
 
+      - name: Report over-long doc comments
+        run: task docs:check
+
       - name: Reject bare @mentions in the PR title, body and commit messages
         if: github.event_name == 'pull_request'
         env:

@@ -7,7 +7,7 @@ Now, because both `main` lines are quiet after `core-name-types-and-constraint` 
 ## What Changes
 
 - A documented three-tier comment convention for `src/*.cue`: the doc comment (at most 6 lines, contract only, optionally pointing at the `SPEC.md` section), a detached `// WHY` note below the field after one blank line for implementation rationale that must stay next to the code, and `SPEC.md` Rationale for the full argument. Recorded in `CLAUDE.md` (CUE Style Guidelines) and in `.claude/skills/core-schema-edit/SKILL.md`, which is the file subagents actually load.
-- A new mechanical gate, `.tasks/doc-check.sh`, with a `task docs:check` task wired into `task check` and a matching `ci.yml` step. It reports every doc comment over 6 lines in `src/*.cue`, excluding `*_pins.cue` fixture files. **Warn-only in this change**: it prints violations and exits 0, so the 46 existing sites do not block anything. The follow-up sweep change flips it to fail once the count is zero.
+- A new mechanical gate, `.tasks/doc-check.sh`, with a `task docs:check` task wired into `task check` and a matching `ci.yml` step. It reports every doc comment over 6 lines in `src/*.cue`, excluding `*_pins.cue` fixture files. **Warn-only in this change**: it prints violations and exits 0, so the 51 existing sites do not block anything. The follow-up sweep change flips it to fail once the count is zero.
 - No `src/*.cue` edits. No `SPEC.md` edits beyond none. No published surface changes: the CUE module is byte-identical before and after.
 
 ## Classification
