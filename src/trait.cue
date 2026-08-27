@@ -46,22 +46,15 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
+	// WHY two fields: see #Resource.matchLabels for why the two cannot be one
+	// field. NOT rendered: matchLabels does not reach #TransformerContext.
+
 	// matchLabels: this trait's MATCHING identity — the keys a
 	// #ComponentTransformer.requiredLabels predicate selects on, unified
 	// wholesale into every #Component that attaches this trait. Separate from
 	// metadata.labels, which carries categorisation and is never unified
 	// upward. NOT rendered (D36). See SPEC.md § 2.2.
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
-
-	// WHY two fields: see #Resource.matchLabels for why the two cannot be one
-	// field. NOT rendered: matchLabels does not reach #TransformerContext.
-
-	// nameConstraint: the name rule a kind this primitive renders enforces on
-	// the owning component's metadata.resourceName (enhancement 0019 D21);
-	// top when the primitive is indifferent, which is the default. A hidden
-	// definition field: never optional, never guarded on presence. MAY be
-	// computed from this primitive's own fields (0019 D23). See SPEC.md § 2.2.
-	#nameConstraint: _
 
 	// WHY the primitive declares it: #Component collects every attached
 	// primitive's slot into one conjunction and asserts the resolved name
@@ -80,18 +73,25 @@ import (
 	// concrete one. SPEC.md § 2.2 Rationale, which points at #Resource
 	// (§ 2.1) for the argument.
 
-	// fulfilment: where this contract's implementation is expected to come
-	// from. "catalog" (the default) means the declaring catalog implements
-	// it; "provider" means it deliberately ships no transformer and a
-	// platform must carry exactly one transformer requiring this contract.
-	// See #Resource.fulfilment and SPEC.md § 2.2 (enhancement 0010 D32).
-	fulfilment: *"catalog" | "provider"
+	// nameConstraint: the name rule a kind this primitive renders enforces on
+	// the owning component's metadata.resourceName (enhancement 0019 D21);
+	// top when the primitive is indifferent, which is the default. A hidden
+	// definition field: never optional, never guarded on presence. MAY be
+	// computed from this primitive's own fields (0019 D23). See SPEC.md § 2.2.
+	#nameConstraint: _
 
 	// WHY it exists on a trait: see #Resource.fulfilment for why it is
 	// declared rather than derived, and why the guard is the kernel's.
 	// `backup` is the case this exists for: catalog_opm declares the trait
 	// and ships nothing that renders it, which is today indistinguishable
 	// from having forgotten to.
+
+	// fulfilment: where this contract's implementation is expected to come
+	// from. "catalog" (the default) means the declaring catalog implements
+	// it; "provider" means it deliberately ships no transformer and a
+	// platform must carry exactly one transformer requiring this contract.
+	// See #Resource.fulfilment and SPEC.md § 2.2 (enhancement 0010 D32).
+	fulfilment: *"catalog" | "provider"
 
 	// WHY no default here: the DECLARING CATALOG states the posture, and it
 	// must state it as a DEFAULT so a module can narrow it at the attachment
@@ -126,6 +126,18 @@ import (
 	appliesTo!: [...#Resource]
 }
 
+// WHY it ships in `core` beside the identity gates and is checked the same
+// way — the schema is the contract, CUE is the engine that checks contracts,
+// and what the author reads is CUE's own error (0011 D21/D22).
+//
+// WHY it TAKES THE FIELD, NOT THE TRAIT. `#TraitOptionalGate & {trait:
+// SomeTrait}` would drag the trait's `spec` into concreteness checking under
+// `cue vet -c`, and a spec is a SCHEMA that must never be concrete.
+//
+// WHY it MUST BE UNIFIED INTO A NON-HIDDEN VALUE. `cue vet -c` does not check
+// hidden fields, so a gate parked in a `_`-prefixed slot passes silently while
+// checking nothing. SPEC.md § 5.1 Rationale.
+
 // #TraitOptionalGate: what `opm catalog publish` unifies against, once per
 // published #Trait, to hold catalogs to the two rules #Trait.optional cannot
 // express itself: a posture is stated, and it is not pinned. Takes the FIELD,
@@ -148,17 +160,5 @@ import (
 	_overridable: ((optional & true) != _|_) && ((optional & false) != _|_)
 	_overridable: true
 }
-
-// WHY it ships in `core` beside the identity gates and is checked the same
-// way — the schema is the contract, CUE is the engine that checks contracts,
-// and what the author reads is CUE's own error (0011 D21/D22).
-//
-// WHY it TAKES THE FIELD, NOT THE TRAIT. `#TraitOptionalGate & {trait:
-// SomeTrait}` would drag the trait's `spec` into concreteness checking under
-// `cue vet -c`, and a spec is a SCHEMA that must never be concrete.
-//
-// WHY it MUST BE UNIFIED INTO A NON-HIDDEN VALUE. `cue vet -c` does not check
-// hidden fields, so a gate parked in a `_`-prefixed slot passes silently while
-// checking nothing. SPEC.md § 5.1 Rationale.
 
 #TraitMap: [string]: #Trait
