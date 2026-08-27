@@ -6,7 +6,7 @@ Now, because the gate and the rule text merged (core PR 53) and nothing else is 
 
 ## What Changes
 
-- Every one of the 51 reported doc comments is split: the contract (what the field is, what a consumer must satisfy, an optional `See SPEC.md § N.M` pointer) stays as the doc comment, at most 6 lines; everything else moves to a `// WHY ...` block directly below the field, after one blank line, or shrinks to a pointer where `SPEC.md` Rationale already carries the same argument verbatim.
+- Every one of the 51 reported doc comments is split: the contract (what the field is, what a consumer must satisfy, an optional `See SPEC.md § N.M` pointer) stays as the doc comment, at most 6 lines; everything else moves to a `// WHY ...` block directly above the doc comment, separated from it by one blank line, or shrinks to a pointer where `SPEC.md` Rationale already carries the same argument verbatim.
 - No text is deleted, only moved or replaced by a pointer to where the same text already lives. `Was:` history, measured cue v0.17.1 behavior, refuted spellings and enhancement decision numbers all survive in the `// WHY` blocks.
 - Code is byte-identical: every non-comment line in `src/*.cue` is unchanged. `SPEC.md` is not edited.
 - `src/INDEX.md` is regenerated: the generator takes the first sentence of each definition's doc comment, and a rewritten first sentence changes the row.

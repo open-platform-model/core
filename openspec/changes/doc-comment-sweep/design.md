@@ -23,7 +23,7 @@ Constraints: code bytes MUST NOT change; `SPEC.md` MUST NOT change (an edit ther
 
 ### D1. Split rule, applied identically at every site
 
-The doc comment keeps, in this order and only as far as 6 lines allow: what the field is; what a consumer must satisfy or what the value is derived from; a `See SPEC.md § N.M` pointer when the construct is tracked. Everything else moves below the field into one `// WHY` block, opened with `// WHY <topic>:` and otherwise verbatim, paragraph breaks kept as empty `//` lines. One block per field; a field with two rationale paragraphs gets one block with two paragraphs, not two blocks.
+The doc comment keeps, in this order and only as far as 6 lines allow: what the field is; what a consumer must satisfy or what the value is derived from; a `See SPEC.md § N.M` pointer when the construct is tracked. Everything else moves into one `// WHY` block above the doc comment, separated by one blank line (D8), opened with `// WHY <topic>:` and otherwise verbatim, paragraph breaks kept as empty `//` lines. One block per field; a field with two rationale paragraphs gets one block with two paragraphs, not two blocks.
 
 **Alternative rejected**: rewriting the rationale while moving it. Any rewrite is a content change hiding inside a relocation commit and cannot be verified mechanically.
 
@@ -39,7 +39,7 @@ Where the moved text is a near-verbatim duplicate of a `SPEC.md` Rationale bulle
 
 ### D4. Definition-level docs (`#Catalog`, `#IdentityPackage`, `#Subscription`, `#Platform`, `#ComponentTransformer`, the `*Type`s)
 
-A definition's doc comment is what `INDEX.md` and the docgen use as its description. Keep the one-paragraph "what it is" and the key invariant; the `// WHY` block goes below the closing `}` of the definition, after one blank line, so it is not inside the struct. For a top-level `#Type: string & =~"..."` one-liner it goes on the line after, after one blank line.
+A definition's doc comment is what `INDEX.md` and the docgen use as its description. Keep the one-paragraph "what it is" and the key invariant; the `// WHY` block goes above the definition's doc comment like any other (D8).
 
 ### D5. Mechanical verification, per commit and at the end
 
@@ -55,10 +55,16 @@ Pass one does the split file by file. Pass two is a fresh read of every touched 
 
 One `docs(<file-stem>):` commit per file, `SPEC_IMPACT=none`, trailer `Spec-Impact: none (comment relocation only)`; one `chore(tasks):` commit for the strict flip and wording; one `docs(index):` commit if `src/INDEX.md` changes independently, otherwise regenerated in the last file commit. One PR.
 
+### D8. `// WHY` blocks sit ABOVE the doc comment, not below the field
+
+**Context**: The gate change (`2026-08-27-doc-comment-gate`, D1) placed notes below the field, arguing that a blank-separated note above reads as the previous field's and could silently reattach. Pass-one review (2026-08-27) rejected the first half: to a human reader every comment above a field belongs to the field below, wherever the blank line sits. The second half is moot: closing the blank line merges note and doc into one over-limit block, which `docs:check` reports.
+**Explored**: Both placements on all 51 sites; `cue fmt` stability and `docs:check` for each.
+**Decision**: Rationale, blank line, contract, field. Natural reading order. Amends the gate change's D1; `CLAUDE.md`, the `core-schema-edit` skill and the script header change wording in this change, and `catalog_opm` takes the same wording fix before its own sweep.
+
 ## Risks / Trade-offs
 
 - [A first sentence rewritten for length changes the `INDEX.md` row and the docgen description] -> intended; review the regenerated `INDEX.md` diff explicitly (task 6.2).
-- [A `// WHY` block placed above the next field's doc, or the blank line dropped] -> `docs:check` reports the merged block as an over-limit doc on the wrong field; pass two checks the blank line by hand.
+- [The blank line between a `// WHY` block and its doc comment dropped] -> `docs:check` reports the merged block as an over-limit doc; pass two checks the blank line by hand.
 - [A D2 pointer references a SPEC bullet that later gets reworded] -> pointers name the bullet's "Why ..." lead-in, which the `core-schema-edit` format keeps stable.
 - [Review fatigue across 51 sites] -> one commit per file, verification lines in each commit message, second pass as separate commits.
 
