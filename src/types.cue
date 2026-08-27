@@ -168,9 +168,9 @@ import (
 // WHY the key is the contract level: a catalog release does not move this key; only a breaking change to the
 // primitive's own shape does. That is what lets a contract declared in one
 // catalog be fulfilled by a transformer in another on an independent release
-// cadence — the failure D4 exists to fix, where `catalog_opm`'s transformerless
-// `backup` contract could only be matched by a provider that happened to have
-// compiled against the identical `catalog_opm` BUILD.
+// cadence — the failure D4 exists to fix, where a transformerless contract
+// (the hypothetical `backup`) could only be matched by a provider that
+// happened to have compiled against the identical `catalog_opm` BUILD.
 //
 // The kind segment (/resources, /traits, /blueprints) is part of the authored
 // value and is retained deliberately: a flat FQN would make primitive names

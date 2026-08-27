@@ -69,9 +69,9 @@ import (
 
 	// WHY it exists on a trait: see #Resource.fulfilment for why it is
 	// declared rather than derived, and why the guard is the kernel's.
-	// `backup` is the case this exists for: catalog_opm declares the trait
-	// and ships nothing that renders it, which is today indistinguishable
-	// from having forgotten to.
+	// `backup` (hypothetical: no catalog ships it today) is the case this
+	// exists for: a catalog declares the trait and ships nothing that renders
+	// it, which is today indistinguishable from having forgotten to.
 
 	// fulfilment: where this contract's implementation is expected to come
 	// from. "catalog" (the default) means the declaring catalog implements
