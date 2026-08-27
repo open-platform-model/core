@@ -104,6 +104,13 @@ import (
 	// It is unified and validated in the runtime
 	debugValues: _
 
+	// WHY open and projected: open so future enhancements can add `platform`
+	// / `environment` siblings without breaking module bodies. Components are
+	// the single source of truth for their own identity; #ctx.components only
+	// mirrors them (D2). SPEC.md § 3.2 Rationale, "Why `#ctx` is inline on
+	// `#Module` and not a wrapper type" and "Why `#ctx.components` is a
+	// projection, not an authored map".
+
 	// Inline runtime context channel, open at the top level (`...`).
 	// `instance` is set by #ModuleInstance from its own metadata; `components`
 	// is a pure CUE projection over every component's #names (enhancement
@@ -120,13 +127,6 @@ import (
 
 		...
 	}
-
-	// WHY open and projected: open so future enhancements can add `platform`
-	// / `environment` siblings without breaking module bodies. Components are
-	// the single source of truth for their own identity; #ctx.components only
-	// mirrors them (D2). SPEC.md § 3.2 Rationale, "Why `#ctx` is inline on
-	// `#Module` and not a wrapper type" and "Why `#ctx.components` is a
-	// projection, not an authored map".
 }
 
 #ModuleMap: [string]: #Module
