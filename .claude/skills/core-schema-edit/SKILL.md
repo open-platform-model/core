@@ -59,6 +59,48 @@ Avoid vacuous rationale ("for flexibility," "for consistency"). If the *why* fit
 
 End the section with a "See also" subsection linking the tutorial counterpart in `docs/` and structural relationships to peer constructs.
 
+## Writing comments
+
+A `//` block that ends on the line directly above a field or definition is its doc comment. Hover in the LSP, `Value.Doc()`, `cue def` and `task generate:index` all replay it verbatim, so it is consumer-facing text. One blank line ends the block: a comment separated from the field by a blank line is not a doc comment, and `cue fmt` keeps that blank line.
+
+Three tiers, in this order of preference:
+
+| Tier | Where | What goes there |
+| --- | --- | --- |
+| Doc comment | directly above the field, at most 6 lines | the contract: what it is, what a consumer must satisfy, optionally `See SPEC.md § N.M` |
+| `// WHY ...` block | below the field, after one blank line | rationale that must stay next to the code: measured cue behavior, refuted spellings, `Was:` history |
+| `SPEC.md` Rationale | the construct's section | the full argument (the Core rule above already requires it) |
+
+Before (everything is hover text):
+
+```cue
+	// Per-component resource-name override. Defaults to the
+	// instance-qualified name `<instance>-<component>` (enhancement 0019
+	// D16); an explicit value wins via the disjunction-default cascade.
+	//
+	// The default branch is deliberately NOT unified with a type: on cue
+	// v0.17.1 a failed validated default degrades to a bare `incomplete
+	// value` that never names the offending string. The error() arm is
+	// reported only when every other arm fails.
+	resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("...")
+```
+
+After (hover shows four lines; the rationale stays in the file, next to the code):
+
+```cue
+	// Per-component resource-name override. Defaults to the
+	// instance-qualified name `<instance>-<component>`; an explicit value
+	// wins and must be a DNS subdomain (#ObjectNameType). See SPEC.md § 3.1.
+	resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("...")
+
+	// WHY the default branch is NOT unified with a type: on cue v0.17.1 a
+	// failed validated default degrades to a bare `incomplete value` that
+	// never names the offending string. The error() arm is reported only when
+	// every other arm fails (enhancement 0019 D16; SPEC.md § 3.1 Rationale).
+```
+
+`task docs:check` (part of `task check`) reports every doc comment over 6 lines; `*_pins.cue` fixture files are exempt, hidden `_` fields in schema files are not. Never fix a report by deleting the blank line's neighbour into a doc comment of a different field; move the text below the field it explains.
+
 ## Workflow
 
 When editing a `core/src/*.cue` file:
@@ -69,7 +111,7 @@ When editing a `core/src/*.cue` file:
    - Constraints adjusted to match the new schema.
    - Rationale explains *why* any non-obvious change exists. New constraint → new bullet. Removed constraint → either delete the bullet or note the removal if removal itself needs explanation.
 3. Run `task spec:check` from `core/` — verifies inventory match.
-4. Run `task check` — runs fmt, vet, INDEX freshness, and `spec:check`.
+4. Run `task check` — runs fmt, vet, INDEX freshness, `spec:check`, and the `docs:check` report.
 5. Stage the `.cue` change(s) and `SPEC.md` together in one commit.
 
 ## Verification gates (mechanical, cannot skip without explicit override)

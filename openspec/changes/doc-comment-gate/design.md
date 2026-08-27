@@ -2,7 +2,7 @@
 
 See proposal.md for motivation. The mechanism this design leans on is a parser fact, verified against cue v0.17.1 (`cue/parser/parser.go`, `next()`): a comment group is flagged `Doc` only when `endline+1 == line(next token)`. A `//` line with no text keeps a group together (multi-paragraph docs are one doc); one genuinely blank line ends the group and the block is no longer a doc comment. `cue fmt` preserves that blank line and collapses two or more to one, so a detached block stays detached through formatting. The LSP hover (`internal/lsp/eval/eval.go`, `docComments`) filters on `group.Doc`; `Value.Doc()` and `cue def` do the same; `.tasks/generate-index.sh` resets its accumulator on any non-comment line, so it agrees with all of them.
 
-Two constraints shape the gate. It MUST run in this repo's toolchain, which is bash, awk and `cue`; there is no Go here. It MUST NOT fail on `main` today: 46 sites exceed 6 lines, and relocating them is a separate change.
+Two constraints shape the gate. It MUST run in this repo's toolchain, which is bash, awk and `cue`; there is no Go here. It MUST NOT fail on `main` today: 51 sites in schema files exceed 6 lines, and relocating them is a separate change.
 
 ## Goals / Non-Goals
 
@@ -76,4 +76,4 @@ added to `check` after `spec:check`, and a matching `ci.yml` step "Report over-l
 
 ## Migration Plan
 
-None for consumers. The follow-up sweep change (one commit per `src/*.cue` file, `docs:` type, `SPEC_IMPACT=none`) relocates the 46 sites and flips `docs:check` to `--strict` in its final task.
+None for consumers. The follow-up sweep change (one commit per `src/*.cue` file, `docs:` type, `SPEC_IMPACT=none`) relocates the 51 sites and flips `docs:check` to `--strict` in its final task.
