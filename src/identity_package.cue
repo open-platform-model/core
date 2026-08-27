@@ -4,6 +4,31 @@ import (
 	"strings"
 )
 
+// WHY #IdentityPackage is a publish gate rather than a field: nothing in
+// `core` unifies against it; a publishing tool loads the artifact's identity
+// package and unifies the loaded value, so the author reads CUE's own error at
+// the field rather than a hand-written expected-versus-found message that can
+// drift from this definition (enhancement 0011 D21/D22).
+//
+// Tooling writes exactly ModulePath and Version, located by THIS schema's field
+// names rather than by a marker attribute (enhancement 0010 D5). Everything
+// else derives, so a publisher gains nothing new to keep in step.
+//
+// It applies to BOTH artifact kinds — a module carries an identity package too
+// (0010 D38, 0011 D12) — which is why it ships here rather than in a catalog: a
+// module need not depend on any particular catalog.
+//
+// `strings` is a CUE BUILTIN, so this definition adds no edge to the module
+// graph. That matters because an artifact's identity/identity.cue deliberately
+// carries no INTRA-MODULE import — it sits at the bottom of its own module's
+// import graph so leaf packages can source ModulePath/Version without a cycle.
+// That invariant is preserved here because validation is EXTERNAL: `core`
+// exports the shape and the publishing tool does the unifying. An identity file
+// never imports `core`, and shipping this definition does not change what it
+// imports. SPEC.md § 5.2 Rationale, "Why exactly two fields are authored" and
+// "Why validation is external, and why we don't have `identity.cue` import
+// `core` and embed this definition".
+
 // IdentityPackage is the shape an artifact's committed identity package must
 // match — the two values a release moves, plus everything that derives from
 // them. The file it types is `identity/identity.cue`, at the root of a module
@@ -27,14 +52,6 @@ import (
 
 	// Major: the major the PATH declares.
 	Major: _ref.major // "v1"
-
-	// VersionMajor: derived from Version, never authored (enhancement 0010 D40),
-	// and asserted equal to the major the path declares. The assertion is the
-	// second declaration below — unification is the check. THIS IS THE ONLY
-	// ASSERTION OF THAT RELATION IN THE SYSTEM; deleting it removes the
-	// relation outright. See SPEC.md § 5.2.
-	VersionMajor: "v" + strings.SplitN(Version, ".", 2)[0]
-	VersionMajor: Major
 
 	// WHY this is the only assertion of that relation in the system: D40
 	// originally had `core` assert it independently on both artifact types;
@@ -71,17 +88,13 @@ import (
 	// relation is asserted here and nowhere else" and "Why it is asserted at
 	// the point the values are written".
 
-	// kindPrefix: the path prefix every catalog member of a given kind hangs
-	// off. The major is NOT re-appended — a catalog member declares a
-	// #PackagePathType (enhancement 0010 D1). Exactly one base prefix per
-	// kind; a contract kind files one apiVersion segment beneath it, a
-	// transformer at the prefix itself. Enumerated, not a pattern constraint.
-	kindPrefix: {
-		resources:    RegistryPath + "/resources"
-		traits:       RegistryPath + "/traits"
-		blueprints:   RegistryPath + "/blueprints"
-		transformers: RegistryPath + "/transformers"
-	}
+	// VersionMajor: derived from Version, never authored (enhancement 0010 D40),
+	// and asserted equal to the major the path declares. The assertion is the
+	// second declaration below — unification is the check. THIS IS THE ONLY
+	// ASSERTION OF THAT RELATION IN THE SYSTEM; deleting it removes the
+	// relation outright. See SPEC.md § 5.2.
+	VersionMajor: "v" + strings.SplitN(Version, ".", 2)[0]
+	VersionMajor: Major
 
 	// WHY EXACTLY ONE BASE PREFIX PER KIND, with no ARBITRARY grouping
 	// subdirectory beneath any of them (enhancement 0010 D42). A CONTRACT
@@ -103,32 +116,43 @@ import (
 	// Rationale, "Why `kindPrefix` is enumerated rather than a pattern
 	// constraint" and "Why no arbitrary grouping segment is admitted beneath a
 	// kind prefix, and why the apiVersion segment is".
+
+	// kindPrefix: the path prefix every catalog member of a given kind hangs
+	// off. The major is NOT re-appended — a catalog member declares a
+	// #PackagePathType (enhancement 0010 D1). Exactly one base prefix per
+	// kind; a contract kind files one apiVersion segment beneath it, a
+	// transformer at the prefix itself. Enumerated, not a pattern constraint.
+	kindPrefix: {
+		resources:    RegistryPath + "/resources"
+		traits:       RegistryPath + "/traits"
+		blueprints:   RegistryPath + "/blueprints"
+		transformers: RegistryPath + "/transformers"
+	}
 }
 
-// WHY #IdentityPackage is a publish gate rather than a field: nothing in
-// `core` unifies against it; a publishing tool loads the artifact's identity
-// package and unifies the loaded value, so the author reads CUE's own error at
-// the field rather than a hand-written expected-versus-found message that can
-// drift from this definition (enhancement 0011 D21/D22).
+// WHY #CatalogMemberFQNGate exists and is shaped this way. It is the
+// enforcement point five decisions delegate to. Enhancement 0010 D17,
+// D21, D25, D42 and D49 all state the catalog-member path and FQN rule and
+// implement it nowhere; D21 in particular REMOVED `core`'s fqn derivation for every
+// catalog member, accepting a measured loss — a catalog on 1.2.0 shipping
+// `fqn: ".../secrets@1.1.0"` passes `cue vet -c` at exit 0 — explicitly in
+// exchange for this gate. Under D4 a wrong key is permanent: modules match
+// against it forever.
 //
-// Tooling writes exactly ModulePath and Version, located by THIS schema's field
-// names rather than by a marker attribute (enhancement 0010 D5). Everything
-// else derives, so a publisher gains nothing new to keep in step.
+// A string comparison in Go would discard information this form keeps. A member
+// one segment too deep fails on BOTH declaredModulePath and declaredFQN, and
+// the second arrives wrapped as `2 errors in empty disjunction` because
+// #FQNType is a disjunction (measured, enhancement 0010 D42).
 //
-// It applies to BOTH artifact kinds — a module carries an identity package too
-// (0010 D38, 0011 D12) — which is why it ships here rather than in a catalog: a
-// module need not depend on any particular catalog.
-//
-// `strings` is a CUE BUILTIN, so this definition adds no edge to the module
-// graph. That matters because an artifact's identity/identity.cue deliberately
-// carries no INTRA-MODULE import — it sits at the bottom of its own module's
-// import graph so leaf packages can source ModulePath/Version without a cycle.
-// That invariant is preserved here because validation is EXTERNAL: `core`
-// exports the shape and the publishing tool does the unifying. An identity file
-// never imports `core`, and shipping this definition does not change what it
-// imports. SPEC.md § 5.2 Rationale, "Why exactly two fields are authored" and
-// "Why validation is external, and why we don't have `identity.cue` import
-// `core` and embed this definition".
+// IT IS DELIBERATELY NOT EMBEDDED IN #Resource, #Trait, #Blueprint OR
+// #ComponentTransformer. Expressing it inside a member's own definition would
+// re-derive that member's `fqn` inside `core` and undo enhancement 0010 D21 —
+// the derivation removal is what lets a contract declared in one catalog be
+// fulfilled by a transformer in another on an independent release cadence.
+// Unifying the gate is the check; the derivation stays out. SPEC.md § 5.3
+// Rationale, "Why this gate exists at all", "Why it unifies rather than
+// comparing, and what a string comparison would discard" and "Why the gate
+// is not embedded in the member definitions".
 
 // CatalogMemberFQNGate is the rule a publishing tool unifies every catalog
 // member against — primitive OR transformer — to check that what the catalog
@@ -155,6 +179,12 @@ import (
 		declaredAPIVersion!: #APIVersionType
 	}
 
+	// WHY derived from the key: so filing and key cannot drift (enhancement
+	// 0010 D49). The transformer arm is selected before declaredAPIVersion is
+	// reached, the same measured ordering _keyVersion relies on. SPEC.md
+	// § 5.3 Rationale, "Why the filing segment is derived rather than
+	// authored, and why transformers don't carry one".
+
 	// What identity/identity.cue implies. The path must sit under THIS catalog
 	// (enhancement 0010 D17); a CONTRACT kind files one segment beneath its
 	// kind prefix, under the member's own apiVersion (D49), a transformer at
@@ -165,11 +195,12 @@ import (
 	][0]
 	declaredCatalogVersion: identity.Version
 
-	// WHY derived from the key: so filing and key cannot drift (enhancement
-	// 0010 D49). The transformer arm is selected before declaredAPIVersion is
-	// reached, the same measured ordering _keyVersion relies on. SPEC.md
-	// § 5.3 Rationale, "Why the filing segment is derived rather than
-	// authored, and why transformers don't carry one".
+	// WHY the list-index form: the transformer branch is selected BEFORE
+	// declaredAPIVersion is reached, which is what spares the absent optional.
+	// Measured 2026-08-03 against cue v0.17.1: kind "transformers" with the
+	// field absent yields the build with no error; kind "resources" supplying
+	// it yields the apiVersion; kind "resources" omitting it fails
+	// `declaredAPIVersion: field is required but not present`.
 
 	// The key is interpolated from the CONTRACT for the three primitive kinds
 	// and from the BUILD for a transformer (enhancement 0010 D4). List-index
@@ -178,13 +209,6 @@ import (
 		if kind == "transformers" {identity.Version},
 		declaredAPIVersion,
 	][0]
-
-	// WHY the list-index form: the transformer branch is selected BEFORE
-	// declaredAPIVersion is reached, which is what spares the absent optional.
-	// Measured 2026-08-03 against cue v0.17.1: kind "transformers" with the
-	// field absent yields the build with no error; kind "resources" supplying
-	// it yields the apiVersion; kind "resources" omitting it fails
-	// `declaredAPIVersion: field is required but not present`.
 
 	// The KEY does not carry the filing segment: the apiVersion reaches a
 	// contract key once, as its "@vN" suffix, never as a path component
@@ -198,27 +222,3 @@ import (
 	// which is the entire point of the field. A gate that derived it would be
 	// asserting a relation that does not exist.
 }
-
-// WHY #CatalogMemberFQNGate exists and is shaped this way. It is the
-// enforcement point five decisions delegate to. Enhancement 0010 D17,
-// D21, D25, D42 and D49 all state the catalog-member path and FQN rule and
-// implement it nowhere; D21 in particular REMOVED `core`'s fqn derivation for every
-// catalog member, accepting a measured loss — a catalog on 1.2.0 shipping
-// `fqn: ".../secrets@1.1.0"` passes `cue vet -c` at exit 0 — explicitly in
-// exchange for this gate. Under D4 a wrong key is permanent: modules match
-// against it forever.
-//
-// A string comparison in Go would discard information this form keeps. A member
-// one segment too deep fails on BOTH declaredModulePath and declaredFQN, and
-// the second arrives wrapped as `2 errors in empty disjunction` because
-// #FQNType is a disjunction (measured, enhancement 0010 D42).
-//
-// IT IS DELIBERATELY NOT EMBEDDED IN #Resource, #Trait, #Blueprint OR
-// #ComponentTransformer. Expressing it inside a member's own definition would
-// re-derive that member's `fqn` inside `core` and undo enhancement 0010 D21 —
-// the derivation removal is what lets a contract declared in one catalog be
-// fulfilled by a transformer in another on an independent release cadence.
-// Unifying the gate is the check; the derivation stays out. SPEC.md § 5.3
-// Rationale, "Why this gate exists at all", "Why it unifies rather than
-// comparing, and what a string comparison would discard" and "Why the gate
-// is not embedded in the member definitions".
