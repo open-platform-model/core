@@ -135,28 +135,16 @@ import (
 	// against — today the concept cannot be expressed at all, and a
 	// transformerless contract is indistinguishable from an oversight.
 	//
-	// Deriving it instead was the obvious alternative and is not computable:
-	// the owning catalog cannot be read off an FQN. The original reason was an
-	// unfixed kind-segment count (".../opm/resources" against
-	// ".../opm/blueprints/workload"); enhancement 0010 D42 has since made every
-	// kind exactly one segment, so the conclusion now rests on a different
-	// obstacle — a member declares a #PackagePathType, which carries NO major,
-	// while a catalog's identity is its #ModulePathType, registryPath PLUS
-	// "@vN". Stripping name and kind off a member FQN therefore recovers the
-	// registryPath and never the major, and a registryPath does not name a
-	// catalog. It is fragile in principle too — a catalog later adding a
-	// transformer would silently change the contract's character. Detecting competing providers by predicate equality was
-	// measured to have no false positives today and rejected for
-	// false-NEGATIVES on the real case: a k8up transformer requiring
-	// backup + schedule and a Velero transformer requiring backup alone are
-	// two providers of one contract, and their predicates differ.
-	//
-	// A closed enum rather than a boolean `providedExternally`, so a third
-	// fulfilment mode does not require a breaking rename. SPEC.md § 2.1
-	// Rationale, "Why a contract declares where its fulfilment comes from,
-	// rather than the platform inferring it", "Why a closed enum and not a
-	// boolean `providedExternally`" and "Why exactly one provider, with no
-	// arbitration between two".
+	// Detecting competing providers by predicate equality was measured to
+	// have no false positives today and rejected for false-NEGATIVES on the
+	// real case (a hypothetical `backup` contract): a k8up transformer
+	// requiring backup + schedule and a Velero transformer requiring backup
+	// alone are two providers of one contract, and their predicates differ.
+	// Why it is declared rather than derived, why a closed enum and why
+	// exactly one provider: SPEC.md § 2.1 Rationale, "Why a contract declares
+	// where its fulfilment comes from, rather than the platform inferring
+	// it", "Why a closed enum and not a boolean `providedExternally`" and
+	// "Why exactly one provider, with no arbitration between two".
 
 	// fulfilment: where this contract's implementation is expected to come
 	// from (enhancement 0010 D32). "catalog" (the default): the declaring
