@@ -68,7 +68,7 @@ Three tiers, in this order of preference:
 | Tier | Where | What goes there |
 | --- | --- | --- |
 | Doc comment | directly above the field, at most 6 lines | the contract: what it is, what a consumer must satisfy, optionally `See SPEC.md § N.M` |
-| `// WHY ...` block | below the field, after one blank line | rationale that must stay next to the code: measured cue behavior, refuted spellings, `Was:` history |
+| `// WHY ...` block | above the doc comment, separated by one blank line | rationale that must stay next to the code: measured cue behavior, refuted spellings, `Was:` history |
 | `SPEC.md` Rationale | the construct's section | the full argument (the Core rule above already requires it) |
 
 Before (everything is hover text):
@@ -85,21 +85,21 @@ Before (everything is hover text):
 	resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("...")
 ```
 
-After (hover shows four lines; the rationale stays in the file, next to the code):
+After (hover shows three lines; the rationale stays in the file, directly above, and reads first):
 
 ```cue
-	// Per-component resource-name override. Defaults to the
-	// instance-qualified name `<instance>-<component>`; an explicit value
-	// wins and must be a DNS subdomain (#ObjectNameType). See SPEC.md § 3.1.
-	resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("...")
-
 	// WHY the default branch is NOT unified with a type: on cue v0.17.1 a
 	// failed validated default degrades to a bare `incomplete value` that
 	// never names the offending string. The error() arm is reported only when
 	// every other arm fails (enhancement 0019 D16; SPEC.md § 3.1 Rationale).
+
+	// Per-component resource-name override. Defaults to the
+	// instance-qualified name `<instance>-<component>`; an explicit value
+	// wins and must be a DNS subdomain (#ObjectNameType). See SPEC.md § 3.1.
+	resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("...")
 ```
 
-`task docs:check` (part of `task check`) reports every doc comment over 6 lines; `*_pins.cue` fixture files are exempt, hidden `_` fields in schema files are not. Never fix a report by deleting the blank line's neighbour into a doc comment of a different field; move the text below the field it explains.
+`task docs:check` (part of `task check`) fails on every doc comment over 6 lines; `*_pins.cue` fixture files are exempt, hidden `_` fields in schema files are not. Never fix a report by deleting a blank line; split the block and keep the contract as the attached part.
 
 ## Workflow
 
@@ -111,7 +111,7 @@ When editing a `core/src/*.cue` file:
    - Constraints adjusted to match the new schema.
    - Rationale explains *why* any non-obvious change exists. New constraint → new bullet. Removed constraint → either delete the bullet or note the removal if removal itself needs explanation.
 3. Run `task spec:check` from `core/` — verifies inventory match.
-4. Run `task check` — runs fmt, vet, INDEX freshness, `spec:check`, and the `docs:check` report.
+4. Run `task check` — runs fmt, vet, INDEX freshness, `spec:check`, and the `docs:check` limit.
 5. Stage the `.cue` change(s) and `SPEC.md` together in one commit.
 
 ## Verification gates (mechanical, cannot skip without explicit override)

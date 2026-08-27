@@ -67,9 +67,9 @@ tasks:
   ## Doc comment length
 
   docs:check:
-    desc: Report doc comments over 6 lines in src/*.cue (warn-only until the sweep lands)
+    desc: Fail on doc comments over 6 lines in src/*.cue
     cmds:
-      - bash .tasks/doc-check.sh src
+      - bash .tasks/doc-check.sh src --strict
 
   ## Git hooks
 

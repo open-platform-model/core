@@ -135,9 +135,9 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 | `task generate:index`         | Regenerate `src/INDEX.md`                                     |
 | `task generate:index:check`   | Verify `src/INDEX.md` is up to date                           |
 | `task spec:check`             | Verify `SPEC.md` inventory matches CUE construct definitions  |
-| `task docs:check`             | Report doc comments over 6 lines in `src/*.cue` (warn-only until the sweep lands) |
+| `task docs:check`             | Fail on doc comments over 6 lines in `src/*.cue`               |
 | `task hooks:install`          | Install the pre-commit hook (SPEC.md co-update gate)          |
-| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment report |
+| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit |
 
 ### Release & publishing
 
@@ -183,10 +183,10 @@ Follow the CUE style used across the workspace catalog. Pin `language: version: 
 Every `//` block that ends on the line directly above a field or definition is that declaration's doc comment, and `cue lsp` hover, `Value.Doc()`, `cue def` and `task generate:index` replay it verbatim. One blank line ends the block; a comment separated from the field by a blank line is not hover text, and `cue fmt` preserves that blank line. Comments therefore go in three tiers:
 
 1. **Doc comment, at most 6 lines.** The contract: what the field is and what a consumer must satisfy, optionally ending with `See SPEC.md § N.M`.
-2. **`// WHY ...` block below the field, after one blank line.** Rationale that must stay next to the code: measured evaluator behavior, refuted spellings, `Was:` history. The blank line above it is load-bearing; the `WHY` prefix marks it so nobody closes the gap.
+2. **`// WHY ...` block above the doc comment, separated from it by one blank line.** Rationale that must stay next to the code: measured evaluator behavior, refuted spellings, `Was:` history. Reads in natural order (why, then what, then the field); the blank line is load-bearing, and closing it merges the two into one over-limit doc comment that `task docs:check` reports.
 3. **`SPEC.md` Rationale.** The full argument, which `core-schema-edit` already requires.
 
-`task docs:check` reports every doc comment over 6 lines (warn-only until the relocation sweep lands, then strict). `*_pins.cue` fixture files are exempt; hidden `_` fields in schema files are not. Details and a before/after example in `.claude/skills/core-schema-edit/SKILL.md` § Writing comments.
+`task docs:check` fails on every doc comment over 6 lines. `*_pins.cue` fixture files are exempt; hidden `_` fields in schema files are not. Details and a before/after example in `.claude/skills/core-schema-edit/SKILL.md` § Writing comments.
 
 ## Working Style for Agents
 
