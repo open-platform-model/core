@@ -93,6 +93,23 @@ import (
 	// and ships nothing that renders it, which is today indistinguishable
 	// from having forgotten to.
 
+	// WHY no default here: the DECLARING CATALOG states the posture, and it
+	// must state it as a DEFAULT so a module can narrow it at the attachment
+	// site:
+	//
+	//   optional: bool | *true    // advisory — a workload without an
+	//                             // autoscaler still runs
+	//   optional: bool | *false   // load-bearing — an unhandled backup means
+	//                             // there are no backups
+	//
+	//   #traits: (BackupFQN): Backup & {optional: true}   // not my data
+	//
+	// `core` cannot express "you may suggest but not decide" in a field, so
+	// #TraitOptionalGate below carries it instead. The full argument is
+	// SPEC.md § 2.2 Rationale, "Why optionality is a property of the Trait,
+	// and why `core` states no default for it" and "Why the earlier
+	// demand-side marker was dropped".
+
 	// optional: whether an unhandled demand for this trait fails the render or
 	// degrades to a warning naming the trait (enhancement 0010 D46, amending
 	// D28's trait half). NO DEFAULT HERE: the declaring catalog states the
@@ -100,34 +117,6 @@ import (
 	// narrow it at the attachment site, and #TraitOptionalGate refuses a
 	// catalog that pins a concrete value. See SPEC.md § 2.2.
 	optional: bool
-
-	// WHY no default here, and the absence is the whole design. `core` has no
-	// opinion about whether backups are optional; the DECLARING CATALOG states
-	// the posture, and it must state it as a DEFAULT:
-	//
-	//   optional: bool | *true    // advisory — a workload without an
-	//                             // autoscaler still runs
-	//   optional: bool | *false   // load-bearing — an unhandled backup means
-	//                             // there are no backups
-	//
-	// A default is what makes the posture a RECOMMENDATION rather than a
-	// ruling: a module narrowing a default at the attachment site is never a
-	// conflict, so the demand side always has the last word —
-	//
-	//   #traits: (BackupFQN): Backup & {optional: true}   // not my data
-	//
-	// while a module narrowing a CONCRETE value is a conflict, which is why a
-	// catalog writing `optional: false` would win and is refused at publish.
-	// `core` cannot express "you may suggest but not decide" in a field, so
-	// #TraitOptionalGate below carries it instead.
-	//
-	// Why the posture is per-trait rather than one rule for all traits:
-	// optionality is a property of the (trait, component) PAIR. `backup` on a
-	// throwaway cache is advisory; on a database it is the entire point. The
-	// catalog knows the common case, the module knows its own, and this shape
-	// lets each say its part. SPEC.md § 2.2 Rationale, "Why optionality is a
-	// property of the Trait, and why `core` states no default for it" and
-	// "Why the earlier demand-side marker was dropped".
 
 	// MUST be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition
