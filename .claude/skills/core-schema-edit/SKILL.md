@@ -71,6 +71,8 @@ Three tiers, in this order of preference:
 | `// WHY ...` block | above the doc comment, separated by one blank line | rationale that must stay next to the code: measured cue behavior, refuted spellings, `Was:` history |
 | `SPEC.md` Rationale | the construct's section | the full argument (the Core rule above already requires it) |
 
+State a rationale once. A WHY paragraph that restates a SPEC.md Rationale bullet collapses to the bullet's title in the closing pointer; when several definitions share one rule (`#nameConstraint` on the three primitives), one carries the WHY block and the others a two-line pointer to it.
+
 Before (everything is hover text):
 
 ```cue
