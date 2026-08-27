@@ -6,36 +6,42 @@ package core
 	metadata: {
 		name!: #NameType
 
-		// Per-component resource-name override. Defaults to the
-		// instance-qualified name `<instance>-<component>` (enhancement 0019
-		// D16), the name every rendered primary object already carries; an
-		// explicit value wins via the disjunction-default cascade. #names reads
-		// from here to compute the rendered resource name and its DNS variants
-		// (enhancement 0001 D2).
-		//
-		// The override's ceiling is #ObjectNameType (0019 D20): a DNS subdomain,
-		// dots admitted, 253 runes, because that is what the kinds most
+		// WHY the default and the ceiling: the default is the name every
+		// rendered primary object already carries (enhancement 0019 D16), and
+		// #names reads from here to compute the rendered resource name and its
+		// DNS variants (enhancement 0001 D2). The override's ceiling is
+		// #ObjectNameType (0019 D20) because that is what the kinds most
 		// components render accept for metadata.name. The default can never
 		// carry a dot or exceed 127 runes, since both halves are #NameType
 		// labels; only an explicit override can meet a dot-hostile primitive's
 		// #nameConstraint, asserted by _nameFits below.
 		//
-		// The default branch is deliberately NOT unified with a type: on cue
+		// WHY the default branch is deliberately NOT unified with a type: on cue
 		// v0.17.1 a failed validated default degrades to a bare `incomplete
 		// value` that never names the offending string. The error() arm is
 		// reported only when every other arm fails, replacing the nested
 		// empty-disjunction output an explicit invalid name would otherwise
-		// produce.
+		// produce. SPEC.md § 3.1 Rationale, "Why the default branch is not
+		// unified with a type" and "Why the override ceiling is a subdomain
+		// and not a label".
+
+		// Per-component resource-name override. Defaults to the
+		// instance-qualified name `<instance>-<component>`; an explicit value
+		// wins via the disjunction-default cascade and must be a DNS subdomain
+		// (#ObjectNameType, dots admitted, 253 runes). #names reads from here.
+		// See SPEC.md § 3.1.
 		resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("resourceName \"\(resourceName)\" is not a DNS subdomain (lowercase alphanumerics, hyphens and dots, 1-253 runes)")
 
+		// WHY labels are not unified upward: both claims were here and both
+		// were false: no CUE in this definition performed the union, and the
+		// kernel reads this field off the component rather than folding it up
+		// from below. Matching now has its own field — see matchLabels
+		// (enhancement 0010 D36).
+
 		// Component labels — descriptive metadata for this component, and the
-		// labels that reach rendered output via #TransformerContext.
-		//
-		// NOT unified from the attached primitives, and nothing matches on
-		// them. Both claims were here and both were false: no CUE in this
-		// definition performed the union, and the kernel reads this field off
-		// the component rather than folding it up from below. Matching now
-		// has its own field — see matchLabels (enhancement 0010 D36).
+		// labels that reach rendered output via #TransformerContext. NOT
+		// unified from the attached primitives, and nothing matches on them;
+		// matching has its own field, matchLabels.
 		labels?: #LabelsAnnotationsType
 
 		// Component annotations — descriptive metadata for this component.
@@ -59,11 +65,11 @@ package core
 	// and an unsupplied one fails the render. Traits differ because a trait
 	// can be advisory — it modifies something that renders regardless.
 
-	// This component's MATCHING identity: the wholesale unification of every
-	// attached primitive's matchLabels. No filter, no key list, no prefix
-	// rule — every key a primitive puts there exists to be matched on, so
-	// there is nothing to select between. `metadata.labels` is NOT unified
-	// upward (see there); the two fields never meet.
+	// WHY this is the component's MATCHING identity: the wholesale
+	// unification of every attached primitive's matchLabels. No filter, no
+	// key list, no prefix rule — every key a primitive puts there exists to
+	// be matched on, so there is nothing to select between. `metadata.labels`
+	// is NOT unified upward (see there); the two fields never meet.
 	//
 	// A component contributes NOTHING here of its own — see the derivation
 	// check below, which is what makes that structural rather than a
@@ -83,7 +89,15 @@ package core
 	//
 	// The union itself is hidden, because it is the PROVENANCE of the public
 	// field rather than a second value a consumer reads: matchLabels IS this,
-	// and the check underneath is what keeps it exactly this.
+	// and the check underneath is what keeps it exactly this. SPEC.md § 3.1
+	// Rationale, "Why matching identity unifies upward but `metadata.labels`
+	// does not" and "Why the union is a comprehension over the attachment
+	// maps and never over the labels".
+
+	// The wholesale unification of every attached primitive's matchLabels:
+	// the provenance of the public matchLabels field, which IS this value.
+	// Embeds each primitive's matchLabels struct whole; never iterates the
+	// labels themselves.
 	_matchLabelsFromPrimitives: {
 		for _, resource in #resources {
 			if resource.matchLabels != _|_ {resource.matchLabels}
@@ -99,39 +113,47 @@ package core
 			}
 		}
 	}
+
 	matchLabels: _matchLabelsFromPrimitives
 
-	// matchLabels is DERIVED, and this is the enforcement. Unification can
-	// only ever ADD to matchLabels, so a size difference is exactly "this
-	// component contributed a key of its own" — whether it invented one or
-	// answered a required one inline.
+	// WHY a length comparison: unification can only ever ADD to matchLabels,
+	// so a size difference is exactly "this component contributed a key of
+	// its own" — whether it invented one or answered a required one inline.
 	//
-	// IF THIS FIRES: put the key on the primitive that owns it, or attach a
-	// blueprint that answers it. A matching key written on a component — or on
-	// a catalog FRAGMENT, which is the same type, and which is why this binds
-	// every #Component rather than only fragments — sits outside the
-	// additive-only promise its contract key gates.
+	// A matching key written on a component — or on a catalog FRAGMENT, which
+	// is the same type, and which is why this binds every #Component rather
+	// than only fragments — sits outside the additive-only promise its
+	// contract key gates.
 	//
 	// `close()` around the union does NOT do this. Measured against cue
 	// v0.17.1: a closed comprehension still admits an authored key, so the
 	// obvious spelling would read as enforcement while enforcing nothing.
+	// SPEC.md § 3.1 Rationale, "Why the derivation is enforced, and why the
+	// rule binds every Component rather than only fragments".
+
+	// matchLabels is DERIVED, and this is the enforcement: a size difference
+	// between the union and the field is exactly "this component contributed
+	// a key of its own". IF THIS FIRES: put the key on the primitive that
+	// owns it, or attach a blueprint that answers it.
 	_matchLabelsAreDerived: len(matchLabels) == len(_matchLabelsFromPrimitives)
 	_matchLabelsAreDerived: true
 
+	// WHY: introduced by enhancement 0001 (D3). Was: #release:
+	// #ReleaseIdentity (renamed in enhancement 0002). SPEC.md § 3.1
+	// Rationale, "Why `#instance` is hidden and module-injected, not
+	// author-supplied".
+
 	// Instance context injected by the parent #Module via its #components
 	// pattern constraint. Hidden definition slot — module authors never set
-	// this directly. Introduced by enhancement 0001 (D3).
-	//
-	// Was: #release: #ReleaseIdentity (renamed in enhancement 0002)
+	// this directly.
 	#instance: #InstanceIdentity
 
-	// Every attached primitive's #nameConstraint, unified into one conjunction
-	// (enhancement 0019 D21); top when none declares one. Collected
-	// UNCONDITIONALLY — comprehensions over the three attachment maps, no
-	// existence guard — because on cue v0.17.1 `x.#nameConstraint != _|_` is
-	// false for a non-concrete value and a guarded spelling silently never
-	// propagates (0019 experiment 09). Unifying top is the identity, so an
-	// indifferent primitive costs nothing.
+	// WHY unconditional (enhancement 0019 D21): comprehensions over the three
+	// attachment maps, no existence guard — because on cue v0.17.1
+	// `x.#nameConstraint != _|_` is false for a non-concrete value and a
+	// guarded spelling silently never propagates (0019 experiment 09).
+	// Unifying top is the identity, so an indifferent primitive costs
+	// nothing.
 	//
 	// COST: this is a second walk over the attachment maps beside
 	// _matchLabelsFromPrimitives, paid per component at every evaluation.
@@ -142,19 +164,22 @@ package core
 	// primitives, so a module with many components each attaching many
 	// primitives pays it in full on every render. If render times grow with
 	// module complexity, re-measure this walk before the transformers.
+
+	// Every attached primitive's #nameConstraint, unified into one
+	// conjunction; top when none declares one. Collected UNCONDITIONALLY,
+	// with no existence guard.
 	_nameConstraints: _
 	for _, resource in #resources {_nameConstraints: resource.#nameConstraint}
 	if #traits != _|_ {
 		for _, trait in #traits {_nameConstraints: trait.#nameConstraint}
 	}
+
 	if #blueprints != _|_ {
 		for _, blueprint in #blueprints {_nameConstraints: blueprint.#nameConstraint}
 	}
 
-	// The assertion: the RESOLVED resourceName satisfies every attached
-	// constraint. Refuses naming the string, the violated bound and the
-	// constraint type's definition site. Two spellings that read as
-	// equivalent are wrong, both measured on cue v0.17.1 (0019 experiment 11):
+	// WHY this exact spelling: two spellings that read as equivalent are
+	// wrong, both measured on cue v0.17.1 (0019 experiment 11):
 	//
 	//   - Unifying _nameConstraints into metadata.resourceName, or writing
 	//     `metadata.resourceName & _nameConstraints` here WITHOUT the
@@ -172,15 +197,27 @@ package core
 	//
 	// So the diagnostic cannot name the attached primitive or a remedy; the
 	// type site in the trace (#NameType, #ServiceNameType) is the pointer.
+	// SPEC.md § 3.1 Rationale, "Why the constraint is asserted on a hidden
+	// field rather than unified into `resourceName`".
+
+	// The assertion: the RESOLVED resourceName satisfies every attached
+	// constraint. Refuses naming the string, the violated bound and the
+	// constraint type's definition site. The interpolation is load-bearing;
+	// see below.
 	_nameFits: "\(metadata.resourceName)" & _nameConstraints
 
-	// Single source of truth for this component's computed names. `resourceName`
-	// reads straight from metadata (cascade lives there); DNS variants derive
-	// deterministically from resourceName + #instance.namespace + #instance.clusterDomain.
-	// Introduced by enhancement 0001 (D2). #Module.#ctx.components projects this
-	// block automatically; authors writing self-references inside a component's
-	// `spec` body MUST go through `#ctx.components.<self-id>.dns.fqdn` because
-	// `#names` is not in lexical scope under the spec definition block.
+	// WHY: introduced by enhancement 0001 (D2). #Module.#ctx.components
+	// projects this block automatically; authors writing self-references
+	// inside a component's `spec` body MUST go through
+	// `#ctx.components.<self-id>.dns.fqdn` because `#names` is not in lexical
+	// scope under the spec definition block. SPEC.md § 3.1 Rationale, "Why
+	// `#names` lives on the Component and `#ctx.components` is a projection".
+
+	// Single source of truth for this component's computed names.
+	// `resourceName` reads straight from metadata (cascade lives there); DNS
+	// variants derive deterministically from resourceName +
+	// #instance.namespace + #instance.clusterDomain. Authors inside a
+	// component's `spec` body MUST use `#ctx.components.<self-id>.dns.fqdn`.
 	#names: {
 		resourceName: metadata.resourceName
 		dns: {

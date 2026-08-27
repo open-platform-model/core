@@ -16,8 +16,8 @@ export LC_ALL=C
 #
 # The convention this enforces (CLAUDE.md, CUE Style Guidelines):
 #   - doc comment: the contract, at most MAX lines
-#   - `// WHY ...` block BELOW the field, after one blank line: rationale that
-#     must stay next to the code but is not hover text
+#   - `// WHY ...` block ABOVE the doc comment, separated by one blank line:
+#     rationale that must stay next to the code but is not hover text
 #   - the normative document (SPEC.md here, docs/ in the catalogs): the full
 #     argument
 #
@@ -74,7 +74,7 @@ done < <(find "$DIR" -name '*.cue' -not -path '*/cue.mod/*' -not -name '*_pins.c
 if [[ "$fails" -gt 0 ]]; then
     echo ""
     echo "$fails doc comment(s) over $MAX lines under $DIR."
-    echo "Keep the contract in the doc comment; move the rest below the field after a blank line (// WHY ...)."
+    echo "Keep the contract in the doc comment; move the rest into a // WHY block above it, separated by a blank line."
     if [[ "$STRICT" == "1" ]]; then
         echo "FAIL: strict mode."
         exit 1

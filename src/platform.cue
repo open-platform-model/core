@@ -1,11 +1,6 @@
 package core
 
-// #Subscription declares that a #Platform pulls primitives from a catalog
-// published at a given CUE module path, and names the single build it pulls.
-// The map key on #Platform.#registry carries the path; #Subscription carries
-// the enable flag and the version.
-//
-// `version` is required and scalar: the value written IS the value
+// WHY scalar: `version` is required and scalar: the value written IS the value
 // materialized. No range to resolve, no allow/deny to arbitrate, no
 // highest-published default. Catalog selection is therefore a pure function
 // of committed source — git-identical inputs materialize identical catalog
@@ -22,16 +17,23 @@ package core
 // contracts and never a transformer (D4); two API versions of one contract
 // already ship side by side in a single build; and testing a new build
 // beside the old is two platforms, which names both behaviours and costs
-// nothing hidden.
+// nothing hidden. SPEC.md § 3.4 Rationale, "Why a subscription names one
+// build, and why the filter that used to select it is gone", "Why the field
+// is a scalar and not a one-element list" and "Why a prerelease needs no
+// flag".
+
+// #Subscription declares that a #Platform pulls primitives from a catalog
+// published at a given CUE module path, and names the single build it pulls.
+// The map key on #Platform.#registry carries the path; #Subscription carries
+// the enable flag and the version. `version` is required and scalar: the
+// value written IS the value materialized. One subscription per catalog
+// path; two builds of one catalog is two platforms. See SPEC.md § 3.4.
 #Subscription: {
 	enable:   bool | *true
 	version!: #VersionType // Example: "1.2.0", "1.0.0-alpha.2"
 }
 
-// #Platform — path-keyed registry of catalog subscriptions plus
-// kernel-filled materialization slots.
-//
-// Authors write #registry. The kernel's Materialize step (library-side)
+// WHY the CUE value is a spec: the kernel's Materialize step (library-side)
 // pulls the build each subscription NAMES — there is nothing to resolve,
 // because the platform file is the resolution — indexes top-level
 // #ComponentTransformer values into #composedTransformers, and computes a
@@ -43,7 +45,16 @@ package core
 // Reshaped by enhancement 0001 (supersedes the prior Id-keyed
 // #ModuleRegistration model). #knownResources / #knownTraits removed:
 // primitives surface transitively via materialized transformers'
-// required/optional maps.
+// required/optional maps. SPEC.md § 3.4 Rationale, "Why subscriptions
+// instead of inline module registrations", "Why the registry map is
+// path-keyed, not Id-keyed", "Why `#composedTransformers` and `#matchers`
+// are optional kernel-filled slots, not CUE comprehensions" and "Why
+// `#knownResources` and `#knownTraits` are removed".
+
+// #Platform — path-keyed registry of catalog subscriptions plus
+// kernel-filled materialization slots. Authors write #registry; the kernel's
+// Materialize step fills #composedTransformers and #matchers on a separate
+// materialized twin (D14). See SPEC.md § 3.4.
 #Platform: {
 	kind: "Platform"
 

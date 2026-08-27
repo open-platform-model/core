@@ -5,23 +5,15 @@ import (
 )
 
 // #ComponentTransformer: Declares how to convert OPM components into platform-specific resources.
-//
-// ComponentTransformers use label-based matching to determine which components they can handle.
 // A transformer matches a component when ALL of the following are true:
 //  1. ALL requiredLabels are present in the component's matchLabels with matching values
 //  2. ALL requiredResources FQNs exist in component #resources
 //  3. ALL requiredTraits FQNs exist in component #traits
-//
-// A component's matchLabels is the wholesale unification of its attached
-// #resources', #traits' and #blueprints' matchLabels. Matching does NOT read
-// metadata.labels on either side (enhancement 0010 D36).
+// Matching never reads metadata.labels (0010 D36). See SPEC.md § 4.1.
 #ComponentTransformer: {
 	kind: "ComponentTransformer"
 
-	// A transformer's identity shape is its OWN — it deliberately shares no
-	// parent definition with the three primitives' (enhancement 0010 D44).
-	//
-	// It carries NO apiVersion, and the absence is load-bearing rather than an
+	// WHY no apiVersion: the absence is load-bearing rather than an
 	// omission. Nothing would read one: this key interpolates catalogVersion,
 	// the matcher keys on the CONTRACTS a transformer demands rather than on
 	// the transformer, and the additive-only promise binds contracts. There is
@@ -38,6 +30,11 @@ import (
 	// `apiVersion` here is a `field not allowed` error rather than a field
 	// nothing reads. That is what makes the exclusion structural instead of
 	// remembered — see the pinned case in identity_pins.cue.
+
+	// A transformer's identity shape is its OWN — it deliberately shares no
+	// parent definition with the three primitives' (enhancement 0010 D44). It
+	// carries NO apiVersion, and the struct is CLOSED, so supplying one is a
+	// `field not allowed` error. See SPEC.md § 4.1.
 	metadata: {
 		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/transformers"
 		name!:       #NameType        // Example: "deployment-transformer"
@@ -64,19 +61,20 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
+	// WHY the key is the DECLARING CATALOG's, not `core`'s: a catalog's
+	// container resource declares the key in its own matchLabels (required,
+	// so the author must pick), and its workload blueprints answer it.
+	// Transformers requiring "stateful" won't match. `core` names no
+	// matching key, which is what lets a catalog introduce one without a
+	// `core` release. SPEC.md § 2.1 Rationale, "Why `core` names no matching
+	// key".
+
 	// Labels a component MUST carry in its matchLabels to match this
 	// transformer. Selection reads #Component.matchLabels — the wholesale
 	// unification of the attached primitives' matchLabels — and never
 	// metadata.labels on either side (enhancement 0010 D36).
-	//
 	// Example: A DeploymentTransformer requires stateless workloads:
 	//   requiredLabels: {"opm.opmodel.dev/workload-type": "stateless"}
-	//
-	// The key is the DECLARING CATALOG's, not `core`'s: a catalog's container
-	// resource declares the key in its own matchLabels (required, so the
-	// author must pick), and its workload blueprints answer it. Transformers
-	// requiring "stateful" won't match. `core` names no matching key, which
-	// is what lets a catalog introduce one without a `core` release.
 	requiredLabels?: #LabelsAnnotationsType
 
 	// Labels optionally used by this transformer - component MAY include these
@@ -103,10 +101,7 @@ import (
 	readsContext?: [...string]
 	producesKinds?: [...string]
 
-	// Transform function. The runtime supplies all three inputs concretely (D18).
-	//
-	// output is either a single resource (struct) or a list of resources
-	// (list). The renderer dispatches on cue.Kind:
+	// WHY struct or list:
 	//   StructKind → one Compiled per (component, transformer) pair; the
 	//                whole struct is the resource.
 	//   ListKind   → one Compiled per list item; each item is one resource.
@@ -115,6 +110,11 @@ import (
 	// of resources should use a struct; transformers that emit N resources
 	// derived from a component-side map (e.g. ConfigMaps, Secrets, PVCs)
 	// should use a list comprehension.
+
+	// Transform function. The runtime supplies all three inputs concretely
+	// (D18). output is either a single resource (struct) or a list of
+	// resources (list); the renderer dispatches on cue.Kind and never
+	// inspects fields inside the value.
 	#transform: {
 		// Was: #moduleRelease (renamed in enhancement 0002)
 		#moduleInstance: _ // Fully concrete #ModuleInstance (D18)
@@ -155,9 +155,7 @@ import (
 	// for the CLI, "opm-controller" for the operator).
 	#runtimeName!: #NameType
 
-	// Labels and annotations. These are inherited from the component and module metadata.
-	//
-	// #Component.matchLabels is DELIBERATELY absent from every fold below: a
+	// WHY #Component.matchLabels is DELIBERATELY absent from every fold here: a
 	// component's matching identity selects a transformer, it does not
 	// describe the objects that transformer emits, and folding it in would
 	// publish a catalog's private matching vocabulary onto every live object.
@@ -166,8 +164,10 @@ import (
 	// `core.opmodel.dev/workload-type` before this change and stop here. An
 	// opt-in render flag was demonstrated working in experiment 04 and
 	// deliberately not taken; adding it later is a struct-level guard on
-	// componentLabels and disturbs nothing else.
-	//
+	// componentLabels and disturbs nothing else. SPEC.md § 2.1 Rationale,
+	// "Why `matchLabels` is not rendered".
+
+	// Labels and annotations. These are inherited from the component and module metadata.
 	// - moduleLabels: labels from #moduleInstanceMetadata.labels (if defined)
 	// - moduleAnnotations: annotations from #moduleInstanceMetadata.annotations (if defined)
 	// - componentLabels: labels from #componentMetadata.labels (if defined) + "app.kubernetes.io/name" = component name

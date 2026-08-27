@@ -11,17 +11,18 @@ import (
 //// Secret Contract Type
 /////////////////////////////////////////////////////////////////
 
-// #Secret is the contract type that module authors place on
-// sensitive fields. It is a disjunction of fulfillment variants.
-// Users provide values that resolve to one of these variants.
-//
-// The $opm discriminator enables auto-discovery via CUE comprehensions.
-// The $secretName and $dataKey fields carry routing information:
+// WHY the $-fields: the $opm discriminator enables auto-discovery via CUE
+// comprehensions. The $secretName and $dataKey fields carry routing
+// information:
 //   $secretName -> K8s Secret resource name (grouping key)
 //   $dataKey    -> data key within that K8s Secret
-//
-// These are set by the author in the schema declaration.
 // Users never need to set them — CUE unification propagates them.
+
+// #Secret is the contract type that module authors place on
+// sensitive fields. It is a disjunction of fulfillment variants.
+// Users provide values that resolve to one of these variants. The
+// $secretName and $dataKey fields are set by the author in the schema
+// declaration; users never set them.
 #Secret: #SecretLiteral | #SecretK8sRef
 
 #SecretType: {
@@ -192,10 +193,8 @@ import (
 	out: (#GroupSecrets & {#in: _discovered}).out
 }
 
-// #DiscoverSecrets walks a resolved config (up to 10 levels deep)
-// and collects all fields whose value is a #Secret.
-//
-// The detection checks for the presence of the $opm discriminator field:
+// WHY #DiscoverSecrets detects the way it does. The detection checks for the
+// presence of the $opm discriminator field:
 //   v.$opm != _|_
 // This succeeds only when $opm is already set on the value (concrete #Secret).
 // Scalars, closed structs (e.g., #Image), and open structs without $opm
@@ -208,6 +207,11 @@ import (
 // The result is a flat map of all discovered secrets, keyed by
 // their path (e.g., "dbUser", "database/password", "auth/tokens/api").
 // The path keys are internal identifiers — grouping uses $secretName/$dataKey.
+
+// #DiscoverSecrets walks a resolved config (up to 10 levels deep)
+// and collects all fields whose value is a #Secret. The result is a flat
+// map keyed by path (e.g., "dbUser", "database/password"); the path keys are
+// internal identifiers — grouping uses $secretName/$dataKey.
 #DiscoverSecrets: {
 	X=#in: {...}
 	out: {

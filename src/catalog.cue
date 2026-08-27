@@ -1,8 +1,7 @@
 package core
 
-// #Catalog: top-level catalog definition. Authoring shape uses the modules
-// pattern — bare `c.#Catalog` at file root, fields written at package level,
-// no `Catalog:` wrapper:
+// WHY it is authored this way. The full authoring shape:
+//
 //
 //   // library/modules/opm/catalog.cue
 //   package opm
@@ -54,7 +53,17 @@ package core
 // Resources / Traits / Blueprints are surfaced transitively via each
 // transformer's required/optional maps. Adding sibling maps (#resources,
 // #traits, #blueprints) is an additive extension if introspection demand
-// surfaces later.
+// surfaces later. SPEC.md § 3.6 Rationale, "Why a single `#Catalog`
+// construct instead of a `#Module.#defines` block", "Why the `M=metadata`
+// field-label alias", "Why the pattern stamps `modulePath` + `catalogVersion`
+// but not `fqn`" and "Why catalogs don't enumerate Resources / Traits /
+// Blueprints".
+
+// #Catalog: top-level catalog definition. Authoring shape uses the modules
+// pattern — bare `c.#Catalog` at file root, fields written at package level,
+// no `Catalog:` wrapper; identity comes from the sibling `identity/` package.
+// Resources, traits and blueprints surface transitively through each
+// transformer's required/optional maps. See SPEC.md § 3.6.
 #Catalog: {
 	kind: "Catalog"
 	M=metadata: {
