@@ -2,7 +2,57 @@ package core
 
 // #Catalog: top-level catalog definition. Authoring shape uses the modules
 // pattern — bare `c.#Catalog` at file root, fields written at package level,
-// no `Catalog:` wrapper:
+// no `Catalog:` wrapper; identity comes from the sibling `identity/` package.
+// Resources, traits and blueprints surface transitively through each
+// transformer's required/optional maps. See SPEC.md § 3.6.
+#Catalog: {
+	kind: "Catalog"
+	M=metadata: {
+		modulePath!: #ModulePathType // Example: "opmodel.dev/catalogs/opm@v1"
+
+		// No "0.0.0-dev" default: an unfilled version is an incomplete value
+		// naming this field, rather than one that renders successfully while
+		// being wrong.
+		version!: #VersionType
+
+		// fqn IS the module path (enhancement 0010 D1) — the version no longer
+		// joins it, and #CatalogFQNType retires with the derivation it typed.
+		fqn: #ModulePathType & modulePath
+
+		// The one decomposition of modulePath. registryPath is what the
+		// #transformers stamp below is built on.
+		_ref: #ArtifactRef & {"modulePath": modulePath}
+
+		// NO version/path major assertion here, deliberately — D43, the same
+		// holding #Module carries under D45. `identity/identity.cue` asserts
+		// VersionMajor == Major at the point both values are WRITTEN; `core`
+		// re-deriving it one hop downstream tests the same relation over the
+		// same two values. The exposure — a catalog whose identity package is
+		// absent or non-conformant carries no consumer-runnable major check,
+		// and the skew surfaces in a platform author's file instead — is
+		// accepted and bounded by enhancement 0011's publish gates.
+
+		description?: string
+		labels?:      #LabelsAnnotationsType
+		annotations?: #LabelsAnnotationsType
+	}
+
+	#transformers: [#ImplFQNType]: #ComponentTransformer & {
+		metadata: {
+			// The major is split out and NOT re-appended: a transformer
+			// declares a #PackagePathType, which admits no "@vN".
+			modulePath: "\(M._ref.registryPath)/transformers"
+
+			// The catalog's own version IS the build every member of it
+			// shipped in — enhancement 0010 D25's rename, stamped rather
+			// than authored per leaf.
+			catalogVersion: M.version
+		}
+	}
+}
+
+// WHY it is authored this way. The full authoring shape:
+//
 //
 //   // library/modules/opm/catalog.cue
 //   package opm
@@ -54,49 +104,8 @@ package core
 // Resources / Traits / Blueprints are surfaced transitively via each
 // transformer's required/optional maps. Adding sibling maps (#resources,
 // #traits, #blueprints) is an additive extension if introspection demand
-// surfaces later.
-#Catalog: {
-	kind: "Catalog"
-	M=metadata: {
-		modulePath!: #ModulePathType // Example: "opmodel.dev/catalogs/opm@v1"
-
-		// No "0.0.0-dev" default: an unfilled version is an incomplete value
-		// naming this field, rather than one that renders successfully while
-		// being wrong.
-		version!: #VersionType
-
-		// fqn IS the module path (enhancement 0010 D1) — the version no longer
-		// joins it, and #CatalogFQNType retires with the derivation it typed.
-		fqn: #ModulePathType & modulePath
-
-		// The one decomposition of modulePath. registryPath is what the
-		// #transformers stamp below is built on.
-		_ref: #ArtifactRef & {"modulePath": modulePath}
-
-		// NO version/path major assertion here, deliberately — D43, the same
-		// holding #Module carries under D45. `identity/identity.cue` asserts
-		// VersionMajor == Major at the point both values are WRITTEN; `core`
-		// re-deriving it one hop downstream tests the same relation over the
-		// same two values. The exposure — a catalog whose identity package is
-		// absent or non-conformant carries no consumer-runnable major check,
-		// and the skew surfaces in a platform author's file instead — is
-		// accepted and bounded by enhancement 0011's publish gates.
-
-		description?: string
-		labels?:      #LabelsAnnotationsType
-		annotations?: #LabelsAnnotationsType
-	}
-
-	#transformers: [#ImplFQNType]: #ComponentTransformer & {
-		metadata: {
-			// The major is split out and NOT re-appended: a transformer
-			// declares a #PackagePathType, which admits no "@vN".
-			modulePath: "\(M._ref.registryPath)/transformers"
-
-			// The catalog's own version IS the build every member of it
-			// shipped in — enhancement 0010 D25's rename, stamped rather
-			// than authored per leaf.
-			catalogVersion: M.version
-		}
-	}
-}
+// surfaces later. SPEC.md § 3.6 Rationale, "Why a single `#Catalog`
+// construct instead of a `#Module.#defines` block", "Why the `M=metadata`
+// field-label alias", "Why the pattern stamps `modulePath` + `catalogVersion`
+// but not `fqn`" and "Why catalogs don't enumerate Resources / Traits /
+// Blueprints".
