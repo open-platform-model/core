@@ -106,6 +106,8 @@ Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`)
 ## Files and tracked constructs
 
 - `src/platform.cue`: the whole delta. Doc comments and both WHY blocks rewritten to the import model (the "scalar version" WHY and the "kernel-filled slots" WHY are both obsolete); each stays within the 6-line doc-comment rule with `SPEC.md § 3.4` pointers.
+- `src/platform_and_match_pins.cue` (landed after this design was drafted, with `core-context-projection`): its subscription-shaped section (`_pinPlatform`, the three `_pinSubscription*` readouts, `_pinOneBuildPerPath`, and the three subscription must-fail cases) pins removed behavior and is deleted under the no-new-fixture decision above; the matching, fulfilment and context pins stay. The import-model delta remains exercised by `enhancements/0019/schemas/examples.cue`.
+- `openspec/specs/primitive-keying/spec.md` (via a delta in this change): the FQN-map-key requirement enumerated `#Platform.#matchers.resources` / `traits` as contract-keyed maps and carried a matcher-bucket scenario; both fall out with D17. Discovered during implementation; the delta drops those clauses and keeps the rest verbatim.
 - `SPEC.md` §3.4: Definition, Shape, Constraints, Rationale rewritten per the pre-draft (`enhancements/0019/schemas/spec.md` §`#CatalogEntry`, §`#Platform`). `#CatalogEntry` is documented inside §3.4 where `#Subscription` is today. Same commit as the CUE (pre-commit hook enforces).
 - `.tasks/spec-tracked.txt`: add `#CatalogEntry` (top-level published definition, not a helper). `#Subscription` was never tracked; nothing to remove.
 - `src/INDEX.md`: regenerate; review the extracted doc comments.

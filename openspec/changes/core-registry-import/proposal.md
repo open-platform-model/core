@@ -38,6 +38,7 @@ None.
 ### Modified Capabilities
 
 - `platform-subscription`: the requirements reshape from "a subscription names one build by version scalar" to "an entry carries the build by import and derives its identity readouts"; the pure-function-of-committed-source and one-entry-per-path requirements survive with their mechanism restated (`cue.mod` is committed source); new requirements for the key binding, the derived fold, and the absence of a reverse index.
+- `primitive-keying`: the "every FQN map key is typed by the role it holds" requirement loses its `#Platform.#matchers` bucket clauses and scenario, which named a map D17 removes; the demand-map and transformer-map clauses are unchanged.
 
 ## Impact
 
