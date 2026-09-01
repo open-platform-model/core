@@ -195,6 +195,90 @@ _pinRenderedLabels: _pinRenderContext.labels & {
 _pinRenderedLabelsCount: len(_pinRenderContext.labels)
 _pinRenderedLabelsCount: 5
 
+// ─── The context is a projection of the other two #transform inputs ─────────
+//
+// 0019 D12: at the #transform site the context's two metadata blocks compute
+// from #moduleInstance and #component; the runtime fills #runtimeName alone.
+// Fixture values mirror enhancements/0019/schemas/examples.cue § D12, so the
+// landed projection and the enhancement's assertions stay comparable.
+
+// A small instance-shaped value. The projection reads its sources
+// structurally (the #moduleInstance slot stays `_`, 0019 D3), so the fixture
+// supplies exactly the fields the projection reads. Labels present,
+// annotations deliberately ABSENT — the absent-optional pin below rests on
+// that, as does the component fixture carrying no labels.
+_pinCtxInstance: {
+	kind: "ModuleInstance"
+	metadata: {
+		name:      "shop"
+		namespace: "apps"
+		fqn:       "opmodel.dev/modules/shop:shop:apps"
+		uuid:      "0f8fad5b-d9cb-469f-a165-70867728950e"
+		labels: "team.opmodel.dev/owner": "platform"
+	}
+	#moduleMetadata: version: "1.2.0"
+}
+
+_pinCtxComponent: metadata: name: "web"
+
+_pinCtxTransformer: #ComponentTransformer & {
+	metadata: {
+		name:           "context-projection"
+		modulePath:     "opmodel.dev/catalogs/opm/transformers"
+		catalogVersion: "1.0.0"
+		fqn:            "opmodel.dev/catalogs/opm/transformers/context-projection@1.0.0"
+		description:    "Pin fixture for the #transform.#context projection"
+	}
+	#transform: {
+		#moduleInstance: _pinCtxInstance
+		#component:      _pinCtxComponent
+
+		// The runtime's whole remaining obligation.
+		#context: #runtimeName: "opm-cli"
+	}
+}
+
+_pinCtx: _pinCtxTransformer.#transform.#context
+
+// Projected from #moduleInstance, with no runtime fill in between.
+// Interpolation forces evaluation (the ONE RULE above).
+_pinCtxInstanceFields: "\(_pinCtx.#moduleInstanceMetadata.name)|\(_pinCtx.#moduleInstanceMetadata.namespace)|\(_pinCtx.#moduleInstanceMetadata.fqn)|\(_pinCtx.#moduleInstanceMetadata.uuid)|\(_pinCtx.#moduleInstanceMetadata.version)"
+_pinCtxInstanceFields: "shop|apps|opmodel.dev/modules/shop:shop:apps|0f8fad5b-d9cb-469f-a165-70867728950e|1.2.0"
+_pinCtxInstanceLabel:  _pinCtx.#moduleInstanceMetadata.labels["team.opmodel.dev/owner"]
+_pinCtxInstanceLabel:  "platform"
+
+// Projected from #component: metadata.name, the component's own identity.
+// The #components-map key is not in scope here and is NEVER the source — a
+// runtime that filled the key diverges (see the must-fail case below).
+_pinCtxComponentName: "\(_pinCtx.#componentMetadata.name)"
+_pinCtxComponentName: "web"
+
+// The label folds were already projections of the two metadata blocks, so
+// they follow with no further wiring. Read by indexing, not unification.
+_pinCtxControllerLabels: {
+	managedBy: _pinCtx.controllerLabels["app.kubernetes.io/managed-by"]
+	name:      _pinCtx.controllerLabels["app.kubernetes.io/name"]
+	instance:  _pinCtx.controllerLabels["app.kubernetes.io/instance"]
+}
+_pinCtxControllerLabels: {managedBy: "opm-cli", name: "web", instance: "web"}
+
+// The whole rendered label set, by count — labels is an OPEN struct, so a
+// literal-unification pin is masked (see _pinRenderedLabelsCount above):
+// moduleLabels contributes team.opmodel.dev/owner; componentLabels
+// app.kubernetes.io/name + module-instance.opmodel.dev/name; controllerLabels
+// managed-by + instance (name shared) = 5 distinct keys.
+_pinCtxRenderedLabelsCount: len(_pinCtx.labels)
+_pinCtxRenderedLabelsCount: 5
+
+// Absent optional sources project as ABSENT — not as errors, not as empty
+// structs. The instance fixture carries no annotations and the component
+// fixture no labels; both stay missing on the context. Pinned as
+// disunification checks, the shape _pinComponentLabelsUnfolded established.
+_pinCtxInstanceAnnotationsAbsent: _pinCtx.#moduleInstanceMetadata.annotations == _|_
+_pinCtxInstanceAnnotationsAbsent: true
+_pinCtxComponentLabelsAbsent:     _pinCtx.#componentMetadata.labels == _|_
+_pinCtxComponentLabelsAbsent:     true
+
 // ─── Fulfilment ─────────────────────────────────────────────────────────────
 
 // The default. A primitive that never mentions the field is catalog-fulfilled,
@@ -567,4 +651,58 @@ _pinOneBuildPerPath: "1.2.0"
 //   fulfilment: "external"
 //   appliesTo: [_pinMatchContainer]
 //   spec: backup: schedule: string
+//  }
+
+// ─── MUST-FAIL: a divergent runtime fill loses to the projection ────────────
+
+// The transitional contract (SPEC.md § 4.1): a staged runtime MAY keep filling
+// the projected fields with IDENTICAL values (unification agrees, a no-op —
+// #runtimeName above is exactly such a fill), and a DIVERGENT fill is a
+// conflict at the field, never a silent win. This case is the key-fill drift
+// measured on modules/k8up ("manager-cluster-role" vs "k8up-manager"): a
+// runtime sourcing the component name from the #components-map key instead of
+// metadata.name. Run once in place, cue v0.17.1, plain `cue vet`:
+//   _failCtxDivergentFill.#transform.#context.#componentMetadata.name:
+//     conflicting values "web" and "frontend"
+// The instance-side twin was measured in the same run shape:
+//   _failCtxDivergentFill.#transform.#context.#moduleInstanceMetadata.name:
+//     conflicting values "shop" and "renamed"
+//
+//  _failCtxDivergentFill: _pinCtxTransformer & {
+//   #transform: #context: #componentMetadata: name: "frontend"
+//  }
+
+// ─── MUST-FAIL: a render without a runtime name refuses ─────────────────────
+
+// Both inputs filled, no #runtimeName: the one context field the projection
+// cannot compute. A MISSING REQUIRED FIELD, so per this file's header it is
+// not vet-visible (`cue vet ./...` and `cue vet -c ./...` both exit 0,
+// measured 2026-09-01, cue v0.17.1) and #context is HIDDEN, so the field must
+// be named. Note the projection itself evaluates — both metadata blocks
+// compute; only #runtimeName and the managed-by fold that reads it fail:
+//
+//   $ cue export -e '_failCtxNoRuntimeName.#transform.#context' ./...
+//   _failCtxNoRuntimeName.#transform.#context.#runtimeName:
+//     field is required but not present
+//   _failCtxNoRuntimeName.#transform.#context.controllerLabels."app.kubernetes.io/managed-by":
+//     required field missing: #runtimeName
+//   _failCtxNoRuntimeName.#transform.#context.controllerLabels."app.kubernetes.io/managed-by":
+//     invalid interpolation: required field missing: #runtimeName
+//
+// Which is what a kernel does — render reads the context concretely — so the
+// error reaches the caller that matters. Do not add a pin that appears to
+// check it; there is no vet-visible form.
+//
+//  _failCtxNoRuntimeName: #ComponentTransformer & {
+//   metadata: {
+//    name:           "context-projection-no-runtime"
+//    modulePath:     "opmodel.dev/catalogs/opm/transformers"
+//    catalogVersion: "1.0.0"
+//    fqn:            "opmodel.dev/catalogs/opm/transformers/context-projection-no-runtime@1.0.0"
+//    description:    "Must-fail fixture: both inputs filled, no #runtimeName"
+//   }
+//   #transform: {
+//    #moduleInstance: _pinCtxInstance
+//    #component:      _pinCtxComponent
+//   }
 //  }
