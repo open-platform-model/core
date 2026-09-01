@@ -1,4 +1,10 @@
-## ADDED Requirements
+## Purpose
+
+Defines what a `#Platform` declares about the catalogs it admits. A registry entry carries its catalog **by import**: the platform module names the build in its own `cue.mod` the way any CUE module names a dependency, and the entry embeds the imported value whole, deriving its `version` and `#transformers` from it. Covers the shape of an entry, the key-to-import binding, the derived transformer fold, why selection cannot move when the registry does, why two builds of one catalog is two platforms, and why a platform carries no reverse index.
+
+Supersedes the `platform-subscription` capability, which described the same surface when an entry named its build with an inert `version!` scalar (enhancement 0019 D5, D17).
+
+## Requirements
 
 ### Requirement: A registry entry carries its catalog by import
 
@@ -89,8 +95,6 @@ A `#Platform` MUST NOT be able to express two builds of one catalog. CUE map sem
 - **WHEN** a platform value declares `#matchers: {...}` in any shape
 - **THEN** validation fails with a field-not-allowed error on `#matchers`
 
-## MODIFIED Requirements
-
 ### Requirement: Catalog selection is a pure function of committed source
 
 Nothing in the registry shape MUST require a resolution step against a registry at evaluation time to determine which build is selected. The platform module's own `cue.mod` MUST be the sole selector of each entry's catalog build: the declared dependency IS the selected build, prereleases selected by naming them there like any other version, with no lockfile, no maturity inference and no opt-in flag.
@@ -104,23 +108,3 @@ Nothing in the registry shape MUST require a resolution step against a registry 
 
 - **WHEN** a platform module's `cue.mod` names catalog build `1.0.0-alpha.2`
 - **THEN** the entry's derived `version` reads `"1.0.0-alpha.2"`, with no additional flag required
-
-## REMOVED Requirements
-
-### Requirement: A subscription names exactly one catalog build
-
-**Reason**: `#Subscription` is removed (enhancement 0019 D5). A version string is inert data nothing in a build resolves; the entry now carries the build itself by import, and one entry still names exactly one build, selected by the platform module's `cue.mod`.
-
-**Migration**: replace each `"<path>": {version: "X.Y.Z"}` subscription with an import of the catalog module at that version and an entry `"<path>": {#catalog: <import>}`; move the version pin into the platform module's `cue.mod`.
-
-### Requirement: A prerelease is selected by being written down
-
-**Reason**: the `version!` field the requirement was phrased against is removed. The behavior survives inside the modified "Catalog selection is a pure function of committed source" requirement: a prerelease is selected by naming it in the platform module's `cue.mod`.
-
-**Migration**: name the prerelease in the platform module's `cue.mod` dependency on the catalog.
-
-### Requirement: One subscription per catalog path
-
-**Reason**: restated in entry vocabulary as the added requirement "One registry entry per catalog path"; the mechanism and force are unchanged.
-
-**Migration**: none; the constraint is carried forward by the added requirement.

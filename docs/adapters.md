@@ -116,8 +116,8 @@ A single Component may match multiple ComponentTransformers — each contributes
 
 > **Planned** — not present in `core/v1alpha2` yet.
 
-A **Platform** models a deployment target as a single, composable construct. It carries the target's identity (`metadata`, `type`), platform-level context, and a registry of capabilities — registered Modules, the union of their Resources/Traits, the composed ComponentTransformer set, and a reverse matcher index used by the compile pipeline.
+A **Platform** models a deployment target as a single, composable construct. It carries the target's identity (`metadata`, `type`) and a path-keyed `#registry` of catalog entries; each entry embeds its imported catalog whole and derives its `version` and `#transformers` from it (enhancement 0019 D5).
 
-`#Platform` retires the older `#Provider` shape: instead of a static `#providers` list, the matcher consumes the Platform's computed `#composedTransformers` and `#matchers` projections directly. A companion `#PlatformMatch` walks a consumer Module's FQN demand against `#matchers` and surfaces `matched` / `unmatched` / `ambiguous` projections per deploy.
+`#Platform` retires the older `#Provider` shape: instead of a static `#providers` list, matching consumes the Platform's derived `#composedTransformers` fold directly. There is no reverse index on the platform (enhancement 0019 D17); the render build's matching glue derives its own contract-to-transformer buckets from `#composedTransformers`.
 
 Platform integration lands incrementally via the kernel-redesign slices (see [`library/enhancements/001-kernel-redesign-around-platform/`](../../library/enhancements/001-kernel-redesign-around-platform/)) and the catalog enhancement (see [`catalog/enhancements/014-platform-construct/`](../../catalog/enhancements/014-platform-construct/)). This document will be expanded once the construct ships in the kernel.

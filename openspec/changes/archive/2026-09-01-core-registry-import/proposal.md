@@ -33,11 +33,15 @@ This change is `core-registry-import`, implementing `enhancements/0019` D5 and D
 
 ### New Capabilities
 
-None.
+- `platform-registry`: what a `#Platform` declares about the catalogs it admits, stated against the import model. It carries every requirement `platform-subscription` held, restated in entry vocabulary (`cue.mod` is the committed source that selects a build; one entry per catalog path), plus new requirements for the key-to-import binding, the derived transformer fold, and the absence of a reverse index.
+
+### Removed Capabilities
+
+- `platform-subscription`: retired, not narrowed. Every requirement it held was phrased against `#Subscription.version!`, a construct this change removes, so a directory named for it misdescribes what it holds. Its subject moves whole to `platform-registry`; each removed requirement names its successor. The change sets `retire_capabilities: true` so the sync deletes the main spec.
 
 ### Modified Capabilities
 
-- `platform-subscription`: the requirements reshape from "a subscription names one build by version scalar" to "an entry carries the build by import and derives its identity readouts"; the pure-function-of-committed-source and one-entry-per-path requirements survive with their mechanism restated (`cue.mod` is committed source); new requirements for the key binding, the derived fold, and the absence of a reverse index.
+- `primitive-keying`: the "every FQN map key is typed by the role it holds" requirement loses its `#Platform.#matchers` bucket clauses and scenario, which named a map D17 removes; the demand-map and transformer-map clauses are unchanged.
 
 ## Impact
 
@@ -45,3 +49,4 @@ None.
 - `SPEC.md` §3.4 (same commit, `core-schema-edit` protocol).
 - `.tasks/spec-tracked.txt`: `#CatalogEntry` added as a tracked construct (it is a top-level published definition, not a helper); `#Subscription` was never tracked, so no removal line.
 - `src/INDEX.md`: regenerate (`task generate:index`) — one definition added, one removed.
+- `src/platform_and_match_pins.cue`, `src/identity_package.cue`, `src/identity_package_pins.cue`, `src/types.cue`, `docs/adapters.md`: the subscription-shaped pins are deleted and the prose that named `#Subscription` / `#matchers` is rewritten to the import model. See design.md § Files and tracked constructs.

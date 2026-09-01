@@ -1,60 +1,55 @@
 package core
 
-// WHY scalar: `version` is required and scalar: the value written IS the value
-// materialized. No range to resolve, no allow/deny to arbitrate, no
-// highest-published default. Catalog selection is therefore a pure function
-// of committed source — git-identical inputs materialize identical catalog
-// bytes on any day, from any machine, with no lockfile. A prerelease is
-// selected by being written down; there is no maturity inference and no flag
-// to opt into one (enhancement 0010 D37).
-//
-// One subscription per catalog path, enforced by CUE map semantics (D13).
-// Two builds of one catalog is TWO PLATFORMS — the permanent rule, not a
-// staging limitation. Every use of breadth collapses on inspection: union
-// coverage across builds describes a catalog that dropped a transformer
-// without saying so, which must fail loudly rather than be papered over;
-// gradual migration does not structurally exist, because a module demands
-// contracts and never a transformer (D4); two API versions of one contract
-// already ship side by side in a single build; and testing a new build
-// beside the old is two platforms, which names both behaviours and costs
-// nothing hidden. SPEC.md § 3.4 Rationale, "Why a subscription names one
-// build, and why the filter that used to select it is gone", "Why the field
-// is a scalar and not a one-element list" and "Why a prerelease needs no
-// flag".
+// WHY an import instead of a version string: a version string is inert data
+// nothing in a CUE build resolves, so the kernel pulled the build out of band
+// and handed the result back on a materialized twin. The entry carries the
+// catalog itself, resolved through the platform module's cue.mod like every
+// other dependency, which is what lets one render build evaluate the
+// instance, the platform and the catalog together (enhancement 0019 D5, D9).
+// Catalog selection stays a pure function of committed source (0010 D14):
+// cue.mod is committed source, and a prerelease is still selected by naming
+// it there. SPEC.md § 3.4 Rationale, "Why an import instead of a version
+// string", "Why the version is derived and not authored" and "Why the whole
+// transformer map".
 
-// #Subscription declares that a #Platform pulls primitives from a catalog
-// published at a given CUE module path, and names the single build it pulls.
-// The map key on #Platform.#registry carries the path; #Subscription carries
-// the enable flag and the version. `version` is required and scalar: the
-// value written IS the value materialized. One subscription per catalog
-// path; two builds of one catalog is two platforms. See SPEC.md § 3.4.
-#Subscription: {
-	enable:   bool | *true
-	version!: #VersionType // Example: "1.2.0", "1.0.0-alpha.2"
+// #CatalogEntry declares that a #Platform admits a catalog, by carrying the
+// imported catalog value whole on #catalog. `version` and `#transformers`
+// are derived readouts, never authored; an expected `version` stamped at
+// platform-generation time unifies with the readout, so wrong bytes are a
+// build conflict naming the entry (0019 D13). One entry per catalog path;
+// two builds of one catalog is two platforms. See SPEC.md § 3.4.
+#CatalogEntry: {
+	enable: bool | *true
+
+	// The imported catalog, embedded whole.
+	#catalog: #Catalog
+
+	// Derived readouts of the catalog's release-stamped identity. Neither
+	// is authored; #Catalog.metadata.version! has no development default,
+	// so an unstamped catalog refuses as incomplete rather than rendering
+	// wrong. A generation-time expected `version` stamp unifies with the
+	// readout (0019 D13 tripwire).
+	version:       #catalog.metadata.version
+	#transformers: #TransformerMap & #catalog.#transformers
 }
 
-// WHY the CUE value is a spec: the kernel's Materialize step (library-side)
-// pulls the build each subscription NAMES — there is nothing to resolve,
-// because the platform file is the resolution — indexes top-level
-// #ComponentTransformer values into #composedTransformers, and computes a
-// #matchers reverse index. The CUE-level #Platform value is therefore a
-// spec; the kernel populates the materialization slots on a separate
-// MaterializedPlatform twin (D14 — Materialize is explicit and
-// caller-driven; the kernel holds no cache).
-//
-// Reshaped by enhancement 0001 (supersedes the prior Id-keyed
-// #ModuleRegistration model). #knownResources / #knownTraits removed:
-// primitives surface transitively via materialized transformers'
-// required/optional maps. SPEC.md § 3.4 Rationale, "Why subscriptions
-// instead of inline module registrations", "Why the registry map is
-// path-keyed, not Id-keyed", "Why `#composedTransformers` and `#matchers`
-// are optional kernel-filled slots, not CUE comprehensions" and "Why
-// `#knownResources` and `#knownTraits` are removed".
+// WHY the fold copies per entry rather than unifying entry maps: the
+// catalog's provenance stamp (0010 D25) refuses a foreign transformer
+// unified into another catalog's member map, so map-level unification fails
+// on healthy multi-catalog input (measured,
+// enhancements/0019/experiments/05-match-in-one-build). Two entries writing
+// one composed FQN still unify at that key: agreement collapses, divergent
+// bodies conflict loudly. #matchers is removed (0019 D17): its only reader
+// was the Go matcher the render-path collapse deletes, and the in-build
+// matching glue folds its own buckets from #composedTransformers in a shape
+// core's list-valued buckets never matched. SPEC.md § 3.4 Rationale, "Why
+// the key binding is structural rather than a check", "Why the fold copies
+// rather than unifies" and "Why #matchers is removed rather than derived".
 
-// #Platform — path-keyed registry of catalog subscriptions plus
-// kernel-filled materialization slots. Authors write #registry; the kernel's
-// Materialize step fills #composedTransformers and #matchers on a separate
-// materialized twin (D14). See SPEC.md § 3.4.
+// A #Platform is a path-keyed registry of catalog entries, each carrying its
+// imported catalog, plus the derived #composedTransformers fold over the
+// enabled entries. A platform value is complete on its own: no Materialize
+// step, no materialized twin, no reverse index. See SPEC.md § 3.4.
 #Platform: {
 	kind: "Platform"
 
@@ -70,18 +65,18 @@ package core
 	// does not consult (014 OQ2).
 	type!: string
 
-	// Path-keyed: map key is the catalog's CUE module path
-	// (e.g. "opmodel.dev/catalogs/opm"). Exactly one subscription per
-	// path — CUE map semantics enforce uniqueness (D13).
-	#registry: [Path=#ModulePathType]: #Subscription
+	// Path-keyed: the map key is the catalog's CUE module path, bound into
+	// the embedded catalog's metadata.modulePath, so key-versus-import
+	// drift is a build conflict naming the entry (0019 D5). Exactly one
+	// entry per path; CUE map semantics enforce uniqueness (0010 D13).
+	#registry: [Path=#ModulePathType]: #CatalogEntry & {#catalog: metadata: modulePath: Path}
 
-	// Kernel-filled after Materialize. Both optional because the
-	// CUE-level #Platform value is a spec; the kernel populates these
-	// on the materialized twin. Materialize is explicit and caller-driven
-	// (D14 — no kernel cache).
-	#composedTransformers?: #TransformerMap
-	#matchers?: {
-		resources: [#ContractFQNType]: [...#ComponentTransformer]
-		traits: [#ContractFQNType]: [...#ComponentTransformer]
+	// Derived, never runtime-filled: the fold of every enabled entry's
+	// #transformers, copied per entry by comprehension (see the WHY block
+	// above). Empty when the registry is empty or fully disabled.
+	#composedTransformers: {
+		for _, entry in #registry if entry.enable {
+			for fqn, tf in entry.#transformers {(fqn): tf}
+		}
 	}
 }

@@ -69,8 +69,10 @@ import (
 	// earlier revision of this comment said so and was wrong. Measured
 	// 2026-08-08: no such assertion appears at any commit of src/, and the
 	// pre-collapse subscription filter carried only range/allow/deny. Nothing
-	// in #Platform / #Subscription relates a subscription's `version` to the
-	// "@vN" its #registry key carries, and nothing ever did. The distinction
+	// in #Platform ever related an entry's `version` to the "@vN" its
+	// #registry key carries: not the removed Subscription definition, and
+	// not #CatalogEntry, whose key binding constrains the embedded catalog's
+	// modulePath but not the version major (0019 D5). The distinction
 	// is about ownership rather than exposure: an unbuilt check has an owner
 	// (the platform-side major-agreement check belongs to `library`'s
 	// subscription-collapse work, not yet started), where a deleted one would

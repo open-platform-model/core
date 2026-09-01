@@ -29,8 +29,8 @@ CUE module: `opmodel.dev/core@v2`
 | `#InstanceIdentity` | `module_context.cue` | #InstanceIdentity carries the deployment-scoped facts that compute per-component names and DNS variants |
 | `#ModuleInstance` | `module_instance.cue` | #ModuleInstance: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version Was: #ModuleRelease (renamed in enhancement 0002) |
 | `#ModuleInstanceMap` | `module_instance.cue` | Was: #ModuleReleaseMap (renamed in enhancement 0002) |
-| `#Platform` | `platform.cue` | #Platform — path-keyed registry of catalog subscriptions plus kernel-filled materialization slots |
-| `#Subscription` | `platform.cue` | #Subscription declares that a #Platform pulls primitives from a catalog published at a given CUE module path, and names the single build it pulls |
+| `#CatalogEntry` | `platform.cue` | #CatalogEntry declares that a #Platform admits a catalog, by carrying the imported catalog value whole on #catalog |
+| `#Platform` | `platform.cue` | A #Platform is a path-keyed registry of catalog entries, each carrying its imported catalog, plus the derived #composedTransformers fold over the enabled entries |
 | `#Resource` | `resource.cue` | #Resource: Defines a resource of deployment within the system |
 | `#ResourceMap` | `resource.cue` |  |
 | `#AutoSecrets` | `schemas.cue` | #AutoSecrets discovers all #Secret instances from a resolved config and groups them by $secretName/$dataKey in one step |

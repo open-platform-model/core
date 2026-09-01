@@ -13,6 +13,7 @@
 #Module
 #ComponentTransformer
 #Catalog
+#CatalogEntry
 #Platform
 #ModuleInstance
 #TraitOptionalGate

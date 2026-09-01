@@ -1,7 +1,11 @@
 package core
 
-// Schema-level pins for catalog selection, component matching and contract
-// fulfilment (enhancement 0010 D36, D37, D32, D28).
+// Schema-level pins for component matching and contract fulfilment
+// (enhancement 0010 D36, D32, D28). The catalog-selection pins that lived
+// here (0010 D37, subscription-shaped) went with #Subscription's removal
+// (0019 D5); the import-model delta is exercised by
+// enhancements/0019/schemas/examples.cue and re-exercised by the library's
+// fixtures when its 0019 wave re-pins.
 //
 // Companion to identity_pins.cue and written to the same rules: every value
 // here is a HIDDEN top-level field, so `cue vet` evaluates them and fails on a
@@ -411,96 +415,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 //  }
 //  failGateUnstated: #TraitOptionalGate & {optional: _failUnstatedOptional.optional}
 
-// ─── Subscription: one build, named ─────────────────────────────────────────
-
-_pinPlatform: #Platform & {
-	metadata: name: "prod"
-	type: "kubernetes"
-	#registry: {
-		// A release.
-		"opmodel.dev/catalogs/opm@v1": version: "1.2.0"
-
-		// A PRERELEASE, selected with no flag and no maturity inference — it
-		// is selected by being written down. Both mainline catalogs publish
-		// 1.0.0-alpha.* today, so this is the fleet's normal case.
-		"opmodel.dev/catalogs/kubernetes@v1": version: "1.0.0-alpha.2"
-
-		// enable is unchanged and still defaults to true.
-		"opmodel.dev/catalogs/legacy@v1": {
-			version: "0.9.0"
-			enable:  false
-		}
-	}
-}
-
-_pinSubscriptionRelease:    "\(_pinPlatform.#registry["opmodel.dev/catalogs/opm@v1"].version)"
-_pinSubscriptionRelease:    "1.2.0"
-_pinSubscriptionPrerelease: "\(_pinPlatform.#registry["opmodel.dev/catalogs/kubernetes@v1"].version)"
-_pinSubscriptionPrerelease: "1.0.0-alpha.2"
-_pinSubscriptionEnabled:    "\(_pinPlatform.#registry["opmodel.dev/catalogs/opm@v1"].enable)"
-_pinSubscriptionEnabled:    "true"
-
-// Two builds of one catalog is TWO PLATFORMS, and the map key is what makes
-// the alternative inexpressible rather than merely discouraged: a second
-// subscription under the same path unifies with the first, so declaring
-// "1.2.0" and "1.3.0" for one catalog is a conflict, not a second channel.
-_pinOneBuildPerPath: "\((_pinPlatform.#registry & {
-	"opmodel.dev/catalogs/opm@v1": version: "1.2.0"
-})["opmodel.dev/catalogs/opm@v1"].version)"
-_pinOneBuildPerPath: "1.2.0"
-
 // ─── MUST-FAIL cases ────────────────────────────────────────────────────────
-
-// A subscription carrying the deleted filter. Reported as closedness rather
-// than as a bad value: #Subscription is a definition, so the field does not
-// exist to be wrong:
-//   _failSubscriptionFilter.#registry."opmodel.dev/catalogs/opm@v1".filter:
-//     field not allowed
-//
-//  _failSubscriptionFilter: #Platform & {
-//   metadata: name: "prod"
-//   type: "kubernetes"
-//   #registry: "opmodel.dev/catalogs/opm@v1": {
-//    version: "1.2.0"
-//    filter: range: ">=1.0.0 <2.0.0"
-//   }
-//  }
-
-// Two builds of ONE catalog. Not two channels — a conflict, because the map
-// key is the catalog path and CUE collapses two declarations under one key:
-//   _failTwoBuildsOnePath."opmodel.dev/catalogs/opm@v1".version:
-//     conflicting values "1.2.0" and "1.3.0"
-//
-//  _failTwoBuildsOnePath: _pinPlatform.#registry & {
-//   "opmodel.dev/catalogs/opm@v1": version: "1.3.0"
-//  }
-
-// A subscription with no version — the shape every live platform has today,
-// and the one this change refuses. A MISSING REQUIRED FIELD, which
-// identity_pins.cue documents at length is not vet-visible: measured
-// 2026-08-07 against cue v0.17.1, `cue vet ./...` and `cue vet -c ./...` both
-// exit 0, and `cue eval` prints the field back as an unsatisfied constraint
-// (`version!: =~"^\d+\.\d+\.\d+…"`) rather than as an error.
-//
-// This case needs one thing more than that precedent, worth recording because
-// it looks like a second bug otherwise: #registry is a HIDDEN field, so even
-// concrete evaluation of the platform SKIPS it —
-// `cue export -e '_failSubscriptionNoVersion' ./...` prints the value and
-// exits 0. The field has to be named:
-//
-//   $ cue export -e '_failSubscriptionNoVersion.#registry' ./...
-//   _failSubscriptionNoVersion.#registry."opmodel.dev/catalogs/opm@v1".version:
-//     field is required but not present
-//
-// Which is what a kernel does — Materialize reads #registry — so the error
-// reaches the caller that matters. Do not add a pin here that appears to
-// check it; there is no vet-visible form.
-//
-//  _failSubscriptionNoVersion: #Platform & {
-//   metadata: name: "prod"
-//   type: "kubernetes"
-//   #registry: "opmodel.dev/catalogs/opm@v1": enable: true
-//  }
 
 // Two primitives disagreeing on ONE matching key. This is the error the
 // design wants to be possible: a real modelling conflict, named at the key,

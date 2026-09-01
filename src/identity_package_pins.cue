@@ -200,9 +200,11 @@ _pinContractAndImplKeysDiffer: true
 // than built and then removed: an earlier revision of this note blamed the
 // scalar-subscription collapse and was wrong. Measured 2026-08-08, no such
 // assertion appears at any commit of src/, and the pre-collapse
-// subscription filter carried only range/allow/deny. Nothing in #Platform or
-// #Subscription relates a subscription's `version` to the "@vN" its #registry
-// key carries, and nothing ever did; the platform-side check is owned by
+// subscription filter carried only range/allow/deny. Nothing in #Platform
+// ever related an entry's `version` to the "@vN" its #registry key carries:
+// not the removed Subscription definition, and not #CatalogEntry, whose key
+// binding constrains modulePath but not the version major (0019 D5); the
+// platform-side check is owned by
 // `library`'s subscription-collapse work, not yet started. The residue is a
 // materialize-time registry resolution failure naming a tag that does not
 // resolve, which is a symptom rather than a diagnosis. Treat this case as
