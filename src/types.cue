@@ -207,7 +207,6 @@ import (
 //	#ComponentTransformer            metadata.fqn         #ImplFQNType
 //	                                 required/optional*   #ContractFQNType  (it demands contracts)
 //	#TransformerMap, #Catalog        map keys             #ImplFQNType
-//	#Platform.#matchers              bucket keys          #ContractFQNType
 //
 // Before D4 split the type, all of those were one regex and the narrowing was
 // free. It is stated here because the disjunction is the only thing in the

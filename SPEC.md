@@ -26,7 +26,7 @@ Cross-references use `file.cue:line` against the repository at the tag in [`CHAN
 OPM Core distinguishes three categories of definition:
 
 - **Primitives** (§2) — independently authored, independently versioned schema contracts: `#Resource`, `#Trait`, `#Blueprint` (specified at §3.3, whose section number is retained so existing cross-references keep resolving). Each carries its own `metadata`, its own contract-keyed identity, and a `spec` schema namespaced under a camelCase form of its name. A primitive is a building block a `#Module` attaches and writes values against, so each carries an `apiVersion` and the additive-only promise that level gates. `#Secret` is **not** a primitive and was previously listed here in error: it is a config-value contract type a module author places on a sensitive field inside `#config` (a disjunction of `#SecretLiteral` and `#SecretK8sRef`, see [`schemas.cue`](src/schemas.cue)). It carries no `metadata`, no `apiVersion`, no contract key and no `spec`, so it satisfies none of the clauses above, and no catalog publishes it as a member.
-- **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Module`, `#Platform`, `#ModuleInstance`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleInstance`), organize them into platform-resolvable subscriptions (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
+- **Constructs** (§3) — framework types that compose, organize, carry, or publish primitives: `#Component`, `#Module`, `#Platform`, `#ModuleInstance`, `#Catalog`. Constructs do not introduce new schema; they unify primitives into structured wholes (`#Component`, `#Module`, `#ModuleInstance`), organize the catalogs that carry them into a platform's admitted set (`#Platform`), or package them as a versioned publication artifact (`#Catalog`).
 - **Adapters** (§4) — types that translate the model into target runtime form without participating in composition: `#ComponentTransformer`.
 - **Publish gates** (§5) — definitions a publishing tool unifies an artifact against, so that the diagnostic an author reads is CUE's own rather than a hand-rolled comparison that drifts from the schema: `#TraitOptionalGate`, `#IdentityPackage`, `#CatalogMemberFQNGate`. A gate is not part of any artifact; it is a rule about artifacts, shipped in the same module as the shapes it constrains (enhancement 0011 D21/D22). `#IdentityPackage` (§5.2) sits here for the same reason the other two do — a publishing tool unifies it and nothing in `core` does — even though it is, uniquely among them, the shape of a file an artifact commits rather than a rule about values an artifact carries. Nothing in `core` or `library` unifies against any of the three; until the `cli` slices land, they are shipped surface with no enforcement behind them.
 
@@ -559,15 +559,28 @@ Implementation: [`blueprint.cue`](src/blueprint.cue).
 
 #### Definition
 
-A `#Platform` is a path-keyed registry of *subscriptions* to catalogs plus the kernel-filled materialization slots the matcher uses at compile time. Authors write the subscription map; each subscription names one catalog build, and the kernel's `Materialize` step pulls exactly that build, indexes the transformers it carries into `#composedTransformers`, and computes a `#matchers` reverse index from primitive FQN to candidate transformer.
+A `#Platform` is a path-keyed registry of *catalog entries*. Each `#CatalogEntry` declares that the platform admits a catalog by **carrying that catalog's value**: the platform module imports the catalog the way any CUE module imports a dependency, and the entry embeds the imported value whole. The build the platform executes is therefore chosen by the platform module's own `cue.mod`, resolved by the same mechanism that resolves every other dependency.
 
-A `#Platform` value is therefore a *spec* (which catalog builds to pull) plus a place for the kernel to write its materialization output. The match-time evaluation runs against the materialized twin, not the raw spec.
+A `#Platform` value is complete on its own, not a spec awaiting materialization: the registry carries the catalogs, and the one materialization-shaped field that survives (`#composedTransformers`) is a fold over that registry computed by CUE. There is no materialized twin, no `Materialize` step to produce one, and no reverse index.
 
-There is no resolution step: the platform file **is** the resolution. Nothing in a subscription requires a query against a registry to determine which build was selected.
+There is no resolution step: the platform module **is** the resolution, bytes included. Nothing in an entry requires a query against a registry at evaluation time to determine which build was selected.
+
+The subscription form (the definition formerly named `Subscription`, an `{enable, version!}` pair) is removed on the `@v2` alpha line (enhancement 0019 D5); `#CatalogEntry` replaces it. It was closed around its two fields, so the entry shape is inexpressible as a unification onto it.
 
 #### Shape
 
 ```cue
+#CatalogEntry: {
+    enable: bool | *true
+
+    // The imported catalog, embedded whole.
+    #catalog: #Catalog
+
+    // Derived readouts. Neither is authored.
+    version:       #catalog.metadata.version
+    #transformers: #TransformerMap & #catalog.#transformers
+}
+
 #Platform: {
     kind: "Platform"
 
@@ -580,23 +593,18 @@ There is no resolution step: the platform file **is** the resolution. Nothing in
 
     type!: string
 
-    // Path-keyed: map key is the catalog's CUE module path.
-    // Exactly one subscription per path (CUE map semantics).
-    #registry: [Path=#ModulePathType]: #Subscription
+    // Path-keyed; the pattern constraint binds the map key into the
+    // embedded catalog's modulePath. Exactly one entry per path
+    // (CUE map semantics).
+    #registry: [Path=#ModulePathType]: #CatalogEntry & {#catalog: metadata: modulePath: Path}
 
-    // Kernel-filled after Materialize. Both optional because the
-    // CUE-level value is a spec; the kernel populates them on the
-    // materialized twin.
-    #composedTransformers?: #TransformerMap
-    #matchers?: {
-        resources: [#ContractFQNType]: [...#ComponentTransformer]
-        traits:    [#ContractFQNType]: [...#ComponentTransformer]
+    // Derived: the fold of every enabled entry's #transformers,
+    // copied per entry by comprehension.
+    #composedTransformers: {
+        for _, entry in #registry if entry.enable {
+            for fqn, tf in entry.#transformers {(fqn): tf}
+        }
     }
-}
-
-#Subscription: {
-    enable:   bool | *true
-    version!: #VersionType     // the single build this subscription materializes
 }
 ```
 
@@ -607,32 +615,37 @@ Implementation: [`platform.cue`](src/platform.cue).
 - `kind` MUST be the literal string `"Platform"`.
 - `metadata.name` MUST be kebab-case (`#NameType`).
 - `type` MUST be present. The value is informational at this stage — the matcher does not consult it.
-- `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). Since enhancement 0010 D1 that type carries a terminal `@vN`, so a key names one major of one catalog (`"opmodel.dev/catalogs/opm@v1"`) and a platform MAY subscribe to two majors of the same catalog as two distinct entries. One subscription per key is enforced by CUE map semantics; multi-channel-per-key is intentionally not expressible.
-- `#Subscription.enable` defaults to `true`. When `false`, the kernel SHOULD skip materialization for that path; primitives owned by the path do not surface on the platform.
-- `#Subscription.version` MUST be present and MUST be a SemVer 2.0 string (`#VersionType`). It names the **single** catalog build the subscription materializes. A subscription with no `version` MUST report a missing required field; it MUST NOT fall back to the highest published build.
-- A prerelease build MUST be selectable by naming it in `version` (e.g. `"1.0.0-alpha.2"`). There MUST be no opt-in flag for prereleases and no maturity inference from the string.
-- Selection MUST NOT require a resolution step against a registry: the declared value is the selected value. Publishing a newer build MUST NOT move an existing platform's selection, and no lockfile is consulted.
-- The subscription filter (the definition formerly named `SubscriptionFilter`, reached through `#Subscription.filter`) is **removed** as of `v2.0.0-alpha.3`, together with `range`, `allow`, `deny`, the prerelease flag and the highest-published default. A subscription declaring `filter` MUST be rejected as a field not allowed.
-- A `#Platform` MUST NOT be able to express two builds of one catalog. CUE map semantics collapse two subscriptions under one path to one key. Two builds of one catalog is two platforms.
-- `#composedTransformers` and `#matchers` are kernel-filled output slots. Authors MUST NOT supply them; doing so would let an author override what the registry actually published. Both are optional at the CUE level because the spec value carries them empty.
+- `#registry` keys MUST be `#ModulePathType` strings (the catalog package's CUE module path). Since enhancement 0010 D1 that type carries a terminal `@vN`, so a key names one major of one catalog (`"opmodel.dev/catalogs/opm@v1"`) and a platform MAY admit two majors of the same catalog as two distinct entries. One entry per key is enforced by CUE map semantics; multi-channel-per-key is intentionally not expressible.
+- A registry entry MUST carry `#catalog`, and that value MUST be a `#Catalog` obtained by import. It MUST NOT be assembled inline in the platform file.
+- The `#registry` pattern constraint MUST bind the map key into the entry's embedded catalog: an entry keyed at a path whose catalog declares a different `metadata.modulePath` MUST fail the build at a path naming that entry.
+- `#CatalogEntry.version` MUST equal `#catalog.metadata.version`. A caller MAY additionally write an expected `version` on the entry (the operator does this at platform-generation time); the written value unifies with the derived readout, so a value that disagrees with the imported bytes MUST fail the build at a path naming the entry.
+- `#CatalogEntry.#transformers` MUST equal the embedded catalog's `#transformers` map, whole. Per-transformer selection MUST NOT be expressible on an entry; that concern belongs to enhancement 0015.
+- `#CatalogEntry.enable` defaults to `true`. `enable: false` MUST exclude the entry from every derived fold on `#Platform`; the entry stays present in the file, and primitives owned by the path do not surface on the platform.
+- An unstamped catalog (no concrete `metadata.version`) MUST refuse as an incomplete value naming that field. `#Catalog.metadata.version!` carries no development default, so this holds without an added check.
+- `#composedTransformers` MUST be the fold of every enabled entry's `#transformers`. It MUST NOT be optional, and no runtime MUST fill it. The fold MUST copy entries member by member (a comprehension); it MUST NOT unify one entry's transformer map into another's, because a catalog's provenance stamp (enhancement 0010 D25) refuses a foreign member, so unification across catalogs fails on healthy input.
+- A `#Platform` MUST NOT carry `#matchers` or any other reverse index. A platform value declaring one MUST be rejected as a field not allowed.
+- A `#Platform` MUST NOT be able to express two builds of one catalog. CUE map semantics collapse two entries under one path to one key, and the platform module's `cue.mod` admits exactly one build per catalog major. Two builds of one catalog is two platforms.
+- Selection MUST NOT require a resolution step against a registry at evaluation time: the platform module's `cue.mod` is the sole selector of each entry's catalog build. Publishing a newer build MUST NOT move an existing platform's selection, and no lockfile is consulted. A prerelease build MUST be selectable by naming it in `cue.mod` like any other version, with no opt-in flag and no maturity inference from the string.
 
 #### Rationale
 
-- **Why subscriptions instead of inline module registrations.** The pre-0001 design forced a platform to embed concrete `#Module` values keyed by an arbitrary author-chosen `Id`, so the platform spec bundled the entire transitive content of every catalog it consumed rather than the intent to consume it. Subscriptions move pull intent into a small declarative shape (path + build) and let the kernel materialize against the registry. See enhancement 0001 D13.
-- **Why the registry map is path-keyed, not Id-keyed.** A catalog has exactly one CUE module path. Keying on path lets CUE's map-uniqueness semantics enforce "one subscription per catalog" structurally — two declarations at the same key unify, divergent declarations fail. Id-keying admitted "two subscriptions for the same catalog under different names" silently, which is meaningless and a common author error.
-- **Why `#composedTransformers` and `#matchers` are optional kernel-filled slots, not CUE comprehensions.** Materialize pulls remote artifacts from OCI — it cannot be a pure CUE comprehension over an in-memory `#registry`. Modeling these as optional fields lets the CUE-level spec remain valid without materialization, while the materialized twin (built by the kernel after fetching) carries the populated values. The alternative — making them required — would force every author to construct a "materialized" view in CUE by hand, defeating the purpose. See enhancement 0001 D14.
-- **Why `#knownResources` and `#knownTraits` are removed.** Both were eager projections that flattened every catalog's primitives into a flat map on the platform. They duplicated information the matcher could (and now does) reach transitively via each transformer's required/optional maps. Removing them eliminates a sync point that always lagged the materialized transformer set.
-- **Why a subscription names one build, and why the filter that used to select it is gone.** The filter's empty-filter default resolved to the highest SemVer published for the path, and that default *is* a float: it moves on the next catalog release whether or not a constraint was written. Ranges without a lockfile is the one combination that cannot be made reproducible, and every ecosystem shipping ranges ships a lock beside them; OPM shipped ranges and recorded its resolution in an in-memory map whose only non-test consumer was an integration harness and whose own doc comment told callers they MUST NOT branch on it. Collapsing to a scalar makes catalog selection a pure function of committed source: **git-identical inputs materialize identical catalog bytes** on any day, from any machine, with no lockfile, because the platform file is the resolution. The breadth the filter bought was load-bearing only under the *old* build-keyed contracts, where a platform had to cover the authorship history of its installed fleet; enhancement 0010 D4 moved the contract key off the build and took that requirement with it. See enhancement 0010 D37.
-- **Why the field is a scalar and not a one-element list.** Widening back to multi-build becomes a breaking rename rather than a list relaxation, and that cost is recorded here rather than discovered later — because every use of breadth collapses on inspection. *Union coverage* (build `1.0.0` ships transformers A and B, build `1.2.0` ships A only, listing both yields `A@1.2.0` + `B@1.0.0`) is the one case breadth uniquely served, and it describes a catalog that made a breaking change without saying so: the dropped transformer must fail the render loudly, and the fix belongs to the catalog author. *Gradual migration* does not structurally exist — under D4 a module demands resources and traits and never a transformer, so no module can stay on the old build. *Two API versions of one contract* ship side by side in a single build; that is what contract keys are for (§2.1). *Testing a new build beside the old* is two platforms, already expressible, naming both behaviours. Newest-wins tie-breaking was defensible and rejected: it makes listing two builds indistinguishable from listing one in every case except the dropped-transformer catalog bug — silent arbitration bought to serve the one scenario that should fail loudly.
-- **Why not ranges plus a lockfile, which is strictly more expressive.** It is more machinery for the same guarantee, and the asymmetry decides it: reintroducing `range` alongside a recorded resolution takes nothing away from a platform that already names its build, while an established floating default cannot be withdrawn cheaply once platforms depend on it. The expressive answer stays available; the float does not.
-- **Why a catalog upgrade is now a manual edit, and why that is not a regression.** For platforms that live in git and reconcile continuously, an upgrade that appears in a diff and gets reviewed is the correct interaction — the alternative is a version that changes because someone else published. Automating the bump is enhancement 0004's subject, and it is additive to this shape.
-- **Why a prerelease needs no flag.** The filter inferred maturity from the version string and gated prereleases behind an opt-in, which made "select `1.0.0-alpha.2`" a two-part statement whose second part was about a *class* of builds rather than the one selected. With a scalar there is one statement: the build is selected by being written down. Both mainline catalogs publish `1.0.0-alpha.*` today, so the gate was load-bearing against the fleet's own normal case.
+- **Why an import instead of a version string.** A version string is inert data that nothing resolves, so the kernel had to resolve it out of band and hand the result back in. An import is resolved by `cue/load` from the main module's own dependency list, which is what makes a single-build render have an answer at all (enhancement 0019 D9). Enhancement 0010 D14's property is preserved rather than weakened: catalog selection stays a pure function of committed source, because `cue.mod` is committed source. The sentence changes from "the platform file is the resolution" to "the platform module is the resolution".
+- **Why the version is derived and not authored.** Two answers to one question, with no way for a reader or the kernel to tell which is load-bearing, is the failure mode a version-string subscription plus an import would have. Experiment 02 measured that the import is the one that decides. A derived readout cannot disagree with the bytes it is read from, and it keeps the stamped identity available to skew diagnostics (0019 D7) and to the Platform CR's status, which the coordinate-only shape discarded.
+- **Why the optional stamp is not a second answer.** It is an assertion unified against the readout, so its only reachable outcomes are "agrees" (a no-op) and "build conflict naming the entry". That makes it defense in depth for the render module's promoted dependency list (0019 D13) rather than an independent selection mechanism.
+- **Why the whole transformer map.** A subset is a second selection mechanism competing with enhancement 0015's provider classes and `TransformerRegistration`, at a granularity nothing needs today. Experiment 07 measured the cost of carrying the rest as zero: unevaluated definition payloads are never evaluated.
+- **Why the key binding is structural rather than a check.** Key-and-import drift is the one new failure mode embedding the catalog introduces, and a pattern constraint makes it inexpressible instead of detectable. The conflict names the entry, so the report points at the line the author wrote.
+- **Why the registry map is path-keyed, not Id-keyed.** A catalog has exactly one CUE module path. Keying on path lets CUE's map-uniqueness semantics enforce "one entry per catalog" structurally — two declarations at the same key unify, divergent declarations fail. Id-keying admitted "two entries for the same catalog under different names" silently, which is meaningless and a common author error.
+- **Why `#composedTransformers` stops being kernel-filled.** With the maps present in the registry the fold is four lines of CUE, and the kernel's index step loses its reason to exist. This is enhancement 0019 D1's direction applied to a schema slot: the divergence between what CUE can compute and what the kernel computes is closed by removing the kernel's copy.
+- **Why the fold copies rather than unifies.** Measured in experiment 05: the catalog's D25 provenance stamp refuses a transformer from another catalog unified into its member map, so unification would fail on exactly the multi-catalog platform this shape exists to support.
+- **Why `#matchers` is removed rather than derived (0019 D17).** The slot existed because a Go step filled it, and both halves of that sentence are being deleted: `Materialize` by this change, and the Go matcher that read it by 0019 D10. Measured 2026-08-20, `library/opm/compile/match.go` is its only reader; nothing in `opm-operator` or `cli` reads it. The in-build glue does not read it either: experiment 05's matcher takes the composed map and the components and builds its own buckets, keyed contract FQN to a *set* of transformer FQNs rather than to a list of transformer values. A derived `#matchers` would therefore be a second index, in a shape nothing consumes, beside the one the render uses. A consumer that wants the index folds it over `#composedTransformers`.
+- **Why one entry names one build, and why breadth stays out.** The scalar-subscription reshape (enhancement 0010 D37) established that every use of multi-build breadth collapses on inspection: union coverage across builds describes a catalog that dropped a transformer without saying so, gradual migration does not structurally exist under D4's contract keys, two API versions of one contract already ship side by side in one build, and testing a new build beside the old is two platforms. The import model keeps all of that and strengthens the mechanism: `cue.mod` admits one build per catalog major, so a second build is not merely refused by map semantics, it has no way to arrive.
+- **Why a catalog upgrade is a manual edit, and why that is not a regression.** For platforms that live in git and reconcile continuously, an upgrade that appears in a diff and gets reviewed is the correct interaction — the alternative is a version that changes because someone else published. The edit moves from the platform file to the platform module's `cue.mod`; automating the bump is enhancement 0004's subject, and it is additive to this shape.
 
 #### See also
 
 - Tutorial: forthcoming
-- Subscribes to: [`#Catalog`](#36-catalog)
-- Materialized for: `#Module` matching at compile time
+- Admits by import: [`#Catalog`](#36-catalog)
+- Composed for: `#Module` matching in the render build
 
 ---
 
@@ -792,7 +805,7 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 
 - Tutorial: forthcoming
 - Publishes: [`#ComponentTransformer`](#41-componenttransformer)
-- Consumed by: [`#Platform`](#34-platform) via `#registry` subscriptions
+- Consumed by: [`#Platform`](#34-platform) via `#registry` entries, which embed the imported catalog whole
 
 ---
 
@@ -1025,7 +1038,7 @@ Implementation: [`identity_package.cue`](src/identity_package.cue).
 
 #### Rationale
 
-- **Why the version/path major relation is asserted here and nowhere else.** Enhancement 0010 D40 originally had `core` assert it independently on `#Module` and `#Catalog`; D43 removed that for `#Catalog` and D45 for `#Module`, both naming publish-side validation against this definition as what replaces it — and `identity_pins.cue` keeps those two cases deliberately vetting clean so the trade reads as a decision rather than a gap. The consequence is that this assertion is not a redundant copy of a check living elsewhere: there is nothing left to copy. It also has no backstop beneath it, and the reason is not the one an earlier revision of this section gave. D43 and D45 were written against a platform-side subscription-selection major check, and that check **has never existed in `core`** — it was not removed by the scalar-subscription reshape. Measured 2026-08-08: no such assertion appears at any commit of `src/`, and the subscription filter that preceded the reshape carried only `range`, `allow` and `deny`. Nothing in `#Platform` (§3.4) or `#Subscription` relates a subscription's `version` to the `@vN` its `#registry` key carries, and nothing ever did. The distinction matters for who closes it: an unbuilt check has a named owner — the platform-side major-agreement check belongs to `library`'s subscription-collapse work, which has not started — whereas a deleted one would be a regression this repo introduced and nobody holds. What survives beneath this assertion today is a materialize-time registry resolution failure — a `@v1` module publishes `v1.*` tags, so a `2.0.0` request simply does not resolve — which names a missing tag rather than the mistake that produced it. Delete this assertion and the relation leaves the system outright.
+- **Why the version/path major relation is asserted here and nowhere else.** Enhancement 0010 D40 originally had `core` assert it independently on `#Module` and `#Catalog`; D43 removed that for `#Catalog` and D45 for `#Module`, both naming publish-side validation against this definition as what replaces it — and `identity_pins.cue` keeps those two cases deliberately vetting clean so the trade reads as a decision rather than a gap. The consequence is that this assertion is not a redundant copy of a check living elsewhere: there is nothing left to copy. It also has no backstop beneath it, and the reason is not the one an earlier revision of this section gave. D43 and D45 were written against a platform-side subscription-selection major check, and that check **has never existed in `core`** — it was not removed by the scalar-subscription reshape. Measured 2026-08-08: no such assertion appears at any commit of `src/`, and the subscription filter that preceded the reshape carried only `range`, `allow` and `deny`. Nothing in `#Platform` (§3.4) ever related a subscription's `version` to the `@vN` its `#registry` key carries — not the removed `Subscription` definition, and not the `#CatalogEntry` shape that replaced it, whose key binding constrains the embedded catalog's `modulePath` but leaves the version-major relation asserted only here. The distinction matters for who closes it: an unbuilt check has a named owner — the platform-side major-agreement check belongs to `library`'s subscription-collapse work, which has not started — whereas a deleted one would be a regression this repo introduced and nobody holds. What survives beneath this assertion today is a materialize-time registry resolution failure — a `@v1` module publishes `v1.*` tags, so a `2.0.0` request simply does not resolve — which names a missing tag rather than the mistake that produced it. Delete this assertion and the relation leaves the system outright.
 - **Why it is asserted at the point the values are written.** `ModulePath` and `Version` are both authored in this one file, so a conflict names the file the author has open. An assertion one hop downstream — in `#Module` or `#Catalog` — tests the same relation over the same two values while pointing at a file that only consumed them.
 - **Why exactly two fields are authored.** Every derived value is one more thing a release could move out of step. Tooling writes `ModulePath` and `Version`; a publisher who never learns that `RegistryPath` exists cannot get it wrong. It is also what makes the decomposition happen once: `#ArtifactRef` is the schema's single module-path splitting site, and projecting through it here is what keeps this definition from becoming a second one.
 - **Why `kindPrefix` is enumerated rather than a pattern constraint.** `[Kind=string]: RegistryPath + "/" + Kind` reads as the more general form and is unusable: `id.kindPrefix.resources` yields `undefined field`, because a pattern constrains keys that already exist rather than generating them. Measured in `enhancements/0011/experiments/01`, finding (b). The enumeration is not a convenience for the common case — it is a complete statement of the catalog's key space, and `#CatalogMemberFQNGate` (§5.3) builds both a member's path and its key from the same value.
