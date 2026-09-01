@@ -56,11 +56,13 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
     optionalResources?: [#ContractFQNType]: #Resource
     optionalTraits?:    [#ContractFQNType]: #Trait
 
-    // The transform function — takes a Component, produces ONE platform resource.
+    // The transform function — the context projects itself from the two
+    // inputs; the runtime fills only #context.#runtimeName (0019 D12).
     #transform: {
-        #component: _                   // matched Component
-        #context:   #TransformerContext // metadata, labels, annotations, runtime identity
-        output:     {...}               // single provider-specific resource
+        #moduleInstance: _                    // fully concrete #ModuleInstance
+        #component:      _                    // matched Component
+        #context:        #TransformerContext  // computed from the two inputs above
+        output:          {...} | [...{...}]   // one resource, or a list of resources
     }
 }
 
@@ -71,14 +73,14 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
 
 ### TransformerContext
 
-Every `#transform` body receives a `#TransformerContext` that carries:
+The `#TransformerContext` a `#transform` body reads is a projection of the other two inputs (enhancement 0019 D12): the two metadata blocks compute from `#moduleInstance` and `#component` at the `#transform` site, and the runtime supplies only `#runtimeName`. It carries:
 
-- `#moduleInstanceMetadata` — name, namespace, fqn, version, uuid, labels, annotations of the instance.
-- `#componentMetadata` — name, labels, annotations of the matched Component.
-- `#runtimeName` — identity of the runtime executing the transform (e.g., `"opm-cli"` for the CLI, `"opm-controller"` for the operator). Stamped onto every rendered resource as `app.kubernetes.io/managed-by`.
+- `#moduleInstanceMetadata` — name, namespace, fqn, version, uuid, labels, annotations, projected from `#moduleInstance` (version through the instance's module metadata).
+- `#componentMetadata` — name, labels, annotations, projected from the matched Component. The name is the component's own `metadata.name`, never the `#components`-map key it sat under.
+- `#runtimeName` — identity of the runtime executing the transform (e.g., `"opm-cli"` for the CLI, `"opm-controller"` for the operator). Stamped onto every rendered resource as `app.kubernetes.io/managed-by`. The one field the runtime fills.
 - Computed `labels` / `annotations` — final maps merged from module, component, and controller layers, ready to apply to the output.
 
-Runtimes must populate `#runtimeName`; CUE evaluation fails if it is missing.
+Runtimes must populate `#runtimeName` and nothing else; CUE evaluation fails if it is missing (see SPEC.md § 4.1, including the transitional fill rule for staged runtimes).
 
 ### Matching Flow
 
