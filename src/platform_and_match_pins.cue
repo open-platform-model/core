@@ -671,3 +671,38 @@ _pinOneBuildPerPath: "1.2.0"
 //  _failCtxDivergentFill: _pinCtxTransformer & {
 //   #transform: #context: #componentMetadata: name: "frontend"
 //  }
+
+// ─── MUST-FAIL: a render without a runtime name refuses ─────────────────────
+
+// Both inputs filled, no #runtimeName: the one context field the projection
+// cannot compute. A MISSING REQUIRED FIELD, so per this file's header it is
+// not vet-visible (`cue vet ./...` and `cue vet -c ./...` both exit 0,
+// measured 2026-09-01, cue v0.17.1) and #context is HIDDEN, so the field must
+// be named. Note the projection itself evaluates — both metadata blocks
+// compute; only #runtimeName and the managed-by fold that reads it fail:
+//
+//   $ cue export -e '_failCtxNoRuntimeName.#transform.#context' ./...
+//   _failCtxNoRuntimeName.#transform.#context.#runtimeName:
+//     field is required but not present
+//   _failCtxNoRuntimeName.#transform.#context.controllerLabels."app.kubernetes.io/managed-by":
+//     required field missing: #runtimeName
+//   _failCtxNoRuntimeName.#transform.#context.controllerLabels."app.kubernetes.io/managed-by":
+//     invalid interpolation: required field missing: #runtimeName
+//
+// Which is what a kernel does — render reads the context concretely — so the
+// error reaches the caller that matters. Do not add a pin that appears to
+// check it; there is no vet-visible form.
+//
+//  _failCtxNoRuntimeName: #ComponentTransformer & {
+//   metadata: {
+//    name:           "context-projection-no-runtime"
+//    modulePath:     "opmodel.dev/catalogs/opm/transformers"
+//    catalogVersion: "1.0.0"
+//    fqn:            "opmodel.dev/catalogs/opm/transformers/context-projection-no-runtime@1.0.0"
+//    description:    "Must-fail fixture: both inputs filled, no #runtimeName"
+//   }
+//   #transform: {
+//    #moduleInstance: _pinCtxInstance
+//    #component:      _pinCtxComponent
+//   }
+//  }
