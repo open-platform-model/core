@@ -148,13 +148,13 @@ An authored contract FQN MUST include the kind segment — `/resources`, `/trait
 - **WHEN** a `#Blueprint` declares `apiVersion: "v1beta1"`
 - **THEN** its `metadata.fqn` validates against `#ContractFQNType`
 
-### Requirement: Every FQN map key is typed by the role it holds
+### Requirement: FQN map keys are typed by the role they hold
 
-No map declared by `core` takes `#FQNType`. A map whose keys name contracts MUST be keyed `#ContractFQNType`: `#ComponentTransformer.requiredResources`, `optionalResources`, `requiredTraits` and `optionalTraits`, and `#Platform.#matchers.resources` and `traits`. A map whose keys name implementations MUST be keyed `#ImplFQNType`: `#TransformerMap` and `#Catalog.#transformers`.
+No map declared by `core` takes `#FQNType`. A map whose keys name contracts MUST be keyed `#ContractFQNType`: `#ComponentTransformer.requiredResources`, `optionalResources`, `requiredTraits` and `optionalTraits`. A map whose keys name implementations MUST be keyed `#ImplFQNType`: `#TransformerMap` and `#Catalog.#transformers`.
 
 A wrong-form key MUST be refused rather than merely failing to match, since an unmatched key surfaces as a transformer that renders nothing rather than as an error naming the key.
 
-What `core` enforces is the key's **form**, not its agreement with anything. That a demand map's key equals its own value's `metadata.fqn`, and that a matcher bucket's key equals the `metadata.fqn` of the contract its listed transformers demand, are invariants of whichever runtime writes them; `core` declares no constraint tying a key to its value.
+What `core` enforces is the key's **form**, not its agreement with anything. That a demand map's key equals its own value's `metadata.fqn` is an invariant of whichever runtime writes it; `core` declares no constraint tying a key to its value.
 
 #### Scenario: A build-shaped key is refused in a demand map
 
@@ -165,8 +165,3 @@ What `core` enforces is the key's **form**, not its agreement with anything. Tha
 
 - **WHEN** a `#TransformerMap` is keyed `"opmodel.dev/catalogs/opm/transformers/backup-transformer@v1"`
 - **THEN** validation fails with a field-not-allowed error
-
-#### Scenario: A matcher bucket rejects a build-shaped key
-
-- **WHEN** `#Platform.#matchers.resources` is filled with the key `"opmodel.dev/catalogs/opm/resources/backup@1.2.0"`
-- **THEN** validation fails with a field-not-allowed error, because a matcher bucket is keyed by the contract a component surfaces
