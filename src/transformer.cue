@@ -111,16 +111,50 @@ import (
 	// derived from a component-side map (e.g. ConfigMaps, Secrets, PVCs)
 	// should use a list comprehension.
 
-	// Transform function. The runtime supplies all three inputs concretely
-	// (D18). output is either a single resource (struct) or a list of
-	// resources (list); the renderer dispatches on cue.Kind and never
-	// inspects fields inside the value.
+	// WHY the projection lives here and not on #TransformerContext: the
+	// computed blocks need #moduleInstance and #component, which are in scope
+	// only at this site, and the definition stays standalone-constructible.
+	// The `!= _|_` guards project an absent optional source as absent rather
+	// than as an error or an empty struct (0019 D12; SPEC.md § 4.1 Rationale).
+
+	// Transform function. The runtime supplies #moduleInstance and #component
+	// concretely (D18) plus #context.#runtimeName; the context's two metadata
+	// blocks compute themselves from those inputs (0019 D12). output is a
+	// single resource (struct) or a list of resources; the renderer dispatches
+	// on cue.Kind and never inspects fields inside the value. See SPEC.md § 4.1.
 	#transform: {
 		// Was: #moduleRelease (renamed in enhancement 0002)
 		#moduleInstance: _ // Fully concrete #ModuleInstance (D18)
 
 		#component: _ // Unconstrained; validated by matching, not by the transform signature
-		#context:   #TransformerContext
+
+		// Projected from the two inputs above; #runtimeName is the runtime's
+		// whole remaining obligation. name reads #component.metadata.name —
+		// the component's own identity, never the components-map key.
+		#context: #TransformerContext & {
+			#moduleInstanceMetadata: {
+				name:      #moduleInstance.metadata.name
+				namespace: #moduleInstance.metadata.namespace
+				fqn:       #moduleInstance.metadata.fqn
+				uuid:      #moduleInstance.metadata.uuid
+				version:   #moduleInstance.#moduleMetadata.version
+				if #moduleInstance.metadata.labels != _|_ {
+					labels: #moduleInstance.metadata.labels
+				}
+				if #moduleInstance.metadata.annotations != _|_ {
+					annotations: #moduleInstance.metadata.annotations
+				}
+			}
+			#componentMetadata: {
+				name: #component.metadata.name
+				if #component.metadata.labels != _|_ {
+					labels: #component.metadata.labels
+				}
+				if #component.metadata.annotations != _|_ {
+					annotations: #component.metadata.annotations
+				}
+			}
+		}
 
 		output: {...} | [...{...}]
 	}

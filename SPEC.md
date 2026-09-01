@@ -806,6 +806,8 @@ A `#ComponentTransformer` translates a matched `#Component` into platform-specif
 
 Transformers are catalog-versioned, and a transformer is an **adapter rather than a primitive** (§1): it carries no `apiVersion`, and its own key names the build it shipped in. The match algorithm is key-driven: each entry in `requiredResources` / `requiredTraits` names the exact contract key the Component must surface for the transformer to consider it.
 
+The `#transform` context is a **projection of the other two inputs** (enhancement 0019 D12): every `#context` field except `#runtimeName` is computed from `#moduleInstance` and `#component` at the `#transform` site, where both are already in scope. The runtime's obligation narrows to the one string nothing in the artifacts can know. `#TransformerContext` itself is unchanged in shape — same fields, same label and annotation folds — and remains directly constructible outside a `#transform`; the projection lives at the site, not on the definition.
+
 #### Shape
 
 ```cue
@@ -844,12 +846,32 @@ Transformers are catalog-versioned, and a transformer is an **adapter rather tha
     #transform: {
         #moduleInstance: _
         #component:      _
-        #context:        #TransformerContext
+
+        // Computed, not runtime-filled (0019 D12). The runtime supplies
+        // only #context.#runtimeName.
+        #context: #TransformerContext & {
+            #moduleInstanceMetadata: {
+                name:      #moduleInstance.metadata.name
+                namespace: #moduleInstance.metadata.namespace
+                fqn:       #moduleInstance.metadata.fqn
+                uuid:      #moduleInstance.metadata.uuid
+                version:   #moduleInstance.#moduleMetadata.version
+                if #moduleInstance.metadata.labels != _|_ {labels: #moduleInstance.metadata.labels}
+                if #moduleInstance.metadata.annotations != _|_ {annotations: #moduleInstance.metadata.annotations}
+            }
+            #componentMetadata: {
+                name: #component.metadata.name
+                if #component.metadata.labels != _|_ {labels: #component.metadata.labels}
+                if #component.metadata.annotations != _|_ {annotations: #component.metadata.annotations}
+            }
+        }
 
         output: {...} | [...{...}]
     }
 }
 ```
+
+The label and annotation folds inside `#TransformerContext` are unchanged: they were already projections of the two metadata blocks.
 
 Implementation: [`transformer.cue`](src/transformer.cue).
 
@@ -865,6 +887,11 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - Every map key under `requiredResources` / `optionalResources` / `requiredTraits` / `optionalTraits` MUST be a `#ContractFQNType` and MUST equal the map value's `metadata.fqn`. A build-shaped key MUST be rejected: a transformer demands contracts, and no `#Resource` or `#Trait` can carry a key in that form.
 - A Transformer matches a Component when: all `requiredLabels` are present in the Component's **`matchLabels`** with matching values, every `requiredResources` FQN appears in the Component's `#resources`, and every `requiredTraits` FQN appears in the Component's `#traits`. `requiredLabels` MUST be evaluated against `#Component.matchLabels` (§3.1) and MUST NOT be evaluated against `metadata.labels` on either side. The kernel matcher additionally unifies the consumer's primitive against the transformer's required slot at the same FQN; divergent definitions surface as a structured error per (component, FQN).
 - `#transform.output` MUST be either a single struct (one rendered resource per match) or a list of structs (N rendered resources per match). Other CUE kinds are rejected by the renderer.
+- `#transform.#context.#moduleInstanceMetadata` and `#transform.#context.#componentMetadata` MUST be projections of `#transform`'s other two inputs. A runtime MUST NOT be required to supply either block. `#componentMetadata.name` MUST read `#component.metadata.name` — the component's own declared identity, never the `#components`-map key the component sat under.
+- An optional source field that is absent MUST project as absent, not as an error and not as an empty struct. `labels` and `annotations` on either metadata block are the covered cases.
+- `#context.#runtimeName` MUST be supplied by the runtime and MUST be present. It is the only context field a runtime is obligated to fill, and it is stamped verbatim onto every rendered object as `app.kubernetes.io/managed-by`.
+- `#TransformerContext` MUST remain directly constructible outside a `#transform` by supplying the two metadata blocks and `#runtimeName`; the projection binds the `#transform` site only.
+- **Transitional.** While the 0019 migration is staged, a runtime MAY continue to fill the projected fields, provided every value it fills is identical to what the projection computes; unification then agrees and behavior is unchanged. A fill DIVERGENT from the projection MUST fail as a unification conflict at that field rather than silently winning. A runtime MUST stop filling the projected fields once the differential parity harness reports agreement on every case.
 
 #### Rationale
 
@@ -874,6 +901,10 @@ Implementation: [`transformer.cue`](src/transformer.cue).
 - **Why the label predicate reads `matchLabels` and not `metadata.labels`.** A label match must be a stable structural predicate the catalog stamps on a primitive once and relies on — not a free-text field a module author can typo into a silent misroute. `matchLabels` is that field: it unifies upward from every attached primitive (§3.1), it carries nothing but matching keys, and a primitive can declare one of them *required* so the author is forced to answer rather than allowed to omit. `metadata.labels` cannot be it, because it also carries categorisation that legitimately differs between primitives (§2.1 Rationale). The two sides of the match now have the same shape: this transformer declares its demand in a dedicated field, and the component declares its supply in one — an asymmetry that existed from the start, since `requiredLabels` was never `metadata.labels` on the transformer either.
 - **Why `#transform.output` may be either a struct or a list.** Most transformers emit one rendered resource per match (`Deployment` per stateless workload, `Service` per network-expose Trait). Some emit a variable number derived from a Component-side map: a `ConfigMapTransformer` emits one `ConfigMap` per entry in a component's `config` map. A single shape would force the variable case into a struct-of-resources contortion; a list-only shape would force the single case into a one-element list. Two shapes is the smallest schema that doesn't lie.
 - **Why we don't allow free-form CUE inside the transformer's output.** The renderer dispatches on `cue.Kind` — struct vs list — and never inspects field bodies. This keeps the kernel's render path agnostic to apply-layer conventions: a Kubernetes transformer's output is whatever the apply layer (kubectl, controller, gitops bridge) interprets, not whatever shape the core schema happens to know. Per Principle I (Contract Stability), the core schema must not assume a particular target.
+- **Why the context is a projection.** The context was already half a projection: its label and annotation folds compute from the two metadata blocks. The half that was not is the half that needed `library/opm/schema/context.go`, a hand-maintained decode-and-re-encode mirror that can drift from the schema it mirrors — and had (see the component-name bullet below). Enhancement 0019's experiment 01 derives every field in 18 lines of CUE against the real published catalog, so the derivation is demonstrated rather than argued.
+- **Why the projection lands with the render-path collapse rather than separately.** Under 0019 D9 the render is one CUE build, so a deferred projection would have the generated render glue hand-roll in CUE exactly what `core` can compute, and a later change move the same logic here. That is churn D12's rationale explicitly rejects.
+- **Why the migration can be staged.** Filling a value identical to what unification computes is a no-op under unification. That property is what lets the Go fills be removed on the parity harness's evidence rather than on a flag day, and it is also why a divergent fill cannot silently win: the same unification that absorbs an identical fill refuses a different one.
+- **Why `#componentMetadata.name` reads `metadata.name` and not the `#components`-map key.** The two are deliberately allowed to diverge (`name: string | *Id` in `#Module.#components`): the key is the stable handle other parts of a module embed and address the component by, while `metadata.name` is the component's own identity — the value the `resourceName` default and the `component.opmodel.dev/name` label already derive from. The map key is also simply not in scope at the `#transform` site. The Go mirror filled the key, which is exactly the drift class a hand-maintained mirror invites; measured 2026-09-01, `modules/k8up` carries two components (`"manager-cluster-role"` → `"k8up-manager"`, `"executor-cluster-role"` → `"k8up-executor"`) where the two sources disagree, so a staged runtime MUST source its fill from evaluated `metadata.name` before re-pinning to this release or the transitional identical-fill rule is unsatisfiable for them.
 
 #### See also
 
