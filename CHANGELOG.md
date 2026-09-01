@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0-alpha.7](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2026-09-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **platform:** #Subscription and #Platform.#matchers are removed, and #Platform.#composedTransformers changes from an optional kernel-filled slot to a required derived fold. Absorbed on the v2 alpha line. The release is unconsumable by the current library kernel; library stays pinned to the prior alpha until its 0019 Phase B wave lands.
+
+### Features
+
+* **platform:** carry the catalog in the registry entry, drop #Subscription and #matchers ([#61](https://github.com/open-platform-model/core/issues/61)) ([0a71fdc](https://github.com/open-platform-model/core/commit/0a71fdc38bdc1c6dfe206e95435a204928a39f14))
+* **transformer:** project #context from the other two #transform inputs ([#59](https://github.com/open-platform-model/core/issues/59)) ([e57dc4b](https://github.com/open-platform-model/core/commit/e57dc4b5261210bd687e6c789ac55fba934eae07))
+
 ## [2.0.0-alpha.6](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2026-08-26)
 
 
