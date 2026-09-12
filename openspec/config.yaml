@@ -247,9 +247,9 @@ operations:
         <noreply@anthropic.com> trailer only, never a session link, never a bare @name, and
         no body line starting with word( because the squash body reaches release-please). The commit must pass the SPEC.md co-commit gate (Principle II): a spec-neutral
         section uses the SPEC_IMPACT=none escape with a stated reason. Do not start the next section with uncommitted work in the tree."
-      - "The commit task is the only delivery operation apply performs: no push, no branch
-        creation, no PR, no tag, no release. Commit on the working branch the run started on,
-        never on main."
+      - "The commit task is the only delivery operation apply performs: no push, no PR, no tag,
+        no release. Commit on the working branch the run started on. If the run started on
+        main, create the working branch before the first commit task; never commit to main."
       - "Pausing: when the user asks to pause, or a blocker appears, finish the current section's
         commit task first if its gates are green; otherwise report exactly which boxes are
         checked and what is uncommitted in the tree. A new session resumes by running apply
