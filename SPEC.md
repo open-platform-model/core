@@ -737,11 +737,11 @@ Implementation: [`module_instance.cue`](src/module_instance.cue).
 
 #### Definition
 
-A `#Catalog` is the construct a catalog package exports to publish its primitives — primarily its `#ComponentTransformer` set — into a versioned, registry-resolvable artifact. It collapses what used to be a `#Module.#defines` block plus author-discipline conventions into one typed value with schema-enforced lockstep on transformer metadata.
+A `#Catalog` is the construct a catalog package exports to publish its primitives into a versioned, registry-resolvable artifact. It states two separate facts about the catalog: the contracts it **defines** — its `#Resource`, `#Trait` and `#Blueprint` members, listed in `#resources`, `#traits` and `#blueprints` — and the contracts it **implements**, the `#ComponentTransformer` set in `#transformers`. The two diverge exactly for a `fulfilment: "provider"` contract, which its declaring catalog lists and deliberately ships no adapter for (enhancement 0015 D1). It collapses what used to be a `#Module.#defines` block plus author-discipline conventions into one typed value with schema-enforced lockstep on every member's provenance.
 
-A `#Catalog` introduces no new vocabulary itself — like every other construct (§3), it organizes primitives into a structured whole. Where `#Module` carries a set of components to render, `#Catalog` carries a set of transformers to publish. Both are constructs; their difference is which artifact they ship.
+A `#Catalog` introduces no new vocabulary itself — like every other construct (§3), it organizes primitives into a structured whole. Where `#Module` carries a set of components to render, `#Catalog` carries a set of contracts and transformers to publish. Both are constructs; their difference is which artifact they ship.
 
-The catalog's identity is its `metadata.modulePath` — the complete CUE module path, `@vN` included — and its `metadata.fqn` is that path verbatim. The SemVer `metadata.version` is the catalog's *build*: it keys the transformers and stamps every member's provenance, but it is not part of the catalog's identity. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery.
+The catalog's identity is its `metadata.modulePath` — the complete CUE module path, `@vN` included — and its `metadata.fqn` is that path verbatim. The SemVer `metadata.version` is the catalog's *build*: it keys the transformers and stamps every member's provenance, but it is not part of the catalog's identity. The kernel reads only `#Catalog.metadata` and `#Catalog.#transformers` at materialize time — there is no package walk, no auto-discovery. The contract maps are data the kernel does not yet consult; enhancement 0015's platform inventory is their first reader.
 
 #### Shape
 
@@ -764,7 +764,37 @@ The catalog's identity is its `metadata.modulePath` — the complete CUE module 
         annotations?: #LabelsAnnotationsType
     }
 
-    // Every entry's metadata.modulePath is stamped to
+    // The contracts this catalog DEFINES (enhancement 0015 D1). Every member's
+    // metadata.modulePath is stamped to
+    //   "<catalog registryPath>/<kind>/<member apiVersion>"   // the member's own filing segment (0010 D49)
+    // and metadata.catalogVersion is stamped to the catalog's version. The
+    // member's apiVersion is read through the A= label alias: a bare
+    // `apiVersion` inside the literal does not resolve to the field the
+    // primitive supplies by unification.
+    #resources: [#ContractFQNType]: #Resource & {
+        metadata: {
+            A=apiVersion:   #APIVersionType
+            modulePath:     "\(M._ref.registryPath)/resources/\(A)"
+            catalogVersion: M.version
+        }
+    }
+    #traits: [#ContractFQNType]: #Trait & {
+        metadata: {
+            A=apiVersion:   #APIVersionType
+            modulePath:     "\(M._ref.registryPath)/traits/\(A)"
+            catalogVersion: M.version
+        }
+    }
+    #blueprints: [#ContractFQNType]: #Blueprint & {
+        metadata: {
+            A=apiVersion:   #APIVersionType
+            modulePath:     "\(M._ref.registryPath)/blueprints/\(A)"
+            catalogVersion: M.version
+        }
+    }
+
+    // The contracts this catalog IMPLEMENTS. Every entry's metadata.modulePath
+    // is stamped to
     //   "<catalog registryPath>/transformers"     // major split out, NOT re-appended
     // and metadata.catalogVersion is stamped to the catalog's version.
     // Pattern enforced by the schema, not by author discipline.
@@ -788,14 +818,20 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 - `metadata` MUST NOT assert that `version`'s major agrees with `modulePath`'s. A `#Catalog` declaring `modulePath: "…/opm@v1"` with `version: "2.0.0"` MUST validate. As with [`#Module`](#32-module), this is an **accepting** behaviour specified deliberately — see Rationale.
 - Every entry in `#transformers` MUST be keyed by the transformer's own `metadata.fqn`, and the key is typed `#ImplFQNType`, so a contract-shaped key MUST be rejected. The pattern constraint on `#transformers` stamps every entry's `metadata.modulePath` to `"<catalog registryPath>/transformers"` — the **major-free** path — and every entry's `metadata.catalogVersion` to the catalog's version. The major MUST NOT be re-appended: a transformer declares a `#PackagePathType`, which admits no `@vN`. An author who writes a divergent value for either field MUST get a `cue vet` failure with "conflicting values" — not a silent override.
 - The pattern does NOT stamp `metadata.fqn`. Under enhancement 0010 D21 an `fqn` is authored at the definition site rather than derived, so there is no value for `#Catalog` to compute; the map key already carries the transformer's own `fqn`, and the agreement between the two is asserted at publish by [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3) rather than here.
-- Resources, Traits, and Blueprints are NOT enumerated in `#Catalog`. They surface transitively via each transformer's `requiredResources` / `requiredTraits` maps and via standard CUE imports for direct references.
+- `#Catalog` MUST declare three contract-member maps beside `#transformers`: `#resources` (values `#Resource`), `#traits` (values `#Trait`) and `#blueprints` (values `#Blueprint`). Each MUST be keyed `#ContractFQNType`, so a build-form key (`path/name@<semver>`) MUST be rejected as a field not allowed rather than accepted as a member nothing demands. A member listed under a map of the wrong kind MUST be rejected with a `conflicting values` error on its `kind`.
+- Each contract map MUST be a pattern constraint with no required entries. A `#Catalog` declaring `metadata` and `#transformers` only — as every catalog published before the maps existed does — MUST validate unchanged, with each of the three maps evaluating to an empty struct.
+- Each contract map's pattern constraint stamps every member's `metadata.catalogVersion` to the catalog's version and every member's `metadata.modulePath` to `"<catalog registryPath>/<kind>/<member apiVersion>"` — the **major-free** registry path, the map's kind segment (`resources`, `traits` or `blueprints`), and the member's own `metadata.apiVersion`, which is the version-segment filing a contract member already declares (enhancement 0010 D49) and [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) derives at publish. A member MAY omit both fields and receive them from the stamp; a member that authors either MUST agree with it, and a divergent value MUST fail `cue vet` with `conflicting values` at a path naming the member — not a silent override.
+- The contract maps do NOT stamp or bind `metadata.fqn`, for the same reason `#transformers` does not: an `fqn` is authored at the definition site (0010 D21), the map key carries the member's own `fqn`, and the agreement between key, `fqn` and the identity package is asserted at publish by [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) (§5.3). A well-formed contract key that differs from its member's authored `fqn` MUST validate in `core`; the disagreement is the publish gate's to refuse.
+- Listing a contract MUST NOT require an adapter. A catalog listing a `fulfilment: "provider"` contract with an empty `#transformers` MUST validate, and the member MUST be readable from its map by key — that visibility is what the maps exist for.
 
 #### Rationale
 
 - **Why a single `#Catalog` construct instead of a `#Module.#defines` block.** The pre-0001 design overloaded `#Module` to act as both a consumer artifact (declares components) and a publisher artifact (defines primitives). A catalog has no `#components` to render — it only publishes vocabulary. Collapsing both responsibilities into one type forced every catalog to ship the consumer surface (and vice versa). Splitting them gives `#Module` one role (consume) and `#Catalog` one role (publish). Both remain constructs — they organize primitives, they don't introduce schema vocabulary. See enhancement 0001 D19.
 - **Why the `M=metadata` field-label alias.** The pattern constraint on `#transformers` needs to reach the outer catalog's `modulePath` and `version` from inside the nested `metadata: { ... }` block of every entry. A bare `metadata.modulePath` reference inside the entry's own metadata walks to the closest parent field named `metadata` — the inner field itself — and self-embeds into a non-concrete interpolation. CUE's value-alias form (`metadata: M={...}`) does not carry across the nested constraint boundary; only the field-label alias form does. Experiment 09 in the enhancement validated both sound forms (hidden-mirror + label-alias); the label-alias is chosen here for inline locality. See enhancement 0001 D25.
 - **Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`.** Stamping the two replaces the prior author-discipline rule ("every transformer's metadata must match the catalog's version") with a structural guarantee that `cue vet` enforces. Experiment 10 confirmed the asymmetry: a wrong `modulePath` or build version fails vet loudly; stamping `fqn` introduces conflicts on round-tripped FQNs. Enhancement 0010 D21 then removed the derivation the stamp would have collided with — an `fqn` is now authored, so `#Catalog` has nothing to compute and the stamped `catalogVersion` is what keeps a transformer's authored key honest about the build it shipped in.
-- **Why catalogs don't enumerate Resources / Traits / Blueprints.** A transformer's `requiredResources` / `requiredTraits` already names every primitive the matcher needs to reach. Adding sibling `#resources` / `#traits` / `#blueprints` maps on `#Catalog` would duplicate that information and invite drift between the enumeration and the transitive set. If introspection demand surfaces later, the sibling maps are an additive extension — not a precondition.
+- **Why a catalog publishes its contracts as members.** Before the contract maps, a catalog's resources, traits and blueprints reached a build only by being demanded by a transformer, and the earlier rationale held that the transitive set was enough. It is enough for a contract the declaring catalog implements, and exactly wrong for one it does not: a `fulfilment: "provider"` trait ships no adapter by design (enhancement 0010 D37), so a subscribed catalog publishing one with an empty `#transformers` was indistinguishable from a catalog that had never heard of it — measured 2026-09-11 in `enhancements/0015/experiments/01-provider-trait-across-catalogs`, the resulting no-provider refusal cannot say the contract is defined at all. Listing makes "this catalog defines X" a stated fact of the artifact, separate from "this catalog implements X" (0015 D1). The drift the earlier rationale feared — a listing disagreeing with the transitive set — is bounded by the stamps here and closed by the publish gate in the 0011 family that checks every provider-fulfilled contract is listed; `core` cannot see an unlisted member and does not claim to.
+- **Why the contract stamp carries the member's `apiVersion` segment while the transformer stamp does not.** A contract member files under `"<kindPrefix>/<apiVersion>"` — the version-segment filing 0010 D49 requires and [`#CatalogMemberFQNGate`](#53-catalogmemberfqngate) derives from the member's own `apiVersion` — so a flat `"<registryPath>/traits"` stamp would conflict with every member catalog_opm ships. Stamping the derived value means a listed member's stamp and its publish-time check agree by construction; the `A=apiVersion` label alias is how the stamp reads a field the primitive supplies by unification rather than one the literal declares, since a bare `apiVersion` inside the literal is `reference "apiVersion" not found` on cue v0.17.1. A transformer carries no `apiVersion` (0010 D44), so its stamp has no segment to carry and stays flat.
+- **Why the member is the primitive itself rather than a projection.** Enhancement 0015's pre-draft stated the member as a metadata projection (a `PublishedContract` type carrying name, kind, paths, versions and `fulfilment`). The primitive is the idiom `#transformers` already establishes — `(fqn): value` — so a catalog author lists a contract the way they list an adapter, and the listed value is the same value the transformers' required maps carry rather than a second copy that can drift from it. `fulfilment` is readable directly off a resource or trait, which is what 0015 D11's `provides` fold reads; a blueprint has no `fulfilment` field (0010 D44), so a projection carrying one would state something a blueprint structurally refuses. One fewer published construct (Principle V), and nothing new to track.
 - **Why a catalog's `fqn` is its module path, and why the dedicated catalog-FQN type retired with it.** The old `fqn` was `modulePath@version`, which meant a catalog's identity moved on every release and its regex was not structurally disjoint from a primitive's `modulePath/name@version` — the two were distinguished by which field they appeared in, not by anything checkable. Making `fqn` the module path removes both problems at once: identity names the artifact rather than the release, and the type is the same `#ModulePathType` a `#Module` carries, so there is one path type per artifact kind instead of one per derivation. The catalog's *build* still has a home — `version` — and it is what keys the transformers.
 - **Why the `"0.0.0-dev"` default is gone.** It existed so `cue vet` was cheap in a source tree, and it made a checkout and a published artifact compute different values: the committed tree resolved `Version` to `0.0.0-dev`, so a local render demanded `…/transformers/deployment@0.0.0-dev` while the registry supplied `…/transformers/deployment@1.0.0`. A default that renders successfully while being wrong is worse than no value at all — an unset `version` is now an incomplete value that names the field, and the committed `identity/identity.cue` supplies the real one to checkout and artifact alike. See enhancement 0010 D5/D6.
 - **Why the transformer stamp drops the major instead of re-appending it.** The stamp builds a *package* path — `metadata.modulePath` on a `#ComponentTransformer` is a `#PackagePathType`, which admits no `@vN` (§2.1 Rationale). Re-appending the catalog's major would produce a value the transformer's own type rejects, and would key every published member under a suffix no import statement writes.
@@ -804,7 +840,7 @@ Implementation: [`catalog.cue`](src/catalog.cue).
 #### See also
 
 - Tutorial: forthcoming
-- Publishes: [`#ComponentTransformer`](#41-componenttransformer)
+- Publishes: [`#Resource`](#21-resource), [`#Trait`](#22-trait) and [`#Blueprint`](#33-blueprint) as contract members; [`#ComponentTransformer`](#41-componenttransformer) as implementations
 - Consumed by: [`#Platform`](#34-platform) via `#registry` entries, which embed the imported catalog whole
 
 ---

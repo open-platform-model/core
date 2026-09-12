@@ -206,7 +206,8 @@ import (
 //	#Resource / #Trait / #Blueprint  metadata.fqn         #ContractFQNType
 //	#ComponentTransformer            metadata.fqn         #ImplFQNType
 //	                                 required/optional*   #ContractFQNType  (it demands contracts)
-//	#TransformerMap, #Catalog        map keys             #ImplFQNType
+//	#TransformerMap, #Catalog.#transformers  map keys   #ImplFQNType
+//	#Catalog.#resources/#traits/#blueprints  map keys   #ContractFQNType  (it defines contracts)
 //
 // Before D4 split the type, all of those were one regex and the narrowing was
 // free. It is stated here because the disjunction is the only thing in the
