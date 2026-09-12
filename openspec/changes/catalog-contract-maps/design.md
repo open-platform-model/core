@@ -109,7 +109,7 @@ Authoring shape a catalog uses, mirroring `#transformers`:
 - `SPEC.md` §3.6 (same commit): Definition gains the contract-member sentence; Shape adds the three maps; Constraints replace the "Resources, Traits, and Blueprints are NOT enumerated" bullet with the key-type, stamp, unstamped-`fqn`, no-adapter-required and empty-is-valid rules; Rationale replaces "Why catalogs don't enumerate Resources / Traits / Blueprints" with "Why a catalog publishes its contracts as members" (0015 D1), and adds "Why the contract stamp carries the member's apiVersion segment while the transformer stamp does not" (0010 D44/D49) and "Why the member is the primitive itself rather than a projection". "See also" gains `#Resource`, `#Trait`, `#Blueprint` under Publishes.
 - `src/catalog_pins.cue` (new): the pins above. Hidden fields only, so `src/INDEX.md` gains no row.
 - `src/types.cue`: the "WHY unused inside `core`, per role" comment table gains the row `#Catalog.#resources/#traits/#blueprints  map keys  #ContractFQNType`. Comment-only.
-- `src/INDEX.md`: `task generate:index`; the `#Catalog` description line changes with its doc comment, nothing else.
+- `src/INDEX.md`: `task generate:index`; unchanged. The generator extracts only the first sentence of the `#Catalog` doc comment, which this change keeps, so no row moves and `task generate:index:check` passes without a regeneration diff.
 - `.tasks/spec-tracked.txt`: unchanged. No new top-level construct is introduced; `#Catalog` is tracked and its §3.6 section moves with the CUE.
 - `docs/` and `README.md`: no hit for catalog member prose (grepped 2026-09-12); nothing to rewrite.
 
@@ -129,6 +129,6 @@ Authoring shape a catalog uses, mirroring `#transformers`:
 
 ## Migration Plan
 
-One commit: `src/catalog.cue` + `src/catalog_pins.cue` + `src/types.cue` + `SPEC.md` + regenerated `src/INDEX.md`, subject `feat(catalog): publish resources, traits and blueprints as catalog members`. release-please cuts a release on the v2 alpha line; CI publishes on the release merge. Rollback before release is a revert; after release, a revert in a later release, safe as long as no published catalog has listed members yet (catalog_opm's listing waits for this release).
+One commit: `src/catalog.cue` + `src/catalog_pins.cue` + `src/types.cue` + `SPEC.md` (`src/INDEX.md` unchanged), subject `feat(catalog): publish resources, traits and blueprints as catalog members`. release-please cuts a release on the v2 alpha line; CI publishes on the release merge. Rollback before release is a revert; after release, a revert in a later release, safe as long as no published catalog has listed members yet (catalog_opm's listing waits for this release).
 
 Downstream: nothing re-pins for this change alone. catalog_opm bumps core to the release that carries it in its listing change (`task deps:update`), and that is the first consumer.

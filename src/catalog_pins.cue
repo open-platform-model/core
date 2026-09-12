@@ -92,6 +92,25 @@ _pinContractCatalog: #Catalog & {
 _pinContractStamps: "\(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.modulePath) \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.catalogVersion)"
 _pinContractStamps: "opmodel.dev/catalogs/opm/resources/v1beta1 4.1.0 | opmodel.dev/catalogs/opm/traits/v1beta1 4.1.0 | opmodel.dev/catalogs/opm/blueprints/v1alpha1 4.1.0"
 
+// ─── Key and fqn are not compared by core ───────────────────────────────────
+
+// A well-formed contract key that differs from the member's authored fqn.
+// `core` enforces the key's FORM only; the agreement between key, fqn and the
+// identity package is #CatalogMemberFQNGate's at publish (0010 D21), as it
+// already is for #transformers. The member validates, receives the stamps,
+// and its fqn is untouched by the key it sits under.
+_pinContractKeyNotCompared: #Catalog & {
+	metadata: {
+		modulePath: "opmodel.dev/catalogs/opm@v4"
+		version:    "4.1.0"
+	}
+	#transformers: {}
+	#traits: "opmodel.dev/catalogs/opm/traits/autoscale@v1beta1": _pinContractTrait
+}
+
+_pinContractKeyNotComparedRead: "\(_pinContractKeyNotCompared.#traits["opmodel.dev/catalogs/opm/traits/autoscale@v1beta1"].metadata.fqn)|\(_pinContractKeyNotCompared.#traits["opmodel.dev/catalogs/opm/traits/autoscale@v1beta1"].metadata.modulePath)"
+_pinContractKeyNotComparedRead: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1|opmodel.dev/catalogs/opm/traits/v1beta1"
+
 // ─── Publishing a contract requires no adapter ──────────────────────────────
 
 // A catalog whose #transformers is EMPTY and whose one member is

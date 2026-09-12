@@ -45,5 +45,5 @@ Three maps, each with a named consumer: the 0015 D1 inventory fold (second slice
 - `SPEC.md` §3.6 (same commit, `core-schema-edit` protocol).
 - `src/catalog_pins.cue` (new): hidden-field pins for the stamps, the empty-catalog case and a provider-fulfilled member with no adapter; must-fail cases as comments with the recorded error text.
 - `src/types.cue`: the comment table of FQN-typed map keys gains a row for the three maps (comment-only).
-- `src/INDEX.md`: regenerate; no definition is added or removed, so only the extracted `#Catalog` description changes.
+- `src/INDEX.md`: unchanged. No definition is added or removed, and the generator extracts only the first sentence of the `#Catalog` doc comment, which is kept.
 - `.tasks/spec-tracked.txt`: unchanged. No new top-level construct; `#Catalog` is already tracked.
