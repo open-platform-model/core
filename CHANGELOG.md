@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-alpha.8](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.7...v2.0.0-alpha.8) (2026-09-12)
+
+
+### Features
+
+* **catalog:** publish resources, traits and blueprints as catalog members ([#64](https://github.com/open-platform-model/core/issues/64)) ([9601a26](https://github.com/open-platform-model/core/commit/9601a268255a362e8f8c6b4a8d2f9c576246ef9d))
+
 ## [2.0.0-alpha.7](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2026-09-01)
 
 
