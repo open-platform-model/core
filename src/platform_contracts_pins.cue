@@ -244,8 +244,8 @@ _pinInventoryBaseOnlyReadout: "defined=4 unfulfilled=[opmodel.dev/catalogs/opm/t
 
 // definedBy carries the REGISTRY KEY (the catalog's module path, major
 // included), not the member's stamped package path.
-_pinInventoryBaseOnlyDefinedBy: "\(_pinInventoryBaseOnly.#contracts.definedBy["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"])|\(_pinInventoryBaseOnly.#contracts.definedBy["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"])"
-_pinInventoryBaseOnlyDefinedBy: "opmodel.dev/catalogs/opm@v1|opmodel.dev/catalogs/opm@v1"
+_pinInventoryBaseOnlyDefinedBy: "\(_pinInventoryBaseOnly.#contracts.definedBy["opmodel.dev/catalogs/opm/resources/container@v1beta1"])|\(_pinInventoryBaseOnly.#contracts.definedBy["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"])|\(_pinInventoryBaseOnly.#contracts.definedBy["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"])|\(_pinInventoryBaseOnly.#contracts.definedBy["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"])"
+_pinInventoryBaseOnlyDefinedBy: "opmodel.dev/catalogs/opm@v1|opmodel.dev/catalogs/opm@v1|opmodel.dev/catalogs/opm@v1|opmodel.dev/catalogs/opm@v1"
 
 // `defined` carries the member as the catalog lists it: the stamp is
 // readable, and so is the primitive's own fulfilment.
@@ -334,6 +334,21 @@ _pinInventoryGuardsHold: true
 // two-providers.
 _pinInventoryGuarded: "\(len(_pinInventoryBaseOnly.#contracts.requiredBy["opmodel.dev/catalogs/opm/resources/container@v1beta1"]))|\(len(_pinInventoryTwoProviders.#contracts.requiredBy["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"]))"
 _pinInventoryGuarded: "1|3"
+
+// ─── A declared reverse index is inert, not refused ─────────────────────────
+//
+// Closedness does not reject an undeclared definition field on #Platform
+// (measured 2026-09-13, cue v0.17.1): the value evaluates and reads the field
+// back. What the platform-registry requirement holds is that NOTHING reads
+// it: the composed fold and the inventory of the one-provider platform are
+// unchanged by its presence.
+_pinInventoryWithMatchers: _pinInventoryOneProvider & {
+	#matchers: "opmodel.dev/catalogs/opm/traits/backup@v1alpha1": ["nothing-reads-this"]
+}
+_pinInventoryWithMatchersInert:      "\(len(_pinInventoryWithMatchers.#matchers))|\(len(_pinInventoryWithMatchers.#composedTransformers))|\((_pinInventoryReadout & {#in: _pinInventoryWithMatchers.#contracts}).out)"
+_pinInventoryWithMatchersInert:      "1|3|defined=5 unfulfilled=[] overSubscribed=[] fulfilled=true routable=true"
+_pinInventoryWithMatchersRequiredBy: strings.Join(list.Sort(_pinInventoryWithMatchers.#contracts.requiredBy["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"], list.Ascending), ",")
+_pinInventoryWithMatchersRequiredBy: _pinInventoryOneProviderRequiredBy
 
 // ─── The definition evaluates with no registry at all ───────────────────────
 

@@ -17,3 +17,4 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 - [x] 3.1 `task generate:index`; review that exactly one row (`#ContractInventory`) was added. Verify: `task generate:index:check` passes.
 - [x] 3.2 `task check` (fmt, vet, INDEX freshness, SPEC inventory, doc-comment limit) passes.
 - [x] 3.3 Grep `src/`, `SPEC.md` and `docs/` for `#ContractRouting`; confirm no hit (the construct is deliberately not landed).
+- [x] 3.4 Commit the whole change (sections 1 to 3, one commit per design.md § Migration Plan) as `feat(platform): derive the contract inventory from the registry`.
