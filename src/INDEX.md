@@ -7,6 +7,7 @@ CUE module: `opmodel.dev/core@v2`
 ## Project Structure
 
 ```
++-- docs/
 ```
 
 ---
