@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-alpha.9](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.8...v2.0.0-alpha.9) (2026-09-13)
+
+
+### Features
+
+* **platform:** derive the contract inventory from the registry ([#66](https://github.com/open-platform-model/core/issues/66)) ([57f011f](https://github.com/open-platform-model/core/commit/57f011ff3ec8906b6b14deb2a008e1793c659f34))
+
 ## [2.0.0-alpha.8](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.7...v2.0.0-alpha.8) (2026-09-12)
 
 
