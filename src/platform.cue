@@ -33,6 +33,54 @@ package core
 	#transformers: #TransformerMap & #catalog.#transformers
 }
 
+// WHY no per-contract routing relation: 0015's pre-draft named a
+// `ContractRouting` a caller unifies per contract; `overSubscribed` and
+// `routable` state the arity rule for every contract at once and
+// `requiredBy` is the list the relation took as input, so the relation
+// would be a second statement of the same two facts with no consumer
+// (Principle V). SPEC.md § 3.4 Rationale, "Why no per-contract routing
+// relation".
+
+// #ContractInventory: what a #Platform derives about the contracts its
+// enabled catalogs define and its enabled transformers require (enhancement
+// 0015 D1, D2, D18): the members and their defining catalogs, the required
+// demands per contract, the two reports and the two booleans they imply.
+// Lives on #Platform.#contracts, derived and never authored; it reports
+// and never refuses. See SPEC.md § 3.4.
+#ContractInventory: {
+	// Every contract every enabled entry's catalog lists, keyed by contract
+	// FQN and carrying the member value as the catalog lists it (the
+	// primitive itself, provenance stamped).
+	defined: [#ContractFQNType]: #Resource | #Trait | #Blueprint
+
+	// Contract FQN to the registry key (module path) of the catalog listing
+	// it: the value every diagnostic prints beside the contract.
+	definedBy: [#ContractFQNType]: #ModulePathType
+
+	// Contract FQN to the implementation FQNs of every enabled transformer
+	// whose requiredResources or requiredTraits name it. Required demands
+	// only (0010 D32: optional consumption is tolerance, not fulfilment);
+	// a defined contract nothing requires maps to an empty list.
+	requiredBy: [#ContractFQNType]: [...#ImplFQNType]
+
+	// Provider-fulfilled resources and traits required by nothing. A
+	// report the operator surfaces as a non-gating condition (D18); never a
+	// refusal. Blueprints never appear: a blueprint carries no fulfilment.
+	unfulfilled: [...#ContractFQNType]
+
+	// Provider-fulfilled resources and traits required by transformers
+	// from more than one catalog, a transformer's catalog being its stamped
+	// metadata.modulePath. What the generation step refuses on (0010 D37).
+	overSubscribed: [...#ContractFQNType]
+
+	// True exactly when nothing is unfulfilled. A report, never a gate.
+	fulfilled: bool & (len(unfulfilled) == 0)
+
+	// True exactly when nothing is over-subscribed. The gate the generation
+	// step (operator, CLI) reads; `core` itself refuses nothing on it.
+	routable: bool & (len(overSubscribed) == 0)
+}
+
 // WHY the fold copies per entry rather than unifying entry maps: the
 // catalog's provenance stamp (0010 D25) refuses a foreign transformer
 // unified into another catalog's member map, so map-level unification fails
@@ -48,8 +96,9 @@ package core
 
 // A #Platform is a path-keyed registry of catalog entries, each carrying its
 // imported catalog, plus the derived #composedTransformers fold over the
-// enabled entries. A platform value is complete on its own: no Materialize
-// step, no materialized twin, no reverse index. See SPEC.md § 3.4.
+// enabled entries and the derived #contracts inventory. A platform value is
+// complete on its own: no Materialize step, no materialized twin, no reverse
+// index. See SPEC.md § 3.4.
 #Platform: {
 	kind: "Platform"
 
@@ -78,5 +127,69 @@ package core
 		for _, entry in #registry if entry.enable {
 			for fqn, tf in entry.#transformers {(fqn): tf}
 		}
+	}
+
+	// WHY the inventory reports rather than asserts (0015 D18): an
+	// assertion inside #Platform is a bottom on the first over-subscribed
+	// contract, so the value cannot name it and every diagnostic reads a
+	// failed value. `routable: false` is the value the generation step
+	// (operator, CLI) refuses on, naming `overSubscribed` and `definedBy`;
+	// `fulfilled: false` is surfaced as a non-gating condition and gates
+	// nothing, which an in-schema assertion could not express.
+	//
+	// WHY over-subscription counts catalogs, not transformers: one
+	// provider catalog may carry two adapters over one contract (k8up's
+	// Schedule and PreBackupPod), and the shipped CLI refusal already
+	// counts catalogs. `_providers` keys a struct by each requiring
+	// transformer's stamped metadata.modulePath, which deduplicates per
+	// catalog; the stamp is unforgeable (0010 D25), so a catalog cannot
+	// pose as two. SPEC.md § 3.4 Rationale, "Why the inventory reports and
+	// does not refuse" and "Why over-subscription counts catalogs".
+
+	// Derived, never authored or runtime-filled: the contract inventory,
+	// folded from every enabled entry's #resources, #traits and #blueprints
+	// and crossed with the required demands of #composedTransformers.
+	// Empty, fulfilled and routable on an empty or fully disabled registry.
+	// An over-subscribed platform still evaluates; refusing it is the
+	// generation step's act. See SPEC.md § 3.4.
+	#contracts: #ContractInventory & {
+		defined: {
+			for _, entry in #registry if entry.enable {
+				for fqn, r in entry.#catalog.#resources {(fqn): r}
+				for fqn, t in entry.#catalog.#traits {(fqn): t}
+				for fqn, b in entry.#catalog.#blueprints {(fqn): b}
+			}
+		}
+		definedBy: {
+			for path, entry in #registry if entry.enable {
+				for fqn, _ in entry.#catalog.#resources {(fqn): path}
+				for fqn, _ in entry.#catalog.#traits {(fqn): path}
+				for fqn, _ in entry.#catalog.#blueprints {(fqn): path}
+			}
+		}
+
+		// The demand maps are optional on #ComponentTransformer, and an
+		// unguarded `for` over an absent one fails the whole platform; the
+		// presence guards are sound because a present map is concrete.
+		requiredBy: {
+			for fqn, _ in defined {
+				(fqn): [
+					for k, tf in #composedTransformers if tf.requiredResources != _|_ for req, _ in tf.requiredResources if req == fqn {k},
+					for k, tf in #composedTransformers if tf.requiredTraits != _|_ for req, _ in tf.requiredTraits if req == fqn {k},
+				]
+			}
+		}
+
+		// Per provider-fulfilled contract, the set of catalogs whose
+		// transformers require it (keyed by stamped modulePath; see the WHY
+		// block above). Blueprints carry no fulfilment and are skipped
+		// before the field is read.
+		_providers: {
+			for fqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "provider" {
+				(fqn): {for _, k in requiredBy[fqn] {(#composedTransformers[k].metadata.modulePath): true}}
+			}
+		}
+		unfulfilled: [for fqn, ps in _providers if len(ps) == 0 {fqn}]
+		overSubscribed: [for fqn, ps in _providers if len(ps) > 1 {fqn}]
 	}
 }
