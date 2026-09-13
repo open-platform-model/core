@@ -561,7 +561,9 @@ Implementation: [`blueprint.cue`](src/blueprint.cue).
 
 A `#Platform` is a path-keyed registry of *catalog entries*. Each `#CatalogEntry` declares that the platform admits a catalog by **carrying that catalog's value**: the platform module imports the catalog the way any CUE module imports a dependency, and the entry embeds the imported value whole. The build the platform executes is therefore chosen by the platform module's own `cue.mod`, resolved by the same mechanism that resolves every other dependency.
 
-A `#Platform` value is complete on its own, not a spec awaiting materialization: the registry carries the catalogs, and the one materialization-shaped field that survives (`#composedTransformers`) is a fold over that registry computed by CUE. There is no materialized twin, no `Materialize` step to produce one, and no reverse index.
+A `#Platform` value is complete on its own, not a spec awaiting materialization: the registry carries the catalogs, and the one materialization-shaped field that survives (`#composedTransformers`) is a fold over that registry computed by CUE. There is no materialized twin, no `Materialize` step to produce one, and no reverse index for matching.
+
+A second derived fold, `#contracts: #ContractInventory` (enhancement 0015 D1, D2, D18), is the platform's *contract inventory*: what the enabled catalogs define (`defined`, `definedBy`), what the enabled transformers require of it (`requiredBy`), and the two arity reports over the provider-fulfilled contracts (`unfulfilled`, `overSubscribed`) with the booleans they imply (`fulfilled`, `routable`). It is a report a platform carries with no module in hand, evaluable on the definition alone, and it refuses nothing: whether `routable: false` withholds a generated platform package is the generation step's act, and `fulfilled: false` gates nothing anywhere. The construct is specified in its own subsection below.
 
 There is no resolution step: the platform module **is** the resolution, bytes included. Nothing in an entry requires a query against a registry at evaluation time to determine which build was selected.
 
@@ -605,6 +607,44 @@ The subscription form (the definition formerly named `Subscription`, an `{enable
             for fqn, tf in entry.#transformers {(fqn): tf}
         }
     }
+
+    // Derived: the contract inventory (0015 D1), folded from the enabled
+    // entries' contract maps and crossed with the required demands of
+    // #composedTransformers. Reports; never refuses (0015 D18).
+    #contracts: #ContractInventory & {
+        defined: {
+            for _, entry in #registry if entry.enable {
+                for fqn, r in entry.#catalog.#resources {(fqn): r}
+                for fqn, t in entry.#catalog.#traits {(fqn): t}
+                for fqn, b in entry.#catalog.#blueprints {(fqn): b}
+            }
+        }
+        definedBy: {
+            for path, entry in #registry if entry.enable {
+                for fqn, _ in entry.#catalog.#resources {(fqn): path}
+                for fqn, _ in entry.#catalog.#traits {(fqn): path}
+                for fqn, _ in entry.#catalog.#blueprints {(fqn): path}
+            }
+        }
+        // Presence-guarded: the demand maps are optional on the transformer.
+        requiredBy: {
+            for fqn, _ in defined {
+                (fqn): [
+                    for k, tf in #composedTransformers if tf.requiredResources != _|_ for req, _ in tf.requiredResources if req == fqn {k},
+                    for k, tf in #composedTransformers if tf.requiredTraits != _|_ for req, _ in tf.requiredTraits if req == fqn {k},
+                ]
+            }
+        }
+        // Per provider-fulfilled contract, the SET of catalogs requiring it,
+        // keyed by each requiring transformer's stamped modulePath.
+        _providers: {
+            for fqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "provider" {
+                (fqn): {for _, k in requiredBy[fqn] {(#composedTransformers[k].metadata.modulePath): true}}
+            }
+        }
+        unfulfilled:    [for fqn, ps in _providers if len(ps) == 0 {fqn}]
+        overSubscribed: [for fqn, ps in _providers if len(ps) > 1 {fqn}]
+    }
 }
 ```
 
@@ -623,7 +663,12 @@ Implementation: [`platform.cue`](src/platform.cue).
 - `#CatalogEntry.enable` defaults to `true`. `enable: false` MUST exclude the entry from every derived fold on `#Platform`; the entry stays present in the file, and primitives owned by the path do not surface on the platform.
 - An unstamped catalog (no concrete `metadata.version`) MUST refuse as an incomplete value naming that field. `#Catalog.metadata.version!` carries no development default, so this holds without an added check.
 - `#composedTransformers` MUST be the fold of every enabled entry's `#transformers`. It MUST NOT be optional, and no runtime MUST fill it. The fold MUST copy entries member by member (a comprehension); it MUST NOT unify one entry's transformer map into another's, because a catalog's provenance stamp (enhancement 0010 D25) refuses a foreign member, so unification across catalogs fails on healthy input.
-- A `#Platform` MUST NOT carry `#matchers` or any other reverse index. A platform value declaring one MUST be rejected as a field not allowed.
+- A `#Platform` MUST NOT declare `#matchers` or any other reverse index for matching. A platform value declaring one is inert, not refused: closedness does not reject an undeclared definition field (measured 2026-09-13 on cue v0.17.1), and nothing in `core` or in the render build's matching glue reads it. Consumers that want a contract-to-transformers index for matching MUST derive it from `#composedTransformers`. `#contracts.requiredBy` is a derived readiness index (contract FQN to the implementation FQNs requiring it), not a matcher bucket: the matching glue MUST NOT read it, and it carries no primitive values.
+- `#contracts` MUST be a `#ContractInventory` derived from `#registry` and `#composedTransformers`. It MUST NOT be authorable and no runtime MUST fill it: a platform author writing `#contracts` by hand conflicts with the derivation at the first key. Its per-field rules are the `#ContractInventory` subsection's; the fold-specific ones are below.
+- `#contracts.defined` MUST hold every member of every enabled entry's `#resources`, `#traits` and `#blueprints`, keyed by the member's contract FQN and carrying the member value as the catalog lists it. `#contracts.definedBy` MUST map each such FQN to the registry key (the catalog's module path) of the entry listing it. A disabled entry MUST contribute nothing to either map, and none of its transformers MUST appear in any `requiredBy` list.
+- `#contracts.requiredBy` MUST be drawn from `#composedTransformers` alone. A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind, so a transformer that omits an empty map MUST NOT fail the platform.
+- Neither report MUST make the platform value fail to evaluate. An over-subscribed or unfulfilled platform MUST still evaluate, with `#composedTransformers` intact and the offending contracts named in the lists (enhancement 0015 D18). Whether `routable: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
+- A `#Platform` with no enabled entries MUST derive empty `defined`, `definedBy` and `requiredBy`, empty `unfulfilled` and `overSubscribed`, and `fulfilled` and `routable` both `true`. The `#Platform` definition itself MUST evaluate `#contracts` with no registry at all.
 - A `#Platform` MUST NOT be able to express two builds of one catalog. CUE map semantics collapse two entries under one path to one key, and the platform module's `cue.mod` admits exactly one build per catalog major. Two builds of one catalog is two platforms.
 - Selection MUST NOT require a resolution step against a registry at evaluation time: the platform module's `cue.mod` is the sole selector of each entry's catalog build. Publishing a newer build MUST NOT move an existing platform's selection, and no lockfile is consulted. A prerelease build MUST be selectable by naming it in `cue.mod` like any other version, with no opt-in flag and no maturity inference from the string.
 
@@ -640,12 +685,69 @@ Implementation: [`platform.cue`](src/platform.cue).
 - **Why `#matchers` is removed rather than derived (0019 D17).** The slot existed because a Go step filled it, and both halves of that sentence are being deleted: `Materialize` by this change, and the Go matcher that read it by 0019 D10. Measured 2026-08-20, `library/opm/compile/match.go` is its only reader; nothing in `opm-operator` or `cli` reads it. The in-build glue does not read it either: experiment 05's matcher takes the composed map and the components and builds its own buckets, keyed contract FQN to a *set* of transformer FQNs rather than to a list of transformer values. A derived `#matchers` would therefore be a second index, in a shape nothing consumes, beside the one the render uses. A consumer that wants the index folds it over `#composedTransformers`.
 - **Why one entry names one build, and why breadth stays out.** The scalar-subscription reshape (enhancement 0010 D37) established that every use of multi-build breadth collapses on inspection: union coverage across builds describes a catalog that dropped a transformer without saying so, gradual migration does not structurally exist under D4's contract keys, two API versions of one contract already ship side by side in one build, and testing a new build beside the old is two platforms. The import model keeps all of that and strengthens the mechanism: `cue.mod` admits one build per catalog major, so a second build is not merely refused by map semantics, it has no way to arrive.
 - **Why a catalog upgrade is a manual edit, and why that is not a regression.** For platforms that live in git and reconcile continuously, an upgrade that appears in a diff and gets reviewed is the correct interaction — the alternative is a version that changes because someone else published. The edit moves from the platform file to the platform module's `cue.mod`; automating the bump is enhancement 0004's subject, and it is additive to this shape.
+- **Why the inventory reports and does not refuse (0015 D18).** An assertion inside `#Platform` (`routable: true`) is a bottom on the first over-subscribed contract, so the value cannot say which contract, and every diagnostic reads a failed value. A refusal that names its parties needs the value to evaluate: `routable: false` is a value the generation step refuses on, naming `overSubscribed` and `definedBy`, and `fulfilled: false` is a value the operator surfaces as a non-gating condition. D18's whole point is that one of the two reports must not gate anything, which an in-schema assertion cannot express; deriving both and asserting neither is the only shape that can.
+- **Why over-subscription counts catalogs.** 0010 D37 says "exactly one transformer requiring the contract", but one provider catalog legitimately carries two adapters over one contract (k8up's Schedule and PreBackupPod), and the shipped CLI refusal already counts catalogs ("supplied by transformers from 2 catalogs"). Counting transformers would refuse k8up's own shape. `_providers` keys a struct by each requiring transformer's stamped `metadata.modulePath`, which deduplicates per catalog; the stamp is unforgeable (0010 D25), so a catalog cannot pose as two, and two builds of one catalog are already inexpressible (one entry per path).
+- **Why no per-contract routing relation.** Enhancement 0015's pre-draft named a per-contract `ContractRouting` relation a caller unifies with its implementations; it is deliberately not landed. `overSubscribed` and `routable` state the arity rule for every contract at once, and `requiredBy` is the per-contract implementation list the relation took as input, so the relation would be a second statement of the same two facts, and no consumer would unify it rather than read the lists (Principle V). Recorded as a deviation from the pre-draft; 0015 D1 and D2 are unchanged by it.
+- **Why `definedBy` carries the registry key.** D18's diagnostic names the defining catalog. The member's stamped `modulePath` is a package path (`<registryPath>/traits/<apiVersion>`), not the registry key, and deriving the catalog back out of it is the prefix parse 0010 D17 records as unreliable. Recording the entry's key in the same fold is free, and it is the value every diagnostic wants to print.
+
+#### `#ContractInventory`
+
+##### Definition
+
+A `#ContractInventory` is the defined-versus-required cross a `#Platform` derives from its enabled entries (enhancement 0015 D1, D2, D18). It is the type of `#Platform.#contracts` and nothing else: no artifact authors one, no runtime fills one, and it carries no primitive beyond the members `defined` copies out of the catalogs. It answers, with no module in hand, which contracts exist on the platform, which catalog lists each, which implementations require each, which provider-fulfilled contracts nothing implements, and which have more than one provider.
+
+##### Shape
+
+```cue
+#ContractInventory: {
+    // Every contract every enabled entry's catalog lists, keyed by
+    // contract FQN: the member value as the catalog lists it.
+    defined: [#ContractFQNType]: #Resource | #Trait | #Blueprint
+
+    // Contract FQN to the registry key of the catalog listing it.
+    definedBy: [#ContractFQNType]: #ModulePathType
+
+    // Contract FQN to the implementation FQNs of every enabled
+    // transformer requiring it. Required demands only.
+    requiredBy: [#ContractFQNType]: [...#ImplFQNType]
+
+    // Provider-fulfilled contracts required by nothing / by more than
+    // one catalog. Reports, never refusals.
+    unfulfilled:    [...#ContractFQNType]
+    overSubscribed: [...#ContractFQNType]
+
+    // The report and the gate (0015 D18).
+    fulfilled: bool & (len(unfulfilled) == 0)
+    routable:  bool & (len(overSubscribed) == 0)
+}
+```
+
+Implementation: [`platform.cue`](src/platform.cue).
+
+##### Constraints
+
+- `#ContractInventory` is a closed definition with no defaults and no required fields; every field is derived where it is used (`#Platform.#contracts`). It MUST NOT be authorable on any artifact.
+- `defined` MUST be keyed by `#ContractFQNType` and each value MUST be the member primitive itself (`#Resource`, `#Trait` or `#Blueprint`, resolved on `kind`), as the catalog lists it, provenance stamp included. A value that is not one of the three primitives MUST be refused.
+- `definedBy` MUST map every key of `defined` to a `#ModulePathType`: the registry key of the listing entry, not the member's stamped package path.
+- `requiredBy` MUST map every defined contract FQN to the list of implementation FQNs whose `requiredResources` or `requiredTraits` name that contract. Optional demands (`optionalResources`, `optionalTraits`) MUST NOT count: optional consumption is tolerance, not fulfilment (0010 D32). A defined contract nothing requires MUST map to an empty list, not an absent key.
+- `unfulfilled` MUST list every defined resource or trait whose `fulfilment` is `"provider"` and whose `requiredBy` list is empty. Blueprints MUST never appear: a blueprint carries no fulfilment (§3.3). A catalog-fulfilled contract nothing requires MUST NOT appear.
+- `overSubscribed` MUST list every defined resource or trait whose `fulfilment` is `"provider"` and whose requiring transformers come from more than one catalog, a transformer's catalog being the stamped `metadata.modulePath` it carries. Two transformers of one catalog requiring one contract MUST count as one provider.
+- `fulfilled` MUST be `true` exactly when `unfulfilled` is empty; `routable` MUST be `true` exactly when `overSubscribed` is empty. Both are derived booleans; an authored value that disagrees is a conflict.
+- Neither list MUST make the value carrying the inventory fail to evaluate. `fulfilled: false` is a report and MUST NOT gate anything in `core`; `routable: false` is the value a generation step outside `core` refuses on.
+
+##### Rationale
+
+- **Why two reports and two booleans, and not one `ready`.** 0015 D1 first made one readiness condition computable; D18 split it because the two lists have different consequences: an unfulfilled contract is a platform with a gap a module may never demand, and refusing it would fail every platform whose catalog lists a contract ahead of its provider, while an over-subscribed contract is one the render cannot route (0010 D37) and must not reach generation. One boolean could only be the conjunction, which loses exactly the distinction D18 draws.
+- **Why `defined` is the primitive disjunction rather than a projection.** `catalog-contract-maps` landed the catalog member as the primitive itself, so a consumer reading `defined[fqn].fulfilment` gets the primitive's own field, and the disjunction refuses a non-member value in the map. A projection type would restate fields the primitive already carries and drift from them.
+- **Why optional demands are invisible.** A transformer that *may* consume a contract does not implement it (0010 D32); counting it would let a tolerant adapter mask the absence of a provider, which is the oversight the inventory exists to name. A contract only optionally consumed is therefore reported unfulfilled, which is the correct reading of tolerance.
+- **Why a catalog that lists nothing yields `fulfilled: true` vacuously.** The inventory reads the contract maps; a catalog that lists no contracts defines none as far as the platform can see, and 0015 `06-operational.md` names that vacuity as the failure to guard against. The guard is the catalog's listing gate (`catalog-contract-listing`), not a rule here: `core` cannot tell an empty catalog from an unlisted one.
 
 #### See also
 
 - Tutorial: forthcoming
 - Admits by import: [`#Catalog`](#36-catalog)
 - Composed for: `#Module` matching in the render build
+- Derives: `#ContractInventory` (this section) from the catalogs' contract maps (§3.6) and the transformers' demands (§4.1)
 
 ---
 

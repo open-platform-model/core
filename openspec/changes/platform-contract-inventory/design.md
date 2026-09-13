@@ -108,6 +108,8 @@ Measured on a scratch copy of `src/` (cue v0.17.1, 2026-09-13) with three stand-
 **Decision**: guard both comprehensions.
 **Rationale**: catalog_opm's transformers declare both maps, but the schema does not require it, and the inventory must not fail a platform over a transformer's omitted empty map.
 
+**Measured on the landed pins (2026-09-13, cue v0.17.1)**: the unguarded case is incomplete-class (`cannot reference optional field: requiredTraits`), reported by `cue export` and not by plain `cue vet` on a hidden pin (nor by `cue vet -c`, which skips hidden fields), and an interpolated readout pin collapses to its literal. The pins file therefore asserts the guards through `_pinInventoryGuardsHold`, a `!= _|_` comparison pinned `true`, which is false for that incomplete value and is the form that fails plain vet when either guard is removed.
+
 ### `definedBy` added to the pre-draft's shape
 
 **Context**: D18's diagnostic names the defining catalog; the pre-draft's `defined` carried only the member (its stamped `modulePath` is a package path, not the registry key).
@@ -134,7 +136,7 @@ Measured on a scratch copy of `src/` (cue v0.17.1, 2026-09-13) with three stand-
 - `src/platform.cue`: `#ContractInventory` added beside `#CatalogEntry`; `#Platform.#contracts` added after `#composedTransformers`; a WHY block on report-versus-gate (D18) and on counting catalogs, each pointing at SPEC.md §3.4.
 - `SPEC.md` §3.4 (same commit): a `#ContractInventory` subsection (Definition, Shape, Constraints, Rationale) beside `#CatalogEntry`; `#Platform`'s Shape gains `#contracts`, Constraints gain the derived-never-authored and reports-never-refuse rules, Rationale gains "Why the inventory reports and does not refuse" (D18), "Why over-subscription counts catalogs" and "Why no per-contract routing relation".
 - `.tasks/spec-tracked.txt`: add `#ContractInventory`.
-- `src/platform_contracts_pins.cue` (new): the three stand-in catalogs and five platforms from the probe as hidden fields, each report pinned by interpolation or `len`, plus the definition-level evaluation pin. Pins convention per `platform_and_match_pins.cue`'s header; must-fail cases: none (nothing refuses).
+- `src/platform_contracts_pins.cue` (new): the three stand-in catalogs and five platforms from the probe as hidden fields, each report pinned by interpolation or `len`, plus the definition-level evaluation pin. Pins convention per `platform_and_match_pins.cue`'s header; must-fail cases: none (nothing refuses). As landed, the k8up-shaped catalog carries two adapters over `backup` (Schedule and PreBackupPod) and lists one contract of its own (`retention`), so the one-catalog-two-adapters dedupe and the disabled-entry-defines-nothing scenarios are pinned too; the velero-shaped adapter declares `requiredTraits` only, so both presence guards are exercised. Lists are pinned through `strings.Join` over a `list.Sort` copy, independent of registry iteration order.
 - `src/INDEX.md`: `task generate:index`, one row added.
 - `openspec/specs/platform-registry/spec.md` (via the delta): the reverse-index requirement restated.
 

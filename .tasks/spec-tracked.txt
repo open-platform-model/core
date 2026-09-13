@@ -19,3 +19,4 @@
 #TraitOptionalGate
 #IdentityPackage
 #CatalogMemberFQNGate
+#ContractInventory
