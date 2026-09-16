@@ -55,6 +55,8 @@ See `proposal.md` § Why. Three existing facts shape the approach:
 
 **Rationale**: **measured** — with position-derived keys the reversed bucket produced a second row, `dup-b|dup-a` beside `dup-a|dup-b`, breaking the spec's "one row, not two". With the sorted key the two rows unify into one whose `contracts` struct holds both FQNs. In practice `requiredBy` lists are built by one comprehension over `#composedTransformers` and so should already agree on order, but the report must not depend on that.
 
+**Not pinned, and cannot be** (verified during implementation): every `requiredBy` bucket is built by that one comprehension over `#composedTransformers`, so two buckets always list a pair in the same order and the disagreeing-order input the spike used is **unreachable through `#Platform`**. Replacing `list.Sort([a, b], list.Ascending)` with a bare `[a, b]` leaves `task vet` green. The sort is therefore correct defensive coding against a shape the derivation cannot produce, not a testable behaviour — a reader should not go looking for the missing fixture. Pinning it would take a hand-built `#ContractInventory` outside `#Platform`, which the pins file deliberately does not do.
+
 ### Scope: catalog-fulfilled contracts only
 
 **Context**: D5 scopes the guard to catalog-fulfilled buckets. Whether to extend it to provider-fulfilled ones was worth checking rather than assuming.

@@ -78,9 +78,6 @@ import (
 	// metadata.modulePath. What the generation step refuses on (0010 D37).
 	overSubscribed: [...#ContractFQNType]
 
-	// True exactly when nothing is unfulfilled. A report, never a gate.
-	fulfilled: bool & (len(unfulfilled) == 0)
-
 	// Pairs of enabled transformers whose match predicates are comparable
 	// over at least one shared catalog-fulfilled contract: `broader`
 	// matches every component `narrower` matches. Provider-fulfilled
@@ -90,6 +87,9 @@ import (
 		narrower: #ImplFQNType
 		contracts: [...#ContractFQNType]
 	}]
+
+	// True exactly when nothing is unfulfilled. A report, never a gate.
+	fulfilled: bool & (len(unfulfilled) == 0)
 
 	// True exactly when nothing is over-subscribed. The gate the generation
 	// step (operator, CLI) reads; `core` itself refuses nothing on it.
