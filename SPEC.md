@@ -563,7 +563,7 @@ A `#Platform` is a path-keyed registry of *catalog entries*. Each `#CatalogEntry
 
 A `#Platform` value is complete on its own, not a spec awaiting materialization: the registry carries the catalogs, and the one materialization-shaped field that survives (`#composedTransformers`) is a fold over that registry computed by CUE. There is no materialized twin, no `Materialize` step to produce one, and no reverse index for matching.
 
-A second derived fold, `#contracts: #ContractInventory` (enhancement 0015 D1, D2, D18), is the platform's *contract inventory*: what the enabled catalogs define (`defined`, `definedBy`), what the enabled transformers require of it (`requiredBy`), and the two arity reports over the provider-fulfilled contracts (`unfulfilled`, `overSubscribed`) with the booleans they imply (`fulfilled`, `routable`). It is a report a platform carries with no module in hand, evaluable on the definition alone, and it refuses nothing: whether `routable: false` withholds a generated platform package is the generation step's act, and `fulfilled: false` gates nothing anywhere. The construct is specified in its own subsection below.
+A second derived fold, `#contracts: #ContractInventory` (enhancement 0015 D1, D2, D5, D18), is the platform's *contract inventory*: what the enabled catalogs define (`defined`, `definedBy`), what the enabled transformers require of it (`requiredBy`), the two arity reports over the provider-fulfilled contracts (`unfulfilled`, `overSubscribed`), and the comparability report over the catalog-fulfilled ones (`comparable`), with the three booleans they imply (`fulfilled`, `routable`, `discriminated`). It is a report a platform carries with no module in hand, evaluable on the definition alone, and it refuses nothing: whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's act, and `fulfilled: false` gates nothing anywhere. The construct is specified in its own subsection below.
 
 There is no resolution step: the platform module **is** the resolution, bytes included. Nothing in an entry requires a query against a registry at evaluation time to determine which build was selected.
 
@@ -644,6 +644,45 @@ The subscription form (the definition formerly named `Subscription`, an `{enable
         }
         unfulfilled:    [for fqn, ps in _providers if len(ps) == 0 {fqn}]
         overSubscribed: [for fqn, ps in _providers if len(ps) > 1 {fqn}]
+
+        // Each enabled transformer's match predicate as a canonical token
+        // set, folded from the three REQUIRED demand maps (presence-guarded).
+        _predicates: {
+            for fqn, tf in #composedTransformers {
+                (fqn): {
+                    if tf.requiredResources != _|_ {for r, _ in tf.requiredResources {"resource:\(r)": true}}
+                    if tf.requiredTraits != _|_ {for t, _ in tf.requiredTraits {"trait:\(t)": true}}
+                    if tf.requiredLabels != _|_ {for k, v in tf.requiredLabels {"label:\(k)=\(v)": true}}
+                }
+            }
+        }
+        // Keyed by the SORTED pair, so a pair found in two buckets collapses
+        // to one row. Subset is tested by union cardinality.
+        _comparablePairs: {
+            for cfqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "catalog" {
+                let _bucket = requiredBy[cfqn]
+                for i, a in _bucket for j, b in _bucket if i < j {
+                    let _pa = _predicates[a]
+                    let _pb = _predicates[b]
+                    let _union = {for k, v in _pa {(k): v}, for k, v in _pb {(k): v}}
+                    let _aSubB = len(_union) == len(_pb)
+                    let _bSubA = len(_union) == len(_pa)
+                    if _aSubB || _bSubA {
+                        let _pair = list.Sort([a, b], list.Ascending)
+                        (strings.Join(_pair, "|")): {
+                            broader:  [if _aSubB && _bSubA {_pair[0]}, if _aSubB {a}, b][0]
+                            narrower: [if _aSubB && _bSubA {_pair[1]}, if _aSubB {b}, a][0]
+                            contracts: (cfqn): true
+                        }
+                    }
+                }
+            }
+        }
+        comparable: [for _, r in _comparablePairs {{
+            broader:  r.broader
+            narrower: r.narrower
+            contracts: [for c, _ in r.contracts {c}]
+        }}]
     }
 }
 ```
@@ -667,8 +706,9 @@ Implementation: [`platform.cue`](src/platform.cue).
 - `#contracts` MUST be a `#ContractInventory` derived from `#registry` and `#composedTransformers`. It MUST NOT be authorable and no runtime MUST fill it: a platform author writing `#contracts` by hand conflicts with the derivation at the first key. Its per-field rules are the `#ContractInventory` subsection's; the fold-specific ones are below.
 - `#contracts.defined` MUST hold every member of every enabled entry's `#resources`, `#traits` and `#blueprints`, keyed by the member's contract FQN and carrying the member value as the catalog lists it. `#contracts.definedBy` MUST map each such FQN to the registry key (the catalog's module path) of the entry listing it. A disabled entry MUST contribute nothing to either map, and none of its transformers MUST appear in any `requiredBy` list.
 - `#contracts.requiredBy` MUST be drawn from `#composedTransformers` alone. A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind, so a transformer that omits an empty map MUST NOT fail the platform.
-- Neither report MUST make the platform value fail to evaluate. An over-subscribed or unfulfilled platform MUST still evaluate, with `#composedTransformers` intact and the offending contracts named in the lists (enhancement 0015 D18). Whether `routable: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
-- A `#Platform` with no enabled entries MUST derive empty `defined`, `definedBy` and `requiredBy`, empty `unfulfilled` and `overSubscribed`, and `fulfilled` and `routable` both `true`. The `#Platform` definition itself MUST evaluate `#contracts` with no registry at all.
+- `#contracts.comparable` MUST be derived from `#composedTransformers` and `defined` alone, over the buckets of `requiredBy` whose contract is catalog-fulfilled. A disabled entry's transformers MUST NOT be paired, which follows from `#composedTransformers` excluding them.
+- No report MUST make the platform value fail to evaluate. An over-subscribed, unfulfilled or undiscriminated platform MUST still evaluate, with `#composedTransformers` intact and the offending contracts and transformer pairs named in the lists (enhancement 0015 D18). Whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
+- A `#Platform` with no enabled entries MUST derive empty `defined`, `definedBy` and `requiredBy`, empty `unfulfilled`, `overSubscribed` and `comparable`, and `fulfilled`, `routable` and `discriminated` all `true`. The `#Platform` definition itself MUST evaluate `#contracts` with no registry at all.
 - A `#Platform` MUST NOT be able to express two builds of one catalog. CUE map semantics collapse two entries under one path to one key, and the platform module's `cue.mod` admits exactly one build per catalog major. Two builds of one catalog is two platforms.
 - Selection MUST NOT require a resolution step against a registry at evaluation time: the platform module's `cue.mod` is the sole selector of each entry's catalog build. Publishing a newer build MUST NOT move an existing platform's selection, and no lockfile is consulted. A prerelease build MUST be selectable by naming it in `cue.mod` like any other version, with no opt-in flag and no maturity inference from the string.
 
@@ -694,7 +734,7 @@ Implementation: [`platform.cue`](src/platform.cue).
 
 ##### Definition
 
-A `#ContractInventory` is the defined-versus-required cross a `#Platform` derives from its enabled entries (enhancement 0015 D1, D2, D18). It is the type of `#Platform.#contracts` and nothing else: no artifact authors one, no runtime fills one, and it carries no primitive beyond the members `defined` copies out of the catalogs. It answers, with no module in hand, which contracts exist on the platform, which catalog lists each, which implementations require each, which provider-fulfilled contracts nothing implements, and which have more than one provider.
+A `#ContractInventory` is the defined-versus-required cross a `#Platform` derives from its enabled entries (enhancement 0015 D1, D2, D18). It is the type of `#Platform.#contracts` and nothing else: no artifact authors one, no runtime fills one, and it carries no primitive beyond the members `defined` copies out of the catalogs. It answers, with no module in hand, which contracts exist on the platform, which catalog lists each, which implementations require each, which provider-fulfilled contracts nothing implements, which have more than one provider, and which pairs of transformers are not discriminated from one another over a contract their own catalogs fulfil (enhancement 0015 D5).
 
 ##### Shape
 
@@ -716,9 +756,19 @@ A `#ContractInventory` is the defined-versus-required cross a `#Platform` derive
     unfulfilled:    [...#ContractFQNType]
     overSubscribed: [...#ContractFQNType]
 
-    // The report and the gate (0015 D18).
-    fulfilled: bool & (len(unfulfilled) == 0)
-    routable:  bool & (len(overSubscribed) == 0)
+    // Pairs of enabled transformers whose match predicates are comparable
+    // over at least one shared CATALOG-fulfilled contract: `broader`
+    // matches every component `narrower` matches.
+    comparable: [...{
+        broader:  #ImplFQNType
+        narrower: #ImplFQNType
+        contracts: [...#ContractFQNType]
+    }]
+
+    // The report and the two gates (0015 D18).
+    fulfilled:     bool & (len(unfulfilled) == 0)
+    routable:      bool & (len(overSubscribed) == 0)
+    discriminated: bool & (len(comparable) == 0)
 }
 ```
 
@@ -732,14 +782,22 @@ Implementation: [`platform.cue`](src/platform.cue).
 - `requiredBy` MUST map every defined contract FQN to the list of implementation FQNs whose `requiredResources` or `requiredTraits` name that contract. Optional demands (`optionalResources`, `optionalTraits`) MUST NOT count: optional consumption is tolerance, not fulfilment (0010 D32). A defined contract nothing requires MUST map to an empty list, not an absent key.
 - `unfulfilled` MUST list every defined resource or trait whose `fulfilment` is `"provider"` and whose `requiredBy` list is empty. Blueprints MUST never appear: a blueprint carries no fulfilment (§3.3). A catalog-fulfilled contract nothing requires MUST NOT appear.
 - `overSubscribed` MUST list every defined resource or trait whose `fulfilment` is `"provider"` and whose requiring transformers come from more than one catalog, a transformer's catalog being the stamped `metadata.modulePath` it carries. Two transformers of one catalog requiring one contract MUST count as one provider.
-- `fulfilled` MUST be `true` exactly when `unfulfilled` is empty; `routable` MUST be `true` exactly when `overSubscribed` is empty. Both are derived booleans; an authored value that disagrees is a conflict.
-- Neither list MUST make the value carrying the inventory fail to evaluate. `fulfilled: false` is a report and MUST NOT gate anything in `core`; `routable: false` is the value a generation step outside `core` refuses on.
+- An enabled transformer's *match predicate* MUST be the union of three demand kinds, as one canonical token set: every FQN in `requiredResources`, every FQN in `requiredTraits`, and every key-and-value pair in `requiredLabels`. A required label MUST contribute its key and its value together, so two transformers requiring the same label key with different values declare different demands. Optional demands (`optionalResources`, `optionalTraits`, `optionalLabels`) MUST NOT contribute (0010 D32). A transformer declaring no map of a kind MUST be treated as declaring no demand of that kind.
+- `comparable` MUST list every unordered pair of enabled transformers satisfying both conditions: one transformer's predicate is a subset of the other's, and the two require at least one defined contract in common whose `fulfilment` is `"catalog"`. Each row MUST carry `broader` (the transformer with the smaller predicate, which therefore matches every component the other matches), `narrower`, and the shared catalog-fulfilled contracts. A pair whose predicates are incomparable MUST NOT appear.
+- Two transformers with equal predicates MUST be reported as one row, not two, and a pair sharing two catalog-fulfilled contracts MUST be reported as one row carrying both, not once per bucket.
+- A pair whose only shared required contracts are provider-fulfilled MUST NOT appear in `comparable`, whichever catalogs the two transformers come from; over-subscription of provider-fulfilled contracts remains `overSubscribed`'s alone. Blueprints MUST never be the shared contract that qualifies a pair: a blueprint carries no fulfilment (§3.3).
+- `fulfilled` MUST be `true` exactly when `unfulfilled` is empty; `routable` MUST be `true` exactly when `overSubscribed` is empty; `discriminated` MUST be `true` exactly when `comparable` is empty. All three are derived booleans; an authored value that disagrees is a conflict.
+- No list MUST make the value carrying the inventory fail to evaluate. `fulfilled: false` is a report and MUST NOT gate anything in `core`; `routable: false` and `discriminated: false` are the values a generation step outside `core` refuses on.
 
 ##### Rationale
 
 - **Why two reports and two booleans, and not one `ready`.** 0015 D1 first made one readiness condition computable; D18 split it because the two lists have different consequences: an unfulfilled contract is a platform with a gap a module may never demand, and refusing it would fail every platform whose catalog lists a contract ahead of its provider, while an over-subscribed contract is one the render cannot route (0010 D37) and must not reach generation. One boolean could only be the conjunction, which loses exactly the distinction D18 draws.
 - **Why `defined` is the primitive disjunction rather than a projection.** `catalog-contract-maps` landed the catalog member as the primitive itself, so a consumer reading `defined[fqn].fulfilment` gets the primitive's own field, and the disjunction refuses a non-member value in the map. A projection type would restate fields the primitive already carries and drift from them.
 - **Why optional demands are invisible.** A transformer that *may* consume a contract does not implement it (0010 D32); counting it would let a tolerant adapter mask the absence of a provider, which is the oversight the inventory exists to name. A contract only optionally consumed is therefore reported unfulfilled, which is the correct reading of tolerance.
+- **Why the predicate is every required demand, not only labels.** 0015 D5 says "one's required set a subset of the other's" without fixing which demands form the set, and a differing required *label value* is the discriminator that first comes to mind. It is not sufficient, and taking it alone produces a false refusal against the shipped catalog. Measured against `catalog_opm` `opm` 4.4.0: in the eight-transformer `ContainerResource` bucket, `hpa` declares no `requiredLabels` while `deployment` declares `workload-type: stateless`, so on labels alone `hpa`'s predicate is a strict subset of `deployment`'s — yet HPA is *supposed* to fire alongside Deployment, because it produces a different kind. What separates them is `requiredTraits` (the catalog's `ScalingTrait` against none), and the same holds for `service` and `pdb`. With all three demand kinds folded into one token set, every pair in that bucket is incomparable and the shipped catalog is clean. A required label contributes key *and* value for the mirror-image reason: `deployment` and `statefulset` share the key and differ only in the value, so a key-only token would collapse them.
+- **Why the comparability report is scoped to catalog-fulfilled contracts.** One provider catalog legitimately carries two adapters over one contract (k8up's Schedule and PreBackupPod), and nothing guarantees those two have incomparable predicates — PreBackupPod requiring `backup` alone is a strict subset of Schedule requiring `backup` plus a container. Running the test over provider-fulfilled buckets would therefore report a topology this schema explicitly permits, and which `overSubscribed` already governs by counting catalogs. The two reports partition the contract space rather than overlapping on it.
+- **Why equal predicates are one row rather than two.** The row is keyed by the *sorted* pair, not by bucket position, so a pair found in two buckets collapses to one row carrying both contracts whatever order each bucket lists it in. Measured during the spike: with position-derived keys, a bucket listing the same two transformers in the opposite order produced a second, mirror-image row. `broader` and `narrower` come from the subset test, not from position; when both directions hold the predicates are equal and the sorted pair decides the two field values arbitrarily but deterministically. The diagnostic names both either way, which is what D5 requires.
+- **Why `core` reports comparability and does not arbitrate it.** 0015 D5 refuses rather than picking a winner, and the refusal lives where `routable`'s does — outside `core` (D18). Most-specific-wins arbitration is deliberately not landed: it is additive on top of this report, and a successor entry can add it without changing the derivation.
 - **Why a catalog that lists nothing yields `fulfilled: true` vacuously.** The inventory reads the contract maps; a catalog that lists no contracts defines none as far as the platform can see, and 0015 `06-operational.md` names that vacuity as the failure to guard against. The guard is the catalog's listing gate (`catalog-contract-listing`), not a rule here: `core` cannot tell an empty catalog from an unlisted one.
 
 #### See also
