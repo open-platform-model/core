@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-alpha.10](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.9...v2.0.0-alpha.10) (2026-09-18)
+
+
+### Features
+
+* **platform:** report comparable transformer predicates in the contract inventory ([#68](https://github.com/open-platform-model/core/issues/68)) ([411cb9f](https://github.com/open-platform-model/core/commit/411cb9fd78993ac506a2bf2d6de64b267594d28d))
+
 ## [2.0.0-alpha.9](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.8...v2.0.0-alpha.9) (2026-09-13)
 
 
