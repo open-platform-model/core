@@ -1,5 +1,10 @@
 package core
 
+import (
+	"list"
+	"strings"
+)
+
 // WHY an import instead of a version string: a version string is inert data
 // nothing in a CUE build resolves, so the kernel pulled the build out of band
 // and handed the result back on a materialized twin. The entry carries the
@@ -43,10 +48,10 @@ package core
 
 // #ContractInventory: what a #Platform derives about the contracts its
 // enabled catalogs define and its enabled transformers require (enhancement
-// 0015 D1, D2, D18): the members and their defining catalogs, the required
-// demands per contract, the two reports and the two booleans they imply.
-// Lives on #Platform.#contracts, derived and never authored; it reports
-// and never refuses. See SPEC.md § 3.4.
+// 0015 D1, D2, D5, D18): the members and their defining catalogs, the
+// required demands per contract, the three reports and the three booleans
+// they imply. Lives on #Platform.#contracts, derived and never authored; it
+// reports and never refuses. See SPEC.md § 3.4.
 #ContractInventory: {
 	// Every contract every enabled entry's catalog lists, keyed by contract
 	// FQN and carrying the member value as the catalog lists it (the
@@ -73,12 +78,27 @@ package core
 	// metadata.modulePath. What the generation step refuses on (0010 D37).
 	overSubscribed: [...#ContractFQNType]
 
+	// Pairs of enabled transformers whose match predicates are comparable
+	// over at least one shared catalog-fulfilled contract: `broader`
+	// matches every component `narrower` matches. Provider-fulfilled
+	// contracts are `overSubscribed`'s business, not this list's.
+	comparable: [...{
+		broader:  #ImplFQNType
+		narrower: #ImplFQNType
+		contracts: [...#ContractFQNType]
+	}]
+
 	// True exactly when nothing is unfulfilled. A report, never a gate.
 	fulfilled: bool & (len(unfulfilled) == 0)
 
 	// True exactly when nothing is over-subscribed. The gate the generation
 	// step (operator, CLI) reads; `core` itself refuses nothing on it.
 	routable: bool & (len(overSubscribed) == 0)
+
+	// True exactly when nothing is comparable. The second gate the
+	// generation step (operator, CLI) reads; `core` itself refuses
+	// nothing on it.
+	discriminated: bool & (len(comparable) == 0)
 }
 
 // WHY the fold copies per entry rather than unifying entry maps: the
@@ -143,8 +163,20 @@ package core
 	// counts catalogs. `_providers` keys a struct by each requiring
 	// transformer's stamped metadata.modulePath, which deduplicates per
 	// catalog; the stamp is unforgeable (0010 D25), so a catalog cannot
-	// pose as two. SPEC.md § 3.4 Rationale, "Why the inventory reports and
-	// does not refuse" and "Why over-subscription counts catalogs".
+	// pose as two.
+	//
+	// WHY comparability folds all three required demand kinds: what keeps a
+	// shared catalog-fulfilled bucket legal is a differing required LABEL
+	// VALUE *or* a distinct required TRAIT, not labels alone. Measured
+	// against catalog_opm `opm` 4.4.0: in the ContainerResource bucket
+	// `hpa` declares no requiredLabels while `deployment` declares
+	// `workload-type: stateless`, so on labels alone `hpa`'s predicate is a
+	// subset of `deployment`'s and the report would falsely name a pair that
+	// is supposed to fire together; their requiredTraits (the catalog's
+	// ScalingTrait against none) is what separates them. SPEC.md § 3.4
+	// Rationale, "Why the inventory reports and does not refuse", "Why
+	// over-subscription counts catalogs" and "Why the predicate is every
+	// required demand, not only labels".
 
 	// Derived, never authored or runtime-filled: the contract inventory,
 	// folded from every enabled entry's #resources, #traits and #blueprints
@@ -191,5 +223,50 @@ package core
 		}
 		unfulfilled: [for fqn, ps in _providers if len(ps) == 0 {fqn}]
 		overSubscribed: [for fqn, ps in _providers if len(ps) > 1 {fqn}]
+
+		// Each enabled transformer's match predicate as a canonical token
+		// set: resource:, trait: and label:<key>=<value> tokens from the
+		// three REQUIRED demand maps, each presence-guarded because all
+		// three are optional. Optional demands never contribute (0010 D32).
+		_predicates: {
+			for fqn, tf in #composedTransformers {
+				(fqn): {
+					if tf.requiredResources != _|_ {for r, _ in tf.requiredResources {"resource:\(r)": true}}
+					if tf.requiredTraits != _|_ {for t, _ in tf.requiredTraits {"trait:\(t)": true}}
+					if tf.requiredLabels != _|_ {for k, v in tf.requiredLabels {"label:\(k)=\(v)": true}}
+				}
+			}
+		}
+
+		// Keyed by the SORTED pair, so a pair found in two buckets collapses
+		// to one row carrying both contracts whatever order each bucket
+		// lists it in (measured: position-derived keys double-report a
+		// reversed bucket). Subset is tested by union cardinality, which
+		// needs no probing for absent fields and yields both directions.
+		_comparablePairs: {
+			for cfqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "catalog" {
+				let _bucket = requiredBy[cfqn]
+				for i, a in _bucket for j, b in _bucket if i < j {
+					let _pa = _predicates[a]
+					let _pb = _predicates[b]
+					let _union = {for k, v in _pa {(k): v}, for k, v in _pb {(k): v}}
+					let _aSubB = len(_union) == len(_pb)
+					let _bSubA = len(_union) == len(_pa)
+					if _aSubB || _bSubA {
+						let _pair = list.Sort([a, b], list.Ascending)
+						(strings.Join(_pair, "|")): {
+							broader: [if _aSubB && _bSubA {_pair[0]}, if _aSubB {a}, b][0]
+							narrower: [if _aSubB && _bSubA {_pair[1]}, if _aSubB {b}, a][0]
+							contracts: (cfqn): true
+						}
+					}
+				}
+			}
+		}
+		comparable: [for _, r in _comparablePairs {{
+			broader:  r.broader
+			narrower: r.narrower
+			contracts: [for c, _ in r.contracts {c}]
+		}}]
 	}
 }

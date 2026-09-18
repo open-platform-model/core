@@ -30,7 +30,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#ModuleInstance` | `module_instance.cue` | #ModuleInstance: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version Was: #ModuleRelease (renamed in enhancement 0002) |
 | `#ModuleInstanceMap` | `module_instance.cue` | Was: #ModuleReleaseMap (renamed in enhancement 0002) |
 | `#CatalogEntry` | `platform.cue` | #CatalogEntry declares that a #Platform admits a catalog, by carrying the imported catalog value whole on #catalog |
-| `#ContractInventory` | `platform.cue` | #ContractInventory: what a #Platform derives about the contracts its enabled catalogs define and its enabled transformers require (enhancement 0015 D1, D2, D18): the members and their defining catalogs, the required demands per contract, the two reports and the two booleans they imply |
+| `#ContractInventory` | `platform.cue` | #ContractInventory: what a #Platform derives about the contracts its enabled catalogs define and its enabled transformers require (enhancement 0015 D1, D2, D5, D18): the members and their defining catalogs, the required demands per contract, the three reports and the three booleans they imply |
 | `#Platform` | `platform.cue` | A #Platform is a path-keyed registry of catalog entries, each carrying its imported catalog, plus the derived #composedTransformers fold over the enabled entries and the derived #contracts inventory |
 | `#Resource` | `resource.cue` | #Resource: Defines a resource of deployment within the system |
 | `#ResourceMap` | `resource.cue` |  |
