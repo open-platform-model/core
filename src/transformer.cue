@@ -4,12 +4,14 @@ import (
 	"strings"
 )
 
-// #ComponentTransformer: Declares how to convert OPM components into platform-specific resources.
-// A transformer matches a component when ALL of the following are true:
-//  1. ALL requiredLabels are present in the component's matchLabels with matching values
-//  2. ALL requiredResources FQNs exist in component #resources
-//  3. ALL requiredTraits FQNs exist in component #traits
-// Matching never reads metadata.labels (0010 D36). See SPEC.md § 4.1.
+// WHY #ComponentTransformer: 0010:D36.
+
+// #ComponentTransformer: Declares how to convert OPM components into
+// platform-specific resources. A transformer matches a component when ALL of
+// the following are true: 1. ALL requiredLabels are present in the component's
+// matchLabels with matching values 2. ALL requiredResources FQNs exist in
+// component #resources 3. ALL requiredTraits FQNs exist in component #traits
+// Matching never reads metadata.labels. See SPEC.md § 4.1.
 #ComponentTransformer: {
 	kind: "ComponentTransformer"
 
@@ -31,25 +33,30 @@ import (
 	// nothing reads. That is what makes the exclusion structural instead of
 	// remembered — see the pinned case in identity_pins.cue.
 
+	// WHY metadata: 0010:D44.
+
 	// A transformer's identity shape is its OWN — it deliberately shares no
-	// parent definition with the three primitives' (enhancement 0010 D44). It
-	// carries NO apiVersion, and the struct is CLOSED, so supplying one is a
-	// `field not allowed` error. See SPEC.md § 4.1.
+	// parent definition with the three primitives'. It carries NO apiVersion, and
+	// the struct is CLOSED, so supplying one is a `field not allowed` error. See
+	// SPEC.md § 4.1.
 	metadata: {
 		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/transformers"
 		name!:       #NameType        // Example: "deployment-transformer"
 
-		// catalogVersion: the catalog build this transformer shipped in. Unlike
-		// a primitive's, it IS this key's own source component (D4) — an
-		// operator upgrading a catalog is choosing new rendering logic and
-		// needs to know which bytes are running.
+		// WHY catalogVersion: 0010:D4.
+
+		// catalogVersion: the catalog build this transformer shipped in. Unlike a
+		// primitive's, it IS this key's own source component — an operator upgrading
+		// a catalog is choosing new rendering logic and needs to know which bytes
+		// are running.
 		catalogVersion!: #VersionType // Example: "1.0.0"
 
-		// fqn: AUTHORED by the catalog at the definition site, not derived here
-		// (enhancement 0010 D21). #ImplFQNType, not #ContractFQNType: what a
-		// platform EXECUTES is keyed by its build. #CatalogMemberFQNGate
-		// asserts the agreement with modulePath, name and catalogVersion at
-		// publish.
+		// WHY fqn: 0010:D21.
+
+		// fqn: AUTHORED by the catalog at the definition site, not derived here.
+		// #ImplFQNType, not #ContractFQNType: what a platform EXECUTES is keyed by
+		// its build. #CatalogMemberFQNGate asserts the agreement with modulePath,
+		// name and catalogVersion at publish.
 		fqn!: #ImplFQNType // Example: "opmodel.dev/catalogs/opm/transformers/deployment-transformer@1.0.0"
 
 		description!: string // A brief description of what this transformer produces
@@ -69,12 +76,13 @@ import (
 	// `core` release. SPEC.md § 2.1 Rationale, "Why `core` names no matching
 	// key".
 
-	// Labels a component MUST carry in its matchLabels to match this
-	// transformer. Selection reads #Component.matchLabels — the wholesale
-	// unification of the attached primitives' matchLabels — and never
-	// metadata.labels on either side (enhancement 0010 D36).
-	// Example: A DeploymentTransformer requires stateless workloads:
-	//   requiredLabels: {"opm.opmodel.dev/workload-type": "stateless"}
+	// WHY requiredLabels: 0010:D36.
+
+	// Labels a component MUST carry in its matchLabels to match this transformer.
+	// Selection reads #Component.matchLabels — the wholesale unification of the
+	// attached primitives' matchLabels — and never metadata.labels on either
+	// side. Example: A DeploymentTransformer requires stateless workloads:
+	// requiredLabels: {"opm.opmodel.dev/workload-type": "stateless"}
 	requiredLabels?: #LabelsAnnotationsType
 
 	// Labels optionally used by this transformer - component MAY include these
@@ -115,16 +123,19 @@ import (
 	// computed blocks need #moduleInstance and #component, which are in scope
 	// only at this site, and the definition stays standalone-constructible.
 	// The `!= _|_` guards project an absent optional source as absent rather
-	// than as an error or an empty struct (0019 D12; SPEC.md § 4.1 Rationale).
+	// than as an error or an empty struct (0019:D12; SPEC.md § 4.1 Rationale).
+
+	// WHY #transform: 0019:D3; 0019:D12.
 
 	// Transform function. The runtime supplies #moduleInstance and #component
-	// concretely (D18) plus #context.#runtimeName; the context's two metadata
-	// blocks compute themselves from those inputs (0019 D12). output is a
-	// single resource (struct) or a list of resources; the renderer dispatches
-	// on cue.Kind and never inspects fields inside the value. See SPEC.md § 4.1.
+	// concretely plus #context.#runtimeName; the context's two metadata blocks
+	// compute themselves from those inputs. output is a single resource (struct)
+	// or a list of resources; the renderer dispatches on cue.Kind and never
+	// inspects fields inside the value. See SPEC.md § 4.1.
 	#transform: {
-		// Was: #moduleRelease (renamed in enhancement 0002)
-		#moduleInstance: _ // Fully concrete #ModuleInstance (D18)
+		// WHY #moduleInstance: was #moduleRelease, renamed by 0002:D8.
+
+		#moduleInstance: _ // Fully concrete #ModuleInstance (0019:D3)
 
 		#component: _ // Unconstrained; validated by matching, not by the transform signature
 
@@ -165,7 +176,9 @@ import (
 
 // Provider context passed to transformers
 #TransformerContext: {
-	// Was: #moduleReleaseMetadata (renamed in enhancement 0002)
+	// WHY #moduleInstanceMetadata: was #moduleReleaseMetadata, renamed by
+	// 0002:D8.
+
 	#moduleInstanceMetadata: {
 		name!:        #NameType
 		namespace!:   #NameType // Required for instances (target environment)
@@ -193,7 +206,7 @@ import (
 	// component's matching identity selects a transformer, it does not
 	// describe the objects that transformer emits, and folding it in would
 	// publish a catalog's private matching vocabulary onto every live object.
-	// The omission is a decision (enhancement 0010 D36), not an oversight —
+	// The omission is a decision (0010:D36), not an oversight —
 	// it is also visible, because rendered objects carried
 	// `core.opmodel.dev/workload-type` before this change and stop here. An
 	// opt-in render flag was demonstrated working in experiment 04 and

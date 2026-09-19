@@ -27,10 +27,10 @@ CUE module: `opmodel.dev/core@v2`
 | `#ModuleMap` | `module.cue` |  |
 | `#ComponentNames` | `module_context.cue` | #ComponentNames is the shape of the per-component computed-names projection |
 | `#InstanceIdentity` | `module_context.cue` | #InstanceIdentity carries the deployment-scoped facts that compute per-component names and DNS variants |
-| `#ModuleInstance` | `module_instance.cue` | #ModuleInstance: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version Was: #ModuleRelease (renamed in enhancement 0002) |
-| `#ModuleInstanceMap` | `module_instance.cue` | Was: #ModuleReleaseMap (renamed in enhancement 0002) |
+| `#ModuleInstance` | `module_instance.cue` | #ModuleInstance: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version |
+| `#ModuleInstanceMap` | `module_instance.cue` |  |
 | `#CatalogEntry` | `platform.cue` | #CatalogEntry declares that a #Platform admits a catalog, by carrying the imported catalog value whole on #catalog |
-| `#ContractInventory` | `platform.cue` | #ContractInventory: what a #Platform derives about the contracts its enabled catalogs define and its enabled transformers require (enhancement 0015 D1, D2, D5, D18): the members and their defining catalogs, the required demands per contract, the three reports and the three booleans they imply |
+| `#ContractInventory` | `platform.cue` | #ContractInventory: what a #Platform derives about the contracts its enabled catalogs define and its enabled transformers require: the members and their defining catalogs, the required demands per contract, the three reports and the three booleans they imply |
 | `#Platform` | `platform.cue` | A #Platform is a path-keyed registry of catalog entries, each carrying its imported catalog, plus the derived #composedTransformers fold over the enabled entries and the derived #contracts inventory |
 | `#Resource` | `resource.cue` | #Resource: Defines a resource of deployment within the system |
 | `#ResourceMap` | `resource.cue` |  |
@@ -53,13 +53,13 @@ CUE module: `opmodel.dev/core@v2`
 | `#ComponentTransformer` | `transformer.cue` | #ComponentTransformer: Declares how to convert OPM components into platform-specific resources |
 | `#TransformerContext` | `transformer.cue` | Provider context passed to transformers |
 | `#TransformerMap` | `transformer.cue` | Map of transformers by fully qualified name |
-| `#APIVersionGated` | `types.cue` | APIVersionGated reports whether the additive-only promise binds at a given apiVersion (enhancement 0010 D34): false at alpha, which promises nothing and whose publish gate is off, true at beta and GA, which are gated in full |
-| `#APIVersionType` | `types.cue` | APIVersionType: a PRIMITIVE's contract level — the value its author moves when the primitive's shape breaks, independent of the catalog's module major and of the catalog's release SemVer (enhancement 0010 D4, D25) |
+| `#APIVersionGated` | `types.cue` | APIVersionGated reports whether the additive-only promise binds at a given apiVersion: false at alpha, which promises nothing and whose publish gate is off, true at beta and GA, which are gated in full |
+| `#APIVersionType` | `types.cue` | APIVersionType: a PRIMITIVE's contract level — the value its author moves when the primitive's shape breaks, independent of the catalog's module major and of the catalog's release SemVer |
 | `#ArtifactRef` | `types.cue` | ArtifactRef splits a complete module path into the OCI repository its tags live under and the major it declares |
 | `#BundleFQNType` | `types.cue` | BundleFQNType: FQN for #Bundle — path/name:vN (major version) Example: "opmodel |
-| `#ContractFQNType` | `types.cue` | ContractFQNType: what a module DEMANDS — path/name@vN, where vN is the primitive's own #APIVersionType (enhancement 0010 D4) |
+| `#ContractFQNType` | `types.cue` | ContractFQNType: what a module DEMANDS — path/name@vN, where vN is the primitive's own #APIVersionType |
 | `#FQNType` | `types.cue` | FQNType: either form, for a consumer holding both |
-| `#ImplFQNType` | `types.cue` | ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of the build the definition shipped in (enhancement 0010 D4) |
+| `#ImplFQNType` | `types.cue` | ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of the build the definition shipped in |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |
 | `#LabelsAnnotationsType` | `types.cue` |  |

@@ -64,7 +64,7 @@ graph TB
 >
 > **Is it a rule about artifacts that a publishing tool unifies against?** → **Publish gate**
 
-The primitive question is *not* "does it introduce new schema vocabulary?" Under that older reading `#Blueprint` sat with the constructs, because its `spec` only composes fields its Resources and Traits already declare — yet a module names a blueprint, writes values under it, and is broken by a change to it exactly as it is by a change to a Resource. What the split has to track is which definitions carry a **contract key** and the additive-only promise that key gates, and that is decided by whether a module writes against the thing (enhancement 0010 D44).
+The primitive question is *not* "does it introduce new schema vocabulary?" Under that older reading `#Blueprint` sat with the constructs, because its `spec` only composes fields its Resources and Traits already declare — yet a module names a blueprint, writes values under it, and is broken by a change to it exactly as it is by a change to a Resource. What the split has to track is which definitions carry a **contract key** and the additive-only promise that key gates, and that is decided by whether a module writes against the thing (0010:D44).
 
 ## Summary
 

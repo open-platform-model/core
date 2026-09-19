@@ -4,11 +4,11 @@ import (
 	cue_uuid "uuid"
 )
 
+// WHY #ModuleInstance: was #ModuleRelease, renamed by 0002:D8.
+
 // #ModuleInstance: The concrete deployment instance
 // Contains: Reference to Module, values, target namespace
 // Users/deployment systems create this to deploy a specific version
-//
-// Was: #ModuleRelease (renamed in enhancement 0002)
 #ModuleInstance: {
 	kind: "ModuleInstance"
 
@@ -23,7 +23,7 @@ import (
 
 		// WHY registryPath: it derives from the module's registryPath rather than from its fqn or
 		// uuid, so NEITHER the module's version NOR its major reaches instance
-		// identity (enhancement 0010 D41). The two values answer different
+		// identity (0010:D41). The two values answer different
 		// questions and were forced to agree by deriving one from the other:
 		// module.uuid answers "which module is this" and MUST move across a
 		// major; instance.uuid answers "which resources does this manage" and
@@ -40,10 +40,12 @@ import (
 		// module's `registryPath` and not from its `fqn` or `uuid`" and "Why not
 		// derive instance identity from the module's `name`".
 
+		// WHY fqn: 0010:D41.
+
 		// fqn: this instance's own identity — the deployed module's MAJOR-FREE
 		// registry path, this instance's name, and its namespace. Neither the
-		// module's version nor its major reaches instance identity (0010 D41).
-		// See SPEC.md § 3.5.
+		// module's version nor its major reaches instance identity. See SPEC.md §
+		// 3.5.
 		fqn: "\(#moduleMetadata.registryPath):\(name):\(namespace)"
 
 		// Stable UUID for this instance, computed as a UUID v5 (SHA1) of the
@@ -66,11 +68,12 @@ import (
 
 	}
 
+	// WHY #module: introduced by 0001:D1/D4.
+
 	// Reference to the Module to deploy. The #ctx.instance wiring sets the
 	// module's runtime context from this instance's metadata — every #Component
 	// in #module receives this instance identity via the module's #components
 	// pattern constraint, so #names + DNS variants flow through automatically.
-	// Introduced by enhancement 0001 (D1, D4).
 	#module!: #Module & {
 		#ctx: instance: {
 			name:          metadata.name
@@ -106,5 +109,6 @@ import (
 	values: _
 }
 
-// Was: #ModuleReleaseMap (renamed in enhancement 0002)
+// WHY #ModuleInstanceMap: was #ModuleReleaseMap, renamed by 0002:D8.
+
 #ModuleInstanceMap: [string]: #ModuleInstance

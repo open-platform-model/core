@@ -57,7 +57,7 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
     optionalTraits?:    [#ContractFQNType]: #Trait
 
     // The transform function — the context projects itself from the two
-    // inputs; the runtime fills only #context.#runtimeName (0019 D12).
+    // inputs; the runtime fills only #context.#runtimeName (0019:D12).
     #transform: {
         #moduleInstance: _                    // fully concrete #ModuleInstance
         #component:      _                    // matched Component
@@ -73,7 +73,7 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
 
 ### TransformerContext
 
-The `#TransformerContext` a `#transform` body reads is a projection of the other two inputs (enhancement 0019 D12): the two metadata blocks compute from `#moduleInstance` and `#component` at the `#transform` site, and the runtime supplies only `#runtimeName`. It carries:
+The `#TransformerContext` a `#transform` body reads is a projection of the other two inputs (0019:D12): the two metadata blocks compute from `#moduleInstance` and `#component` at the `#transform` site, and the runtime supplies only `#runtimeName`. It carries:
 
 - `#moduleInstanceMetadata` — name, namespace, fqn, version, uuid, labels, annotations, projected from `#moduleInstance` (version through the instance's module metadata).
 - `#componentMetadata` — name, labels, annotations, projected from the matched Component. The name is the component's own `metadata.name`, never the `#components`-map key it sat under.
@@ -116,8 +116,8 @@ A single Component may match multiple ComponentTransformers — each contributes
 
 > **Planned** — not present in `core/v1alpha2` yet.
 
-A **Platform** models a deployment target as a single, composable construct. It carries the target's identity (`metadata`, `type`) and a path-keyed `#registry` of catalog entries; each entry embeds its imported catalog whole and derives its `version` and `#transformers` from it (enhancement 0019 D5).
+A **Platform** models a deployment target as a single, composable construct. It carries the target's identity (`metadata`, `type`) and a path-keyed `#registry` of catalog entries; each entry embeds its imported catalog whole and derives its `version` and `#transformers` from it (0019:D5).
 
-`#Platform` retires the older `#Provider` shape: instead of a static `#providers` list, matching consumes the Platform's derived `#composedTransformers` fold directly. There is no reverse index on the platform (enhancement 0019 D17); the render build's matching glue derives its own contract-to-transformer buckets from `#composedTransformers`.
+`#Platform` retires the older `#Provider` shape: instead of a static `#providers` list, matching consumes the Platform's derived `#composedTransformers` fold directly. There is no reverse index on the platform (0019:D17); the render build's matching glue derives its own contract-to-transformer buckets from `#composedTransformers`.
 
 Platform integration lands incrementally via the kernel-redesign slices (see [`library/enhancements/001-kernel-redesign-around-platform/`](../../library/enhancements/001-kernel-redesign-around-platform/)) and the catalog enhancement (see [`catalog/enhancements/014-platform-construct/`](../../catalog/enhancements/014-platform-construct/)). This document will be expanded once the construct ships in the kernel.

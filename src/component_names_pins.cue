@@ -1,7 +1,7 @@
 package core
 
 // Schema-level pins for the name types and the per-primitive name
-// constraint (enhancement 0019 D20, D21, D23).
+// constraint (0019:D20, D21, D23).
 //
 // Companion to platform_and_match_pins.cue and written to the same rules:
 // every value here is a HIDDEN top-level field, so `cue vet` evaluates it
@@ -45,7 +45,7 @@ _pinNameIndifferent: #Resource & {
 }
 
 // The container, shaped like the catalog's: the workload-type key is
-// REQUIRED, and the constraint is computed from it (0019 D23) — #NameType
+// REQUIRED, and the constraint is computed from it (0019:D23) — #NameType
 // when stateful (pod DNS <sts>-<n>.<svc>… puts the name in a label
 // position, and the server enforces the label rule on both axes there),
 // top otherwise. List-index form: a default arm would win over the concrete
@@ -130,7 +130,7 @@ _pinNameDottedOverrideFqdn: "\(_pinNameDottedOverride.#names.dns.fqdn)"
 _pinNameDottedOverrideFqdn: "metrics.internal.example.media.svc.cluster.local"
 
 // A 65-rune default with no constraint: admitted (the 63-rune guard that
-// refused this before D20 is retired; both operands are labels, so the
+// refused this before 0019:D20 is retired; both operands are labels, so the
 // default cannot exceed 127 runes and the 253 ceiling is unreachable).
 _pinNameLongDefault: #Component & {
 	metadata: name:        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -149,7 +149,7 @@ _pinNameMaxDefault: #Component & {
 _pinNameMaxDefaultLen: len(_pinNameMaxDefault.#names.resourceName)
 _pinNameMaxDefaultLen: 127
 
-// Exact override that satisfies Expose: the D22 spelling for a workload,
+// Exact override that satisfies Expose: the 0019:D22 spelling for a workload,
 // Service and projection that share one name.
 _pinNameExposedExact: #Component & {
 	metadata: {
@@ -215,7 +215,7 @@ _pinNameComposedValue: "prod-db"
 //   _failNameLeadingDigit._nameFits: invalid value "1prod-web"
 //     (out of bound =~"^[a-z]([a-z0-9-]*[a-z0-9])?$")
 //
-// Raw stateful container, dotted override (D23):
+// Raw stateful container, dotted override (0019:D23):
 //
 //   _failNameStatefulDots: #Component & {
 //   	metadata: {name: "cache", resourceName: "cache.internal"}

@@ -10,30 +10,34 @@ import (
 // and handed the result back on a materialized twin. The entry carries the
 // catalog itself, resolved through the platform module's cue.mod like every
 // other dependency, which is what lets one render build evaluate the
-// instance, the platform and the catalog together (enhancement 0019 D5, D9).
-// Catalog selection stays a pure function of committed source (0010 D14):
+// instance, the platform and the catalog together (0019:D5, D9).
+// Catalog selection stays a pure function of committed source (0010:D14):
 // cue.mod is committed source, and a prerelease is still selected by naming
 // it there. SPEC.md § 3.4 Rationale, "Why an import instead of a version
 // string", "Why the version is derived and not authored" and "Why the whole
 // transformer map".
 
+// WHY #CatalogEntry: 0019:D13.
+
 // #CatalogEntry declares that a #Platform admits a catalog, by carrying the
-// imported catalog value whole on #catalog. `version` and `#transformers`
-// are derived readouts, never authored; an expected `version` stamped at
+// imported catalog value whole on #catalog. `version` and `#transformers` are
+// derived readouts, never authored; an expected `version` stamped at
 // platform-generation time unifies with the readout, so wrong bytes are a
-// build conflict naming the entry (0019 D13). One entry per catalog path;
-// two builds of one catalog is two platforms. See SPEC.md § 3.4.
+// build conflict naming the entry. One entry per catalog path; two builds of
+// one catalog is two platforms. See SPEC.md § 3.4.
 #CatalogEntry: {
 	enable: bool | *true
 
 	// The imported catalog, embedded whole.
 	#catalog: #Catalog
 
+	// WHY the readouts: 0019:D13.
+
 	// Derived readouts of the catalog's release-stamped identity. Neither
 	// is authored; #Catalog.metadata.version! has no development default,
 	// so an unstamped catalog refuses as incomplete rather than rendering
 	// wrong. A generation-time expected `version` stamp unifies with the
-	// readout (0019 D13 tripwire).
+	// readout, which is the tripwire.
 	version:       #catalog.metadata.version
 	#transformers: #TransformerMap & #catalog.#transformers
 }
@@ -46,12 +50,14 @@ import (
 // (Principle V). SPEC.md § 3.4 Rationale, "Why no per-contract routing
 // relation".
 
+// WHY #ContractInventory: 0015:D1/D2/D5/D18.
+
 // #ContractInventory: what a #Platform derives about the contracts its
-// enabled catalogs define and its enabled transformers require (enhancement
-// 0015 D1, D2, D5, D18): the members and their defining catalogs, the
-// required demands per contract, the three reports and the three booleans
-// they imply. Lives on #Platform.#contracts, derived and never authored; it
-// reports and never refuses. See SPEC.md § 3.4.
+// enabled catalogs define and its enabled transformers require: the members
+// and their defining catalogs, the required demands per contract, the three
+// reports and the three booleans they imply. Lives on #Platform.#contracts,
+// derived and never authored; it reports and never refuses.
+// See SPEC.md § 3.4.
 #ContractInventory: {
 	// Every contract every enabled entry's catalog lists, keyed by contract
 	// FQN and carrying the member value as the catalog lists it (the
@@ -62,20 +68,26 @@ import (
 	// it: the value every diagnostic prints beside the contract.
 	definedBy: [#ContractFQNType]: #ModulePathType
 
+	// WHY requiredBy counts required demands only: 0010:D32.
+
 	// Contract FQN to the implementation FQNs of every enabled transformer
 	// whose requiredResources or requiredTraits name it. Required demands
-	// only (0010 D32: optional consumption is tolerance, not fulfilment);
+	// only, because optional consumption is tolerance, not fulfilment;
 	// a defined contract nothing requires maps to an empty list.
 	requiredBy: [#ContractFQNType]: [...#ImplFQNType]
 
-	// Provider-fulfilled resources and traits required by nothing. A
-	// report the operator surfaces as a non-gating condition (D18); never a
-	// refusal. Blueprints never appear: a blueprint carries no fulfilment.
+	// WHY unfulfilled: 0015:D18.
+
+	// Provider-fulfilled resources and traits required by nothing. A report the
+	// operator surfaces as a non-gating condition; never a refusal. Blueprints
+	// never appear: a blueprint carries no fulfilment.
 	unfulfilled: [...#ContractFQNType]
 
-	// Provider-fulfilled resources and traits required by transformers
-	// from more than one catalog, a transformer's catalog being its stamped
-	// metadata.modulePath. What the generation step refuses on (0010 D37).
+	// WHY overSubscribed: 0010:D37.
+
+	// Provider-fulfilled resources and traits required by transformers from more
+	// than one catalog, a transformer's catalog being its stamped
+	// metadata.modulePath. What the generation step refuses on.
 	overSubscribed: [...#ContractFQNType]
 
 	// Pairs of enabled transformers whose match predicates are comparable
@@ -102,12 +114,12 @@ import (
 }
 
 // WHY the fold copies per entry rather than unifying entry maps: the
-// catalog's provenance stamp (0010 D25) refuses a foreign transformer
+// catalog's provenance stamp (0010:D25) refuses a foreign transformer
 // unified into another catalog's member map, so map-level unification fails
 // on healthy multi-catalog input (measured,
 // enhancements/0019/experiments/05-match-in-one-build). Two entries writing
 // one composed FQN still unify at that key: agreement collapses, divergent
-// bodies conflict loudly. #matchers is removed (0019 D17): its only reader
+// bodies conflict loudly. #matchers is removed (0019:D17): its only reader
 // was the Go matcher the render-path collapse deletes, and the in-build
 // matching glue folds its own buckets from #composedTransformers in a shape
 // core's list-valued buckets never matched. SPEC.md § 3.4 Rationale, "Why
@@ -129,15 +141,19 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
+	// WHY type: 0014:OQ2.
+
 	// Informational. Future enhancement may enforce type-vs-transformer
-	// compatibility; today it is an authored discriminator the matcher
-	// does not consult (014 OQ2).
+	// compatibility; today it is an authored discriminator the matcher does not
+	// consult.
 	type!: string
 
-	// Path-keyed: the map key is the catalog's CUE module path, bound into
-	// the embedded catalog's metadata.modulePath, so key-versus-import
-	// drift is a build conflict naming the entry (0019 D5). Exactly one
-	// entry per path; CUE map semantics enforce uniqueness (0010 D13).
+	// WHY #registry: 0019:D5; 0001:D13.
+
+	// Path-keyed: the map key is the catalog's CUE module path, bound into the
+	// embedded catalog's metadata.modulePath, so key-versus-import drift is a
+	// build conflict naming the entry. Exactly one entry per path; CUE map
+	// semantics enforce uniqueness.
 	#registry: [Path=#ModulePathType]: #CatalogEntry & {#catalog: metadata: modulePath: Path}
 
 	// Derived, never runtime-filled: the fold of every enabled entry's
@@ -149,7 +165,7 @@ import (
 		}
 	}
 
-	// WHY the inventory reports rather than asserts (0015 D18): an
+	// WHY the inventory reports rather than asserts (0015:D18): an
 	// assertion inside #Platform is a bottom on the first over-subscribed
 	// contract, so the value cannot name it and every diagnostic reads a
 	// failed value. `routable: false` is the value the generation step
@@ -162,7 +178,7 @@ import (
 	// Schedule and PreBackupPod), and the shipped CLI refusal already
 	// counts catalogs. `_providers` keys a struct by each requiring
 	// transformer's stamped metadata.modulePath, which deduplicates per
-	// catalog; the stamp is unforgeable (0010 D25), so a catalog cannot
+	// catalog; the stamp is unforgeable (0010:D25), so a catalog cannot
 	// pose as two.
 	//
 	// WHY comparability folds all three required demand kinds: what keeps a
@@ -224,10 +240,12 @@ import (
 		unfulfilled: [for fqn, ps in _providers if len(ps) == 0 {fqn}]
 		overSubscribed: [for fqn, ps in _providers if len(ps) > 1 {fqn}]
 
-		// Each enabled transformer's match predicate as a canonical token
-		// set: resource:, trait: and label:<key>=<value> tokens from the
-		// three REQUIRED demand maps, each presence-guarded because all
-		// three are optional. Optional demands never contribute (0010 D32).
+		// WHY _predicates: 0010:D32.
+
+		// Each enabled transformer's match predicate as a canonical token set:
+		// resource:, trait: and label:<key>=<value> tokens from the three REQUIRED
+		// demand maps, each presence-guarded because all three are optional.
+		// Optional demands never contribute.
 		_predicates: {
 			for fqn, tf in #composedTransformers {
 				(fqn): {

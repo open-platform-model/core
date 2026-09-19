@@ -35,7 +35,7 @@ _pinModuleV2: #Module & {
 }
 
 // Underscores are legal in a module path leaf, because a module path ends in
-// the module's own snake_case name (D8).
+// the module's own snake_case name (0010:D8).
 _pinModuleSnakeLeaf: #Module & {
 	metadata: {
 		name:         "cert_manager"
@@ -111,7 +111,7 @@ _pinCatalogStamp: #Catalog & {
 			description: "renders a Deployment"
 			modulePath:  "opmodel.dev/catalogs/opm/transformers"
 
-			// Authored, not derived (D21) — the stamp above supplies
+			// Authored, not derived (0010:D21) — the stamp above supplies
 			// catalogVersion, and this value must agree with it. `core` no
 			// longer checks that; #CatalogMemberFQNGate does, at publish.
 			fqn: "opmodel.dev/catalogs/opm/transformers/deployment@1.2.0"
@@ -120,7 +120,7 @@ _pinCatalogStamp: #Catalog & {
 	}
 }
 
-// ─── Instance identity (D41) ────────────────────────────────────────────────
+// ─── Instance identity (0010:D41) ────────────────────────────────────────────────
 //
 // THE INVARIANT, HALF TWO, and the half the owner label depends on. The SAME
 // instance under four perturbations of the module it deploys: only the last
@@ -181,7 +181,7 @@ _pinInstanceOwnerLabel: _pinInstanceOnV2.metadata.labels["module-instance.opmode
 // module's uuid is what a registry dedupes on. An instance's is what the
 // operator's prune step compares against a live object's owner label, so a
 // silent change to it makes every upgrade skip the deletes it should perform,
-// leave the objects running, and report success — the exact failure D41 exists
+// leave the objects running, and report success — the exact failure 0010:D41 exists
 // to prevent, arrived at from a different direction.
 //
 // If one of these fails, the question is never "update the expected value". It
@@ -191,7 +191,7 @@ _pinInstanceOwnerLabel: _pinInstanceOnV2.metadata.labels["module-instance.opmode
 //
 // SPEC.md §3.2 used to say `library` pinned a known uuid as this sentinel.
 // `library/opm/helper/synth/instance_test.go` does carry one, but it encodes
-// the PRE-D41 formula (it hashes the module's uuid, not its registryPath) and
+// the PRE-0010:D41 formula (it hashes the module's uuid, not its registryPath) and
 // sits behind the not-yet-done library-core-retarget slice. The constant lives
 // here, so the sentinel belongs here.
 _pinModuleV2UUIDAbsolute:     _pinModuleV2.metadata.uuid & "a48f489f-ebfc-579a-8d48-d658c12d3f2a"
@@ -273,11 +273,11 @@ _pinResourcePath: #Resource & {
 	spec: configMaps: _
 }
 
-// ─── Primitive keying: a contract key and an implementation key (D4) ────────
+// ─── Primitive keying: a contract key and an implementation key (0010:D4) ────────
 //
 // The three primitives carry a CONTRACT key, terminated by their own
 // apiVersion, and the adapter carries an IMPLEMENTATION key, terminated by the
-// build it shipped in. Every fqn below is AUTHORED (D21) — `core` computes
+// build it shipped in. Every fqn below is AUTHORED (0010:D21) — `core` computes
 // none of them.
 
 _pinContractKeyedResource: #Resource & {
@@ -292,7 +292,7 @@ _pinContractKeyedResource: #Resource & {
 }
 
 // Same catalog, same name, same level — a TRAIT. The kind segment is what
-// keeps the two keys apart, which is why D21 retains it: a flat FQN would make
+// keeps the two keys apart, which is why 0010:D21 retains it: a flat FQN would make
 // primitive names globally unique across all four kinds within one catalog,
 // and catalog_opm already ships a resource named `secrets`.
 _pinContractKeyedTrait: #Trait & {
@@ -310,7 +310,7 @@ _pinContractKeyedTrait: #Trait & {
 _pinKindSegmentSeparatesKeys: _pinContractKeyedResource.metadata.fqn != _pinContractKeyedTrait.metadata.fqn
 _pinKindSegmentSeparatesKeys: true
 
-// A blueprint is a PRIMITIVE (D44) and carries a contract key on that basis.
+// A blueprint is a PRIMITIVE (0010:D44) and carries a contract key on that basis.
 _pinContractKeyedBlueprint: #Blueprint & {
 	metadata: {
 		name:           "stateless-workload"
@@ -336,7 +336,7 @@ _pinImplKeyedTransformer: #ComponentTransformer & {
 	#transform: {}
 }
 
-// ─── The additive-only promise is readable off the level (D34) ──────────────
+// ─── The additive-only promise is readable off the level (0010:D34) ──────────────
 //
 // Alpha promises nothing, so its publish gate is off; beta and GA are gated in
 // full. Asserted at all three rungs rather than at one, because a helper that
@@ -353,18 +353,18 @@ _pinGatedAtBeta: true
 _pinGatedAtGA: (#APIVersionGated & {apiVersion: "v1"}).gated
 _pinGatedAtGA: true
 
-// ─── MUST VET CLEAN, deliberately (D43 / D45) ───────────────────────────────
+// ─── MUST VET CLEAN, deliberately (0010:D43 / D45) ───────────────────────────────
 //
 // A declared version whose major disagrees with the path's is NOT refused by
 // `core`, on either artifact type. This is the SPECIFIED behaviour, not a gap:
-// D40 added a `core`-side versionMajor assertion, D43 removed it for #Catalog
-// and D45 for #Module. The relation is asserted in the artifact's own
+// 0010:D40 added a `core`-side versionMajor assertion, 0010:D43 removed it for #Catalog
+// and 0010:D45 for #Module. The relation is asserted in the artifact's own
 // identity/identity.cue, at the point both values are written, where a failure
 // names the file the author has open.
 //
 // These two cases exist so that reintroducing the `core`-side assertion reads
 // as a CHANGE rather than as a fix — an uncommented passing case with no
-// comment looks like an oversight, and this one is the trade D43/D45 made.
+// comment looks like an oversight, and this one is the trade 0010:D43/D45 made.
 _pinModuleMajorSkewAccepted: #Module & {
 	metadata: {
 		name:       "postgres"
@@ -381,7 +381,7 @@ _pinCatalogMajorSkewAccepted: #Catalog & {
 }
 
 // An authored fqn that disagrees with the primitive's OWN name — `restore`
-// against a resource named `backup` — is NOT refused by `core` (D21). This is
+// against a resource named `backup` — is NOT refused by `core` (0010:D21). This is
 // the trade the derivation removal made, not a gap: the check moves to
 // #CatalogMemberFQNGate at publish, which ships in the paired
 // `core-identity-package` change. Until it lands, nothing in this repo catches
@@ -407,7 +407,7 @@ _pinAuthoredFQNSkewAccepted: #Resource & {
 // key. Measured 2026-07-27 as the reason `catalogVersion` was NOT dropped in
 // favour of authoring `fqn` alone — with nothing to interpolate, a catalog on
 // 1.2.0 shipping a key naming 1.1.0 passes `cue vet -c` at exit 0, and under
-// D4 that key is what a platform executes against permanently.
+// 0010:D4 that key is what a platform executes against permanently.
 //
 // Here the disagreement is still expressible, but the two values now sit side
 // by side in one struct where the gate can compare them.
@@ -485,7 +485,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 
 // A primitive path carrying a major. Reported against the FIELD rather than
 // through an interpolation, unlike the module cases above: with the fqn
-// derivation removed (D21), nothing in #Resource interpolates modulePath any
+// derivation removed (0010:D21), nothing in #Resource interpolates modulePath any
 // more, so the type is the only thing that fires:
 //   _failPrimitiveMajor.metadata.modulePath: invalid value
 //     "opmodel.dev/catalogs/opm/resources@v1"
@@ -502,7 +502,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //   spec: configMaps: _
 //  }
 
-// A module path substituted where a registry path belongs — the shape D41
+// A module path substituted where a registry path belongs — the shape 0010:D41
 // replaces, and the one an instance fqn must never be built from.
 //
 // Two mechanisms refuse it, and in `core` the FIRST one fires. `registryPath`
@@ -559,7 +559,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //  }
 
 // A SemVer where a contract LEVEL belongs. The two spellings are the whole of
-// D4's split, so a build leaking into apiVersion must not be a near-miss that
+// 0010:D4's split, so a build leaking into apiVersion must not be a near-miss that
 // the regex happens to admit:
 //   _failSemverAPIVersion.metadata.apiVersion: invalid value "1.2.0"
 //     (out of bound =~"^v[0-9]+((alpha|beta)[0-9]+)?$")

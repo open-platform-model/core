@@ -1,6 +1,6 @@
 package core
 
-// Schema-level pins for the catalog contract maps (enhancement 0015 D1):
+// Schema-level pins for the catalog contract maps (0015:D1):
 // #Catalog.#resources, #traits and #blueprints, the members a catalog
 // DEFINES as distinct from the #transformers it IMPLEMENTS. The enhancement
 // ships no examples.cue, so the delta is exercised here.
@@ -56,7 +56,7 @@ _pinContractBlueprint: #Blueprint & {
 	spec: statelessWorkload: replicas: int
 }
 
-// The case the maps exist for (0015 D1, 0010 D37): a provider-fulfilled
+// The case the maps exist for (0015:D1, 0010:D37): a provider-fulfilled
 // trait, which its declaring catalog lists and ships no adapter for.
 _pinContractProviderTrait: #Trait & {
 	metadata: {
@@ -86,7 +86,7 @@ _pinContractCatalog: #Catalog & {
 }
 
 // Read back by key. The stamped modulePath is the MAJOR-FREE registry path,
-// the map's kind segment, and the member's own apiVersion (0010 D49) — the
+// the map's kind segment, and the member's own apiVersion (0010:D49) — the
 // value #CatalogMemberFQNGate derives at publish; catalogVersion is the
 // catalog's build. One interpolation over all six values forces evaluation.
 _pinContractStamps: "\(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.modulePath) \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.catalogVersion)"
@@ -96,7 +96,7 @@ _pinContractStamps: "opmodel.dev/catalogs/opm/resources/v1beta1 4.1.0 | opmodel.
 
 // A well-formed contract key that differs from the member's authored fqn.
 // `core` enforces the key's FORM only; the agreement between key, fqn and the
-// identity package is #CatalogMemberFQNGate's at publish (0010 D21), as it
+// identity package is #CatalogMemberFQNGate's at publish (0010:D21), as it
 // already is for #transformers. The member validates, receives the stamps,
 // and its fqn is untouched by the key it sits under.
 _pinContractKeyNotCompared: #Catalog & {
@@ -116,7 +116,7 @@ _pinContractKeyNotComparedRead: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1
 // A catalog whose #transformers is EMPTY and whose one member is
 // provider-fulfilled: before the contract maps this catalog published
 // nothing at all. The trait is readable by key and its fulfilment is what
-// 0015 D11's `provides` fold reads.
+// 0015:D11's `provides` fold reads.
 _pinContractProviderOnlyCatalog: #Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/backup@v1"
@@ -170,7 +170,7 @@ _pinContractEmptyMaps: "000"
 //  _failContractFilingDriftRead: _failContractFilingDrift.#traits["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"].metadata.modulePath
 
 // A stale build: a member naming a catalogVersion other than the catalog's
-// own. Provenance is stamped, not authored per leaf (0010 D25):
+// own. Provenance is stamped, not authored per leaf (0010:D25):
 //   _failContractStaleBuild.#traits."opmodel.dev/catalogs/opm/traits/scaling@v1beta1".metadata.catalogVersion: conflicting values
 //     "4.1.0" and "3.9.0"
 //   _failContractStaleBuild.#traits."opmodel.dev/catalogs/opm/traits/scaling@v1beta1".spec.scaling: field not allowed

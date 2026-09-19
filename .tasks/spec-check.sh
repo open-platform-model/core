@@ -60,7 +60,7 @@ all_cue_names=$(
 
 # Names referenced anywhere in SPEC.md (headers, prose, code blocks).
 #
-# Old-name breadcrumb lines (enhancement 0002 D12 — "Renamed from `#Old`
+# Old-name breadcrumb lines (0002:D12 — "Renamed from `#Old`
 # (enhancement NNNN).") intentionally name a now-removed identifier to leave a
 # migration trail in the construct's Definition prose. These are deliberate
 # historical references, not stale ones, so drop breadcrumb lines before
