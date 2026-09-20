@@ -140,8 +140,8 @@ context: |
 
   ### Comments
   - Default to no enhancement reference: say what the code does and why, in the comment's own words.
-  - When the rationale genuinely lives in an enhancement, cite it once at the symbol as `0011:D9` — enhancement id, colon, decision id, no space. One enhancement, several decisions: `0011:D16/D18/D21`. Across enhancements: `0011:D9, 0010:D34`. A bare `D9` names nothing, because decision numbers restart per enhancement.
-  - Never cite a section, slice, phase, task or design-doc-local id (`§8.1`, `slice C2`, `task 4.2`, `design LD3`). They are not stable identifiers.
+  - When the rationale genuinely lives in an enhancement, cite it once at the symbol as `0011:D9` — enhancement id, colon, decision id, no space. One enhancement, several decisions: `0011:D16/D18/D21`. Across enhancements: `0011:D9, 0010:D34`. One requirement of a decision: `0011:D9:R2`; several: `0011:D9:R1/R2`. A bare `D9` names nothing, because decision numbers restart per enhancement.
+  - Never cite a section, slice, phase, task or design-doc-local id (`§8.1`, `slice C2`, `task 4.2`, `design LD3`). They are not stable identifiers; a requirement number (`R2`) is.
   - Never put a reference in a scaffold template, a generated file, a fixture a user copies, or a CLI output string. Those reach people with no access to the enhancements repo.
   - No `Was:` rename history in comments; `git log` owns it.
   - In CUE, the reference goes in a `// WHY` block separated from the doc comment by one blank line, never in the doc comment itself: `cue lsp` hover, `Value.Doc()` and `cue def` replay a doc comment verbatim.
@@ -173,7 +173,7 @@ rules:
       ships section by section. In that mode the change stays active on main between PRs, and
       spec sync and enhancement delivery logging wait for archive after the last PR."
     - When the change implements a slice of an enhancement, cite the entry and the decision
-      numbers it satisfies (e.g. `enhancements/0010` D1, D6, D8) rather than restating the design.
+      numbers it satisfies (e.g. `enhancements/0010` D1, D6, D8) or, when only part of a decision lands, the requirement numbers (`0010:D4:R1/R2`) rather than restating the design.
     - "If this change implements decisions from an enhancement in the sibling enhancements/ repo, create enhancement.yaml in this change directory declaring it (implements: [{enhancement: \"NNNN\", decisions: [D1, ...], resolves: []}]). Write it at creation time, while the enhancement is in context; it is what makes archive-time delivery logging mechanical."
 
   design:
@@ -208,6 +208,9 @@ rules:
     - "Focus: WHAT behavior is changing (not HOW it's implemented)"
     - "Updates when: New or changed requirements emerge"
     - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
+    - When a requirement implements an enhancement requirement, cite `NNNN:DN:Rn` in its body
+      (first sentence or a trailing `Source:` line), never inside the `### Requirement:` header,
+      which tools read as the requirement's name.
     - Describe observable behavior — what an artifact may now express, what it may no longer
       express, and what error a consumer sees when it gets it wrong.
     - Use ADDED/MODIFIED/REMOVED sections to show deltas.
