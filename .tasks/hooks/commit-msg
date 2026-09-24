@@ -25,12 +25,12 @@
 # Bypass, for the rare case where a real mention is intended:
 #   AT_MENTION_OK=1 git commit ...
 #
-# Full rule: CLAUDE.md § "Never Write a Bare `@name` Into GitHub Text"
+# Full rule: AGENTS.md § "Never Write a Bare `@name` Into GitHub Text"
 #
 # Attribution (no bypass): the only AI attribution allowed is the exact plain
 # trailer `Co-Authored-By: Claude <noreply@anthropic.com>`. Session IDs/URLs,
 # generated-with footers, and model-versioned AI co-author lines are refused.
-# Full rule: CLAUDE.md § "Commit and PR Attribution — Plain Co-Author Line Only"
+# Full rule: AGENTS.md § "Commit and PR Attribution — Plain Co-Author Line Only"
 
 set -euo pipefail
 
@@ -76,7 +76,7 @@ fi
     echo "  • Drop the @ entirely         \"the v2 line\", \"major v2\""
     echo "  • NOT quoting or backticks    \"@v2\", '@v2', \`@v2\`     (still mentions)"
     echo "  • Real mention intended?      AT_MENTION_OK=1 git commit ..."
-    echo "  Rule: CLAUDE.md § \"Never Write a Bare \`@name\` Into GitHub Text\""
+    echo "  Rule: AGENTS.md § \"Never Write a Bare \`@name\` Into GitHub Text\""
     echo
   fi
   if [[ -n "$session" ]]; then
@@ -95,6 +95,6 @@ fi
     printf '%s\n' "$coauthor" | sed 's/^/  /'
     echo
   fi
-  echo "Rule: CLAUDE.md § \"Commit and PR Attribution — Plain Co-Author Line Only\""
+  echo "Rule: AGENTS.md § \"Commit and PR Attribution — Plain Co-Author Line Only\""
 } >&2
 exit 1

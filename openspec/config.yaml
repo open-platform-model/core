@@ -100,13 +100,13 @@ context: |
 
   ## Technology Standards
 
-  See [CLAUDE.md](../CLAUDE.md) for full details. This repo has no `CONSTITUTION.md`; this file and
-  `CLAUDE.md` are the two normative sources, and `Taskfile.yml` wins over both on how commands run.
+  See [AGENTS.md](../AGENTS.md) for full details. This repo has no `CONSTITUTION.md`; this file and
+  `AGENTS.md` are the two normative sources, and `Taskfile.yml` wins over both on how commands run.
   - Language: CUE only. No Go, no other runtime.
   - CUE language floor: `v0.17.0`, declared in `src/cue.mod/module.cue`.
   - Toolchain: pinned separately (CI `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
   - Build/validate entrypoint: `Taskfile.yml`. All raw `cue` invocations run from `src/`.
-  - Registry vars (`CUE_REGISTRY`, `OPM_REGISTRY`) come from the workspace root `CLAUDE.md`.
+  - Registry vars (`CUE_REGISTRY`, `OPM_REGISTRY`) come from the workspace root `AGENTS.md`.
 
   ## Code Style
 
@@ -136,7 +136,7 @@ context: |
   - AI attribution: an optional plain `Co-Authored-By: Claude <noreply@anthropic.com>` trailer is
     the only allowed form — never generated-with footers, model-versioned co-author lines, or
     session IDs/URLs in a commit message, PR title, PR body, issue or review comment. See
-    `CLAUDE.md`.
+    `AGENTS.md`.
 
   ### Comments
   - Default to no enhancement reference: say what the code does and why, in the comment's own words.

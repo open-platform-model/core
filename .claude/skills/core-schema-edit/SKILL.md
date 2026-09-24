@@ -124,4 +124,4 @@ When editing a `core/src/*.cue` file:
 
 ## Subagent note
 
-If you are a subagent dispatched to edit `core/src/*.cue`, the parent agent's CLAUDE.md is not loaded into your context. Read this skill in full before making changes. The mechanical gates will block your commit if you skip the SPEC.md update — saving you a wasted iteration but only if you have the format ready when you write it.
+If you are a subagent dispatched to edit `core/src/*.cue`, the parent agent's AGENTS.md is not loaded into your context. Read this skill in full before making changes. The mechanical gates will block your commit if you skip the SPEC.md update — saving you a wasted iteration but only if you have the format ready when you write it.

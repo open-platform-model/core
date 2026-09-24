@@ -14,7 +14,7 @@ export LC_ALL=C
 # blank line ends the run: a block separated from the field by a blank line
 # is NOT a doc comment, and `cue fmt` preserves that blank line.
 #
-# The convention this enforces (CLAUDE.md, CUE Style Guidelines):
+# The convention this enforces (AGENTS.md, CUE Style Guidelines):
 #   - doc comment: the contract, at most MAX lines
 #   - `// WHY ...` block ABOVE the doc comment, separated by one blank line:
 #     rationale that must stay next to the code but is not hover text
