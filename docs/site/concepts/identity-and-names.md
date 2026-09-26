@@ -61,7 +61,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why the default object name includes the instance name
 
-<!-- With the bare component name, two instances of one module in one namespace would both render a `web` Deployment and overwrite each other. `<instance>-<component>` follows the `<release>-<chart>` naming Helm users already know. The namespace and uuid stay out: the namespace is already part of the DNS name, and a uuid is unreadable in `kubectl get`. Check against: core/SPEC.md (§3.1 Rationale, "Why the default is `<instance>-<component>`"), core/src/component.cue -->
+<!-- With the bare component name, two instances of one module in one namespace would both render a `web` Deployment and overwrite each other. The namespace and uuid stay out: the namespace is already part of the DNS name, and a uuid is unreadable in `kubectl get`. Check against: core/SPEC.md (§3.1 Rationale, "Why the default is `<instance>-<component>`"), core/src/component.cue -->
 
 ## Common mistakes
 
@@ -79,7 +79,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### `app.kubernetes.io/instance` holds the component name
 
-<!-- Misreading from Helm, where `app.kubernetes.io/instance` is the release name. Correct: on objects OPM renders it carries the component's `metadata.name`, the same value as `app.kubernetes.io/name`; the instance name is in `module-instance.opmodel.dev/name`. Check against: core/src/transformer.cue (componentLabels, controllerLabels) -->
+<!-- Misreading from the Kubernetes recommended labels, where `app.kubernetes.io/instance` names the instance of an application. Correct: on objects OPM renders it carries the component's `metadata.name`, the same value as `app.kubernetes.io/name`; the instance name is in `module-instance.opmodel.dev/name`. Check against: core/src/transformer.cue (componentLabels, controllerLabels) -->
 
 ### A component's key and its name can differ
 

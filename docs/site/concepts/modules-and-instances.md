@@ -7,7 +7,7 @@ sidebar:
 ---
 
 <!-- Open with OPM as the subject, in one or two sentences: a module is a versioned, published description of an application, and an instance is one configured deployment of it, with a name, in one namespace. Say what the page leaves to other pages: identity formulas to "Identity and names", the version numbers to "Versions in OPM", CLI versus operator ownership to "Who owns an instance", deletion to "Deletion and pruning". Link the glossary entries for module, instance, component and CUE on first use. No steps, no field tables. Check against: core/src/module.cue, core/src/module_instance.cue, core/SPEC.md §3.2 and §3.5 Definition 
-Kubernetes comparison, only if it helps: weave it into the sentence that introduces the concept, or into How it works, never as a section of its own. Researched candidate: Compare with a Helm chart and a Helm release: a module is the packaged, versioned chart published to an OCI registry, an instance is one installed, configured copy with a name in one namespace. Where the comparison stops: (1) values are unified with the module's `#config` schema before anything renders, so a misspelled or mistyped field fails instead of being templated; (2) there are no templates: `#components` is data, and transformers from the platform's catalogs turn it into objects; (3) the instance's identity is computed from the module's registry path without its major, the instance name and the namespace, so it survives every upgrade of the module; (4) an instance exists in two forms, the `#ModuleInstance` CUE value that renders and the `ModuleInstance` custom resource (`opmodel.dev/v1alpha1`) that records it on the cluster. Check against: core/src/module_instance.cue, core/SPEC.md §3.5 Constraints, opm-operator/api/v1alpha1/moduleinstance_types.go, library/opm/kernel/validate.go -->
+Kubernetes comparison, only if it helps: weave it into the sentence that introduces the concept, or into How it works, never as a section of its own. No Kubernetes idea is close enough, and the Helm chart and release comparison is made only on the Start here pages (0018:D9), so explain the pair on its own terms: a module is a versioned description of an application published to an OCI registry, an instance is one configured copy with a name in one namespace. Facts to state: (1) values are unified with the module's `#config` schema, not templated; a mistyped value fails, but an unknown key fails only in a `-f` file until library#140 is fixed; (2) there are no templates: `#components` is data, and transformers from the platform's catalogs turn it into objects; (3) the instance's identity is computed from the module's registry path without its major, the instance name and the namespace, so it survives every upgrade of the module; (4) an instance exists in two forms, the `#ModuleInstance` CUE value that renders and the `ModuleInstance` custom resource (`opmodel.dev/v1alpha1`) that records it on the cluster. Check against: core/src/module_instance.cue, core/SPEC.md §3.5 Constraints, opm-operator/api/v1alpha1/moduleinstance_types.go, library/opm/kernel/validate.go -->
 
 ## How it works
 
@@ -33,7 +33,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why a module and its values are separate
 
-<!-- One module is deployed many times, into different namespaces with different values, without forking it: the instance identity is injected by the module into every component rather than written on the component. Compare Helm's chart and values, and say that OPM makes the split a type boundary rather than a file convention. Check against: core/SPEC.md §3.5 Definition; core/SPEC.md §3.1 Rationale, "Why `#instance` is hidden and module-injected, not author-supplied"; core/SPEC.md §3.2 Rationale, "Why the `#components` pattern injects `#instance` instead of leaving it for `#ModuleInstance`" -->
+<!-- One module is deployed many times, into different namespaces with different values, without forking it: the instance identity is injected by the module into every component rather than written on the component. Say that OPM makes the split between a module and its values a type boundary, not a file convention. Check against: core/SPEC.md §3.5 Definition; core/SPEC.md §3.1 Rationale, "Why `#instance` is hidden and module-injected, not author-supplied"; core/SPEC.md §3.2 Rationale, "Why the `#components` pattern injects `#instance` instead of leaving it for `#ModuleInstance`" -->
 
 ### Why the configuration schema stays plain data
 
@@ -49,7 +49,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why default object names include the instance name
 
-<!-- `<instance>-<component>` follows Helm's `<release>-<chart>` convention, so two instances of one module in one namespace do not overwrite each other's objects. Check against: core/SPEC.md §3.1 Rationale, "Why the default is `<instance>-<component>` rather than the bare component name" -->
+<!-- `<instance>-<component>` keeps two instances of one module in one namespace from overwriting each other's objects. Check against: core/SPEC.md §3.1 Rationale, "Why the default is `<instance>-<component>` rather than the bare component name" -->
 
 ## Common mistakes
 
@@ -67,7 +67,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### `app.kubernetes.io/instance` holds the component name
 
-<!-- Helm users expect this label to hold the release name. OPM sets it, and `app.kubernetes.io/name`, to the component's name; the instance name is on `module-instance.opmodel.dev/name`. Select an instance's objects by that label. Check against: core/src/transformer.cue (`controllerLabels`, `componentLabels`) -->
+<!-- Readers expect this label to hold the instance name, as the Kubernetes recommended labels describe it. OPM sets it, and `app.kubernetes.io/name`, to the component's name; the instance name is on `module-instance.opmodel.dev/name`. Select an instance's objects by that label. Check against: core/src/transformer.cue (`controllerLabels`, `componentLabels`) -->
 
 ### Upgrading the module keeps the same instance
 

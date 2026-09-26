@@ -6,7 +6,7 @@ sidebar:
   order: 22
 ---
 
-<!-- One sentence: `#config` declares every value an instance of the module may set, each with a type, limits and usually a default, and components read those values instead of literals. Use it for any field that should differ between instances, the way a Helm chart exposes values, except that OPM checks the values against the schema before rendering.
+<!-- One sentence: `#config` declares every value an instance of the module may set, each with a type, limits and usually a default, and components read those values instead of literals. Use it for any field that should differ between instances.
 Keep secrets out of this page. Leave at most a note that secrets documentation is pending; do not describe `#Secret` fields.
 Check against: core/src/module.cue (#config, debugValues), core/src/module_instance.cue (values), core/SPEC.md section 3.2 (#Module) -->
 
