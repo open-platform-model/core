@@ -50,7 +50,7 @@ Current state:
 | --- | --- |
 | `src/module.cue` | The field above |
 | `src/module_init_values_pins.cue` (new) | One hidden pin per spec scenario (see Pins) |
-| `SPEC.md` § 3.2 | Shape line, two Constraints, two Rationale bullets |
+| `SPEC.md` § 3.2 | Shape line, Constraints (including the order tooling reads `initValues` and `debugValues` in), three Rationale bullets |
 | `docs/constructs.md` | `initValues` beside `debugValues` in the `#Module` walkthrough |
 | `src/INDEX.md` | Regenerated; the Project Structure tree gains the new pins file |
 
