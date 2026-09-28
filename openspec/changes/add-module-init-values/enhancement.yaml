@@ -1,0 +1,10 @@
+# Enhancement declaration, read by `task enhancements:delivery:log` at archive time.
+# See enhancements/schema.cue #ChangeDeclaration.
+#
+# D3 and D4 are shared with cli: this change lands the schema field
+# (0016:D3:R1/R3, 0016:D4:R1/R2); cli's add-instance-init lands the reader
+# (0016:D3:R2, 0016:D4:R3).
+implements:
+  - enhancement: "0016"
+    decisions: [D3, D4]
+    resolves: []
