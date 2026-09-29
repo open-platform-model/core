@@ -78,16 +78,29 @@ import (
 
 	// WHY unfulfilled: 0015:D18.
 
-	// Provider-fulfilled resources and traits required by nothing. A report the
-	// operator surfaces as a non-gating condition; never a refusal. Blueprints
-	// never appear: a blueprint carries no fulfilment.
+	// Defined provider-fulfilled resources and traits with no providedBy
+	// key. A report the operator surfaces as a non-gating condition; never
+	// a refusal. Blueprints never appear, nor does a contract no enabled
+	// catalog defines.
 	unfulfilled: [...#ContractFQNType]
+
+	// WHY providedBy: 0010:D37, 0015:D2/D18. It is the one provider count:
+	// the render build reads it instead of keeping its own, so the refusal
+	// and the generation gate cannot disagree. Keyed by registry key, major
+	// included, because the stamped transformer modulePath is major-free.
+
+	// Provider-fulfilled contract FQN to the sorted registry keys (path@vN)
+	// of the enabled entries whose transformers require it, whether or not
+	// an enabled entry defines it. Present exactly when some entry provides
+	// it. See SPEC.md § 3.4.
+	providedBy: [#ContractFQNType]: [...#ModulePathType]
 
 	// WHY overSubscribed: 0010:D37.
 
-	// Provider-fulfilled resources and traits required by transformers from more
-	// than one catalog, a transformer's catalog being its stamped
-	// metadata.modulePath. What the generation step refuses on.
+	// Keys of providedBy with more than one registry entry, including a
+	// contract no enabled entry defines. Two majors of one catalog are two
+	// providers; two adapters in one entry are one. What the generation
+	// step and the render build refuse on.
 	overSubscribed: [...#ContractFQNType]
 
 	// Pairs of enabled transformers whose match predicates are comparable
@@ -173,13 +186,14 @@ import (
 	// `fulfilled: false` is surfaced as a non-gating condition and gates
 	// nothing, which an in-schema assertion could not express.
 	//
-	// WHY over-subscription counts catalogs, not transformers: one
+	// WHY over-subscription counts registry entries, not transformers: one
 	// provider catalog may carry two adapters over one contract (k8up's
-	// Schedule and PreBackupPod), and the shipped CLI refusal already
-	// counts catalogs. `_providers` keys a struct by each requiring
-	// transformer's stamped metadata.modulePath, which deduplicates per
-	// catalog; the stamp is unforgeable (0010:D25), so a catalog cannot
-	// pose as two.
+	// Schedule and PreBackupPod), so counting transformers refuses its own
+	// shape. The key is the registry key, major included: the stamped
+	// transformer metadata.modulePath is major-free, so it cannot tell
+	// k8up@v2 from k8up@v3, and the render build counts them as two.
+	// Fulfilment is read off each transformer's own requirement, so
+	// providers of a contract no enabled entry defines are counted too.
 	//
 	// WHY comparability folds all three required demand kinds: what keeps a
 	// shared catalog-fulfilled bucket legal is a differing required LABEL
@@ -191,12 +205,12 @@ import (
 	// is supposed to fire together; their requiredTraits (the catalog's
 	// ScalingTrait against none) is what separates them. SPEC.md § 3.4
 	// Rationale, "Why the inventory reports and does not refuse", "Why
-	// over-subscription counts catalogs" and "Why the predicate is every
-	// required demand, not only labels".
+	// over-subscription counts registry entries" and "Why the predicate is
+	// every required demand, not only labels".
 
 	// Derived, never authored or runtime-filled: the contract inventory,
-	// folded from every enabled entry's #resources, #traits and #blueprints
-	// and crossed with the required demands of #composedTransformers.
+	// folded from every enabled entry's #resources, #traits and #blueprints,
+	// crossed with the required demands of the enabled entries' transformers.
 	// Empty, fulfilled and routable on an empty or fully disabled registry.
 	// An over-subscribed platform still evaluates; refusing it is the
 	// generation step's act. See SPEC.md § 3.4.
@@ -228,17 +242,24 @@ import (
 			}
 		}
 
-		// Per provider-fulfilled contract, the set of catalogs whose
-		// transformers require it (keyed by stamped modulePath; see the WHY
-		// block above). Blueprints carry no fulfilment and are skipped
-		// before the field is read.
-		_providers: {
-			for fqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "provider" {
-				(fqn): {for _, k in requiredBy[fqn] {(#composedTransformers[k].metadata.modulePath): true}}
+		// Per provider-fulfilled contract some enabled transformer requires,
+		// the set of registry keys whose transformers require it. Iterated
+		// per entry, not over #composedTransformers, so the key stays
+		// visible; the demand maps are presence-guarded as for requiredBy.
+		_providerSet: {
+			for rkey, entry in #registry if entry.enable
+			for _, tf in entry.#transformers {
+				if tf.requiredResources != _|_ {
+					for fqn, req in tf.requiredResources if req.fulfilment == "provider" {(fqn): (rkey): true}
+				}
+				if tf.requiredTraits != _|_ {
+					for fqn, req in tf.requiredTraits if req.fulfilment == "provider" {(fqn): (rkey): true}
+				}
 			}
 		}
-		unfulfilled: [for fqn, ps in _providers if len(ps) == 0 {fqn}]
-		overSubscribed: [for fqn, ps in _providers if len(ps) > 1 {fqn}]
+		providedBy: {for fqn, ps in _providerSet {(fqn): list.Sort([for k, _ in ps {k}], list.Ascending)}}
+		unfulfilled: [for fqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "provider" if providedBy[fqn] == _|_ {fqn}]
+		overSubscribed: [for fqn, ps in providedBy if len(ps) > 1 {fqn}]
 
 		// WHY _predicates: 0010:D32.
 

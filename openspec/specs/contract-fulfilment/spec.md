@@ -37,9 +37,9 @@ Defines where a contract's implementation is expected to come from, and what a c
 
 ### Requirement: A provider-fulfilled contract admits exactly one provider
 
-For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one provider of that contract, a provider being an enabled catalog whose transformers *require* the contract. The count is of catalogs, so two transformers of one catalog requiring the contract are one provider. Two providing catalogs MUST be refused, naming both catalog paths and the contract key. Zero is an unresolved demand, which fails the render unless the render's caller asked to skip unprovided provider-fulfilled demands (see "A render's caller may skip unprovided provider-fulfilled demands"). Two remain refused under that request.
+For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one provider of that contract, a provider being an enabled registry entry whose transformers *require* the contract. The count is of registry entries, keyed by registry key (the catalog module path with its major): two transformers of one entry requiring the contract are one provider, and two enabled majors of one catalog are two. A provider counts whether or not any enabled entry defines the contract. Two providers MUST be refused, naming both registry keys and the contract key. Zero is an unresolved demand, which fails the render unless the render's caller asked to skip unprovided provider-fulfilled demands (see "A render's caller may skip unprovided provider-fulfilled demands"). Two remain refused under that request.
 
-This is enforced by the kernel's render build rather than by the schema: `core` declares the intent, and counting the providing catalogs across the platform's enabled registry entries is the render build's. The platform's contract inventory reports its own count without refusing on it, but only over contracts an enabled catalog defines and keyed by each transformer's stamped major-free module path rather than its registry key, so it differs from the render build's for a provider-fulfilled contract whose defining catalog is not enabled (omitted) and for two enabled majors of one provider catalog (counted as one). The render refuses on the render build's count, not the inventory's. The requirement is stated here because it is what `fulfilment: "provider"` means.
+This is enforced outside the schema: `core` declares the intent and computes the count once, as the platform's contract inventory (`#Platform.#contracts.providedBy`, `overSubscribed` and `routable`), which reports it without refusing on it. The kernel's render build and the generation step (operator, CLI) refuse on that one count; none of them keeps a count of its own. The requirement is stated here because it is what `fulfilment: "provider"` means.
 
 #### Scenario: Two providers for one contract are refused
 
@@ -55,6 +55,16 @@ This is enforced by the kernel's render build rather than by the schema: `core` 
 
 - **WHEN** a transformer names a provider-fulfilled contract among its optional demands rather than its required ones
 - **THEN** it is not counted as a provider of that contract
+
+#### Scenario: Two majors of one provider catalog are two providers
+
+- **WHEN** a platform enables `opmodel.dev/catalogs/k8up@v2` and `opmodel.dev/catalogs/k8up@v3`, and a transformer of each requires the same provider-fulfilled contract
+- **THEN** the platform's contract inventory reports the contract over-subscribed and not routable, naming both registry keys, and the render build refuses on that same count
+
+#### Scenario: Providers count when the defining catalog is not enabled
+
+- **WHEN** the catalog defining a provider-fulfilled contract is disabled or absent, and two enabled entries have transformers requiring it
+- **THEN** the platform's contract inventory reports the contract over-subscribed and not routable, and the render build refuses on that same count
 
 ### Requirement: Every declared resource is a required demand
 
