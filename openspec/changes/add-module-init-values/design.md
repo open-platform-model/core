@@ -61,7 +61,10 @@ Hidden top-level fields in `src/module_init_values_pins.cue`, following the conv
 ```cue
 _pinInitConcrete:    #Module & {/* … */ initValues: {replicas: 2, logLevel: "info"}}
 _pinInitOpen:        #Module & {/* … */ initValues: {replicas: *2 | int, logLevel: "info" | "debug", port?: int}}
-_pinInitDisjunction: _pinInitOpen.initValues.logLevel & ("info" | "debug")
+// Both branches unify only while the disjunction survives; a value collapsed
+// to one branch fails the other pin.
+_pinInitDisjunctionInfo:  _pinInitOpen.initValues.logLevel & "info"
+_pinInitDisjunctionDebug: _pinInitOpen.initValues.logLevel & "debug"
 _pinInitNonConforming: #Module & {/* … */ #config: {replicas: int}, initValues: {replicas: "two"}}
 _pinInitBoth:        #Module & {/* … */ debugValues: {logLevel: "debug"}, initValues: {logLevel: "info"}}
 _pinInitSameModuleUUID:   _pinPlain.metadata.uuid & _pinInitConcrete.metadata.uuid
