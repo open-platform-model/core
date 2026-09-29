@@ -37,19 +37,19 @@ Defines where a contract's implementation is expected to come from, and what a c
 
 ### Requirement: A provider-fulfilled contract admits exactly one provider
 
-For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one transformer *requiring* that contract. Two MUST be refused, naming both catalog paths and the contract key. Zero is an unresolved demand, which fails the render unless the render's caller asked to skip unprovided provider-fulfilled demands (see "A render's caller may skip unprovided provider-fulfilled demands"). Two remain refused under that request.
+For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one provider of that contract, a provider being an enabled catalog whose transformers *require* the contract. The count is of catalogs, so two transformers of one catalog requiring the contract are one provider. Two providing catalogs MUST be refused, naming both catalog paths and the contract key. Zero is an unresolved demand, which fails the render unless the render's caller asked to skip unprovided provider-fulfilled demands (see "A render's caller may skip unprovided provider-fulfilled demands"). Two remain refused under that request.
 
-This is enforced at materialize rather than by the schema — `core` declares the intent; counting transformers across a materialized set is the kernel's. The requirement is stated here because it is what `fulfilment: "provider"` means.
+This is enforced by the kernel's render build rather than by the schema: `core` declares the intent, and counting the providing catalogs across the platform's enabled registry entries is the render build's. The platform's contract inventory reports the same count without refusing on it. The requirement is stated here because it is what `fulfilment: "provider"` means.
 
 #### Scenario: Two providers for one contract are refused
 
-- **WHEN** a platform materializes two catalogs whose transformers both declare the same provider-fulfilled contract in `requiredResources`
-- **THEN** materialize fails, naming both catalog paths and the contract key, with no arbitration between them
+- **WHEN** a platform enables two catalogs whose transformers both declare the same provider-fulfilled contract in `requiredResources`
+- **THEN** the render build refuses, naming both catalog paths and the contract key, with no arbitration between them
 
 #### Scenario: One provider is accepted
 
-- **WHEN** exactly one materialized transformer requires the provider-fulfilled contract
-- **THEN** materialize succeeds
+- **WHEN** exactly one enabled catalog carries transformers requiring the provider-fulfilled contract, whether one transformer or several
+- **THEN** the render build does not refuse on the provider count
 
 #### Scenario: Optional demands do not count as provision
 
@@ -64,7 +64,7 @@ A resource MUST NOT have a demand-side optionality marker. A component whose res
 
 #### Scenario: An unsupplied resource fails the render
 
-- **WHEN** a component declares a resource whose FQN no materialized transformer supplies, and the resource is catalog-fulfilled or the caller did not ask to skip unprovided demands
+- **WHEN** a component declares a resource whose FQN no enabled transformer on the platform supplies, and the resource is catalog-fulfilled or the caller did not ask to skip unprovided demands
 - **THEN** the render fails, naming the unresolved FQN
 
 #### Scenario: A component with a partially satisfied set does not render
@@ -82,7 +82,7 @@ An unhandled trait whose resolved `optional` is `false` fails the render, except
 
 #### Scenario: An unhandled load-bearing trait fails
 
-- **WHEN** a component declares a trait no materialized transformer handles, whose resolved `optional` is `false`, and the trait is catalog-fulfilled or the caller did not ask to skip unprovided demands
+- **WHEN** a component declares a trait no enabled transformer on the platform handles, whose resolved `optional` is `false`, and the trait is catalog-fulfilled or the caller did not ask to skip unprovided demands
 - **THEN** the render fails, naming the trait
 
 #### Scenario: An unhandled advisory trait warns
@@ -119,7 +119,7 @@ This is enforced at publish rather than by the schema: CUE cannot express "this 
 
 ### Requirement: A render's caller may skip unprovided provider-fulfilled demands
 
-A render's caller MAY ask the render to skip every demand that is *unprovided*: a demand on a contract declaring `fulfilment: "provider"` for which zero enabled transformers on the platform require the demanded key. The request is per render and belongs to the caller; without it, every render behaves as the other requirements of this capability state.
+A render's caller MAY ask the render to skip every demand that is *unprovided*: a demand on a contract declaring `fulfilment: "provider"` for which no enabled catalog on the platform carries a transformer requiring the demanded key, the single-provider count at zero. The request is per render and belongs to the caller; without it, every render behaves as the other requirements of this capability state.
 
 Only unprovided demands are skippable. Under the request:
 
@@ -135,7 +135,7 @@ Enforcement is the kernel's, like the rest of this capability. `core` states the
 
 #### Scenario: A skipped trait lets the rest of the component render
 
-- **WHEN** a component attaches a trait whose contract declares `fulfilment: "provider"` and resolves `optional: false`, no enabled transformer on the platform requires that contract, and the render's caller asked to skip unprovided demands
+- **WHEN** a component attaches a trait whose contract declares `fulfilment: "provider"` and resolves `optional: false`, no enabled catalog on the platform carries a transformer requiring that contract, and the render's caller asked to skip unprovided demands
 - **THEN** the render succeeds and the component renders every pair it matched
 - **AND** the report names the component, the trait's contract key and the trait kind
 
@@ -158,7 +158,7 @@ Enforcement is the kernel's, like the rest of this capability. `core` states the
 
 #### Scenario: A present provider that did not match still refuses
 
-- **WHEN** a component attaches a provider-fulfilled, load-bearing trait, the platform carries exactly one transformer requiring that contract, that transformer does not match the component, and the caller asked to skip unprovided demands
+- **WHEN** a component attaches a provider-fulfilled, load-bearing trait, exactly one enabled catalog on the platform carries a transformer requiring that contract, that transformer does not match the component, and the caller asked to skip unprovided demands
 - **THEN** the render fails, naming the unresolved contract key
 
 #### Scenario: An over-subscribed contract still refuses under the request
@@ -168,5 +168,5 @@ Enforcement is the kernel's, like the rest of this capability. `core` states the
 
 #### Scenario: A provider on the platform is used, not skipped
 
-- **WHEN** exactly one enabled transformer requires the provider-fulfilled contract, it matches the component, and the caller asked to skip unprovided demands
+- **WHEN** exactly one enabled catalog carries a transformer requiring the provider-fulfilled contract, that transformer matches the component, and the caller asked to skip unprovided demands
 - **THEN** the render uses that provider's transformer, and nothing is reported as skipped
