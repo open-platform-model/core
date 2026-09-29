@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0-alpha.12](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.11...v2.0.0-alpha.12) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **platform:** contracts.overSubscribed and routable now count providing registry entries over every enabled transformer, so a platform enabling two majors of one provider catalog, such as opmodel.dev/catalogs/k8up@v2 and opmodel.dev/catalogs/k8up@v3, or two providers of a contract whose defining catalog is disabled or absent, is no longer routable. contracts.providedBy is added.
+
+### Features
+
+* **platform:** count contract providers per registry entry ([#77](https://github.com/open-platform-model/core/issues/77)) ([e8a69be](https://github.com/open-platform-model/core/commit/e8a69beebb98f1420cc4ae6c1606db5a0d39d6a5))
+
 ## [2.0.0-alpha.11](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.10...v2.0.0-alpha.11) (2026-09-29)
 
 
