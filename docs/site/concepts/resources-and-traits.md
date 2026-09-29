@@ -17,7 +17,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A trait modifies a resource
 
-<!-- `#Trait` has the same metadata and spec shape plus `appliesTo` (the resources it modifies) and `optional`, its posture when no transformer handles it. The catalog states the posture as a default: `bool | *true` for advisory traits such as `expose` and `scaling`, `bool | *false` for load-bearing ones such as `backup`. A module overrides it where it attaches the trait: `#traits: (FQN): SomeTrait & {optional: true}`. An unhandled advisory trait renders with a warning; an unhandled load-bearing one fails the render. In catalog_opm every trait's `appliesTo` lists `container`, except `backup`, which lists `volumes`. Check against: core/src/trait.cue, catalog_opm/opm/traits/v1beta1/expose.cue, catalog_opm/opm/traits/v1beta1/scaling.cue, catalog_opm/opm/traits/v1alpha1/backup.cue, library/opm/internal/renderstage/render.cue.tmpl (`_handled`, `unhandledWarnings`, `unresolvedTraits`) -->
+<!-- `#Trait` has the same metadata and spec shape plus `appliesTo` (the resources it modifies) and `optional`, its posture when no transformer handles it. The catalog states the posture as a default: `bool | *true` for advisory traits such as `expose` and `scaling`, `bool | *false` for load-bearing ones such as `backup`. A module overrides it where it attaches the trait: `#traits: (FQN): SomeTrait & {optional: true}`. An unhandled advisory trait renders with a warning; an unhandled load-bearing one fails the render, unless it is provider-fulfilled, nothing on the platform provides it, and the caller passes `--skip-unprovided`, which renders the rest of the component and warns. In catalog_opm every trait's `appliesTo` lists `container`, except `backup`, which lists `volumes`. Check against: core/src/trait.cue, catalog_opm/opm/traits/v1beta1/expose.cue, catalog_opm/opm/traits/v1beta1/scaling.cue, catalog_opm/opm/traits/v1alpha1/backup.cue, library/opm/internal/renderstage/render.cue.tmpl (`_handled`, `unhandledWarnings`, `unresolvedTraits`) -->
 
 ### Each spec sits under its own key
 
@@ -69,7 +69,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Every attached resource must be implemented
 
-<!-- There is no optional resource. A resource with no transformer on the platform is an unresolved demand, and the render is refused as a whole, including the parts that did match. Check against: core/SPEC.md §3.1 Constraints, library/opm/errors/match.go (`UnresolvedDemandsError`), library/opm/kernel/render_decode.go (`gateErrors`) -->
+<!-- There is no optional resource. A resource with no transformer on the platform is an unresolved demand, and the render is refused as a whole, including the parts that did match. `--skip-unprovided` does not make one optional: it skips only a provider-fulfilled resource nothing on the platform provides, and then renders nothing of its component. Check against: core/SPEC.md §3.1 Constraints, library/opm/errors/match.go (`UnresolvedDemandsError`), library/opm/kernel/render_decode.go (`gateErrors`) -->
 
 ### The labels on a resource or trait are only categories
 
