@@ -29,7 +29,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### The contract inventory
 
-<!-- `#Platform.#contracts` is derived with no module in hand: `defined` and `definedBy` (every contract and the catalog listing it), `requiredBy` (the transformers requiring each), `unfulfilled` and `overSubscribed` (provider contracts with no implementing catalog, or with several), `comparable` (transformer pairs where one matches everything the other does over a shared catalog contract), and the booleans `fulfilled`, `routable` and `discriminated`. `opm platform check [dir]` prints it: over-subscribed and comparable exit with the validation error code, unfulfilled exits 0. Check against: core/src/platform.cue (`#ContractInventory`), cli/internal/cmd/platform/check.go, library/opm/platform/contracts.go -->
+<!-- `#Platform.#contracts` is derived with no module in hand: `defined` and `definedBy` (every contract and the catalog listing it), `requiredBy` (the transformers requiring each), `providedBy` (the registry keys, path with major, providing each provider contract, whether or not an enabled catalog defines it), `unfulfilled` and `overSubscribed` (defined provider contracts with no provider, or provider contracts with several registry entries providing them), `comparable` (transformer pairs where one matches everything the other does over a shared catalog contract), and the booleans `fulfilled`, `routable` and `discriminated`. `opm platform check [dir]` prints it: over-subscribed and comparable exit with the validation error code, unfulfilled exits 0. Check against: core/src/platform.cue (`#ContractInventory`), cli/internal/cmd/platform/check.go, library/opm/platform/contracts.go -->
 
 ## Why it is built this way
 
@@ -55,7 +55,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why a provider contract has exactly one provider
 
-<!-- When this was measured no cross-catalog provider existed, so there was nothing to arbitrate; refusing two keeps the choice explicit, where silently picking one would make behaviour depend on catalog load order. Over-subscription counts catalogs rather than transformers, because one provider catalog may carry two transformers for one contract. Check against: core/SPEC.md §2.1 Rationale, "Why exactly one provider, with no arbitration between two"; core/SPEC.md §3.4 Rationale, "Why over-subscription counts catalogs" -->
+<!-- When this was measured no cross-catalog provider existed, so there was nothing to arbitrate; refusing two keeps the choice explicit, where silently picking one would make behaviour depend on catalog load order. Over-subscription counts registry entries rather than transformers, because one provider catalog may carry two transformers for one contract; the entry is keyed with its major, so two majors of one catalog are two providers. The inventory computes this count once and the render build reads it, so the generation gate and the render refusal agree. Check against: core/SPEC.md §2.1 Rationale, "Why exactly one provider, with no arbitration between two"; core/SPEC.md §3.4 Rationale, "Why over-subscription counts registry entries" -->
 
 ### Why the inventory reports and does not refuse
 
@@ -94,7 +94,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - A catalog's `version` is concrete: cue (an unstamped catalog is an incomplete value).
 - A catalog's version major agrees with its path, and every member's FQN agrees with the identity package: publish (`#IdentityPackage`, `#CatalogMemberFQNGate` in `opm catalog publish`).
 - Changes to beta and GA contracts are additive only: publish (the compatibility gate).
-- A provider contract supplied by two catalogs: kernel (render refused), also reported by `opm platform check`.
+- A provider contract supplied by two registry entries (path with major, so two majors of one catalog count as two): kernel (render refused), also reported by `opm platform check`.
 - An unfulfilled provider contract: nothing refuses it until a module demands it, then kernel, unless the render's caller asked to skip unprovided demands.
 - Comparable transformer pairs: reported by `opm platform check`, validation exit. Verify whether anything else refuses them; nothing in opm-operator does.
 - Every provider contract a catalog declares is listed in its contract maps: the catalog's own CI (`task vet:listing` in catalog_opm), not a publish gate. Verify which badge the writing guide wants for catalog CI.

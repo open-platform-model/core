@@ -90,7 +90,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - Two attached members disagreeing on a matching label: cue (conflicting values).
 - An unanswered required matching key: cue, under concrete evaluation only, so it surfaces at render rather than at plain `cue vet`.
 - `requiredLabels` are compared with `matchLabels`, never with `metadata.labels`: kernel (the render glue).
-- An unresolved demand, an unmatched component, a provider contract supplied by two catalogs: kernel (render refused). An unprovided demand is skipped instead when the render's caller asks: kernel, reported per skip.
+- An unresolved demand, an unmatched component, a provider contract supplied by two registry entries (path with major): kernel (render refused). An unprovided demand is skipped instead when the render's caller asks: kernel, reported per skip.
 - An unhandled advisory trait: kernel, warning only.
 - A unify conflict on a candidate: kernel, reported and the candidate disqualified.
 - `matchLabels` never reach a rendered object: cue (`#TransformerContext` has no path from them). Verify against the catalog wrappers' copy in `metadata.labels` noted above.
