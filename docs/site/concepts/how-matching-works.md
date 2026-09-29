@@ -29,7 +29,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Verdicts and the gate
 
-<!-- Every attached resource and trait is a demand. A demand is satisfied when some candidate in its bucket passes both checks; a trait also counts as handled when any matched transformer lists it as optional. The render is refused on three verdicts, each a typed error: an unresolved demand (`UnresolvedDemandsError`, whose message tells apart "implemented at a different apiVersion", "defined by <catalog> and nothing on this platform implements it" and "no enabled catalog defines this contract"), an unmatched component (`UnmatchedComponentsError`, listing each candidate's missing labels), and a provider contract supplied by more than one catalog (`OverSubscribedContractsError`). An unhandled advisory trait is a warning, and unify conflicts are reported as rows. Check against: library/opm/internal/renderstage/render.cue.tmpl (`unresolved`, `unmatched`, `warnings`, `unifyFailures`, `guard`, `gate`), library/opm/kernel/render_decode.go (`gateErrors`), library/opm/errors/match.go, library/opm/errors/unmatched.go, library/opm/errors/oversubscribed.go -->
+<!-- Every attached resource and trait is a demand. A demand is satisfied when some candidate in its bucket passes both checks; a trait also counts as handled when any matched transformer lists it as optional. The render is refused on three verdicts, each a typed error: an unresolved demand (`UnresolvedDemandsError`, whose message tells apart "implemented at a different apiVersion", "defined by <catalog> and nothing on this platform implements it" and "no enabled catalog defines this contract"), an unmatched component (`UnmatchedComponentsError`, listing each candidate's missing labels), and a provider contract supplied by more than one catalog (`OverSubscribedContractsError`). The render's caller may ask to skip an unresolved demand that is unprovided, meaning its contract is provider-fulfilled and zero catalogs on the platform provide it (core/SPEC.md §3.1 `#Component`); the CLI's `--skip-unprovided` does, and without it the refusal's hint names the flag. A catalog-fulfilled gap, a provider that is present but did not match, and an over-subscribed contract still refuse. An unhandled advisory trait is a warning, and unify conflicts are reported as rows. Check against: library/opm/internal/renderstage/render.cue.tmpl (`unresolved`, `unmatched`, `warnings`, `unifyFailures`, `guard`, `gate`), library/opm/kernel/render_decode.go (`gateErrors`), library/opm/errors/match.go, library/opm/errors/unmatched.go, library/opm/errors/oversubscribed.go, cli/internal/workflow/render/validation.go (`unprovidedHint`) -->
 
 ### Where matching runs
 
@@ -75,13 +75,13 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 <!-- Matching is not "one component, one object". Every transformer whose checks pass renders, and each emits its own kinds. Check against: library/opm/internal/renderstage/render.cue.tmpl (`matched`, `pairs`, `rendered`) -->
 
-### `opm module vet` does not run matching
+### `opm module vet` runs matching too
 
-<!-- `opm module vet` checks the module's identity and validates `#config` against `debugValues` or `-f` files; it does not render. Matching verdicts appear at `opm module build`, `opm module apply`, `opm instance vet`, `opm instance build`, `opm instance diff` and `opm instance apply`, and in the operator's reconcile. Check against: cli/internal/cmd/module/vet.go, cli/internal/cmd/instance/vet.go, cli/internal/cmd/module/build.go, cli/internal/cmd/instance/diff.go -->
+<!-- `opm module vet` checks the module's identity and validates `#config` against `debugValues` or `-f` files, then renders the module as `opm module build` does and reports each object without printing it, so the two reach the same verdict against the same platform. Matching verdicts appear at `opm module vet`, `opm module build`, `opm module apply`, `opm instance vet`, `opm instance build`, `opm instance diff` and `opm instance apply`, and in the operator's reconcile. Check against: cli/internal/cmd/module/vet.go, cli/internal/cmd/instance/vet.go, cli/internal/cmd/module/build.go, cli/internal/cmd/instance/diff.go -->
 
 ### A missing transformer fails the render
 
-<!-- Nothing is skipped silently except an advisory trait, which warns. A missing transformer for a resource, or for a trait resolved `optional: false`, refuses the whole render. Check against: library/opm/kernel/render_decode.go (`gateErrors`), library/opm/internal/renderstage/render.cue.tmpl (`unresolvedResources`, `unresolvedTraits`) -->
+<!-- Nothing is skipped silently except an advisory trait, which warns. A missing transformer for a resource, or for a trait resolved `optional: false`, refuses the whole render, unless the demand is unprovided and the render passes `--skip-unprovided`. Then a skipped trait leaves its component rendering everything else, a skipped resource leaves the whole component unrendered, and each skip is a warning on stderr, such as `component "db": skipped provider-fulfilled trait "<fqn>" (no provider on this platform)` or `component "<name>" not rendered: provider-fulfilled resource "<fqn>" has no provider on this platform`. Check against: library/opm/kernel/render_decode.go (`gateErrors`), library/opm/internal/renderstage/render.cue.tmpl (`unresolvedResources`, `unresolvedTraits`, `_skipResources`, `_skipTraits`), cli/internal/workflow/render/skipped.go -->
 
 ## What enforces this
 
@@ -90,7 +90,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - Two attached members disagreeing on a matching label: cue (conflicting values).
 - An unanswered required matching key: cue, under concrete evaluation only, so it surfaces at render rather than at plain `cue vet`.
 - `requiredLabels` are compared with `matchLabels`, never with `metadata.labels`: kernel (the render glue).
-- An unresolved demand, an unmatched component, a provider contract supplied by two catalogs: kernel (render refused).
+- An unresolved demand, an unmatched component, a provider contract supplied by two catalogs: kernel (render refused). An unprovided demand is skipped instead when the render's caller asks: kernel, reported per skip.
 - An unhandled advisory trait: kernel, warning only.
 - A unify conflict on a candidate: kernel, reported and the candidate disqualified.
 - `matchLabels` never reach a rendered object: cue (`#TransformerContext` has no path from them). Verify against the catalog wrappers' copy in `metadata.labels` noted above.

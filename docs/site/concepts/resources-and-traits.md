@@ -13,7 +13,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A resource is something that must exist
 
-<!-- `#Resource`: `metadata` (`name`, `apiVersion`, a catalog-authored `fqn` such as `opmodel.dev/catalogs/opm/resources/container@v1beta1`, `catalogVersion` as provenance, `description`, categorisation `labels`), one `spec` field named after the resource in camelCase (`spec: container:`), optional `matchLabels`, `fulfilment`, and the hidden `#nameConstraint`. Every resource a component attaches is a required demand: if no transformer on the platform handles it, the render fails. Check against: core/src/resource.cue, core/SPEC.md §3.1 Constraints (demands), library/opm/internal/renderstage/render.cue.tmpl (`unresolvedResources`) -->
+<!-- `#Resource`: `metadata` (`name`, `apiVersion`, a catalog-authored `fqn` such as `opmodel.dev/catalogs/opm/resources/container@v1beta1`, `catalogVersion` as provenance, `description`, categorisation `labels`), one `spec` field named after the resource in camelCase (`spec: container:`), optional `matchLabels`, `fulfilment`, and the hidden `#nameConstraint`. Every resource a component attaches is a required demand: if no transformer on the platform handles it, the render fails, unless the resource is provider-fulfilled, nothing on the platform provides it, and the caller passes `--skip-unprovided`, which leaves the whole component unrendered and warns. Check against: core/src/resource.cue, core/SPEC.md §3.1 Constraints (demands), library/opm/internal/renderstage/render.cue.tmpl (`unresolvedResources`) -->
 
 ### A trait modifies a resource
 

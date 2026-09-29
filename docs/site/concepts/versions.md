@@ -27,7 +27,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### The core schema major
 
-<!-- Every module, catalog and platform imports `opmodel.dev/core@v2`. Core versions like any CUE module: a breaking schema revision moves the major (it has gone from `@v0` to `@v1` to `@v2`), and consumers move by rewriting the import. The `@v2` line ships `v2.0.0-alpha.N` prereleases and has taken breaking changes inside that line (alpha.7 removed `#Subscription`), so it promises nothing yet. The kernel is verified against one exact core release and names it (`DefaultSchemaModule`), and the platform module `opm config init` seeds pins one core release. Check against: core/src/cue.mod/module.cue, core/README.md, core/CHANGELOG.md, library/opm/schema/loader.go, cli/internal/config/templates.go (DefaultCorePath, DefaultCorePin) -->
+<!-- Every module, catalog and platform imports `opmodel.dev/core@v2`. Core versions like any CUE module: a breaking schema revision moves the major (it has gone from `@v0` to `@v1` to `@v2`), and consumers move by rewriting the import. The `@v2` line ships `v2.0.0-alpha.N` prereleases and has taken breaking changes inside that line (alpha.7 removed `#Subscription`), so it promises nothing yet. The kernel is verified against one exact core release and names it (`DefaultSchemaModule`), and a platform the CLI generates from a render's own dependency pins carries core at the higher of the render's core pin and that release. Check against: core/src/cue.mod/module.cue, core/README.md, core/CHANGELOG.md, library/opm/schema/loader.go, cli/internal/config/templates.go (DefaultCorePath), cli/internal/platform/moduledeps.go (GenerateModuleDepsModule) -->
 
 ### Which build a render uses
 
