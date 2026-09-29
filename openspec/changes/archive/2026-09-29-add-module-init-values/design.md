@@ -52,7 +52,7 @@ Current state:
 | `src/module_init_values_pins.cue` (new) | One hidden pin per spec scenario (see Pins) |
 | `SPEC.md` § 3.2 | Shape line, Constraints (including the order tooling reads `initValues` and `debugValues` in), three Rationale bullets |
 | `docs/constructs.md` | `initValues` beside `debugValues` in the `#Module` walkthrough |
-| `src/INDEX.md` | Regenerated; the Project Structure tree gains the new pins file |
+| `src/INDEX.md` | Regenerated; no new row (the pins are hidden fields) and no tree line (the generated Project Structure tree lists directories only) |
 
 ### Pins
 
@@ -67,9 +67,12 @@ _pinInitDisjunctionInfo:  _pinInitOpen.initValues.logLevel & "info"
 _pinInitDisjunctionDebug: _pinInitOpen.initValues.logLevel & "debug"
 _pinInitNonConforming: #Module & {/* … */ #config: {replicas: int}, initValues: {replicas: "two"}}
 _pinInitBoth:        #Module & {/* … */ debugValues: {logLevel: "debug"}, initValues: {logLevel: "info"}}
-_pinInitSameModuleUUID:   _pinPlain.metadata.uuid & _pinInitConcrete.metadata.uuid
+_pinInitPlain:       #Module & {/* … */}   // no initValues; _pinInitAbsent asserts the field stays absent
+_pinInitSameModuleUUID:   _pinInitPlain.metadata.uuid & _pinInitConcrete.metadata.uuid
 _pinInitInstance:    #ModuleInstance & {/* … */ #module: _pinInitOpen, values: {…}}
-_pinInitSameInstanceUUID: _pinInstancePlain.metadata.uuid & _pinInitInstance.metadata.uuid
+_pinInitInstancePlain: #ModuleInstance & {/* … */ #module: _pinInitPlain, values: {…}}
+_pinInitSameInstanceUUID: _pinInitInstancePlain.metadata.uuid & _pinInitInstance.metadata.uuid
+// plus fqn and labels: unified, and label counts equal so an added key fails
 // MUST-FAIL: _pinInitTypo: #Module & {/* … */ initValuez: {}}
 //   -> _pinInitTypo.initValuez: field not allowed
 ```

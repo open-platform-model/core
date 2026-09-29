@@ -113,6 +113,14 @@ import (
 	// It is unified and validated in the runtime
 	debugValues: _
 
+	// WHY optional, open and not unified with #config: 0016:D3/D4.
+	// SPEC.md § 3.2 Rationale.
+
+	// Values a freshly initialized instance package starts from.
+	// Optional; MAY be non-concrete. Not checked against #config here.
+	// See SPEC.md § 3.2.
+	initValues?: _
+
 	// WHY open and projected: open so future enhancements can add `platform`
 	// / `environment` siblings without breaking module bodies. Components are
 	// the single source of truth for their own identity; #ctx.components only

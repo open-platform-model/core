@@ -87,7 +87,7 @@ Matching identity flows upward, categorisation does not. When a Resource, Trait 
 
 A **Module** is the top-level application definition. It groups Components and a config schema (`#config`) into a portable, versionable unit that a Module Author publishes.
 
-Modules enforce a clear separation between the configuration **contract** (`#config` — the constraints consumers must satisfy) and concrete values supplied at deploy time by [`#ModuleInstance`](#moduleinstance). The `debugValues` field carries optional, in-module example values used by build/validation tooling.
+Modules enforce a clear separation between the configuration **contract** (`#config` — the constraints consumers must satisfy) and concrete values supplied at deploy time by [`#ModuleInstance`](#moduleinstance). The `debugValues` field carries optional, in-module example values used by build/validation tooling. The optional `initValues` field carries the values a freshly initialized instance package starts from: `opm instance init` reads it first and falls back to `debugValues` when it is absent. `initValues` may be non-concrete (a default, or an undefaulted disjunction the deployer must pick from) and is not checked against `#config` by the schema.
 
 #### What Module Infers
 
@@ -122,13 +122,16 @@ Modules enforce a clear separation between the configuration **contract** (`#con
 
     // Bundled example values used by build/validation tooling.
     debugValues: _
+
+    // Optional starting values for `opm instance init`; falls back to debugValues.
+    initValues?: _
 }
 ```
 
 #### Key Relationships
 
 ```text
-Module Author ──defines──▶ Module (#components, #config, debugValues)
+Module Author ──defines──▶ Module (#components, #config, debugValues, initValues)
 End-user ──deploys──▶ ModuleInstance (concrete values into #config)
 ```
 

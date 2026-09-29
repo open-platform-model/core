@@ -55,7 +55,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### `debugValues` are not defaults
 
-<!-- Readers take `debugValues` for a values.yaml of defaults. It is example data that `opm module vet`, `opm module build` and `opm module apply` use when no `-f` file is given; an instance file never reads it, and the kernel never falls back to it. Defaults are `*` values inside `#config`. Check against: core/src/module.cue (`debugValues`), library/opm/module/module.go, library/opm/kernel/synth.go, cli/internal/cmd/module/vet.go, cli/internal/workflow/render/module.go -->
+<!-- Readers take `debugValues` for a values.yaml of defaults. It is example data that `opm module vet`, `opm module build` and `opm module apply` use when no `-f` file is given; an instance file never reads it, and the kernel never falls back to it. Defaults are `*` values inside `#config`. Nor is `debugValues` a new instance's starting point when the module sets `initValues`: `opm instance init` reads `initValues` first and falls back to `debugValues` only when it is absent. Verify `opm instance init` has shipped in cli before keeping that sentence. Check against: core/SPEC.md §3.2 Constraints (`initValues`), core/src/module.cue (`debugValues`, `initValues`), library/opm/module/module.go, library/opm/kernel/synth.go, cli/internal/cmd/module/vet.go, cli/internal/workflow/render/module.go -->
 
 ### The `ModuleInstance` resource is a record, not the thing that renders
 
