@@ -95,6 +95,13 @@ _pinInitInstance: #ModuleInstance & {
 
 _pinInitSameInstanceUUID: _pinInitInstancePlain.metadata.uuid & _pinInitInstance.metadata.uuid
 
+// Beyond the uuid, the instance's derived metadata does not move either: the
+// same fqn and the same labels, owner label included. Unifying the two label
+// maps catches a changed value; the length check catches an added key.
+_pinInitSameInstanceFQN:         _pinInitInstancePlain.metadata.fqn & _pinInitInstance.metadata.fqn
+_pinInitSameInstanceLabels:      _pinInitInstancePlain.metadata.labels & _pinInitInstance.metadata.labels
+_pinInitSameInstanceLabelsCount: len(_pinInitInstancePlain.metadata.labels) & len(_pinInitInstance.metadata.labels)
+
 // ─── MUST-FAIL: #Module stays closed ───────────────────────────────────────
 
 // A misspelled sibling is still refused. Measured 2026-09-29 with `task vet`:
