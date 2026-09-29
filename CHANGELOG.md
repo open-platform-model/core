@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-alpha.11](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.10...v2.0.0-alpha.11) (2026-09-29)
+
+
+### Features
+
+* **module:** add optional initValues to #Module ([#70](https://github.com/open-platform-model/core/issues/70)) ([d9d740b](https://github.com/open-platform-model/core/commit/d9d740ba0d68460753605f4eb1ce54e11390d3af))
+
 ## [2.0.0-alpha.10](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.9...v2.0.0-alpha.10) (2026-09-18)
 
 
