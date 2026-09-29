@@ -88,7 +88,7 @@ import (
 	// fulfilment: where this contract's implementation is expected to come from.
 	// "catalog" (the default) means the declaring catalog implements it;
 	// "provider" means it deliberately ships no transformer and a platform must
-	// carry exactly one transformer requiring this contract. See
+	// carry exactly one catalog whose transformers require this contract. See
 	// #Resource.fulfilment and SPEC.md § 2.2.
 	fulfilment: *"catalog" | "provider"
 
