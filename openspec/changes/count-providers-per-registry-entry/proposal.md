@@ -16,7 +16,7 @@ This corrects the delivery of `0015:D2` (one provider per contract, refused nami
 - **`unfulfilled` is recounted** against `providedBy`: a defined provider-fulfilled resource or trait with no `providedBy` key. A contract no enabled catalog defines is never unfulfilled. The result is unchanged on every platform core pins today.
 - **Fulfilment is read from the transformer's own requirement**, never from the defining catalog's member, so counting no longer depends on whether an enabled entry defines the contract.
 - `definedBy`, `requiredBy`, `comparable`, `fulfilled` and `discriminated` are unchanged in shape and value. The hidden `_providers` field is replaced by hidden `_providerSet` plus the exported `providedBy`.
-- `SPEC.md` §2.1 (the `fulfilment` constraint) and §3.4 (`#Platform` rationale and `#ContractInventory` shape, constraints and rationale) drop the documented divergence and state the one count. `docs/site/concepts/platforms-and-catalogs.md` follows.
+- `SPEC.md` §2.1 (the `fulfilment` constraint) and §3.4 (`#Platform` rationale and `#ContractInventory` shape, constraints and rationale) drop the documented divergence and state the one count. `docs/site/concepts/platforms-and-catalogs.md` and `docs/site/concepts/how-matching-works.md` follow.
 - New pins in `src/platform_contracts_pins.cue` for both bug shapes (two majors; definer disabled; definer absent) and `providedBy` pins on the existing platforms, written first and red on today's core.
 
 ## Capabilities
