@@ -28,7 +28,7 @@ import (
 // As there, the filename must NOT begin with an underscore: CUE skips such
 // files, and every pin below would then vet clean by never running.
 
-// ─── Fixtures: five stand-in catalogs ───────────────────────────────────────
+// ─── Fixtures: six stand-in catalogs ────────────────────────────────────────
 //
 // Shapes copied from catalog_opm and the provider design (0015 02-design.md);
 // `core` has no dependencies, so nothing is imported. Each member authors
@@ -40,7 +40,8 @@ import (
 // k8up catalogs, at majors v2 and v3, each ship one PreBackupPod adapter
 // requiring `backup` alone and list nothing: the provider-count bug shapes
 // (two majors of one provider; two providers with the definer disabled or
-// absent).
+// absent). A restic-shaped catalog ships one adapter naming `backup` only as
+// an optional demand: consumption that is not provision.
 
 _pinInventoryContainer: #Resource & {
 	metadata: {
@@ -208,7 +209,27 @@ _pinInventoryK8upV3BareCatalog: #Catalog & {
 	#transformers: (_pinInventoryK8upV3PreBackupPod.metadata.fqn): _pinInventoryK8upV3PreBackupPod
 }
 
-// ─── The eight platforms ────────────────────────────────────────────────────
+// An adapter that names `backup` ONLY under optionalTraits and requires
+// nothing, so it sits in no catalog-fulfilled bucket and `comparable` cannot
+// confound the readout.
+_pinInventoryResticOptional: #ComponentTransformer & {
+	metadata: {
+		name:        "optional-backup"
+		fqn:         "opmodel.dev/catalogs/restic/transformers/optional-backup@1.0.0"
+		description: "Pin fixture: an adapter consuming backup optionally"
+	}
+	optionalTraits: (_pinInventoryBackup.metadata.fqn): _pinInventoryBackup
+}
+
+_pinInventoryResticCatalog: #Catalog & {
+	metadata: {
+		modulePath: "opmodel.dev/catalogs/restic@v1"
+		version:    "1.0.0"
+	}
+	#transformers: (_pinInventoryResticOptional.metadata.fqn): _pinInventoryResticOptional
+}
+
+// ─── The nine platforms ─────────────────────────────────────────────────────
 
 _pinInventoryEmpty: #Platform & {
 	metadata: name: "empty"
@@ -284,6 +305,17 @@ _pinInventoryDefinerAbsent: #Platform & {
 	#registry: {
 		(_pinInventoryK8upV2BareCatalog.metadata.modulePath): #catalog: _pinInventoryK8upV2BareCatalog
 		(_pinInventoryVeleroCatalog.metadata.modulePath): #catalog:     _pinInventoryVeleroCatalog
+	}
+}
+
+// The defining catalog beside an entry whose only adapter names `backup` as
+// an optional demand.
+_pinInventoryOptionalOnly: #Platform & {
+	metadata: name: "optional-only"
+	type: "kubernetes"
+	#registry: {
+		(_pinInventoryBaseCatalog.metadata.modulePath): #catalog:   _pinInventoryBaseCatalog
+		(_pinInventoryResticCatalog.metadata.modulePath): #catalog: _pinInventoryResticCatalog
 	}
 }
 
@@ -428,6 +460,18 @@ _pinInventoryDefinerAbsentReadout: "defined=0 unfulfilled=[] overSubscribed=[opm
 
 _pinInventoryDefinerAbsentProvidedBy: "\(len(_pinInventoryDefinerAbsent.#contracts.providedBy))|\(strings.Join(_pinInventoryDefinerAbsent.#contracts.providedBy["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"], ","))"
 _pinInventoryDefinerAbsentProvidedBy: "1|opmodel.dev/catalogs/k8up@v2,opmodel.dev/catalogs/velero@v1"
+
+// ─── Optional demands do not count as provision ─────────────────────────────
+//
+// The restic entry's adapter names `backup` only under optionalTraits, so it
+// is not a provider: providedBy has no `backup` key and the readout is base
+// only's, `backup` unfulfilled and the platform still routable.
+
+_pinInventoryOptionalOnlyReadout: (_pinInventoryReadout & {#in: _pinInventoryOptionalOnly.#contracts}).out
+_pinInventoryOptionalOnlyReadout: "defined=4 unfulfilled=[opmodel.dev/catalogs/opm/traits/backup@v1alpha1] overSubscribed=[] fulfilled=false routable=true comparable=0 discriminated=true"
+
+_pinInventoryOptionalOnlyProvidedBy: "\(len(_pinInventoryOptionalOnly.#contracts.providedBy))|\(_pinInventoryOptionalOnly.#contracts.providedBy["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"] == _|_)"
+_pinInventoryOptionalOnlyProvidedBy: "0|true"
 
 // ─── The presence guards ────────────────────────────────────────────────────
 //
