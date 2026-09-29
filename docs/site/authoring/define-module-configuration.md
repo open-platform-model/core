@@ -51,6 +51,11 @@ Check against: opm/docs/site/authoring/your-first-module.md, core/src/module.cue
    <!-- A concrete value for every `#config` field, optional ones included, so `opm module vet` and `opm module build` exercise every branch. `debugValues` is used only when no `-f` file is given; a `-f` file replaces it rather than layering on it.
    Check against: core/src/module.cue (debugValues), modules/DESIGN_PATTERNS.md section 11, cli/internal/workflow/render/values.go (ResolveModuleValues, DebugValuesSource) -->
 
+7. Optionally, write `initValues`.
+
+   <!-- The values a new deployment starts from: `opm instance init` writes them into the generated `values.cue`, and uses `debugValues` only when `initValues` is absent. Keep test-only content (throwaway hostnames, debug log levels, dummy credentials) in `debugValues`. `initValues` may be non-concrete: a default renders as its value, an undefaulted disjunction renders as a choice the deployer must make, an optional field is left out. The schema does not check it against `#config`; `opm instance vet` on the generated package does. Verify `opm instance init` has shipped in cli before writing this step.
+   Check against: core/src/module.cue (initValues), core/SPEC.md section 3.2 (Constraints, Rationale) -->
+
 ## Check that it worked
 
 <!-- Command: `opm module vet` in the module directory.
