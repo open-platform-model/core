@@ -2,9 +2,9 @@
 
 This document describes how `opmodel.dev/core` is published to its OCI registry: the stable release flow (already in place) and the branch-build flow (to be implemented). The focus is the *strategy* — tag format, determinism guarantees, and how consumers resolve them. Implementation (Taskfile, CI) follows once this is agreed.
 
-> **Note (enhancement 0010).** The module advanced to `opmodel.dev/core@v2` and now ships its main channel as `v2.0.0-alpha.N` prereleases (release-please `prerelease` mode). The `@v1` line is retired at `v1.1.0-alpha.1`, and the earlier `@v0.x` import paths and the stable-`vX.Y.Z`-vs-branch-`-dev` framing in the worked examples below **predate both cutovers** — they are retained to illustrate the resolution *mechanics*; the concrete version strings are stale. How branch `-dev` tags coexist with `-alpha` release tags once `MAJOR ≥ 1` is resolved in [Pre-stable: why branch builds carry a leading `0`](#pre-stable-why-branch-builds-carry-a-leading-0).
+> **Note (enhancement 0010).** The module advanced to `opmodel.dev/core@v2` and now ships its main channel as `v2.0.0-beta.N` prereleases (release-please `prerelease` mode; beta since `v2.0.0-beta.1`, alpha before). The `@v1` line lives on, stable at `v1.1.0`, and the earlier `@v0.x` import paths and the stable-`vX.Y.Z`-vs-branch-`-dev` framing in the worked examples below **predate both cutovers** — they are retained to illustrate the resolution *mechanics*; the concrete version strings are stale. How branch `-dev` tags coexist with prerelease tags once `MAJOR ≥ 1` is resolved in [Why branch builds carry a leading `0`](#why-branch-builds-carry-a-leading-0).
 >
-> **A major bump is an import rewrite, not a dep bump.** `@v1` and `@v2` are distinct modules to CUE and to the registry: they resolve independently, both remain resolvable forever, and a consumer moves by editing its `import` statements as well as its `deps`. That asymmetry is the whole cost of crossing a major, and it is why the alpha line exists to absorb breaks that do not need one.
+> **A major bump is an import rewrite, not a dep bump.** `@v1` and `@v2` are distinct modules to CUE and to the registry: they resolve independently, both remain resolvable forever, and a consumer moves by editing its `import` statements as well as its `deps`. That asymmetry is the whole cost of crossing a major, and it is why the prerelease line absorbs breaks instead: from its first beta a break advances `-beta.N` and never moves the module path, and a major is crossed only after GA.
 
 ## Goal
 
@@ -50,7 +50,7 @@ The `g` prefix on the SHA mirrors `git describe`. It exists for one reason: a 7-
 
 | Segment | Could we drop it? | Consequence |
 | --- | --- | --- |
-| `dev` | no | label distinguishes branch builds from any future `rc`/`beta` pre-release schemes |
+| `dev` | no | label distinguishes branch builds from the alpha, beta or rc release channels |
 | `<commit_ct>` | no | sole source of order; without it `@v<MAJOR>.<NEXT_MINOR>` would resolve to an arbitrary tag |
 | `g<short_sha>` | no | guarantees one tag per commit. Two commits can share `%ct` (same-second on different branches, or after `git commit --amend`) — without the SHA the second publish would clash with the first |
 | branch slug | **dropped** | would only enable registry-side filtering by branch (`crane ls \| grep …`). Same information is available from Git for any commit identified by SHA, and the tag should be artifact identity, not branch metadata |
@@ -63,20 +63,20 @@ The invariant: **a branch build must never be the version a query selects**, und
 
 It is tempting to lean on Go/CUE's rule that `@vN` ignores prereleases when a stable version exists, and let branch builds preview the next minor. Two things defeat that:
 
-1. **A major can live for a long time with no stable release.** `@v1` ships only `v1.0.0-alpha.N` today, so there is nothing for `@v1` to prefer and it must take the highest prerelease. `v1.0.0-dev.*` beats every `v1.0.0-alpha.N`, because prerelease identifiers compare lexically and `alpha` < `dev`. Moving the branch build to the next minor is *strictly worse*: `v1.1.0-dev.*` beats `v1.0.0-alpha.3` on the base version alone, before prerelease identifiers are consulted at all.
+1. **A major can live for a long time with no stable release.** `@v2` has only prereleases today (alpha and beta), so there is nothing for `@v2` to prefer and it must take the highest prerelease. `v2.0.0-dev.*` would beat every `v2.0.0-beta.N`, because prerelease identifiers compare lexically and `beta` < `dev`. Moving the branch build to the next minor is *strictly worse*: `v2.1.0-dev.*` beats `v2.0.0-beta.3` on the base version alone, before prerelease identifiers are consulted at all.
 2. ~~**Range subscriptions deliberately admit prereleases.**~~ **Retired in `v2.0.0-alpha.3`** — a `#Platform` subscription now names one build as a scalar `version` and resolves nothing, so no query of that kind can select a branch build by accident. It is kept here struck through rather than deleted because it was a load-bearing half of the original argument: while platform filters were ranges that admitted prereleases, a next-minor branch build won any range whose top minor had no release of its own. The conclusion below stands on point 1 alone, and stands unchanged.
 
 So the branch build shares the base version of the highest existing release and is ranked below it there. SemVer 2.0 §11.4.3 is the lever: *a numeric identifier always has lower precedence than an alphanumeric one at the same position*. Leading the prerelease with `0` puts every branch build under every named channel on that base:
 
 ```text
-v1.0.0-0.dev.1785961206.g6b10e87  <  v1.0.0-alpha.1  <  v1.0.0
+v2.0.0-0.dev.1785961206.g6b10e87  <  v2.0.0-alpha.1  <  v2.0.0-beta.1  <  v2.0.0
 ```
 
 One rule, every phase, every query kind. `0` is a valid numeric identifier — the SemVer prohibition is on *leading* zeroes (`01`), which the registry rejects outright (see the validation table).
 
 A branch build may still outrank an *older* release on a lower base — `v1.1.0-0.dev.*` is above `v1.0.0`. That is expected and harmless: resolution selects the maximum, and the maximum is always the newest release (`v1.1.0-alpha`), never the branch build.
 
-The cost is that "track latest dev" has no range-based form: `@v1.0` resolves to the newest alpha, since branch builds now sort below it. Pinning an exact `-0.dev.` tag is the only way to follow a branch. That is the intended trade — an unreleased build should be opted into explicitly, never inherited by someone who wrote `@v1`.
+The cost is that "track latest dev" has no range-based form: `@v2.0` resolves to the newest prerelease, since branch builds now sort below it. Pinning an exact `-0.dev.` tag is the only way to follow a branch. That is the intended trade — an unreleased build should be opted into explicitly, never inherited by someone who wrote `@v2`.
 
 ## Determinism: local publish == CI publish
 
@@ -103,7 +103,7 @@ The base version is the one piece sourced outside the commit — it is read from
 
 ## Consumer resolution
 
-CUE's resolver (`cue mod get`, `cue mod tidy`) follows Go-module semantics: pre-release tags are excluded from `@latest` and major-only queries, but **included** when a query specifies the same `MAJOR.MINOR`.
+CUE's resolver (`cue mod get`, `cue mod tidy`) follows Go-module semantics: pre-release tags are excluded from `@latest` and major-only queries only when that major has a stable release, and are **included** when a query specifies the same `MAJOR.MINOR`. A major with no stable release resolves to its highest prerelease: `@v2` today selects the newest `v2.0.0` prerelease (verified on cue v0.17.1 on 2026-09-30: `cue mod get opmodel.dev/core@v2` pinned the newest `v2` prerelease while `@latest` picked `v1.1.0`). The table below shows the stable case.
 
 Verified against CUE 0.16.1:
 
@@ -121,7 +121,7 @@ So two pin styles are blessed by this strategy:
 
 ```cue
 // Track the release channel
-deps: "opmodel.dev/core@v2": v: "v2.0.0-alpha.1"
+deps: "opmodel.dev/core@v2": v: "v2.0.0-beta.1"
 
 // Follow a specific branch build — exact pin only, by design
 deps: "opmodel.dev/core@v2": v: "v2.0.0-0.dev.1785961206.g6b10e87"
