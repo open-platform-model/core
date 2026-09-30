@@ -7,11 +7,11 @@ The owner decided on 2026-09-30 to move every prerelease line in OPM from alpha 
 - `release-please-config.json`: `prerelease-type` goes from `alpha` to `beta`, so every release after the first continues `2.0.0-beta.N`. No `release-as` key is added; the manifest is not hand-edited.
 - The first beta is forced by a one-shot `Release-As: 2.0.0-beta.1` footer in the final squash commit message of this change's single PR (squash type `chore(release)`). The release PR it opens, `chore(main): release 2.0.0-beta.1`, carries the same schema bytes as `v2.0.0-alpha.13`.
 - `openspec/specs/schema-release/spec.md`: the prerelease requirements become type-agnostic (the current type is `beta`), state the beta promise, and state that a line's first prerelease is forced by a `Release-As:` footer in the final commit message. The historical partial-tag requirement is left alone.
-- The canonical beta promise replaces the alpha wording in `openspec/config.yaml` (Principle IV, the commit conventions, the proposal rule), `AGENTS.md` (branch table, the prerelease rule, the commit table), `README.md`, `docs/publishing.md` (including the false claim that prereleases are always excluded from `@latest`), and the promise text in `docs/site/concepts/versions.md`.
-- Comments that name the alpha line as current: `Taskfile.yml` publish example, `src/cue.mod/module.cue`, `.tasks/branch-tag.sh`, `.github/workflows/release.yml`. Comment-only; no logic reads the prerelease label.
+- The canonical beta promise replaces the alpha wording in `openspec/config.yaml` (Principle IV, the commit conventions, the proposal rule), `AGENTS.md` (branch table, the prerelease rule, the module-root paragraph, the commit table), `README.md`, `docs/publishing.md` (including the false claim that prereleases are always excluded from `@latest`), and the promise text in `docs/site/concepts/versions.md`. The sentences that say "a breaking schema revision bumps the module major" are rescoped to after GA, since during beta a break never moves the module path.
+- Comments that name the alpha line as current: `Taskfile.yml` publish example, `.tasks/branch-tag.sh`, `.github/workflows/release.yml`. Comment-only; no logic reads the prerelease label. The README and Taskfile publish examples use the placeholder `vX.Y.Z`, never a real upcoming version. Nothing under `src/` changes.
 - `CHANGELOG.md` and `openspec/changes/archive/**` are historical records and stay as they are.
 
-This is not a schema change. The published CUE is byte-identical before and after, so under Principle I it is neither MAJOR, MINOR nor PATCH in content; the version moves from `2.0.0-alpha.13` to `2.0.0-beta.1` by the forced footer alone. It relies on `@v2` still being a prerelease line (Principle IV) and redefines what that line promises: from beta.1 on, a break advances `-beta.N` and never moves the module path by itself.
+This is not a schema change. The published CUE is byte-identical before and after, so under Principle I it is neither MAJOR, MINOR nor PATCH in content; the version moves from `2.0.0-alpha.13` to `2.0.0-beta.1` by the forced footer alone. It relies on `@v2` still being a prerelease line (Principle IV) and redefines what that line promises: from beta.1 on, a break advances `-beta.N` and never moves the module path, and the line crosses no major before GA.
 
 ## Capabilities
 
@@ -21,7 +21,7 @@ None.
 
 ### Modified Capabilities
 
-- `schema-release`: the CI-only publication scenario and the pre-stable break requirement stop naming `alpha`, carry the beta promise and the owner sign-off rule for breaks that would force a `catalogs/opm` major, and a new requirement states how a line changes prerelease type or goes GA (forced by a `Release-As:` footer in the final commit message; a config flip alone cuts nothing).
+- `schema-release`: the CI-only publication scenario stops naming `alpha`. The pre-stable break requirement is renamed to "A break on a prerelease line advances the prerelease, and only a stable line crosses a major": it carries the beta promise, forbids a major crossing before GA (the crossing mechanics stay, scoped to a stable line), and adds the owner sign-off rule for breaks that would force a `catalogs/opm` major. A new requirement states how a line changes prerelease type (forced by a `Release-As:` footer in the final commit message; a config flip alone cuts nothing) and goes GA (`prerelease: false` plus a visible carrier commit).
 
 ## Impact
 

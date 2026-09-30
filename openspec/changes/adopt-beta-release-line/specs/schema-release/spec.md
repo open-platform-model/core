@@ -1,3 +1,8 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: A pre-stable break defaults to advancing the prerelease, and crossing a major is a separate decision`
+- TO: `### Requirement: A break on a prerelease line advances the prerelease, and only a stable line crosses a major`
+
 ## MODIFIED Requirements
 
 ### Requirement: The schema is published only by CI, from a reviewed release
@@ -16,30 +21,35 @@ A published version is immutable. A tag CI did not build is a tag nobody reviewe
 - **WHEN** the `publish-cue` job fails
 - **THEN** the failure is fixed and the job re-run, and no local `cue mod publish` is issued against the registry
 
-### Requirement: A pre-stable break defaults to advancing the prerelease, and crossing a major is a separate decision
+### Requirement: A break on a prerelease line advances the prerelease, and only a stable line crosses a major
 
 A major line with no stable `vX.0.0` release is a prerelease line. Its prerelease type is the `prerelease-type` in `release-please-config.json`; `opmodel.dev/core@v2` is on type `beta`. The rules below write the type as `<type>` because they hold for whichever type the line carries.
 
-From its first beta, a prerelease line is on the path to GA. A breaking schema change on it MUST land as a `feat!:` commit whose `BREAKING CHANGE:` footer is the migration note the CHANGELOG shows. It advances the prerelease counter, from `vX.0.0-<type>.N` to `vX.0.0-<type>.N+1`, and it MUST NOT move the module path to a new major by itself. While the line is a prerelease, every releasable commit (`fix:`, `feat:`, `feat!:`) advances the counter; minor and patch bumps apply only once the line is stable.
+From its first beta, a prerelease line is on the path to GA. A breaking schema change of any kind MUST land on it as a `feat!:` commit whose `BREAKING CHANGE:` footer is the migration note the CHANGELOG shows. It advances the prerelease counter, from `vX.0.0-<type>.N` to `vX.0.0-<type>.N+1`, and it MUST NOT move the module path to a new major. The line MUST NOT cross a major before GA: a change on it MUST NOT edit `src/cue.mod/module.cue`'s `module:` line or carry a `Release-As:` footer naming a new major. While the line is a prerelease, every releasable commit (`fix:`, `feat:`, `feat!:`) advances the counter; minor and patch bumps apply only once the line is stable.
 
 The stable lines built on core keep the normal SemVer rule, where a break is a new major: `opmodel.dev/catalogs/opm` and the module fleets. A core break that would force a `catalogs/opm` major MUST NOT land without owner sign-off, and its proposal MUST record that sign-off.
 
-Crossing a major is never implied by a break. It is a deliberate, separately decided act, and a proposal that takes it MUST state it and why. The case for it is a break a consumer cannot absorb by re-reading the same import path: when the meaning of an existing field changes, when values every published artifact declares are refused, or when a derived identity consumers store moves. Crossing changes every consumer's retarget from a dependency bump into an import rewrite. It requires two edits in the **same** commit on `main`: `src/cue.mod/module.cue`'s `module:` line, and a `Release-As: X.0.0-<type>.1` footer in that commit's final message forcing the new line's first prerelease — `versioning: prerelease` advances the prerelease counter within a major and never crosses one on its own. `cue mod publish` refuses a tag whose major disagrees with the declared module path, so the two cannot land apart.
+Crossing a major is a stable-line act, taken only after GA. It is never implied by a break; it is a deliberate, separately decided act, and a proposal that takes it MUST state it and why. The case for it is a break a consumer cannot absorb by re-reading the same import path: when the meaning of an existing field changes, when values every published artifact declares are refused, or when a derived identity consumers store moves. Crossing changes every consumer's retarget from a dependency bump into an import rewrite. It requires two edits in the **same** commit on `main`: `src/cue.mod/module.cue`'s `module:` line, and a `Release-As:` footer in that commit's final message forcing the new major's first version (`X.0.0-<type>.1` when the new major opens as a prerelease line) — `versioning: prerelease` advances the prerelease counter within a major and never crosses one on its own. `cue mod publish` refuses a tag whose major disagrees with the declared module path, so the two cannot land apart.
 
 #### Scenario: An absorbable break advances the prerelease counter
 
-- **WHEN** a `feat!:` commit whose `BREAKING CHANGE:` footer carries the migration note reshapes published definitions, no stable `vX.0.0` exists, and consumers can absorb the break by re-reading the same import path
-- **THEN** the release is `vX.0.0-<type>.N+1` (for example `v2.0.0-beta.2` after `v2.0.0-beta.1`), the module path is unmoved, the CHANGELOG shows the migration note, and consumers retarget by a dependency bump
+- **WHEN** a `feat!:` commit whose `BREAKING CHANGE:` footer carries the migration note reshapes published definitions and no stable `vX.0.0` exists
+- **THEN** the release is `vX.0.0-<type>.N+1` (for example `v2.0.0-beta.2` after `v2.0.0-beta.1`), the module path is unmoved, the CHANGELOG shows the migration note, and consumers retarget by a dependency bump, because on a prerelease line the migration note is how every break is absorbed
 
 #### Scenario: An unabsorbable break bumps the module major
 
-- **WHEN** a change redefines what an existing field means, refuses values every published artifact declares, or moves a derived identity consumers store, and its proposal records the separate decision to cross a major
-- **THEN** the module path moves to the next major, the version is forced to `X.0.0-<type>.1` by a `Release-As:` footer in the final commit message, and the proposal states the import-rewrite cost
+- **WHEN** on a stable line (after GA) a change redefines what an existing field means, refuses values every published artifact declares, or moves a derived identity consumers store, and its proposal records the separate decision to cross a major
+- **THEN** the module path moves to the next major, the version is forced to the new major's first version by a `Release-As:` footer in the final message of the same commit, and the proposal states the import-rewrite cost
 
-#### Scenario: A break does not move the module path by itself
+#### Scenario: A break during beta does not move the module path
 
-- **WHEN** a `feat!:` commit lands on the prerelease line and no proposal records a decision to cross a major
+- **WHEN** a `feat!:` commit lands on the prerelease line, whatever kind of break it carries
 - **THEN** the `module:` line is unchanged, the release is the next `-<type>.N` on the same major, and no `Release-As:` footer is written
+
+#### Scenario: A module line change during beta is refused
+
+- **WHEN** a change on a prerelease line edits the `module:` line in `src/cue.mod/module.cue`, or carries a `Release-As:` footer naming a new major
+- **THEN** it is not merged; the break lands instead as a `feat!:` commit with a migration note on the same major, and a major crossing waits for GA
 
 #### Scenario: A break without a migration note is refused in review
 
@@ -63,13 +73,13 @@ Crossing a major is never implied by a break. It is a deliberate, separately dec
 
 ## ADDED Requirements
 
-### Requirement: A line changes prerelease type or goes stable only through a forced carrier commit
+### Requirement: A line changes prerelease type through a forced carrier commit and goes stable through a visible one
 
 Changing `prerelease-type` in `release-please-config.json` MUST land together with a `Release-As:` footer that names the line's first prerelease of the new type (`X.0.0-<type>.1`, for example `2.0.0-beta.1`), written in the final footer block of the commit message that lands on `main`. release-please keeps the existing label when only the type changes, and a change made of hidden-type commits alone opens no release PR. A footer on an inner commit of a squashed PR does not count; only the squash commit's own message is read.
 
 The forced version MUST NOT be written as a `release-as` key in `release-please-config.json`, which stays in force for every later release, and `.release-please-manifest.json` MUST NOT be edited by hand. The release PR the footer opens MUST be read before it is merged, and merged only when its title names the forced version.
 
-GA drops the suffix the same way: `prerelease: false` in `release-please-config.json` plus a visible carrier commit on `main`, either a releasable type or a `Release-As: X.0.0` footer.
+GA drops the suffix: `prerelease: false` in `release-please-config.json` plus a visible carrier commit on `main`, either a releasable type or a `Release-As: X.0.0` footer. No force is needed for GA: with `prerelease: false`, any releasable commit proposes `X.0.0`.
 
 #### Scenario: A type flip with a forced first version cuts the first beta
 
@@ -83,5 +93,5 @@ GA drops the suffix the same way: `prerelease: false` in `release-please-config.
 
 #### Scenario: GA drops the suffix
 
-- **WHEN** `prerelease` is set to `false` and a visible carrier commit lands on `main`
+- **WHEN** `prerelease` is set to `false` and a visible carrier commit (a releasable type, or a `Release-As: X.0.0` footer) lands on `main`
 - **THEN** release-please proposes `X.0.0` with no prerelease suffix, and from then on a break is a new major
