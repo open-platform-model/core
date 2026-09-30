@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-alpha.13](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.12...v2.0.0-alpha.13) (2026-09-30)
+
+
+### Features
+
+* **platform:** fold only single-definer contract keys and report collisions ([#80](https://github.com/open-platform-model/core/issues/80)) ([9c846b7](https://github.com/open-platform-model/core/commit/9c846b76856b9c724383792c6ee9195e5d95c3c0))
+
 ## [2.0.0-alpha.12](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.11...v2.0.0-alpha.12) (2026-09-29)
 
 
