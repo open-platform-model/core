@@ -495,6 +495,10 @@ _pinInventoryBaseOnlyRequiredBy: "opmodel.dev/catalogs/opm/transformers/deployme
 _pinInventoryBaseOnlyProvidedBy: "\(len(_pinInventoryBaseOnly.#contracts.providedBy))"
 _pinInventoryBaseOnlyProvidedBy: "0"
 
+// One major: every key has a single definer, so nothing collides.
+_pinInventoryBaseOnlyCollisions: (_pinInventoryCollisionReadout & {#in: _pinInventoryBaseOnly.#contracts}).out
+_pinInventoryBaseOnlyCollisions: "collisions=[] collidingEntries=[] entries=0 routable=true"
+
 // ─── One provider: k8up's two adapters count as ONE registry entry ─────────
 //
 // Five members (k8up lists `retention`); `backup` is required by both k8up
@@ -723,8 +727,10 @@ _pinInventoryCollideOverSubscribedProvidedBy: "opmodel.dev/catalogs/k8up@v2,opmo
 _pinInventoryCollideThreeMajorsCollisions: (_pinInventoryCollisionReadout & {#in: _pinInventoryCollideThreeMajors.#contracts}).out
 _pinInventoryCollideThreeMajorsCollisions: "collisions=[opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1,opmodel.dev/catalogs/opm/resources/container@v1beta1,opmodel.dev/catalogs/opm/traits/backup@v1alpha1,opmodel.dev/catalogs/opm/traits/scaling@v1beta1] collidingEntries=[opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1=opmodel.dev/catalogs/opm@v1+opmodel.dev/catalogs/opm@v2;opmodel.dev/catalogs/opm/resources/container@v1beta1=opmodel.dev/catalogs/opm@v1+opmodel.dev/catalogs/opm@v2+opmodel.dev/catalogs/opm@v3;opmodel.dev/catalogs/opm/traits/backup@v1alpha1=opmodel.dev/catalogs/opm@v1+opmodel.dev/catalogs/opm@v2+opmodel.dev/catalogs/opm@v3;opmodel.dev/catalogs/opm/traits/scaling@v1beta1=opmodel.dev/catalogs/opm@v1+opmodel.dev/catalogs/opm@v2] entries=4 routable=false"
 
-_pinInventoryCollideThreeMajorsDefinedBy: "\(_pinInventoryCollideThreeMajors.#contracts.definedBy["opmodel.dev/catalogs/opm/resources/volume@v1beta1"])|\(len(_pinInventoryCollideThreeMajors.#composedTransformers))"
-_pinInventoryCollideThreeMajorsDefinedBy: "opmodel.dev/catalogs/opm@v2|3"
+// `volume` is the only single-definer key, so defined and definedBy hold it
+// alone.
+_pinInventoryCollideThreeMajorsDefinedBy: "\(_pinInventoryCollideThreeMajors.#contracts.definedBy["opmodel.dev/catalogs/opm/resources/volume@v1beta1"])|\(len(_pinInventoryCollideThreeMajors.#contracts.defined))|\(len(_pinInventoryCollideThreeMajors.#contracts.definedBy))|\(len(_pinInventoryCollideThreeMajors.#composedTransformers))"
+_pinInventoryCollideThreeMajorsDefinedBy: "opmodel.dev/catalogs/opm@v2|1|1|3"
 
 // ─── Fixtures: the comparability report (0015:D5, OQ9) ──────────────────────
 //

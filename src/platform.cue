@@ -195,9 +195,12 @@ import (
 	// assertion inside #Platform is a bottom on the first over-subscribed
 	// contract, so the value cannot name it and every diagnostic reads a
 	// failed value. `routable: false` is the value the generation step
-	// (operator, CLI) refuses on, naming `overSubscribed` and `definedBy`;
-	// `fulfilled: false` is surfaced as a non-gating condition and gates
-	// nothing, which an in-schema assertion could not express.
+	// (operator, CLI) refuses on. Under 0015:D18 the refusal named
+	// `overSubscribed` and `definedBy`; since 0026:OQ17 it names
+	// `overSubscribed` or `collisions` (with `collidingEntries`), whichever
+	// made the platform not routable. `fulfilled: false` is surfaced as a
+	// non-gating condition and gates nothing, which an in-schema assertion
+	// could not express.
 	//
 	// WHY over-subscription counts registry entries, not transformers: one
 	// provider catalog may carry two adapters over one contract (k8up's
