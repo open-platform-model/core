@@ -131,9 +131,10 @@ import (
 	//                and the default, so nothing opts in by accident.
 	//   "provider" — the declaring catalog ships NO transformer for it,
 	//                deliberately, and a platform must carry EXACTLY ONE
-	//                catalog whose transformers require this contract. Two
-	//                are refused by the render build naming both catalog
-	//                paths and the contract key; zero is an unresolved
+	//                registry entry (path with major) whose transformers
+	//                require this contract. Two are refused by the render
+	//                build naming both registry keys and the contract key;
+	//                zero is an unresolved
 	//                demand and fails the render.
 	//
 	// A declaration, not an enforcement: `core` cannot refuse on a count
@@ -158,8 +159,9 @@ import (
 	// fulfilment: where this contract's implementation is expected to come from.
 	// "catalog" (the default): the declaring catalog implements it. "provider":
 	// the catalog ships no transformer and a platform must carry EXACTLY ONE
-	// catalog whose transformers require this contract. A declaration the
-	// kernel counts against, not an enforcement. See SPEC.md § 2.1.
+	// registry entry (path with major) whose transformers require it. A
+	// declaration the kernel counts against, not an enforcement. See SPEC.md
+	// § 2.1.
 	fulfilment: *"catalog" | "provider"
 
 	// MUST be an OpenAPIv3 compatible schema
