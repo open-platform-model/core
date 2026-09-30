@@ -1,8 +1,9 @@
-## Purpose
+## RENAMED Requirements
 
-Defines how a `core` schema release is cut and published: CI-only publication from a reviewed release PR, why a break on a prerelease line advances the prerelease and only a stable line crosses a major, how a line changes prerelease type or goes GA, why a partial tag on the line is never a retarget target, and the coherence, example-evaluation and resolve-after-publish checks a cut MUST pass (change `core-alpha-release`, 2026-08).
+- FROM: `### Requirement: A pre-stable break defaults to advancing the prerelease, and crossing a major is a separate decision`
+- TO: `### Requirement: A break on a prerelease line advances the prerelease, and only a stable line crosses a major`
 
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: The schema is published only by CI, from a reviewed release
 
@@ -70,52 +71,7 @@ Crossing a major is a stable-line act, taken only after GA. It is never implied 
 - **WHEN** a consumer needs to reverse a retarget that crossed a major
 - **THEN** it restores the previous import path as well as the version pin, and the previous major stays resolvable indefinitely, because a published tag names fixed bytes permanently
 
-### Requirement: A partial tag on the line is not a retarget target
-
-A tag that carries only some of the changes a cut is defined to publish MUST NOT be retargeted to by any consumer. Publication makes a tag resolvable; it does not make it complete.
-
-`v2.0.0-alpha.1` is exactly this case: it was published by the major bump and carries `core-identity-shape` alone, without the contract keying, platform surface or identity package. A resolvable partial tag is more hazardous than no tag, because nothing in the registry distinguishes it from a complete one.
-
-#### Scenario: A consumer re-pins to a partial alpha
-
-- **WHEN** a consumer re-pins to an alpha published before every slice of the cut has landed
-- **THEN** it compiles against an incomplete schema, and the failure surfaces as missing constructs rather than as a version error
-
-### Requirement: The published schema is internally coherent before it is tagged
-
-Before a release is cut, `SPEC.md` MUST describe one schema: an invariant stated in more than one section MUST be stated identically, category claims MUST agree with the sections they classify, every cross-reference MUST resolve to a name that exists, and no section MUST describe behaviour a landed change replaced.
-
-Inventory checking is not coherence checking. `task spec:check` verifies that tracked constructs have sections and that sections name live constructs; it cannot detect two sections disagreeing.
-
-#### Scenario: A stale cross-reference blocks the cut
-
-- **WHEN** a `SPEC.md` section refers to a field renamed or deleted by a landed change
-- **THEN** the release is not cut until it is corrected, even though `task spec:check` passes
-
-#### Scenario: A design problem found during the pass is not resolved in the release
-
-- **WHEN** the coherence pass surfaces a design inconsistency rather than an editorial one
-- **THEN** it is raised as a new change, and the release waits
-
-### Requirement: Every worked example evaluates against the shipped schema
-
-Every illustrative shape in `SPEC.md`, in `docs/`, and in the authoring doc comments inside `src/*.cue` MUST be evaluated against the schema being published, not reviewed by reading.
-
-A stale example in a normative document is a false statement about a published contract, and the stale ones look correct.
-
-#### Scenario: An example carrying a superseded shape is caught
-
-- **WHEN** a `SPEC.md` example declares a module path in a form the current schema refuses
-- **THEN** evaluation fails and the example is corrected before the tag is cut
-
-### Requirement: The published artifact is verified to resolve
-
-After publication, the released version MUST be verified by resolving it from a tree that did not build it and evaluating a minimal artifact in the new shape.
-
-#### Scenario: A scratch consumer compiles against the new release
-
-- **WHEN** a fresh tree adds `opmodel.dev/core@v2` at the published version and evaluates a minimal `#Module`
-- **THEN** it resolves and evaluates, confirming the artifact is complete as published rather than only as built
+## ADDED Requirements
 
 ### Requirement: A line changes prerelease type through a forced carrier commit and goes stable through a visible one
 

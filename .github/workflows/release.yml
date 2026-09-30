@@ -85,7 +85,7 @@ jobs:
         working-directory: src
         run: |
           set -euo pipefail
-          # version output is X.Y.Z or X.Y.Z-alpha.N (no leading v).
+          # version output is X.Y.Z or X.Y.Z-<type>.N, e.g. 2.0.0-beta.1 (no leading v).
           VERSION="v${{ needs.release-please.outputs.version }}"
           echo "Publishing opmodel.dev/core@v2 at ${VERSION}"
           cue vet ./...
