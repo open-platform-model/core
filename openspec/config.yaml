@@ -139,8 +139,9 @@ context: |
   needs or hides a change consumers needed to see.
   - `feat:` (minor) — new construct, new field, additive schema surface.
   - `fix:` (patch) — wrong constraint, broken default, definition behaving wrong.
-  - `feat!:` / `BREAKING CHANGE:` (advances `-beta.N` on `@v2`; its `BREAKING CHANGE:` footer is
-    the migration note) — removing or renaming a definition, tightening a published constraint.
+  - `feat!:` / `feat(scope)!:` with a `BREAKING CHANGE:` footer (the migration note; advances
+    `-beta.N` on `@v2`) — removing or renaming a definition, tightening a published constraint. A
+    break typed `feat:` or `fix:` is refused.
   - While `@v2` is a prerelease, `feat:` and `fix:` also advance `-beta.N`; minor and patch apply
     from GA.
   - `refactor:`, `docs:`, `style:`, `chore:`, `test:`, `ci:`, `build:` — no release.
