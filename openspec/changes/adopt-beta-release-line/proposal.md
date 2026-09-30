@@ -28,7 +28,8 @@ None.
 - **library**: re-pins `DefaultSchemaModule` and its registry test pins to `opmodel.dev/core@v2` `v2.0.0-beta.1` in its own `adopt-beta-release-line` change, after G1. Until then its skew report names beta.1 as newer than the alpha.13 it carries (expected).
 - **catalog_opm**: `catalogs/k8s` and `catalogs/opm` bump their core pin to beta.1 after G1 (k8s cuts `1.0.0-beta.1`, opm stays stable at `4.4.4`).
 - **cli**, **opm-operator**: pick up core beta.1 through the library re-pin and their templates and samples; no direct action from this change.
-- **modules**, **opm-modules**: re-pin through the supervisor's `task deps:update` after the cli beta; they stay on stable per-module SemVer.
+- **modules**, **opm-modules**: take the core and catalog re-pin from the supervisor's post-G3 `task deps:update` patch and merge after G6 (the first cli release embedding the operator beta); they stay on stable per-module SemVer.
+- **opm-suite-installer**: consumes G1 (core beta on GHCR), G3 (the catalog releases) and G6 (the cli release it bundles); no direct action from this change.
 - Every consumer pinning an explicit `v2.0.0-alpha.N` keeps resolving it: published tags are immutable. A consumer resolving `opmodel.dev/core@v2` with no pin gets the highest prerelease, and `beta` sorts above `alpha`, so the move is monotonic.
 - Branch dev tags (`-0.dev.`) are unaffected: `.tasks/branch-tag.sh` reads only the base version of the highest tag.
 - Enhancement 0021 carries verbatim copies of the rule text changed here; the supervisor re-copies them after this merges (outside this repo). This change implements no enhancement decision, so it carries no `enhancement.yaml`.
