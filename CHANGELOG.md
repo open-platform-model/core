@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-beta.1](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.13...v2.0.0-beta.1) (2026-09-30)
+
+
+### Miscellaneous
+
+* **release:** adopt the beta release line ([#84](https://github.com/open-platform-model/core/issues/84)) ([eff1b1d](https://github.com/open-platform-model/core/commit/eff1b1d18246ab892edb2d5bde48163e07395037))
+
 ## [2.0.0-alpha.13](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.12...v2.0.0-alpha.13) (2026-09-30)
 
 
