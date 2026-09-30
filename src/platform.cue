@@ -54,18 +54,20 @@ import (
 
 // #ContractInventory: what a #Platform derives about the contracts its
 // enabled catalogs define and its enabled transformers require: the members
-// and their defining catalogs, the required demands per contract, the three
-// reports and the three booleans they imply. Lives on #Platform.#contracts,
-// derived and never authored; it reports and never refuses.
-// See SPEC.md § 3.4.
+// and their defining catalogs, the keys more than one catalog lists, the
+// required demands per contract, the reports and the three booleans they
+// imply. Lives on #Platform.#contracts, derived and never authored; it
+// reports and never refuses. See SPEC.md § 3.4.
 #ContractInventory: {
-	// Every contract every enabled entry's catalog lists, keyed by contract
-	// FQN and carrying the member value as the catalog lists it (the
-	// primitive itself, provenance stamped).
+	// Every contract exactly one enabled entry's catalog lists, keyed by
+	// contract FQN and carrying the member value as the catalog lists it
+	// (the primitive itself, provenance stamped). A key two enabled
+	// entries list is in collisions instead.
 	defined: [#ContractFQNType]: #Resource | #Trait | #Blueprint
 
-	// Contract FQN to the registry key (module path) of the catalog listing
-	// it: the value every diagnostic prints beside the contract.
+	// Contract FQN to the registry key (module path) of the one catalog
+	// listing it: the value every diagnostic prints beside the contract.
+	// Colliding keys are absent.
 	definedBy: [#ContractFQNType]: #ModulePathType
 
 	// WHY requiredBy counts required demands only: 0010:D32.
@@ -103,6 +105,16 @@ import (
 	// step and the render build refuse on.
 	overSubscribed: [...#ContractFQNType]
 
+	// Contract keys more than one enabled entry's catalog lists, sorted.
+	// Such a key is in none of defined, definedBy, requiredBy, unfulfilled
+	// or comparable, so fulfilled and discriminated can read true while it
+	// is listed; routable reads false. See SPEC.md § 3.4.
+	collisions: [...#ContractFQNType]
+
+	// Each collisions key to the sorted registry keys (path@vN) of the
+	// enabled entries listing it. Holds colliding keys only.
+	collidingEntries: [#ContractFQNType]: [...#ModulePathType]
+
 	// Pairs of enabled transformers whose match predicates are comparable
 	// over at least one shared catalog-fulfilled contract: `broader`
 	// matches every component `narrower` matches. Provider-fulfilled
@@ -116,9 +128,10 @@ import (
 	// True exactly when nothing is unfulfilled. A report, never a gate.
 	fulfilled: bool & (len(unfulfilled) == 0)
 
-	// True exactly when nothing is over-subscribed. The gate the generation
-	// step (operator, CLI) reads; `core` itself refuses nothing on it.
-	routable: bool & (len(overSubscribed) == 0)
+	// True exactly when nothing is over-subscribed and no contract key
+	// collides. The gate the generation step (operator, CLI) reads; `core`
+	// itself refuses nothing on it.
+	routable: bool & (len(overSubscribed) == 0 && len(collisions) == 0)
 
 	// True exactly when nothing is comparable. The second gate the
 	// generation step (operator, CLI) reads; `core` itself refuses
@@ -203,32 +216,52 @@ import (
 	// `workload-type: stateless`, so on labels alone `hpa`'s predicate is a
 	// subset of `deployment`'s and the report would falsely name a pair that
 	// is supposed to fire together; their requiredTraits (the catalog's
-	// ScalingTrait against none) is what separates them. SPEC.md § 3.4
-	// Rationale, "Why the inventory reports and does not refuse", "Why
-	// over-subscription counts registry entries" and "Why the predicate is
-	// every required demand, not only labels".
+	// ScalingTrait against none) is what separates them.
+	//
+	// WHY a key two enabled entries list is a collision, not a conflict:
+	// folding it made two majors of one catalog sharing keys a bottom on
+	// metadata.catalogVersion, so no report could name them (0026:OQ17,
+	// measured in enhancements/0026/experiments/01-one-major-per-build and
+	// 06-collision-tolerant-fold). Only single-definer keys fold; the rest
+	// report with routable false, an interim net until 0026:D9. SPEC.md
+	// § 3.4 Rationale, "Why the inventory reports and does not refuse", "Why
+	// over-subscription counts registry entries", "Why the predicate is every
+	// required demand, not only labels" and "Why a shared key is a collision
+	// and not a conflict".
 
 	// Derived, never authored or runtime-filled: the contract inventory,
 	// folded from every enabled entry's #resources, #traits and #blueprints,
 	// crossed with the required demands of the enabled entries' transformers.
 	// Empty, fulfilled and routable on an empty or fully disabled registry.
-	// An over-subscribed platform still evaluates; refusing it is the
-	// generation step's act. See SPEC.md § 3.4.
+	// An over-subscribed or colliding platform still evaluates; refusing it
+	// is the generation step's act. See SPEC.md § 3.4.
 	#contracts: #ContractInventory & {
+		// Per contract key, the set of enabled registry keys whose catalog
+		// lists it. A key with one definer folds into defined and definedBy;
+		// a key with more is a collision, reported and never folded.
+		_definers: {
+			for path, entry in #registry if entry.enable {
+				for fqn, _ in entry.#catalog.#resources {(fqn): (path): true}
+				for fqn, _ in entry.#catalog.#traits {(fqn): (path): true}
+				for fqn, _ in entry.#catalog.#blueprints {(fqn): (path): true}
+			}
+		}
 		defined: {
 			for _, entry in #registry if entry.enable {
-				for fqn, r in entry.#catalog.#resources {(fqn): r}
-				for fqn, t in entry.#catalog.#traits {(fqn): t}
-				for fqn, b in entry.#catalog.#blueprints {(fqn): b}
+				for fqn, r in entry.#catalog.#resources if len(_definers[fqn]) == 1 {(fqn): r}
+				for fqn, t in entry.#catalog.#traits if len(_definers[fqn]) == 1 {(fqn): t}
+				for fqn, b in entry.#catalog.#blueprints if len(_definers[fqn]) == 1 {(fqn): b}
 			}
 		}
 		definedBy: {
 			for path, entry in #registry if entry.enable {
-				for fqn, _ in entry.#catalog.#resources {(fqn): path}
-				for fqn, _ in entry.#catalog.#traits {(fqn): path}
-				for fqn, _ in entry.#catalog.#blueprints {(fqn): path}
+				for fqn, _ in entry.#catalog.#resources if len(_definers[fqn]) == 1 {(fqn): path}
+				for fqn, _ in entry.#catalog.#traits if len(_definers[fqn]) == 1 {(fqn): path}
+				for fqn, _ in entry.#catalog.#blueprints if len(_definers[fqn]) == 1 {(fqn): path}
 			}
 		}
+		collisions: list.Sort([for fqn, ds in _definers if len(ds) > 1 {fqn}], list.Ascending)
+		collidingEntries: {for fqn, ds in _definers if len(ds) > 1 {(fqn): list.Sort([for p, _ in ds {p}], list.Ascending)}}
 
 		// The demand maps are optional on #ComponentTransformer, and an
 		// unguarded `for` over an absent one fails the whole platform; the

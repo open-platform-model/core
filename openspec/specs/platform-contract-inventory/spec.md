@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines what a `#Platform` derives about the contracts its enabled catalogs define and its enabled transformers require: which contracts exist, which catalog lists each, which implementations require each, which provider-fulfilled contracts nothing implements, which have more than one provider, and which pairs of transformers are not discriminated from one another over a contract their own catalogs fulfil. The inventory is a report a platform carries with no module in hand (enhancement 0015 D1, D2, D5, D18).
+Defines what a `#Platform` derives about the contracts its enabled catalogs define and its enabled transformers require: which contracts exist, which catalog lists each, which contract keys more than one enabled entry defines, which implementations require each, which provider-fulfilled contracts nothing implements, which have more than one provider, and which pairs of transformers are not discriminated from one another over a contract their own catalogs fulfil. The inventory is a report a platform carries with no module in hand (enhancement 0015 D1, D2, D5, D18).
 
 ## Requirements
 
