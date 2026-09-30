@@ -2,8 +2,7 @@
 title: "Modules and instances"
 description: "How a module you write becomes an instance running on a cluster."
 type: explanation
-sidebar:
-  order: 30
+weight: 30
 ---
 
 <!-- Open with OPM as the subject, in one or two sentences: a module is a versioned, published description of an application, and an instance is one configured deployment of it, with a name, in one namespace. Say what the page leaves to other pages: identity formulas to "Identity and names", the version numbers to "Versions in OPM", CLI versus operator ownership to "Who owns an instance", deletion to "Deletion and pruning". Link the glossary entries for module, instance, component and CUE on first use. No steps, no field tables. Check against: core/src/module.cue, core/src/module_instance.cue, core/SPEC.md §3.2 and §3.5 Definition 

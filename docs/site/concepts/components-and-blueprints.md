@@ -2,8 +2,7 @@
 title: "Components and blueprints"
 description: "Why every component needs a blueprint, and how a component is derived from it."
 type: explanation
-sidebar:
-  order: 31
+weight: 31
 ---
 
 <!-- Open with OPM as the subject: a component is one deployable part of a module, assembled from resources, traits and blueprints, and OPM derives everything about it (its spec, its matching labels, its names) from what it attaches. A blueprint is the catalog's ready-made bundle for one kind of workload. Scope note for the author: the description says every component needs a blueprint, but only a component carrying the `container` resource does, because that resource declares a required matching key; a component of only ConfigMaps, or of a raw `k8s-*` resource, needs none. Confirm the description with the owner before publishing. Link the glossary entries for component, blueprint, resource, trait and unification on first use. No steps, no field tables. Check against: core/src/component.cue, core/src/blueprint.cue, catalog_opm/opm/resources/v1beta1/container.cue, catalog_opm/opm/resources/v1beta1/configmap.cue, catalog_opm/opm/transformers/configmap_transformer.cue 

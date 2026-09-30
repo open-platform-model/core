@@ -2,8 +2,7 @@
 title: "Versions in OPM"
 description: "The four different version numbers in OPM and what each one promises."
 type: explanation
-sidebar:
-  order: 35
+weight: 35
 ---
 
 <!-- Open with OPM as the subject: OPM artifacts carry four separate version numbers, each answering a different question, and this page says what each one promises and what reads it. The four: the major at the end of a module or catalog path (`@v3`), the release SemVer in `identity/identity.cue` (`3.0.1`), a contract's `apiVersion` (`v1beta1`), and the major of the core schema every artifact imports (`opmodel.dev/core@v2`). Assumes Modules and instances and Platforms and catalogs. Link The Catalog Contract for the full additive-only rule rather than restating it. The CLI and operator release versions are outside the four; give them one sentence at most (the CLI refuses to apply when the cluster's operator is newer than it). Check against: core/SPEC.md, core/src/types.cue, modules/apprise/identity/identity.cue, modules/apprise/cue.mod/module.cue, cli/internal/inventory/gates.go (GateOperatorVersionCeiling) 

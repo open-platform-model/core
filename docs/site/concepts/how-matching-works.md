@@ -2,8 +2,7 @@
 title: "How matching works"
 description: "How OPM picks the transformer that renders each component, and the two label sets involved."
 type: explanation
-sidebar:
-  order: 33
+weight: 33
 ---
 
 <!-- Open with OPM as the subject: at render, OPM decides which transformers turn each component into Kubernetes objects, by comparing what each transformer requires with what the component carries. Say early that one component usually matches several transformers, so "the transformer" in the description means the one behind each object. Say what the page leaves to others: the component side in "Components and blueprints", where the transformers come from in "Platforms and catalogs", and each failure's fix in "Unresolved demands", "No matching transformer" and "Over-subscribed provider contracts". Link the glossary entries for transformer, render, FQN and matching labels on first use. No steps, no field tables. Check against: core/src/transformer.cue, library/opm/internal/renderstage/render.cue.tmpl, library/opm/kernel/doc.go ("Rendering") 

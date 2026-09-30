@@ -2,8 +2,7 @@
 title: "Platforms and catalogs"
 description: "What a platform declares, what a catalog supplies, and how the two meet."
 type: explanation
-sidebar:
-  order: 34
+weight: 34
 ---
 
 <!-- Open with OPM as the subject: a catalog is a versioned artifact that defines contracts (resources, traits, blueprints) and ships the transformers that implement them; a platform is the list of catalogs a render may use, each pinned to one build. Say what the page leaves to others: matching in "How matching works", member reference in "Catalog members", writing and publishing catalogs in "Write a transformer" and "Publish a catalog". Link the glossary entries for catalog, platform, contract, transformer and provider on first use. No steps, no field tables. Check against: core/src/catalog.cue, core/src/platform.cue, core/SPEC.md §3.4 and §3.6 Definition 

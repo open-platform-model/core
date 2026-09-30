@@ -2,8 +2,7 @@
 title: "Define a module's configuration"
 description: "Declare the values users of your module can set, with types, defaults and limits."
 type: how-to
-sidebar:
-  order: 22
+weight: 22
 ---
 
 <!-- One sentence: `#config` declares every value an instance of the module may set, each with a type, limits and usually a default, and components read those values instead of literals. Use it for any field that should differ between instances.
@@ -66,4 +65,4 @@ Check against: cli/internal/cmd/module/vet.go (runVetModuleOnly, validateVetValu
 ## Related
 
 <!-- By title: the reference entry "Definitions" (the #Module definition) and the concept page "Modules and instances".
-Check against: opmodel.dev/site/content/docs/reference/definitions/index.md, core/docs/site/concepts/modules-and-instances.md, core/src/module.cue -->
+Check against: opmodel.dev/site/content/docs/reference/definitions/_index.md, core/docs/site/concepts/modules-and-instances.md, core/src/module.cue -->
