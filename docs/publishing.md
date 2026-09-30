@@ -103,7 +103,7 @@ The base version is the one piece sourced outside the commit — it is read from
 
 ## Consumer resolution
 
-CUE's resolver (`cue mod get`, `cue mod tidy`) follows Go-module semantics: pre-release tags are excluded from `@latest` and major-only queries only when that major has a stable release, and are **included** when a query specifies the same `MAJOR.MINOR`. A major with no stable release resolves to its highest prerelease: `@v2` today selects the newest `v2.0.0` prerelease (verified on cue v0.17.1 on 2026-09-30: `cue mod get opmodel.dev/core@v2` pinned the newest `v2` prerelease while `@latest` picked `v1.1.0`). The table below shows the stable case.
+CUE's resolver (`cue mod get`, `cue mod tidy`) applies one rule to every query: it keeps the published versions that match the query's prefix (all versions, on every major, for `@latest`; `v2.` for `@v2`; `v0.4.` for `@v0.4`), then takes the highest stable release among them, and takes the highest prerelease only when no stable release matches that prefix (`LatestVersion` in `internal/mod/modload/query.go`, applied by `update.go`, cue v0.17.1). A `MAJOR.MINOR` query gets no special treatment: it too skips prereleases whenever a stable release shares its prefix. So `@latest` picks `v1.1.0` (a stable release exists on another major) while `@v2` selects the newest `v2.0.0` prerelease, because v2 has no stable release yet (verified on cue v0.17.1 on 2026-09-30 with `cue mod get opmodel.dev/core@v2`). The table below shows the stable case.
 
 Verified against CUE 0.16.1:
 
