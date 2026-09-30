@@ -85,8 +85,8 @@ Examples: `Container`, `Volume`, `ConfigMap`, `Secret`.
 
     // Where this contract's implementation is expected to come from.
     // "catalog" = the declaring catalog implements it (today's behaviour).
-    // "provider" = it deliberately ships none; exactly one enabled catalog
-    // on the platform must carry transformers requiring this contract.
+    // "provider" = it deliberately ships none; exactly one enabled registry
+    // entry (path with major) must carry transformers requiring it.
     fulfilment: *"catalog" | "provider"
 
     // MUST be OpenAPIv3-compatible, namespaced under camelCase(name).
