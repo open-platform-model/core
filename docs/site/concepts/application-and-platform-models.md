@@ -15,7 +15,7 @@ weight: 29
 
 ### The platform, as far as OPM models it today
 
-<!-- A `#Platform` carries the catalogs it admits (`#registry`, one entry per catalog module path) and, from them, the transformers that decide how components become Kubernetes objects (`#composedTransformers`). It also reports a contract inventory (`#contracts`): which contracts its catalogs define, which ones its transformers require, and whether each provider-fulfilled contract has exactly one provider. That is the whole platform half today. Point to "Platforms and catalogs". Check against: core/src/platform.cue, core/SPEC.md (section 3.4) -->
+<!-- A `#Platform` carries the catalogs it admits (`#registry`, one entry per catalog module path) and, from them, the transformers that decide how components become Kubernetes objects (`#composedTransformers`). It also reports a contract inventory (`#contracts`): which contracts its catalogs define, which ones its transformers require, whether each provider-fulfilled contract has exactly one provider, and which contract keys collide because more than one enabled catalog lists them. That is the whole platform half today. Point to "Platforms and catalogs". Check against: core/src/platform.cue, core/SPEC.md (section 3.4) -->
 
 ### The platform model
 
@@ -48,4 +48,4 @@ weight: 29
 
 ## What enforces this
 
-<!-- The platform-side rules that hold today, each with its badge: a platform admits at most one provider for each provider-fulfilled contract (kernel; `OverSubscribedContractsError`, also reported by `opm platform check`); the catalog builds a render uses are the ones the platform module's `cue.mod` pins (cue). Nothing enforces the platform model, which does not exist. Check against: core/src/platform.cue, library/opm/errors/oversubscribed.go, cli/internal/cmd/platform/check.go -->
+<!-- The platform-side rules that hold today, each with its badge: a platform admits at most one provider for each provider-fulfilled contract (kernel; `OverSubscribedContractsError`, also reported by `opm platform check` and the operator's `OverSubscribedContracts` reason); a contract key has at most one enabled defining catalog (reported by `#contracts.collisions`; kernel, `ContractCollisionsError`; also reported by `opm platform check` and the operator's `ContractCollisions` reason); the catalog builds a render uses are the ones the platform module's `cue.mod` pins (cue). Nothing enforces the platform model, which does not exist. Check against: core/src/platform.cue, library/opm/errors/oversubscribed.go, library/opm/errors/collision.go, cli/internal/cmd/platform/check.go, opm-operator/internal/status/conditions.go -->
