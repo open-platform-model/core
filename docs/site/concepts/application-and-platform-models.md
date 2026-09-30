@@ -2,8 +2,7 @@
 title: "The application model and the platform model"
 description: "Why OPM is named a platform model while it models applications today, and what each model covers."
 type: explanation
-sidebar:
-  order: 29
+weight: 29
 ---
 
 <!-- Open with OPM as the subject: Open Platform Model names two models. The application model, which OPM has today, describes an application and what it needs from a cluster. The platform model describes the platform an application runs on. Today OPM models a platform only as far as rendering needs. Say what the page assumes ("What OPM is", linked from its Common mistakes entry) and what it covers: what each model describes, what exists of each today, and why the application model came first. Check against: core/SPEC.md (section 1), opm/README.md (Vision) -->
@@ -20,9 +19,10 @@ sidebar:
 
 ### The platform model
 
-:::note[Direction]
-The platform model is meant to describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. No design exists yet.
-:::
+> [!NOTE]
+> **Direction**
+>
+> The platform model is meant to describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. No design exists yet.
 
 <!-- Direction note rules (0018:D3): present-tense status, no dates, and a link to the enhancement once one exists. No enhancement proposes the platform model itself, so the note links none for it. Two draft enhancements, both not started, touch the platform side without being the platform model; decide whether the note names them, by id. 0026 (module-dictated catalog versions and the generated platform) lets a platform admit each catalog lineage with a version range and lets the module's own pin pick the version inside it, refusing a pin outside the range. The CLI's deps fallback is not part of 0026 and the note must not present it as such: when a render runs with no `--platform` and no cluster `Platform` is used, the CLI generates a platform from the render's own catalog pins, so the module's pin is used because no platform exists to admit or bound it. 0026 covers the case the fallback leaves untouched: a platform is given, it holds a range, and the kernel checks the pin against it. 0027 (self-service kinds from published modules) lets a platform team bind a published module to a kind that consumers create by supplying values only; an offering binds one exact release and an update policy, not a 0026 range. Check against: enhancements/0026/README.md, enhancements/0027/README.md, cli/openspec/specs/platform-resolution/spec.md ("Module commands render against the module's deps", "Renders fall back to their own deps"), opm/README.md (Roadmap, Phase 3) -->
 

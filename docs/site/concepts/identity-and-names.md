@@ -2,8 +2,7 @@
 title: "Identity and names"
 description: "How OPM identifies modules and catalog members, and why a name means different things in different places."
 type: explanation
-sidebar:
-  order: 36
+weight: 36
 ---
 
 <!-- Open with OPM as the subject: OPM gives modules, catalogs, contracts, transformers and instances each a fully qualified name in a field called `fqn`, and the field means something different on each. The core claim, stated early: on a module or catalog `fqn` is the module path verbatim; on a resource, trait or blueprint it is a contract key that differs from the member's own `modulePath`. The second half of the page covers names: which spelling each thing takes, and which name ends up on a rendered object. Assumes Modules and instances and Resources and traits; links Versions in OPM for the version inside each key. Check against: core/src/types.cue, core/src/module.cue, core/src/resource.cue, core/SPEC.md 

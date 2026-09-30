@@ -2,8 +2,7 @@
 title: "What enforces a rule"
 description: "The four places a rule can be enforced, from CUE to plain convention, and why it matters which one."
 type: explanation
-sidebar:
-  order: 38
+weight: 38
 ---
 
 <!-- Open with OPM as the subject: OPM checks its rules in four places, and every rule on a Concepts or Reference page carries a badge naming the one that refuses a violation: `cue` (the value itself fails to evaluate), `kernel` (the render refuses it), `publish` (a publish command refuses the artifact) and `convention` (nothing refuses it). The page explains what each place can see, when a violation surfaces there, and why the badge matters: on the page a `convention` rule reads as firmly as a `cue` rule, and it is not. Check against: enhancements/0018/02-design.md (Enforcement badges), enhancements/0018/contracts/contracts.cue (#EnforcementLayer) 

@@ -2,8 +2,7 @@
 title: "Resources and traits"
 description: "What a resource describes, what a trait adds to it, and why they are separate."
 type: explanation
-sidebar:
-  order: 32
+weight: 32
 ---
 
 <!-- Open with OPM as the subject: a resource describes something that must exist (a container, volumes, ConfigMaps), a trait describes how it behaves (scaling, exposure, restart policy), and a catalog publishes both as versioned contracts. Say what the page leaves to others: attaching them in "Components and blueprints", how transformers pick them up in "How matching works", contract keys and `apiVersion` in "Versions in OPM" and "Identity and names". Link the glossary entries for resource, trait, catalog, contract and FQN on first use. No steps, no field tables. Check against: core/src/resource.cue, core/src/trait.cue, core/SPEC.md §2.1 and §2.2 Definition 

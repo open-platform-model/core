@@ -2,8 +2,7 @@
 title: "Who owns an instance"
 description: "The difference between an instance the CLI manages and one the operator manages."
 type: explanation
-sidebar:
-  order: 37
+weight: 37
 ---
 
 <!-- Open with OPM as the subject: every deployed instance is managed by exactly one of two actors, the `opm` CLI or the OPM operator, and the ModuleInstance's `spec.owner` records which. The page explains what each actor does for the instances it owns, what the other actor does with them, and what that changes when you apply, delete or inspect. Say once, plainly, that no command moves an instance from one owner to the other; describe no transfer. Assumes Modules and instances; links Deletion and pruning and Delete an instance safely for the full deletion story. Check against: cli/README.md (CLI-managed vs operator-managed instances), cli/internal/inventory/ownership.go, opm-operator/api/v1alpha1/moduleinstance_types.go 
