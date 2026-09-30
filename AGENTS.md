@@ -101,7 +101,7 @@ This is a pure CUE repository: schema definitions plus the tooling to validate a
 
 | Branch | Module line | Purpose |
 | --- | --- | --- |
-| `main` | `opmodel.dev/core@v2` | Living development line (v2.0.0-alpha.N prereleases → stable v2). All new schema work, including the enhancement 0010/0011 identity and publishing reshape. |
+| `main` | `opmodel.dev/core@v2` | Living development line (v2.0.0-beta.N prereleases → stable v2). All new schema work, including the enhancement 0010/0011 identity and publishing reshape. |
 | `v1` | `opmodel.dev/core@v1` | **Protected maintenance branch** — the stable v1 line (`v1.1.0`+). release-please targets that branch and `versioning: always-bump-patch` pins it to 1.1.x patch releases; the `@v1` module path additionally refuses any tag outside major 1 at publish. |
 
 **You are on `main`.** Fixes needed by consumers still pinning `opmodel.dev/core@v1`
@@ -116,7 +116,7 @@ warning.
 - Cut changes into mergeable sections: each ends green under `task check` and closes with its own commit (`openspec/config.yaml` Principle VI).
 - The schema is a published contract. A breaking change to the `core` package is a breaking change for every consumer — prefer additive evolution.
 - Never run `cue mod publish` against a live registry manually — let CI publish.
-- The CUE module is on major `@v2`, currently shipping `v2.0.0-alpha.N` prereleases (enhancement 0010 — the identity reshape moved the schema off the `@v1` line, which lives on as the protected `v1` maintenance branch, stable at `v1.1.0`). release-please runs in prerelease mode (`prerelease: true`, `prerelease-type: "alpha"`, `bump-minor-pre-major: false` in `release-please-config.json`); a `feat!:` advances the alpha counter **within** the major — it does not bump the major. Crossing a major is a deliberate act: edit `src/cue.mod/module.cue`'s `module:` line and force the version with a `Release-As: X.0.0-alpha.1` footer in the same commit. The two must land together, or `cue mod publish` rejects the tag as not matching the declared major. A future stable cut drops the `-alpha` suffix.
+- The CUE module is on major `@v2`, shipping `v2.0.0-beta.N` prereleases (enhancement 0010 — the identity reshape moved the schema off the `@v1` line, which lives on as the protected `v1` maintenance branch, stable at `v1.1.0`). release-please runs in prerelease mode (`prerelease: true`, `prerelease-type: "beta"`, `bump-minor-pre-major: false` in `release-please-config.json`). From its first beta, the line is on the path to GA. A breaking change is still allowed during beta, but only as a `feat!` commit whose `BREAKING CHANGE:` footer is the migration note the CHANGELOG shows. It advances the `-beta.N` counter and never moves the module path to a new major. Stable lines (`opmodel.dev/catalogs/opm@v4` and the module fleets) keep the normal SemVer rule: a break is a new major. A core beta break that would force a `catalogs/opm` major needs owner sign-off. While the line is a prerelease, `feat:` and `fix:` also advance `-beta.N`; the minor and patch bumps in the commit table below apply from GA. During beta the line never crosses a major; after GA, crossing a major edits `src/cue.mod/module.cue`'s `module:` line and forces the version with a `Release-As:` footer in the same commit (the two must land together, or `cue mod publish` rejects the tag as not matching the declared major). Changing the prerelease type is forced by a `Release-As: X.0.0-<type>.1` footer in the final commit message on `main`; flipping `prerelease-type` alone cuts nothing. GA drops the suffix: `prerelease: false` plus a visible carrier commit (a releasable type, or a `Release-As: X.0.0` footer). Never add a `release-as` key to `release-please-config.json`, and never hand-edit `.release-please-manifest.json`.
 
 ## Entrypoint
 
@@ -143,7 +143,7 @@ openspec/                OpenSpec proposals/specs/archives (active change workfl
 .claude/skills/          repo-local skills (core-schema-edit, openspec-*)
 ```
 
-`src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the import path is `opmodel.dev/core@v2` with no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) sits at the repo root. A breaking schema revision bumps the module major (e.g. `@v2` → `@v3`); it does not add a sibling package.
+`src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the import path is `opmodel.dev/core@v2` with no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) sits at the repo root. A new major (e.g. `@v2` → `@v3`) is the only way the module path changes, and it never adds a sibling package; it is taken only after GA, and during beta a break advances `-beta.N` instead.
 
 All raw `cue` invocations run from `src/`. The Taskfile handles this via `dir: src` / `cd src` — see `task fmt`, `task vet`, `task tidy`, `task publish`.
 
@@ -186,7 +186,7 @@ Releases are driven entirely by commit message types (Conventional Commits). Use
 | `fix:`                            | patch                           | yes          | wrong constraint, broken default, definition behaving wrong   |
 | `perf:`                           | patch                           | yes          | schema compile-time / evaluation cost improvements            |
 | `revert:`                         | patch                           | yes          | undo of a prior released change                               |
-| `feat!:` / `feat(scope)!:` / `BREAKING CHANGE:` | prerelease (advances `-alpha.N` on `@v2`) | yes | removing/renaming a definition, tightening a published constraint |
+| `feat!:` / `feat(scope)!:` / `BREAKING CHANGE:` | prerelease (advances `-beta.N` on `@v2`) | yes | removing/renaming a definition, tightening a published constraint; the `BREAKING CHANGE:` footer is the migration note |
 | `refactor:`                       | none                            | hidden       | moving files, renaming internal-only identifiers, restructuring |
 | `docs:`                           | none                            | hidden       | README, design notes, comments — anything consumers don't see  |
 | `style:`                          | none                            | hidden       | formatting-only changes (run `task fmt`)                       |
