@@ -60,8 +60,9 @@ context: |
     `-beta.N` counter and never moves the module path to a new major. Stable lines
     (`opmodel.dev/catalogs/opm@v4` and the module fleets) keep the normal SemVer rule: a break is
     a new major. A core beta break that would force a `catalogs/opm` major needs owner sign-off.
-    GA drops the suffix: `prerelease: false` plus a visible carrier commit. Say so explicitly in
-    the proposal when a change relies on the beta break licence.
+    GA drops the suffix: `prerelease: false` plus a visible carrier commit per package, in
+    dependency order; core's GA carrier comes first in the cross-repo dependency order. Say so
+    explicitly in the proposal when a change relies on the beta break licence.
   - Crossing a major is a stable-line act, taken only after GA and never implied by a break;
     during beta the `module:` line does not change. After GA it edits `src/cue.mod/module.cue`'s
     `module:` line and forces the new major's first version with a `Release-As:` footer in the
@@ -71,7 +72,8 @@ context: |
   - Changing the prerelease type is forced by a `Release-As: X.0.0-<type>.1` footer in the final
     commit message on `main`; flipping `prerelease-type` alone cuts nothing. GA drops the suffix:
     `prerelease: false` plus a visible carrier commit (a releasable type, or a `Release-As: X.0.0`
-    footer). Never add a `release-as` key to `release-please-config.json`, and never hand-edit
+    footer); core's GA carrier comes first in the cross-repo dependency order, since every other
+    prerelease line builds on it. Never add a `release-as` key to `release-please-config.json`, and never hand-edit
     `.release-please-manifest.json`.
   - Pin `language: version: "v0.17.0"` in `cue.mod/module.cue`. That is a consumer floor, not a
     toolchain pin: a module declaring `vX` is rejected by every `cue` older than `vX`.
