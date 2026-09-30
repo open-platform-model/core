@@ -107,7 +107,7 @@ tasks:
   ## Publishing
 
   publish:
-    desc: Publish the CUE module at VERSION (e.g. task publish VERSION=v1.0.0-alpha.1)
+    desc: Publish the CUE module at VERSION (e.g. task publish VERSION=vX.Y.Z; CI publishes releases, run locally only against a local registry)
     requires:
       vars: [VERSION]
     cmds:

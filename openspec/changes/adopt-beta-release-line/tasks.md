@@ -39,8 +39,8 @@ Ticked by the supervisor, not by the worker, and outside every commit.
 
 ## 3. Tooling comments
 
-- [ ] 3.1 `Taskfile.yml` `publish` desc, `.tasks/branch-tag.sh` ~78-80 and ~98, `.github/workflows/release.yml` ~88, per D5. Verify: `bash -n .tasks/branch-tag.sh` exits 0; `task --list-all >/dev/null` exits 0; `grep -n 'VERSION=' Taskfile.yml | grep -v 'VERSION=vX.Y.Z'` prints nothing that names a version; `python3 -c 'import yaml; yaml.safe_load(open(".github/workflows/release.yml"))'` exits 0; `git diff -U0 -- Taskfile.yml .tasks .github` shows only comment or `desc:` lines.
-- [ ] 3.2 Gates green, `git diff --quiet origin/main -- src` exits 0, then commit `chore(tooling): name the beta line in tooling comments`. No `.cue` file is staged, so the `SPEC.md` co-update hook does not apply and no `SPEC_IMPACT` escape is used. Stage only the three files and this `tasks.md`. Verify `git status --short` prints nothing.
+- [x] 3.1 `Taskfile.yml` `publish` desc, `.tasks/branch-tag.sh` ~78-80 and ~98, `.github/workflows/release.yml` ~88, per D5. Verify: `bash -n .tasks/branch-tag.sh` exits 0; `task --list-all >/dev/null` exits 0; `grep -n 'VERSION=' Taskfile.yml | grep -v 'VERSION=vX.Y.Z'` prints nothing that names a version; `python3 -c 'import yaml; yaml.safe_load(open(".github/workflows/release.yml"))'` exits 0; `git diff -U0 -- Taskfile.yml .tasks .github` shows only comment or `desc:` lines.
+- [x] 3.2 Gates green, `git diff --quiet origin/main -- src` exits 0, then commit `chore(tooling): name the beta line in tooling comments`. No `.cue` file is staged, so the `SPEC.md` co-update hook does not apply and no `SPEC_IMPACT` escape is used. Stage only the three files and this `tasks.md`. Verify `git status --short` prints nothing.
 
 ## 4. Flip, verify, archive: the carrier commit
 
