@@ -6,9 +6,9 @@
 
 ## 2. Local publish forced to the local registry
 
-- [ ] 2.1 `Taskfile.yml` `publish`: replace the cmds with the single D3 script that exports `CUE_REGISTRY="opmodel.dev=localhost:5000+insecure,registry.cue.works"` before `cue fmt`/`git diff`/`cue vet`/`cue mod publish`, and update `desc`. `task --list` shows the new description.
-- [ ] 2.2 Verify the forcing per design D3 step 1, never against GHCR or the workspace `opm-registry`: in a `--network none` container, on a fresh-repository scratch copy of the tree, with the sentinel `CUE_REGISTRY='opmodel.dev=127.0.0.1:1,registry.cue.works'` and an empty `DOCKER_CONFIG`, `task publish VERSION=v2.0.0-0.probe.1` fails with an error naming `localhost:5000`, not `127.0.0.1:1`. No `opmodel.dev/*` module is published to any registry (Registry Policy rule 2).
-- [ ] 2.3 `task check` green, then commit `chore(publish): force task publish to the local registry` with `SPEC_IMPACT=none` (reason: Taskfile only)
+- [x] 2.1 `Taskfile.yml` `publish`: replace the cmds with the single D3 script that exports `CUE_REGISTRY="opmodel.dev=localhost:5000+insecure,registry.cue.works"` before `cue fmt`/`git diff`/`cue vet`/`cue mod publish`, and update `desc`. `task --list` shows the new description.
+- [x] 2.2 Verify the forcing per design D3 step 1, never against GHCR or the workspace `opm-registry`: in a `--network none` container, on a fresh-repository scratch copy of the tree, with the sentinel `CUE_REGISTRY='opmodel.dev=127.0.0.1:1,registry.cue.works'` and an empty `DOCKER_CONFIG`, `task publish VERSION=v2.0.0-0.probe.1` fails with an error naming `localhost:5000`, not `127.0.0.1:1`. No `opmodel.dev/*` module is published to any registry (Registry Policy rule 2).
+- [x] 2.3 `task check` green, then commit `chore(publish): force task publish to the local registry` with `SPEC_IMPACT=none` (reason: Taskfile only)
 
 ## 3. Docs and agent pointer
 

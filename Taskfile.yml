@@ -107,14 +107,20 @@ tasks:
   ## Publishing
 
   publish:
-    desc: Publish the CUE module at VERSION (e.g. task publish VERSION=vX.Y.Z; CI publishes releases, run locally only against a local registry)
+    desc: Publish the CUE module at VERSION to the local registry only (task publish VERSION=vX.Y.Z; CI publishes releases)
     requires:
       vars: [VERSION]
     cmds:
-      - (cd src && cue fmt ./...)
-      - git diff --exit-code -- 'src/*.cue'
-      - (cd src && cue vet ./...)
-      - (cd src && cue mod publish {{.VERSION}})
+      - |
+        set -euo pipefail
+        # Forced here, whatever the shell exports: a release is published only
+        # by CI, so a laptop publish must never reach GHCR. Exported in the
+        # script because an exported CUE_REGISTRY beats a task-level env:.
+        export CUE_REGISTRY="opmodel.dev=localhost:5000+insecure,registry.cue.works"
+        (cd src && cue fmt ./...)
+        git diff --exit-code -- 'src/*.cue'
+        (cd src && cue vet ./...)
+        (cd src && cue mod publish "{{.VERSION}}")
 
   branch-tag:
     desc: Print the branch-publish tag for HEAD (no side effects)
