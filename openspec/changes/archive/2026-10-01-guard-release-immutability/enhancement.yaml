@@ -1,0 +1,13 @@
+# Declares which enhancement decisions this change implements. Consumed by
+# `task enhancements:delivery:log` once the change has landed on main.
+#
+# decisions is empty on purpose. This change carries 0021:D10:R2 and
+# 0021:D10:R3 for core's release path only (enhancements PR 74, head c52aaf2,
+# open on 2026-10-01). D10 also requires the tag rulesets, the release-branch
+# policy and work in four other repositories; it is claimed by the change that
+# completes it (Phase 2 at the earliest), never by a change that only starts it.
+# The entry is still declared so the delivery log records this landing.
+implements:
+  - enhancement: "0021"
+    decisions: []
+    resolves: []

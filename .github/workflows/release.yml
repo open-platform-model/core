@@ -73,6 +73,15 @@ jobs:
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
 
+      # A published version always names the bytes first pushed under it, and
+      # `cue mod publish` overwrites without asking. Exit 1 (already published):
+      # release the next version. Exit 2 (registry state unknown): nothing was
+      # pushed, re-run the job.
+      - name: Refuse a version the registry already holds
+        env:
+          VERSION: v${{ needs.release-please.outputs.version }}
+        run: bash .tasks/publish-probe.sh "${VERSION}"
+
       - name: Setup CUE
         uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
         with:
