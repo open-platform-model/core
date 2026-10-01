@@ -8,7 +8,7 @@ This document describes how `opmodel.dev/core` is published to its OCI registry:
 
 ## Goal
 
-Every commit that lands on a feature branch, plus every released commit on `main`, produces a versioned, immutable CUE module artifact in the registry. The same Git commit produces the **same tag** whether published from a developer laptop or from CI — no rebuilds, no clock-dependent state.
+Every commit that lands on a feature branch, plus every released commit on `main`, produces a versioned CUE module artifact in the registry. A release version is never overwritten: the release job refuses to publish a version GHCR already holds, and a broken release is fixed by releasing the next version. Branch builds are outside that rule (see [Implementation](#implementation)). The same Git commit produces the **same tag** whether published from a developer laptop or from CI — no rebuilds, no clock-dependent state.
 
 Consumers (downstream repos, Taskfile automation, ad-hoc `cue mod get`) need a way to pin either:
 
@@ -96,7 +96,7 @@ What this rules out:
 
 What this means in practice:
 
-- A developer publishing locally before pushing produces the same tag CI will produce on the matching push. The second publish is a no-op (OCI registry refuses to overwrite immutable tags, or returns the same digest).
+- A developer publishing locally before pushing produces the same tag CI will produce on the matching push. GHCR does not refuse to overwrite a tag, so the second publish re-pushes the manifest under the same tag; built from the same commit it names the same content. Branch builds have no existence probe; only the release path refuses a version the registry already holds.
 - Reproducible builds: anyone with the commit can re-derive the exact tag, fetch the artifact, and verify the digest.
 
 The base version is the one piece sourced outside the commit — it is read from the repo's git tags. Worst case: a branch outlives a release, and re-publishes from that branch keep targeting an outdated base. The publisher should `git fetch --tags` periodically; CI naturally sees the latest tags because it checks out fresh with `fetch-depth: 0`. A stale base is not a correctness problem for the invariant — an older base ranks *lower*, so the branch build still loses to every newer release.
@@ -133,7 +133,7 @@ There is deliberately no range-based "track latest dev" pin. Consuming an unrele
 
 - **Per-branch "latest" tag.** CUE rejects partial pre-release prefixes (`@v0.4.0-dev` → "module not found"). To find the newest tag for branch `foo`, query the OCI tag list (`crane ls`, `gh api`, or `(*modregistry.Client).ModuleVersions`) and filter client-side. Out of scope for this document.
 - **Branch metadata in the tag string.** Use OCI manifest annotations if/when needed.
-- **Mutable "channel" pointers** (e.g. an always-updated `dev` tag). CUE refuses non-SemVer tags from the resolver, and the OCI immutability model in GHCR makes mutable tags a footgun anyway.
+- **Mutable "channel" pointers** (e.g. an always-updated `dev` tag). CUE refuses non-SemVer tags from the resolver, and a tag that moves under its consumers is exactly what the release rule forbids for version tags. GHCR itself has no tag immutability, so the rule is enforced by the release job's probe, not by the registry.
 - **Cross-branch ordering by recency.** `@v0.<NEXT_MINOR>` returns the genuinely-newest commit globally because `commit_ct` leads the sort — but two branches active in the same window will see each other's commits as "latest dev" depending on who committed last. This is the intended semantics; if a consumer wants to pin to one branch's lineage specifically, it should pin the exact tag.
 
 ## Validation summary
@@ -157,10 +157,12 @@ Full transcript of the resolver tests is in the design conversation; not duplica
 - `.tasks/branch-tag.sh` — pure shell function that prints the tag for HEAD. Reads the major from `src/cue.mod/module.cue` and `NEXT_MINOR` from the highest stable `vMAJOR.*.*` git tag (falls back to `0` if no stable release exists yet for the current major). Refuses to run on `main` or against a dirty worktree.
 - `task branch-tag` — prints the tag without side effects.
 - `task publish:branch` — runs `task check` then `cue mod publish $TAG` from `src/`. Honours `CUE_REGISTRY`, so the same command publishes to the workspace local registry (`localhost:5000+insecure`) or GHCR depending on the environment. In CI this is the sanctioned `-dev.*` pre-release path; a laptop publish is a gated exception (Registry Policy rule 2, workspace root `AGENTS.md`).
+- `task publish` — publishes `VERSION` to the local registry only: it forces `CUE_REGISTRY` to `opmodel.dev=localhost:5000+insecure` inside its script, whatever the shell exports, so a laptop publish cannot reach GHCR.
+- `.tasks/publish-probe.sh` — the release path's existence check. The `publish-cue` job in `release.yml` runs it before `cue mod publish`: it sends an anonymous `HEAD` for the version's manifest on GHCR and publishes only on a 404. A 200 fails the job (the version is published; release the next one), and any other answer fails it too (nothing was pushed; re-run the job).
 - `.github/workflows/branch-publish.yml` — fires on `push` to any branch except `main`. Skipped on forks (no `packages: write`). Calls `task publish:branch` after logging into GHCR with `GITHUB_TOKEN`.
 
 ## Follow-ups (not yet implemented)
 
-- Idempotency probe: HEAD the OCI manifest before publish and skip if the tag already exists. Current behavior is to re-publish the same content under the same tag — registries dedupe by digest, so this is a no-op in storage but produces noisy logs.
+- Branch-build probe (not planned): branch builds are outside the release rule and are re-published under the same tag on every run for the same commit, without a probe. The release path's probe (see [Implementation](#implementation)) is not applied to them.
 - Cleanup workflow: prune branch tags whose SHA is no longer reachable from any current ref (avoids accumulating orphaned tags after force-pushes / rebases).
 - Consumer helper (e.g. `task core:latest-tag MINOR=v0.4`) for automation that needs the resolved tag string outside of CUE — wraps an OCI tag-list query and SemVer sort.
