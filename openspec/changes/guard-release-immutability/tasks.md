@@ -1,0 +1,17 @@
+## 1. Release workflow guards
+
+- [ ] 1.1 Add `.tasks/publish-probe.sh` per design D1 (module path from `src/cue.mod/module.cue`, anonymous GHCR token, `HEAD` manifest; exit 0 on 404, 1 on 200, 2 otherwise; `PROBE_BASE_URL`/`PROBE_NAMESPACE` overrides). Verify: `bash .tasks/publish-probe.sh v2.0.0-beta.1` exits 1 naming the version as published, `bash .tasks/publish-probe.sh v2.0.0-beta.99` exits 0, `PROBE_BASE_URL=http://127.0.0.1:9 bash .tasks/publish-probe.sh v2.0.0-beta.99` exits 2, and `shellcheck .tasks/publish-probe.sh` is clean.
+- [ ] 1.2 `.github/workflows/release.yml`, `release-please` job: add `sha: ${{ steps.release.outputs.sha }}` to the job outputs and a step gated on `steps.release.outputs.release_created == 'true'` that runs the D2 tag-SHA assertion. Verify by running the step's script locally with `TAG=v2.0.0-beta.1` and `want=4f9b245ae6e38e964110b00cfa606115bd162b27` (passes) and with a different 40-hex `want` (fails with the "never move the tag" message).
+- [ ] 1.3 `.github/workflows/release.yml`, `publish-cue` job: after checkout, assert `git rev-parse HEAD` equals `needs.release-please.outputs.sha`; then run `bash .tasks/publish-probe.sh "v${version}"` as its own step before "Publish CUE module", so a refusal stops the job before `cue mod publish`. Verify with `actionlint .github/workflows/release.yml` (or `yq` parse when actionlint is absent) and by reading that the publish step now follows both guards.
+- [ ] 1.4 `task check` green, then commit `ci(release): refuse to publish a version GHCR holds or a tag at the wrong commit` with `SPEC_IMPACT=none` (reason: CI only, no schema change)
+
+## 2. Local publish forced to the local registry
+
+- [ ] 2.1 `Taskfile.yml` `publish`: replace the cmds with the single D3 script that exports `CUE_REGISTRY="opmodel.dev=localhost:5000+insecure,registry.cue.works"` before `cue fmt`/`git diff`/`cue vet`/`cue mod publish`, and update `desc`. Verify: with no local registry running and `CUE_REGISTRY` exported as the canonical GHCR mapping, `task publish VERSION=v2.0.0-0.probe.1` fails with a `localhost:5000` connection error and never contacts GHCR; `task --list` shows the new description.
+- [ ] 2.2 `task check` green, then commit `chore(publish): force task publish to the local registry` with `SPEC_IMPACT=none` (reason: Taskfile only)
+
+## 3. Docs and agent pointer
+
+- [ ] 3.1 `AGENTS.md`: add one line under Repository Rules pointing at the workspace rule ("Release tags are immutable: never move, delete or re-create a tag, and never re-publish a version; a broken release is fixed by the next one. See the workspace root `AGENTS.md`."), and extend "Release & publishing" with the tag-SHA assertion and the GHCR probe. Verify: `grep -n 'immutable' AGENTS.md` shows both.
+- [ ] 3.2 `README.md` (publish line) and `docs/publishing.md`: state that `task publish` targets the local registry only; replace the "OCI registry refuses to overwrite immutable tags" claim in "Determinism" with the measured fact (GHCR does not refuse; release publishes are guarded by the probe, branch builds are re-published by design); move the "Idempotency probe" follow-up to "Implementation" for the release path. Verify: `grep -n 'refuses to overwrite' docs/publishing.md` returns nothing.
+- [ ] 3.3 `task check` green, then commit `docs(release): document the immutable-release guards` with `SPEC_IMPACT=none` (reason: docs only)
