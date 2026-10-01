@@ -4,10 +4,12 @@ See proposal.md for why. Current state:
 
 - `.github/workflows/release.yml` runs on `push` to `main` only. The `release-please` job (action v4.4.1, release-please 17.3.0, acting as the release App) exposes `release_created`, `tag_name` and `version`, and dispatches `ci.yml` onto `release-please--branches--main--components--core`. The `publish-cue` job checks out `tag_name`, logs into GHCR with `GITHUB_TOKEN`, runs `cue vet ./...` and `cue mod publish "v${version}"` from `src/`. Nothing checks the registry first.
 - `Taskfile.yml` `publish`: `cue fmt`, a clean-diff check, `cue vet`, `cue mod publish {{.VERSION}}`, all under the caller's `CUE_REGISTRY`.
-- `publish:branch` and `.github/workflows/branch-publish.yml` publish `-0.dev.*` tags to GHCR on every non-main push. Those tags are mutable by the workspace rule and stay untouched.
-- The `v1` branch is core's existing maintenance line and the precedent for this design: its `release.yml` runs on `push` to `v1`, passes `target-branch: v1`, dispatches CI onto `release-please--branches--v1--components--core`, and its `release-please-config.json` sets `versioning: always-bump-patch`. It has released `v1.1.x` patches that way.
+- `publish:branch` and `.github/workflows/branch-publish.yml` publish `-0.dev.*` tags to GHCR on every non-main push. Those tags are outside the release rule and this change leaves them untouched.
+- The `v1` branch is core's existing maintenance line: its own `release.yml` runs on `push` to `v1`, passes `target-branch: v1`, runs release-please with `GITHUB_TOKEN` (not the release App) and publishes with no probe. This change does not touch it (task 3.1 tracks it).
 
-Platform controls this design relies on, owner-applied in the browser and not repo content: org ruleset `tags-immutable` (no tag update or deletion, empty bypass), `tags-create-app-only` (tag creation only by the opm-release-please App), `release-branches` (`refs/heads/release/*`: no deletion, no force push, PR required, squash only, empty bypass), and GitHub immutable releases for core.
+Platform controls this design relies on, owner-applied in the browser and not repo content: org ruleset `tags-immutable` (no tag update or deletion, empty bypass), `tags-create-app-only` (tag creation only by the opm-release-please App), and GitHub immutable releases for core. Not all of them are active yet; see the Migration Plan.
+
+This is Phase 1 of the owner's two-phase plan (canon Revision 2, 2026-10-01). Phase 1 adds no release-branch support: every core release in this change is cut from `main`. Release branches and their automation are Phase 2 (before GA); the inputs collected for it are under "Phase 2 notes".
 
 Nothing under `src/` changes, so no `src/*.cue` file, no construct in `.tasks/spec-tracked.txt` and no `SPEC.md` section moves. No construct is newly tracked. Every commit in this change is spec-neutral and lands with `SPEC_IMPACT=none` (reason: CI and tooling only).
 
@@ -16,16 +18,15 @@ Nothing under `src/` changes, so no `src/*.cue` file, no construct in `.tasks/sp
 **Goals:**
 
 - A release run never overwrites a version GHCR already holds.
-- A released minor can receive patch releases from a `release/vX.Y` branch, cut by one automated action, without any change to `main`'s release flow.
 - `task publish` cannot reach GHCR from a laptop.
 - Every refusal fails the run loudly; nothing degrades to a warning or a skip.
 
 **Non-Goals:**
 
-- Cutting a release branch now. Core is in beta; fixes go forward on `main` (`-beta.N+1`). The first `release/v2.0` is cut at GA or when `main` starts work `v2.0` must not get.
+- Release branches. No `release/**` trigger, no target-branch change, no cut action, no branch-model row. That is Phase 2; until then every fix goes forward on `main` (`-beta.N+1` during beta).
 - Asserting the tag's commit in the workflow. `tags-create-app-only` and `tags-immutable` mean a tag can only be created by the App release-please runs as, and never moved; the assertion the earlier draft planned is dropped.
-- Branch builds. `-0.dev.*` tags stay mutable, `publish:branch` keeps honouring `CUE_REGISTRY`, and `branch-publish.yml` keeps firing on every non-main push, `release/**` included (a dev build of a release branch is harmless and ranks below its releases).
-- The `v1` maintenance branch's own `release.yml` (follow-up, task 4.1).
+- Branch builds. `-0.dev.*` tags are outside this change's requirement, `publish:branch` keeps honouring `CUE_REGISTRY` (an open question below), and `branch-publish.yml` keeps firing on every non-main push.
+- The `v1` maintenance branch's own `release.yml` (follow-up, task 3.1).
 - Making a red release run green again once the version exists. The recovery is the next version.
 
 ## Decisions
@@ -54,7 +55,7 @@ esac
 
 The two `|| ...` fallbacks matter under `set -e`: without them an unreachable registry exits with curl's own code (7) before the `case`, which still fails closed but skips the message that tells the operator a re-run is safe.
 
-Exit codes map to the recovery rule (D4): 1 means roll forward, 2 means re-run.
+Exit codes map to the recovery rule (D2): 1 means roll forward, 2 means re-run.
 
 Measured 2026-10-01 against GHCR: `v2.0.0-beta.1` returns 200, `v2.0.0-beta.99` returns 404. A repository that does not exist does **not** return 404: the token endpoint answers 403 (`curl -f` fails, the token is empty), the anonymous `HEAD` then answers 401, and the probe exits 2. That is the safe direction for core, whose repository exists (CUE drops the `@vN` major from the repository path). A first publish to a brand-new repository would need a different absence proof; this script is not meant to be copied to one unchanged.
 
@@ -65,84 +66,16 @@ Alternatives:
 - **Treat "present" as success (idempotent re-run).** Rejected: proving the present bytes equal the tag's tree needs a rebuild and digest comparison CUE does not expose, and the published `v2.0.0-beta.1` manifest carries no `org.cuelang.vcs-commit` annotation (`source: kind: "self"`), so there is no cheap provenance check either.
 - **Authenticate with `GITHUB_TOKEN`.** Not needed: the package is public. If it ever turns private the anonymous probe gets 401 and refuses (fail closed), which is the safe direction.
 
-### D2. Release from `release/**` with the same workflow, branch-targeted
-
-The `push` trigger gains `release/**`. release-please gets `target-branch: ${{ github.ref_name }}`, which is `main` on `main` (the action's default, so `main`'s behaviour is unchanged) and `release/vX.Y` on a release branch. The CI dispatch step derives its ref the same way, passing the branch through `env:` rather than interpolating it into the script:
-
-```yaml
-on:
-  push:
-    branches:
-      - main
-      - 'release/**'
-...
-      - name: Run release-please
-        id: release
-        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-          target-branch: ${{ github.ref_name }}
-
-      - name: Trigger required CI on the release PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TARGET: ${{ github.ref_name }}
-        run: |
-          gh workflow run ci.yml \
-            --repo "${{ github.repository }}" \
-            --ref "release-please--branches--${TARGET}--components--core" \
-            || echo "no open release branch - nothing to trigger"
-```
-
-The branch-local release-please settings live in the branch's own `release-please-config.json` (`versioning: always-bump-patch`, `prerelease: false`), set by the PR the cut action opens, exactly as `v1` does. `publish-cue` is unchanged apart from the D1 probe: it checks out `tag_name` and publishes, so a backport patch `v2.0.1` gets the same guard as a `main` release. The `@v2` module path still refuses any tag outside major 2.
-
-`ci.yml` needs no change: its `pull_request` trigger has no branch filter, so a backport PR into `release/v2.0` and the release PR on it both get the required check.
-
-Alternatives:
-
-- **A separate `release-branch.yml`.** Rejected: two copies of the publish job drift, and the probe would have to be added twice.
-- **Hard-code the target per branch, as `v1` does.** Rejected: one workflow serves every future `release/vX.Y` with no edit at cut time.
-
-### D3. A thin `cut-release-branch` caller over the shared reusable workflow
-
-```yaml
-name: Cut release branch
-
-on:
-  workflow_dispatch:
-    inputs:
-      minor:
-        description: 'Released minor to maintain, as X.Y (for example 2.0); creates release/vX.Y from the highest vX.Y.* tag'
-        required: true
-        type: string
-
-permissions:
-  contents: read
-
-jobs:
-  cut:
-    uses: open-platform-model/.github/.github/workflows/cut-release-branch.yml@<commit-sha> # pinned once it merges
-    with:
-      tag_prefix: v
-      minor: ${{ inputs.minor }}
-      package: '.'
-    secrets: inherit
-```
-
-The reusable workflow (owned by `open-platform-model/.github`, written in parallel) creates `release/v<minor>` from the highest `v<minor>.*` tag and opens a PR into it that sets `versioning: always-bump-patch` and `prerelease: false` for package `.` in `release-please-config.json` and confirms `release.yml`'s trigger covers the branch (D2 already does). Core keeps no logic of its own: the caller passes core's constants. The input names, the pinned SHA, the `secrets:` form and the caller's `permissions:` follow the reusable workflow's merged interface; if it mints the release App token itself, the caller needs no write permission. Creating the branch through the App is what lets it pass `release-branches` without a bypass.
-
-During beta the highest `v2.0.*` tag is a prerelease (`v2.0.0-beta.N`); the action must not be run until GA (Non-Goals). That is an operator rule, recorded in the spec requirement, not enforced by the caller.
-
-### D4. One recovery rule: re-run while nothing is published, roll forward once it is
+### D2. One recovery rule: re-run while nothing is published, roll forward once it is
 
 - The probe exits 2 (inconclusive) or the job fails before `cue mod publish` pushes its manifest: nothing was published. The job is re-run in CI. This is what the existing schema-release requirement already prescribes ("a failed publish is debugged and re-run in CI").
-- The probe exits 1 (version present), whether on a first run or a re-run: the version is never published again. If it is broken, the next release supersedes it (`-beta.N+1`, or the next patch from `release/vX.Y` after GA). The tag is never moved, and the run stays red.
+- The probe exits 1 (version present), whether on a first run or a re-run: the version is never published again. If it is broken, the next release from `main` supersedes it (`-beta.N+1` during beta). The tag is never moved, and the run stays red.
 
 `putCheckedModule` pushes the manifest last, after every blob, so a job that dies before that leaves the version absent and a re-run is safe; a job that pushed the manifest and then reported failure is caught by the probe on re-run, and the existing "published artifact is verified to resolve" check tells the operator whether the published version is usable. The spec's MODIFIED requirement states this once so the existing re-run sentence and the new refusal cannot be read against each other.
 
-### D5. Force `task publish` to a local registry in-script
+One path is outside the publish job: release-please itself can fail after it created the tag and GitHub Release (release-please 17.3.0 `manifest.ts`: `createRelease` succeeds, a later comment or label call fails). A re-run then hits `DuplicateReleaseError`, relabels the PR and fails, and the run after that finds no pending release PR and leaves `release_created` empty: green, nothing published. Core has no dispatch recovery. So: **if the tag exists, the module is absent and no release PR is pending, the recovery is the next version, not a re-run.** The gap predates this change and is rare.
+
+### D3. Force `task publish` to a local registry in-script
 
 ```yaml
 publish:
@@ -186,14 +119,8 @@ Even if the forcing were broken, the sentinel points at a closed port, the crede
 **Decision**: Drop the assertion and its spike.
 **Rationale**: `tags-create-app-only` restricts tag creation to the App release-please runs as, and `tags-immutable` forbids moving or re-creating one, so a stale or hand-made tag at the release version cannot exist. This also removes the review finding that an assertion in the `release-please` job turned a transient failure into a green run that published nothing.
 
-### Does release-please handle a target branch containing `/`?
-**Context**: D2 targets `release/v2.0`, so release-please names its PR branch `release-please--branches--release/v2.0--components--core`.
-**Explored**: release-please v17.3.0 `src/util/branch-name.ts`.
-**Decision**: Use `github.ref_name` unchanged.
-**Rationale**: the name is built as `release-please--branches--${targetBranch}--components--${component}` and parsed with `^release-please--branches--(?<branch>.+)--components--(?<component>.+)$`, whose `.+` admits `/`. The legacy v12 patterns that use `[^/]+` start with `release-please/branches/` and cannot match the new form.
-
 ### Can Taskfile `env:` force the registry?
-**Context**: D5.
+**Context**: D3.
 **Explored**: a scratch Taskfile under task 3.52.0 with `CUE_REGISTRY=ghcr` exported.
 **Decision**: Export in the command script.
 **Rationale**: the ambient value won over the task-level `env:`.
@@ -201,18 +128,37 @@ Even if the forcing were broken, the sentinel points at a closed port, the crede
 ## Risks / Trade-offs
 
 - [A publish that pushed its manifest but reported failure leaves a permanently red run] → the next release supersedes it; the resolve-after-publish check tells the operator whether the version is usable. Accepted over an idempotent re-run that cannot verify bytes.
-- [GHCR outage or rate limit blocks a release] → fail closed by design; re-run the job once the registry answers (D4). Safe because nothing was published.
+- [GHCR outage or rate limit blocks a release] → fail closed by design; re-run the job once the registry answers (D2). Safe because nothing was published.
 - [A refused release leaves a GitHub Release and tag with no published module] → expected; the CHANGELOG entry stands, and the next release publishes. Never delete the release or the tag (rulesets refuse it anyway).
-- [A backport patch released after a newer minor becomes GitHub's "Latest" release] → release-please 17.3.0 calls `createRelease` with no `make_latest`, and GitHub defaults it to true, so `v2.0.1` cut after `v2.1.0` takes the badge. Cosmetic: CUE resolution, the docs site and consumers ignore it. Not fixed here; revisit if a release-please version exposes the flag.
-- [The cut action is run during beta, branching from a `-beta.N` tag] → the spec forbids it; the branch would be undeletable under `release-branches`. Accepted as an operator rule because the action runs once per minor, by hand.
-- [The reusable workflow's final interface differs from D3's assumed input names] → the caller is a few lines and is finished against the merged interface (task 2.2); nothing runs it before GA.
 - [The probe hard-codes the GHCR layout (`ghcr.io/<namespace>/<module path>`)] → that layout is the one `CUE_REGISTRY` in `release.yml` already encodes; a registry move edits both in one place each.
 - [`task publish` loses the ability to target GHCR] → intended; that was never a sanctioned use.
 
 ## Migration Plan
 
-Merge as one PR of hidden-type commits; its title, which becomes the squash commit, MUST also be a hidden type (`ci(release): ...`), or the merge would cut `v2.0.0-beta.2`. The probe takes effect on the next release PR merge; the release-branch trigger stays idle until a `release/v2.0` exists. Rollback is a revert of the workflow and Taskfile edits; nothing published changes either way.
+Merge as one PR of hidden-type commits; its title, which becomes the squash commit, MUST also be a hidden type (`ci(release): ...`), or the merge would cut `v2.0.0-beta.2`. The probe takes effect on the next release PR merge. Rollback is a revert of the workflow and Taskfile edits; nothing published changes either way.
+
+Owner preconditions, platform-side and not repo content. A read-only ruleset listing for core on 2026-10-01 showed only `docs-branches-pinned`, `mention-guard` and `tags-immutable` active. In order:
+
+1. Fix `v1`'s `release.yml` to run release-please as the release App (task 3.1) before step 2, or `v1`'s next release cannot create its tag.
+2. Enable `tags-create-app-only`. Until it is active, dropping the tag-to-commit assertion rests on `tags-immutable` alone, which stops a moved tag but not a hand-made one created before release-please reaches that version.
+3. Replace `docs-branches-pinned` with `release-branches`. The retired ruleset still blocks deleting ordinary `docs/<topic>` PR branches on core.
+4. For the owner: `release-branches` as drafted has no `required_status_checks` rule, so a PR into `release/*` could merge with failing CI. Settle that before Phase 2 cuts the first branch.
+
+## Phase 2 notes
+
+Inputs for the Phase 2 release-branch change. Nothing here is implemented in Phase 1.
+
+- **Policy to implement** (0021 D10, owner canon): lazy `release/vX.Y` (core: `release/v2.0`), cut by one automated action from the newest final `vX.Y.*` tag, never deleted, changed only by squash PRs, branch-local `versioning: always-bump-patch` and `prerelease: false`, every release tagged by release-please as the App, docs-only fixes cut no release and the docs site pins the commit SHA. **Version-line rule:** `release/vX.Y` is cut only when `main`'s next release is `X.(Y+1).0` or higher, and after the cut `main` never releases an `X.Y.*` version.
+- **Design carried from the withdrawn draft:** one `release.yml` with `push.branches: [main, 'release/**']`, `target-branch: ${{ github.ref_name }}` (the default on `main`, so `main` is unchanged), and the CI dispatch ref built from `github.ref_name` through `env:`. Checked: release-please 17.3.0 `src/util/branch-name.ts` parses `release-please--branches--(?<branch>.+)--components--...`, so a target containing `/` works. `ci.yml`'s `pull_request` trigger has no branch filter. `v1` is the precedent (`target-branch: v1`, `always-bump-patch`).
+- **Cut-action failure (review major):** the shared `cut-release-branch.yml` (open-platform-model/.github, commit 72f7d5d) creates `release/<x>` before pushing its setup branch, and its setup commit edits `release.yml`, which the opm-release-please App cannot push (no `workflows` permission). The result is an undeletable, unconfigured release branch that still carries `main`'s `versioning: prerelease`. Fix in .github: push and check the setup branch first, and skip adding `target-branch` when it is already present. Core: the release-branch trigger must be in the tree of the tag being cut, so the setup PR edits `release-please-config.json` only; dry-run the reusable Prepare step against core and assert `git diff --name-only` is exactly that file.
+- **Caller interface:** the reusable workflow declares `tag_prefix`, `minor`, `package_path`, `release_workflow`, `release_app_client_id` and secrets `release_app_private_key`, `token`. A core caller passes `package_path: .`, the client id from `vars.RELEASE_APP_CLIENT_ID` and the private key explicitly (not `secrets: inherit`), with `permissions: {}`, pinned by commit SHA.
+- **Beta and App facts:** the reusable workflow already refuses a minor with only prerelease tags, so a cut during beta is refused by the tool, not by an operator rule. The App token is used so CI runs on the setup PR; it is not what lets the branch pass `release-branches` (that ruleset has no creation rule). Prove in release-flow-sandbox that creating `release/*` through the API succeeds while the ruleset is active.
+- **"Latest" badge:** release-please 17.3.0 calls `createRelease` without `make_latest`, so a backport patch released after a newer minor takes GitHub's "Latest" badge. Cosmetic.
+- **Workspace hook:** the agent hook lets a `gh api` POST to `git/refs` with `ref=refs/heads/release/...` through, and `release-branches` would make such a branch permanent. Block it in `check_gh_api` before Phase 2.
+- **Sandbox proof** before core adopts it: a cut from a pre-change tag, and the collision where `main` and the branch would both claim an `X.Y.*` version.
 
 ## Open Questions
 
-- None blocking. The `v1` branch follow-up is tracked as task 4.1.
+- `task publish:branch` still follows the ambient `CUE_REGISTRY`, while workspace Registry Policy rule 2 says publish tasks force a local mapping. CI uses it for `-0.dev.*` builds, so forcing it local would break `branch-publish.yml`. Follow-up: refuse to run outside CI with a GHCR mapping, as a separate `chore(publish)` change.
+- The canon calls `-0.dev.*` builds "mutable by design"; enhancements PR 74's D10 R3 calls them "only ever created, never re-pointed". This change says only that they are outside its requirement. The owner settles the wording in 0021.
+- The `v1` follow-up is tracked as task 3.1.
