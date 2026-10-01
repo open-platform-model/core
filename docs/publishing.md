@@ -8,7 +8,7 @@ This document describes how `opmodel.dev/core` is published to its OCI registry:
 
 ## Goal
 
-Every commit that lands on a feature branch, plus every released commit on `main`, produces a versioned CUE module artifact in the registry. A release version is never overwritten: the release job refuses to publish a version GHCR already holds, and a broken release is fixed by releasing the next version. Branch builds are outside that rule (see [Implementation](#implementation)). The same Git commit produces the **same tag** whether published from a developer laptop or from CI — no rebuilds, no clock-dependent state.
+Every commit that lands on a feature branch, plus every released commit on `main`, produces a versioned CUE module artifact in the registry. A release version is never overwritten: the release job refuses to publish a version GHCR already holds, and a broken release is fixed by releasing the next version. Branch builds are outside that rule (see [Implementation](#implementation)). The same Git commit produces the **same tag** whether published from a developer laptop or from CI: no rebuilds, no clock-dependent state.
 
 Consumers (downstream repos, Taskfile automation, ad-hoc `cue mod get`) need a way to pin either:
 
@@ -157,8 +157,8 @@ Full transcript of the resolver tests is in the design conversation; not duplica
 - `.tasks/branch-tag.sh` — pure shell function that prints the tag for HEAD. Reads the major from `src/cue.mod/module.cue` and `NEXT_MINOR` from the highest stable `vMAJOR.*.*` git tag (falls back to `0` if no stable release exists yet for the current major). Refuses to run on `main` or against a dirty worktree.
 - `task branch-tag` — prints the tag without side effects.
 - `task publish:branch` — runs `task check` then `cue mod publish $TAG` from `src/`. Honours `CUE_REGISTRY`, so the same command publishes to the workspace local registry (`localhost:5000+insecure`) or GHCR depending on the environment. In CI this is the sanctioned `-dev.*` pre-release path; a laptop publish is a gated exception (Registry Policy rule 2, workspace root `AGENTS.md`).
-- `task publish` — publishes `VERSION` to the local registry only: it forces `CUE_REGISTRY` to `opmodel.dev=localhost:5000+insecure` inside its script, whatever the shell exports, so a laptop publish cannot reach GHCR.
-- `.tasks/publish-probe.sh` — the release path's existence check. The `publish-cue` job in `release.yml` runs it before `cue mod publish`: it sends an anonymous `HEAD` for the version's manifest on GHCR and publishes only on a 404. A 200 fails the job (the version is published; release the next one), and any other answer fails it too (nothing was pushed; re-run the job).
+- `task publish`: publishes `VERSION` to the local registry only: it forces `CUE_REGISTRY` to `opmodel.dev=localhost:5000+insecure` inside its script, whatever the shell exports, so a laptop publish cannot reach GHCR.
+- `.tasks/publish-probe.sh`: the release path's existence check. The `publish-cue` job in `release.yml` runs it before `cue mod publish`: it sends an anonymous `HEAD` for the version's manifest on GHCR and publishes only on a 404. A 200 fails the job (the version is published; release the next one), and any other answer fails it too (nothing was pushed; re-run the job).
 - `.github/workflows/branch-publish.yml` — fires on `push` to any branch except `main`. Skipped on forks (no `packages: write`). Calls `task publish:branch` after logging into GHCR with `GITHUB_TOKEN`.
 
 ## Follow-ups (not yet implemented)
