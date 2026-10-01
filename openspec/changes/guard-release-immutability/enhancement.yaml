@@ -1,0 +1,9 @@
+# Declares which enhancement decisions this change implements. Consumed by
+# `task enhancements:delivery:log` at archive time.
+# 0021 D10 is added by enhancements PR 74 (open on 2026-10-01); archive waits
+# for it to merge, and the requirement numbers cited in the proposal and spec
+# are re-checked against the merged text first.
+implements:
+  - enhancement: "0021"
+    decisions: [D10]
+    resolves: []
