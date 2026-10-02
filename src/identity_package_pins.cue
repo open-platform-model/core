@@ -206,9 +206,9 @@ _pinContractAndImplKeysDiffer: true
 // binding constrains modulePath but not the version major (0019:D5); the
 // platform-side check is owned by
 // `library`'s subscription-collapse work, not yet started. The residue is a
-// materialize-time registry resolution failure naming a tag that does not
-// resolve, which is a symptom rather than a diagnosis. Treat this case as
-// having no safety net beneath it.
+// registry resolution failure on the platform module's catalog import, naming
+// a tag that does not resolve, which is a symptom rather than a diagnosis.
+// Treat this case as having no safety net beneath it.
 //
 // The error names the DERIVED field rather than either authored one, which is
 // what makes it readable — "VersionMajor" is where the two values meet:
