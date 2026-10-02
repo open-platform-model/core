@@ -160,9 +160,17 @@ OPM checks values against `#config` and refuses a setting the schema does not ha
 
 The `ModuleInstance` custom resource is the cluster's record of an instance: its owner, the objects applied for it in `status.inventory`, and its status. For an instance the operator owns, it also carries the desired module path, version and values. What renders is the CUE `#ModuleInstance` value, built from the instance package or, by the operator, from the resource's spec. A resource the CLI owns carries `spec.module` and `spec.values` too, but the operator does not act on them while `spec.owner` is `cli`.
 
-### The operator deploys only published modules
+### Local modules reach the cluster only through the CLI
 
-`spec.module` holds a registry path and a version, and nothing else. A module that exists only on your disk cannot reach an instance the operator owns, and `opm instance apply` and `opm module apply` refuse to deploy one to such an instance. Iterate on a local module with `opm module build`, or with an instance the CLI owns, and publish it before the operator deploys it.
+The CLI can render a module that is not published. The instance package keeps its usual import of the module, and a `cue.mod/local-module.cue` file in the package redirects that import to a directory on disk. This is CUE's own local module file, available from CUE v0.17:
+
+```cue
+deps: "opmodel.dev/modules/web_app@v1": replaceWith: "../web_app"
+```
+
+A relative path is resolved from the package's root. The CLI's render commands honour the file and warn that a local replacement is in effect. An instance the CLI applies this way carries the annotation `module-instance.opmodel.dev/source: local` on its `ModuleInstance` resource. CUE never publishes `local-module.cue`, and `opm module publish` refuses a module that carries one unless you pass `--skip-override-check`.
+
+The operator never renders a local module. `spec.module` holds a registry path and a version, and nothing else. A `ModulePackage` whose instance package carries `local-module.cue` replacements is refused, because the operator does not enable local replacements. `opm instance apply` and `opm module apply` refuse to send a module resolved from local bytes to an instance the operator owns. Publish the module first, then let the operator deploy it.
 
 ### `app.kubernetes.io/instance` holds the component name
 
