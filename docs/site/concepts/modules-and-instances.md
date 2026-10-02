@@ -31,6 +31,8 @@ my_app/
 
 `#config` is the configuration schema: every setting a deployer can change, with its type and, where it has one, its default. OPM's rule is that a module author writes defaults only in `#config`, each marked with `*`, as in `replicas: int & >=1 | *1`. `#components` maps each component name to a component. `debugValues` is example data the CLI renders the module with while you work on it. It is not a set of defaults.
 
+A module can also set `initValues`: the values a new instance of it starts from. It is optional, and it may leave choices open. `opm instance init` writes it into the `values.cue` of the instance package it creates. A module without `initValues` stays valid, and its instances start from its `debugValues` instead.
+
 The module path carries the major version, as in `example.com/modules/my_app@v0`. The module's `metadata.name` is snake_case and equals the path's last segment, here `my_app`. `opm module publish` pushes the module to the registry under that path, tagged with the full version from `identity/identity.cue`, such as `0.1.0`. `opm module publish` refuses a version the registry already holds.
 
 ### An instance binds a module to values, a name and a namespace
@@ -66,6 +68,14 @@ values: {
 ```
 
 `#ModuleInstance` takes five main inputs: the module in `#module`, `metadata.name`, `metadata.namespace`, `metadata.clusterDomain` (`cluster.local` unless you set it) and `values`. OPM unifies `values` with the module's `#config`. Values passed with `-f` join the same unification. A later file does not override an earlier one, and two different values for one setting are a conflict.
+
+You do not have to write the package by hand. `opm instance init` creates one from a published module:
+
+```bash
+opm instance init shop opmodel.dev/modules/web_app --namespace shop
+```
+
+The command writes three files into `shop/`. `cue.mod/module.cue` gives the package the module path `instance.local/shop@v0` and pins the module, core and the catalogs to exact versions. `instance.cue` imports the module and sets the name and namespace. `values.cue` holds the starting values: the module's `initValues` if it sets them, else its `debugValues` if they are fully concrete, else an empty `values: {}`. The command prints which source it used, and it does not validate the result. Run `opm instance vet` on the package before you deploy it.
 
 The instance's `components` are the module's `#components`, evaluated with your values. OPM adds no component of its own. The instance hands its name, namespace, UUID and cluster domain to the module, and the module passes them to every component as the component's instance identity. That is how each component computes the names of its objects. The default is `<instance>-<component>`, so the podinfo instance's `podinfo` component renders a Deployment and a Service named `podinfo-podinfo`.
 
@@ -114,6 +124,12 @@ One module is deployed many times, into different namespaces, with different val
 
 `#config` is the module's public contract, and it travels with the published module. Keeping it plain data lets tools that do not run CUE read it, such as a web form, a kubectl plugin or generated code in another language. So `#config` has to stay expressible as OpenAPI v3, with no CUE comprehensions, `for` loops or `if` clauses. Nothing checks this (see [What enforces this](#what-enforces-this)).
 
+### Why a module's starting values are not its example values
+
+`debugValues` and `initValues` answer different questions. `debugValues` is what the author tests with, and it can hold throwaway hostnames, debug log levels or dummy credentials. `initValues` is what the author wants a new deployment to start from. Reusing `debugValues` for both would copy test data into every new instance package, so OPM gives the second purpose its own field.
+
+`initValues` is not unified with `#config`. That keeps every module load from evaluating the schema for a check only `opm instance init` needs, so a stale `initValues` breaks one new package instead of the whole module. It also lets the author leave a choice open. A setting with a default appears in `values.cue` as its default. A choice with no default, such as `"ClusterIP" | "LoadBalancer"`, appears as the choice, and the first `opm instance vet` asks the deployer to pick one. An optional setting is left out.
+
 ### Why an instance is one value with no builder
 
 `#ModuleInstance` wires its name, namespace, UUID and cluster domain into the module inline, in the same expression that names the module. Module and instance are therefore a single CUE value. There is no builder to call first and no step that has to run before another. Because the cluster domain sits on the instance, an instance on a cluster with a non-standard domain sets `metadata.clusterDomain` once, and every component's fully qualified DNS name follows.
@@ -134,7 +150,7 @@ Two instances of one module can live in one namespace. If objects took the bare 
 
 `debugValues` looks like a set of defaults, and it is not one. It is example data that `opm module vet`, `opm module build` and `opm module apply` use when you pass no `-f` file. Passing `-f` replaces it entirely. An instance package never reads it, and OPM never falls back to it when an instance leaves a setting out. Defaults are the `*` values inside `#config`.
 
-Nor is `debugValues` necessarily a new instance's starting point. `opm instance init` writes the module's `initValues` into the new package when the module sets them. It uses `debugValues` only when the module has no `initValues` and the `debugValues` are fully concrete, and it starts from empty values otherwise.
+Nor is `debugValues` always what a new instance starts from. When a module sets `initValues`, `opm instance init` uses those and never reads `debugValues`.
 
 ### Values in an instance package are not checked for unknown settings
 
@@ -177,4 +193,6 @@ Each rule names what refuses a violation. [What enforces a rule](/docs/concepts/
 - `cue`: An instance's name and namespace are DNS labels (`#NameType`).
 - `cue`: Every component receives the instance's identity. A component that sets `#instance` to a different identity conflicts with the module's wiring.
 - `convention`: A module author writes defaults only inside `#config`, never on component fields. Nothing checks it.
+- `cue`: A module's top-level fields are the ones `#Module` declares. A misspelled field, such as `initValuez`, fails with `field not allowed`, and so does `initValues` against a core release older than the one that added it.
+- `convention`: A module's `initValues` satisfy its `#config`. Nothing checks this when the module loads or when `opm instance init` runs; a mismatch surfaces at the first `opm instance vet` of the new package.
 - `convention`: `#config` stays expressible as OpenAPI v3, with no comprehensions. Core's specification says the render pipeline enforces this, but no check exists.
