@@ -6,7 +6,7 @@ weight: 32
 ---
 
 <!-- Open with OPM as the subject: a resource describes something that must exist (a container, volumes, ConfigMaps), a trait describes how it behaves (scaling, exposure, restart policy), and a catalog publishes both as versioned contracts. Say what the page leaves to others: attaching them in "Components and blueprints", how transformers pick them up in "How matching works", contract keys and `apiVersion` in "Versions in OPM" and "Identity and names". Link the glossary entries for resource, trait, catalog, contract and FQN on first use. No steps, no field tables. Check against: core/src/resource.cue, core/src/trait.cue, core/SPEC.md §2.1 and §2.2 Definition 
-Kubernetes comparison, only if it helps: weave it into the sentence that introduces the concept, or into How it works, never as a section of its own. Researched candidate: Each resource and trait is a versioned schema with an `apiVersion` on the Kubernetes ladder (`v1alpha1`, `v1beta1`, `v1`), which a Kubernetes reader knows from CRD versions. A resource is closest to the part of a pod spec that says what runs; a trait to a setting Kubernetes spreads across objects (replicas on the Deployment, ports on a Service, a disruption budget on a PodDisruptionBudget). Where the comparison stops: neither is a Kubernetes kind. The `container` resource becomes a Deployment, StatefulSet, DaemonSet, Job or CronJob depending on the workload type its blueprint sets, and a trait may produce its own object (`expose` becomes a Service) or only change another. Nothing is installed in the cluster to serve them; transformers read them at render time. Check against: core/src/types.cue (`#APIVersionType`), catalog_opm/opm/resources/v1beta1/container.cue, catalog_opm/opm/traits/v1beta1/expose.cue, catalog_opm/opm/transformers/service_transformer.cue, catalog_opm/opm/transformers/deployment_transformer.cue -->
+Kubernetes comparison, only if it helps: weave it into the sentence that introduces the concept, or into How it works, never as a section of its own. Researched candidate: Each resource and trait is a versioned schema with an `apiVersion` on the Kubernetes ladder (`v1alpha1`, `v1beta1`, `v1`), which a Kubernetes reader knows from CRD versions. A resource is closest to the part of a pod spec that says what runs; a trait to a setting Kubernetes spreads across objects (replicas on the Deployment, ports on a Service, a disruption budget on a PodDisruptionBudget). Where the comparison stops: neither is a Kubernetes kind. The `container` resource becomes a Deployment, StatefulSet, DaemonSet, Job or CronJob depending on the workload type its blueprint sets, and a trait may produce its own object (`expose` becomes a Service) or only change another. Nothing is installed in the cluster to serve them; transformers read them at render time. Check against: core/src/types.cue (`#APIVersionType`), catalog_opm/src/resources/v1beta1/container.cue, catalog_opm/src/traits/v1beta1/expose.cue, catalog_opm/src/transformers/service_transformer.cue, catalog_opm/src/transformers/deployment_transformer.cue -->
 
 ## How it works
 
@@ -16,7 +16,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A trait modifies a resource
 
-<!-- `#Trait` has the same metadata and spec shape plus `appliesTo` (the resources it modifies) and `optional`, its posture when no transformer handles it. The catalog states the posture as a default: `bool | *true` for advisory traits such as `expose` and `scaling`, `bool | *false` for load-bearing ones such as `backup`. A module overrides it where it attaches the trait: `#traits: (FQN): SomeTrait & {optional: true}`. An unhandled advisory trait renders with a warning; an unhandled load-bearing one fails the render, unless it is provider-fulfilled, nothing on the platform provides it, and the caller passes `--skip-unprovided`, which renders the rest of the component and warns. In catalog_opm every trait's `appliesTo` lists `container`, except `backup`, which lists `volumes`. Check against: core/src/trait.cue, catalog_opm/opm/traits/v1beta1/expose.cue, catalog_opm/opm/traits/v1beta1/scaling.cue, catalog_opm/opm/traits/v1alpha1/backup.cue, library/opm/internal/renderstage/render.cue.tmpl (`_handled`, `unhandledWarnings`, `unresolvedTraits`) -->
+<!-- `#Trait` has the same metadata and spec shape plus `appliesTo` (the resources it modifies) and `optional`, its posture when no transformer handles it. The catalog states the posture as a default: `bool | *true` for advisory traits such as `expose` and `scaling`, `bool | *false` for load-bearing ones such as `backup`. A module overrides it where it attaches the trait: `#traits: (FQN): SomeTrait & {optional: true}`. An unhandled advisory trait renders with a warning; an unhandled load-bearing one fails the render, unless it is provider-fulfilled, nothing on the platform provides it, and the caller passes `--skip-unprovided`, which renders the rest of the component and warns. In catalog_opm every trait's `appliesTo` lists `container`, except `backup`, which lists `volumes`. Check against: core/src/trait.cue, catalog_opm/src/traits/v1beta1/expose.cue, catalog_opm/src/traits/v1beta1/scaling.cue, catalog_opm/src/traits/v1alpha1/backup.cue, library/opm/internal/renderstage/render.cue.tmpl (`_handled`, `unhandledWarnings`, `unresolvedTraits`) -->
 
 ### Each spec sits under its own key
 
@@ -24,7 +24,11 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Who implements a resource or trait
 
-<!-- Usually the declaring catalog also ships the transformer (`fulfilment: "catalog"`, the default). A `provider` contract is one the declaring catalog deliberately ships no transformer for, such as the opm catalog's `backup@v1alpha1` trait; another catalog on the platform must implement it. Keep the platform side on "Platforms and catalogs". Verify: no catalog in the workspace implements `backup@v1alpha1` today. Check against: core/src/resource.cue (`fulfilment`), core/src/trait.cue (`fulfilment`), catalog_opm/opm/traits/v1alpha1/backup.cue -->
+<!-- Usually the declaring catalog also ships the transformer (`fulfilment: "catalog"`, the default). A `provider` contract is one the declaring catalog deliberately ships no transformer for, such as the opm catalog's `backup@v1alpha1` trait; another catalog on the platform must implement it. Keep the platform side on "Platforms and catalogs". Verify: no catalog in the workspace implements `backup@v1alpha1` today. Check against: core/src/resource.cue (`fulfilment`), core/src/trait.cue (`fulfilment`), catalog_opm/src/traits/v1alpha1/backup.cue -->
+
+### Native objects for what no abstraction models
+
+<!-- The escape hatch: the `objects` resource (`opmodel.dev/catalogs/opm/resources/objects@v1alpha1`, wrapper `#Objects` in `opmodel.dev/catalogs/opm/resources/v1alpha1`) carries Kubernetes objects in their native shape, a map keyed by name, for what no resource or trait models: a custom resource instance, a StorageClass. Each entry renders as one object, as written, and its name is never prefixed. A built-in kind is validated against its closed upstream `cue.dev/x/k8s.io` definition (Kubernetes 1.36, no opt-out) and an unknown kind in a built-in API group is refused; any other kind passes open and states `#scope`, `"Namespaced"` or `"Cluster"`, which is never rendered. Namespaced objects get the instance's namespace unless they set one. It is alpha, and an entry takes no traits. One sentence on when to use it (last resort), then link the how-to "Use a raw Kubernetes resource". Check against: catalog_opm/src/resources/v1alpha1/objects.cue, catalog_opm/src/transformers/objects_transformer.cue, catalog_opm/docs/site/authoring/use-a-raw-kubernetes-resource.md -->
 
 ## Why it is built this way
 
@@ -52,7 +56,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A resource is not a Kubernetes kind
 
-<!-- The misreading: `container` means Deployment. The kind is decided at render, by which transformer matches the component's workload type. Check against: catalog_opm/opm/transformers/deployment_transformer.cue, catalog_opm/opm/transformers/statefulset_transformer.cue, catalog_opm/opm/transformers/daemonset_transformer.cue, catalog_opm/opm/transformers/job_transformer.cue, catalog_opm/opm/transformers/cronjob_transformer.cue (`requiredLabels`) -->
+<!-- The misreading: `container` means Deployment. The kind is decided at render, by which transformer matches the component's workload type. Check against: catalog_opm/src/transformers/deployment_transformer.cue, catalog_opm/src/transformers/statefulset_transformer.cue, catalog_opm/src/transformers/daemonset_transformer.cue, catalog_opm/src/transformers/job_transformer.cue, catalog_opm/src/transformers/cronjob_transformer.cue (`requiredLabels`) -->
 
 ### An attached advisory trait can be skipped
 
@@ -68,13 +72,14 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### The labels on a resource or trait are only categories
 
-<!-- `metadata.labels` on a resource or trait (`resource.opmodel.dev/category`, `trait.opmodel.dev/category`) categorise it; they never reach the component, and nothing matches on them. Matching uses `matchLabels`. Check against: core/src/resource.cue, core/src/component.cue, catalog_opm/opm/resources/v1beta1/container.cue -->
+<!-- `metadata.labels` on a resource or trait (`resource.opmodel.dev/category`, `trait.opmodel.dev/category`) categorise it; they never reach the component, and nothing matches on them. Matching uses `matchLabels`. Check against: core/src/resource.cue, core/src/component.cue, catalog_opm/src/resources/v1beta1/container.cue -->
 
 ## What enforces this
 
 <!-- One line per rule, each with its badge:
 - `spec` has exactly one field, named after the member in camelCase: cue.
 - `fulfilment` is `catalog` or `provider`: cue (closed enum).
+- A built-in Kubernetes kind in an `objects` entry matches its closed upstream definition, and an unknown kind in a built-in API group is refused: cue.
 - A trait's `optional` is stated as a default and not pinned to a value: publish (`#TraitOptionalGate` in `opm catalog publish`).
 - `fqn`, `modulePath` and `catalogVersion` agree with the catalog's identity package: publish (`#CatalogMemberFQNGate`).
 - Changes to a beta or GA contract are additive only: publish (the compatibility gate in `opm catalog publish`).
@@ -82,4 +87,4 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - An unhandled trait resolved `optional: true` warns: kernel, advisory only.
 - `appliesTo` is non-empty and a trait attaches only where it applies: convention (not checked; see Common mistakes).
 - A resource or trait schema marks no defaults: convention.
-Check against: core/src/resource.cue, core/src/trait.cue, cli/internal/publish/catalog_gates.go, cli/internal/publish/gates.go, cli/internal/compat/compat.go, library/opm/internal/renderstage/render.cue.tmpl, library/opm/errors/match.go, core/SPEC.md §6.3 -->
+Check against: core/src/resource.cue, core/src/trait.cue, catalog_opm/src/resources/v1alpha1/objects.cue, cli/internal/publish/catalog_gates.go, cli/internal/publish/gates.go, cli/internal/compat/compat.go, library/opm/internal/renderstage/render.cue.tmpl, library/opm/errors/match.go, core/SPEC.md §6.3 -->

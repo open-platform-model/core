@@ -10,7 +10,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ## How it works
 
-<!-- One illustrative snippet, not a field table, giving each kind's real `fqn`: module `opmodel.dev/modules/apprise@v3`, equal to its modulePath; catalog `opmodel.dev/catalogs/opm@v4`, equal to its modulePath; trait `opmodel.dev/catalogs/opm/traits/scaling@v1beta1`, whose modulePath is `opmodel.dev/catalogs/opm/traits/v1beta1`; transformer `opmodel.dev/catalogs/opm/transformers/deployment-transformer@<catalog version>`; instance `opmodel.dev/modules/apprise:<instance name>:<namespace>`. Check against: modules/apprise/identity/identity.cue, catalog_opm/opm/identity/identity.cue, catalog_opm/opm/traits/v1beta1/scaling.cue, catalog_opm/opm/transformers/deployment_transformer.cue, core/src/module_instance.cue -->
+<!-- One illustrative snippet, not a field table, giving each kind's real `fqn`: module `opmodel.dev/modules/apprise@v3`, equal to its modulePath; catalog `opmodel.dev/catalogs/opm@v4`, equal to its modulePath; trait `opmodel.dev/catalogs/opm/traits/scaling@v1beta1`, whose modulePath is `opmodel.dev/catalogs/opm/traits/v1beta1`; transformer `opmodel.dev/catalogs/opm/transformers/deployment-transformer@<catalog version>`; instance `opmodel.dev/modules/apprise:<instance name>:<namespace>`. Check against: modules/apprise/identity/identity.cue, catalog_opm/src/identity/identity.cue, catalog_opm/src/traits/v1beta1/scaling.cue, catalog_opm/src/transformers/deployment_transformer.cue, core/src/module_instance.cue -->
 
 ### Modules and catalogs are named by their path
 
@@ -18,11 +18,11 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Contracts are named by an authored key
 
-<!-- Resources, traits and blueprints carry a `metadata.fqn` of the form `<path>/<name>@<apiVersion>` (#ContractFQNType), written by the catalog and not computed by core. Their `metadata.modulePath` is a different string: the package the member is filed in, `<catalog registryPath>/<kind>/<apiVersion>`, with no major. The kind segment (`/resources`, `/traits`, `/blueprints`) stays in the key so a resource and a trait may share a name. This key is what a module demands, what a transformer requires, and what a catalog lists its members under. Check against: core/src/resource.cue, core/src/trait.cue, core/src/blueprint.cue, core/src/catalog.cue, catalog_opm/opm/traits/v1beta1/scaling.cue -->
+<!-- Resources, traits and blueprints carry a `metadata.fqn` of the form `<path>/<name>@<apiVersion>` (#ContractFQNType), written by the catalog and not computed by core. Their `metadata.modulePath` is a different string: the package the member is filed in, `<catalog registryPath>/<kind>/<apiVersion>`, with no major. The kind segment (`/resources`, `/traits`, `/blueprints`) stays in the key so a resource and a trait may share a name. This key is what a module demands, what a transformer requires, and what a catalog lists its members under. Check against: core/src/resource.cue, core/src/trait.cue, core/src/blueprint.cue, core/src/catalog.cue, catalog_opm/src/traits/v1beta1/scaling.cue -->
 
 ### Transformers are named by the build that shipped them
 
-<!-- A transformer's `metadata.fqn` is `<path>/<name>@<semver>` (#ImplFQNType), where the version is the catalog's release; its `modulePath` is `<catalog registryPath>/transformers`. Contract keys and transformer keys are separate types, so one cannot stand where the other belongs. Check against: core/src/transformer.cue, core/src/types.cue (#ImplFQNType, #FQNType), catalog_opm/opm/transformers/deployment_transformer.cue -->
+<!-- A transformer's `metadata.fqn` is `<path>/<name>@<semver>` (#ImplFQNType), where the version is the catalog's release; its `modulePath` is `<catalog registryPath>/transformers`. Contract keys and transformer keys are separate types, so one cannot stand where the other belongs. Check against: core/src/transformer.cue, core/src/types.cue (#ImplFQNType, #FQNType), catalog_opm/src/transformers/deployment_transformer.cue -->
 
 ### Instances are named by module lineage, name and namespace
 
@@ -34,7 +34,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Which name reaches a rendered object
 
-<!-- A component sits under a key in `#components`; its `metadata.name` defaults to that key and may differ from it. `metadata.name` is the one that counts: it becomes the `component.opmodel.dev/name` and `app.kubernetes.io/name` labels and the default object name. The rendered object's name is `metadata.resourceName`, which defaults to `<instance name>-<component name>`; an explicit value may be any DNS subdomain up to 253 characters (#ObjectNameType) unless an attached member narrows it (the Expose trait requires a valid Service name, #ServiceNameType; the stateful workload blueprint requires a DNS label). `#names.dns` derives the short, namespace-local and cluster-wide DNS names from `resourceName`. Check against: core/src/component.cue, core/src/module.cue (#components), core/src/transformer.cue (componentLabels, controllerLabels), core/src/types.cue (#ObjectNameType, #ServiceNameType), catalog_opm/opm/traits/v1beta1/expose.cue, catalog_opm/opm/blueprints/v1beta1/stateful_workload.cue, catalog_opm/docs/name-constraints.md -->
+<!-- A component sits under a key in `#components`; its `metadata.name` defaults to that key and may differ from it. `metadata.name` is the one that counts: it becomes the `component.opmodel.dev/name` and `app.kubernetes.io/name` labels and the default object name. The rendered object's name is `metadata.resourceName`, which defaults to `<instance name>-<component name>`; an explicit value may be any DNS subdomain up to 253 characters (#ObjectNameType) unless an attached member narrows it (the Expose trait requires a valid Service name, #ServiceNameType; the stateful workload blueprint requires a DNS label). `#names.dns` derives the short, namespace-local and cluster-wide DNS names from `resourceName`. Check against: core/src/component.cue, core/src/module.cue (#components), core/src/transformer.cue (componentLabels, controllerLabels), core/src/types.cue (#ObjectNameType, #ServiceNameType), catalog_opm/src/traits/v1beta1/expose.cue, catalog_opm/src/blueprints/v1beta1/stateful_workload.cue, catalog_opm/docs/name-constraints.md -->
 
 ## Why it is built this way
 
@@ -66,7 +66,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A contract's `fqn` is not its `modulePath`
 
-<!-- Misreading, carried over from modules: `fqn` equals `modulePath` everywhere. Correct: only on modules and catalogs. The scaling trait's `modulePath` is `…/traits/v1beta1` and its `fqn` is `…/traits/scaling@v1beta1`. Check against: core/src/trait.cue, core/src/catalog.cue, catalog_opm/opm/traits/v1beta1/scaling.cue -->
+<!-- Misreading, carried over from modules: `fqn` equals `modulePath` everywhere. Correct: only on modules and catalogs. The scaling trait's `modulePath` is `…/traits/v1beta1` and its `fqn` is `…/traits/scaling@v1beta1`. Check against: core/src/trait.cue, core/src/catalog.cue, catalog_opm/src/traits/v1beta1/scaling.cue -->
 
 ### The `@v1` on a contract key is a contract level
 
