@@ -49,6 +49,20 @@ jobs:
       - name: Report over-long doc comments
         run: task docs:check
 
+      # The definitions reference is generated from src/*.cue by a Go tool
+      # with its own module under tools/refgen.
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/refgen/go.mod
+          cache-dependency-path: tools/refgen/go.sum
+
+      - name: Test the reference generator
+        run: task refgen:test
+
+      - name: Verify the definitions reference is up to date
+        run: task docs:reference:check
+
       - name: Reject bare @mentions in the PR title, body and commit messages
         if: github.event_name == 'pull_request'
         env:

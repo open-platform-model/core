@@ -95,7 +95,7 @@ This repo defines and publishes the Open Platform Model **core schema** as a ver
 
 The schema is the source of truth for OPM. Every OPM artifact is typed against these definitions, and downstream repos (`library`, `catalog`, `cli`, `opm-operator`, `modules`, `releases`) consume `core` as a published dependency — never by filesystem path.
 
-This is a pure CUE repository: schema definitions plus the tooling to validate and publish them. No Go code.
+The schema is pure CUE: definitions plus the tooling to validate and publish them. The one Go program is the definitions reference generator in `tools/refgen/` (its own Go module), which writes `docs/site/reference/definitions/` and never ships in the CUE module.
 
 ## Branch model (read before committing)
 
@@ -138,6 +138,9 @@ src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v2
 src/*.cue                the core schema package (module root lives under src/)
 src/INDEX.md             generated definition index (ships inside the CUE module)
 docs/                    schema design notes (tutorial / explanatory)
+docs/site/               site pages opmodel.dev builds (STYLE.md "Site Pages" dialect)
+docs/site/reference/definitions/  generated definitions reference (task docs:reference; never hand-edit)
+tools/refgen/            Go generator for that reference (own go.mod; not part of the CUE module)
 SPEC.md                  normative schema specification (definitions, constraints, rationale)
 openspec/                OpenSpec proposals/specs/archives (active change workflow)
 .tasks/                  Taskfile script fragments + git hooks
@@ -170,7 +173,10 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 | `task spec:check`             | Verify `SPEC.md` inventory matches CUE construct definitions  |
 | `task docs:check`             | Fail on doc comments over 6 lines in `src/*.cue`               |
 | `task hooks:install`          | Install the pre-commit hook (SPEC.md co-update gate)          |
-| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit |
+| `task docs:reference`         | Regenerate the definitions reference in `docs/site/reference/definitions/` from `src/*.cue` |
+| `task docs:reference:check`   | Fail when the committed definitions reference is stale        |
+| `task refgen:test`            | gofmt check, vet and test `tools/refgen`                      |
+| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + reference generator and freshness |
 
 ### Release & publishing
 
@@ -234,7 +240,8 @@ Every `//` block that ends on the line directly above a field or definition is t
   - **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
 - Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
 - Keep `src/INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated section; update both.
-- Run `task check` before finishing — it covers fmt, vet, INDEX freshness, and SPEC inventory in one shot.
+- Run `task docs:reference` after changing a definition or a doc comment in `src/`: the reference pages under `docs/site/reference/definitions/` are generated from them and `task docs:reference:check` fails when they are stale. A new exported definition must be placed on a page or excluded in `tools/refgen/groups.go` (with a reason), or the generator refuses to run. The generator drops `// WHY` blocks and strips enhancement citations, `SPEC.md` pointers and experiment references from doc comments; a doc comment that reads badly once they are gone needs rewording at the source.
+- Run `task check` before finishing — it covers fmt, vet, INDEX freshness, SPEC inventory, the doc-comment limit and the reference in one shot.
 - **Non-trivial schema work goes through OpenSpec** (`openspec/`, added 2026-08-05). Scaffold with the `openspec-new-change` skill; `openspec/config.yaml` carries the normative rules each artifact must satisfy. Two things it does *not* replace: `SPEC.md`, which is the published specification and is written in the implementing commit itself under `core-schema-edit`; and the enhancement entry, when the change is a slice of one.
   - **Core-scoped slice of a cross-cutting enhancement**: the design lives in `enhancements/NNNN/`, the execution lives in an OpenSpec change here. Cite the decision numbers it satisfies and create `enhancement.yaml` in the change directory at creation time (`implements: [{enhancement: "NNNN", decisions: [D1], resolves: []}]`; validated by `enhancements/schema.cue` `#ChangeDeclaration`). It is the only link between the change and the entry: at archive time `task enhancements:delivery:log FROM=core/openspec/changes/archive/<name> SUMMARY="..."` from the workspace root appends the landing to that entry's `delivery.yaml`, and `task enhancements:delivery:reconcile` catches a change that declared one and was never logged. A change that implements no enhancement carries no such file, which is fine.
   - Apply the mergeable-sections gate before starting work — split requests that do not cut into a handful of green, committable sections using `openspec/config.yaml` § Execution Gate phrasing.
