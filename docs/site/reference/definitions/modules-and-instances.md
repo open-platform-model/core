@@ -27,7 +27,7 @@ The portable application blueprint created by developers and/or platform teams.
     kind: "Module"
 
     metadata: {
-        // name: snake_case, and the leaf of modulePath. A module name has ONE
+        // name: snake_case, and the leaf of modulePath. A module name has one
         // spelling: it is the CUE package name, the registry-path leaf and the value
         // in the module.opmodel.dev/name label, and package names cannot contain
         // hyphens. The kebab-case #NameType stays on #Resource / #Trait /
@@ -37,11 +37,7 @@ The portable application blueprint created by developers and/or platform teams.
         modulePath!: #ModulePathType // Example: "example.com/modules/example_module@v1" (author-supplied in module.cue)
         version!:    #VersionType    // Example: "0.1.0" (author-supplied in module.cue)
 
-        // The one decomposition of modulePath. registryPath is the OCI
-        // repository (major stripped); major is read from the path.
-        _ref: #ArtifactRef & {"modulePath": modulePath}
-
-        // fqn IS the module path — nothing is recombined, and neither `name` nor
+        // fqn is the module path — nothing is recombined, and neither `name` nor
         // `version` is interpolated into it. Artifact identity therefore
         // distinguishes majors and nothing finer: @v2 and @v3 are distinct modules
         // under both CUE and Go semantics, while every release inside a major shares
@@ -49,22 +45,14 @@ The portable application blueprint created by developers and/or platform teams.
         fqn: #ModulePathType & modulePath // Example: "example.com/modules/example_module@v1"
 
         // registryPath: the major-free identity of the module lineage.
-        // #ModuleInstance derives its own fqn from THIS rather than from fqn, so
+        // #ModuleInstance derives its own fqn from this rather than from fqn, so
         // instance identity survives a major bump; it is also the OCI repository
         // every address-composition site in `cli` and `library` collapses into.
         registryPath: _ref.registryPath // Example: "example.com/modules/example_module"
 
-        // The path's leaf MUST be the module's name. Hidden, because it is a check
-        // rather than a value a consumer reads. Only the LEAF is constrained: CUE
-        // accepts hyphens in path segments, and narrowing the whole path would make
-        // OPM unable to express its own organisation
-        // (github.com/open-platform-model/...).
-        _leaf: strings.HasSuffix(_ref.registryPath, "/"+name)
-        _leaf: true
-
-        // Unique identifier for the module, computed as a UUID v5 (SHA1) of the FQN using the OPM namespace UUID.
-        // The formula is unchanged; its input is the module path, so a uuid
-        // moves on a major bump and on nothing else.
+        // Unique identifier for the module, computed as a UUID v5 (SHA1) of the
+        // FQN using the OPM namespace UUID. Its input is the module path, so a
+        // uuid moves on a major bump and on nothing else.
         uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
 
         description?: string
@@ -98,14 +86,14 @@ The portable application blueprint created by developers and/or platform teams.
 
     // Value schema - constraints and defaults.
     // Developers define the configuration contract and reference it in their components.
-    // MUST be OpenAPIv3 compliant (no CUE templating - for/if statements)
+    // Must be OpenAPIv3 compliant (no CUE templating - for/if statements)
     #config: _
 
     // debugValues: Example values for testing and debugging.
     // It is unified and validated in the runtime
     debugValues: _
 
-    // Values a freshly initialized instance package starts from. Optional; MAY be
+    // Values a freshly initialized instance package starts from. Optional; may be
     // non-concrete. Not checked against #config here.
     initValues?: _
 
@@ -159,7 +147,7 @@ CUE enforces each of these rules on a value unified with `#Module`:
         // every component's #names.dns.fqdn via #module.#ctx.instance.
         clusterDomain: string | *"cluster.local"
 
-        // fqn: this instance's own identity — the deployed module's MAJOR-FREE
+        // fqn: this instance's own identity — the deployed module's major-free
         // registry path, this instance's name, and its namespace. Neither the module's
         // version nor its major reaches instance identity.
         fqn: "\(#moduleMetadata.registryPath):\(name):\(namespace)"

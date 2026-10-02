@@ -65,7 +65,7 @@ CUE enforces each of these rules on a value unified with `#SecretType`:
 
 ## #SecretLiteral
 
-User provides the actual value.
+`#SecretLiteral` is the [`#Secret`](/docs/reference/definitions/secrets-and-config/#secret) variant that carries the value itself.
 
 **At a glance**
 
@@ -87,7 +87,7 @@ User provides the actual value.
 
 **Notes**
 
-The transformer creates a K8s Secret with this data entry.
+The transformer creates a Kubernetes Secret holding it as one data entry.
 
 **Enforcement**
 
@@ -98,7 +98,7 @@ CUE enforces each of these rules on a value unified with `#SecretLiteral`:
 
 ## #SecretK8sRef
 
-Points to a pre-existing K8s Secret in the cluster.
+`#SecretK8sRef` is the [`#Secret`](/docs/reference/definitions/secrets-and-config/#secret) variant that points to a Kubernetes Secret already in the cluster.
 
 **At a glance**
 
@@ -114,14 +114,14 @@ Points to a pre-existing K8s Secret in the cluster.
 #SecretK8sRef: {
     #SecretType
 
-    secretName!: string // pre-existing K8s Secret name
-    remoteKey!:  string // key within that K8s Secret
+    secretName!: string // name of the existing Kubernetes Secret
+    remoteKey!:  string // key within that Secret
 }
 ```
 
 **Notes**
 
-OPM emits no resource — the Secret already exists. OPM only wires the secretKeyRef in env vars.
+OPM emits no resource for it and only wires the secretKeyRef in env vars.
 
 **Enforcement**
 
@@ -161,7 +161,7 @@ CUE enforces each of these rules on a value unified with `#AutoSecrets`:
 
 ## #SecretSchema
 
-Secret specification for K8s Secret resources.
+Secret specification for Kubernetes Secret resources.
 
 **At a glance**
 

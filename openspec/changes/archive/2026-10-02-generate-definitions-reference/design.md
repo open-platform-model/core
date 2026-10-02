@@ -31,7 +31,7 @@ Every exported (`#`-prefixed) top-level definition in a non-fixture file of `src
 | --- | --- |
 | Summary | First sentence of the cleaned doc comment, its leading `#Name:` label dropped |
 | At a glance | File, module path, shape read off the AST (closed or open struct, map, string constraint, disjunction), the `kind` value, embedded definitions, Uses and Used by |
-| Spec | The definition as written, formatted by `cue/format` with four-space indent; only doc and same-line comments kept, cleaned; a derived `T & {...}` value over 40 lines with comprehensions is shown as `T` with a note (only `#Platform.#contracts` today) |
+| Spec | The definition as written, formatted by `cue/format` with four-space indent, without hidden (`_`) fields or the comprehensions that only set them; only doc and same-line comments kept, cleaned; a derived `T & {...}` value over 40 lines with comprehensions is shown as `T` with a note (only `#Platform.#contracts` today) |
 | Example | `Example:` and `Usage:` segments of the doc comment |
 | Notes | The rest of the doc comment |
 | Enforcement | Rules read off constraints, each tagged as enforced by CUE: closedness, required (`!`) fields (with an `if` clause's condition), a field pinned to `true` beside the expression it tests, a field declared twice with two scalar expressions, and a string constraint's pattern and rune bounds |
@@ -40,7 +40,7 @@ Parts are bold labels rather than headings, so a page's table of contents lists 
 
 ### Filtering
 
-Rationale blocks (`// WHY ...`) are separated from the doc comment by a blank line, so the parser attaches them as non-doc groups and the generator drops every non-doc group. Inside the doc comment it removes enhancement citations (`0010:D37`, with lead-ins such as "enhancement" or "per"), `See SPEC.md § N.M` pointers and experiment references, then tidies the punctuation the removal leaves. A paragraph the rules leave unchanged keeps its line breaks; a changed one is re-wrapped. Where a comment still read badly, the comment was fixed in `src/` instead of adding a rule.
+Rationale blocks (`// WHY ...`) are separated from the doc comment by a blank line, so the parser attaches them as non-doc groups and the generator drops every non-doc group; a group that opens with `WHY` is dropped whole even where it sits directly above a field. Hidden fields are the schema's internal machinery (assertions, unions, decompositions) and stay off the page; the rules they assert are still stated under enforcement, which reads the unmodified source. Inside the doc comment it removes enhancement citations (`0010:D37`, with lead-ins such as "enhancement" or "per"), `See SPEC.md § N.M` pointers and experiment references, then tidies the punctuation the removal leaves. A paragraph the rules leave unchanged keeps its line breaks; a changed one is re-wrapped. Where a comment still read badly, the comment was fixed in `src/` instead of adding a rule.
 
 ### Markers and authored text
 

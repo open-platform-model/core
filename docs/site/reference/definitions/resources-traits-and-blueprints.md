@@ -43,7 +43,7 @@ Defines a resource of deployment within the system.
         // 1.3.0" when the shapes are compatible but the provider lags.
         catalogVersion!: #VersionType // Example: "1.0.0"
 
-        // fqn: AUTHORED by the catalog at the definition site, not derived here.
+        // fqn: authored by the catalog at the definition site, not derived here.
         // `core` does not check it against this definition's own name or path;
         // #CatalogMemberFQNGate asserts the agreement at publish.
         fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/resources/container@v1beta1"
@@ -51,7 +51,7 @@ Defines a resource of deployment within the system.
         // Human-readable description of the definition
         description?: string
 
-        // Optional metadata labels for CATEGORIZATION. Descriptive only — nothing
+        // Optional metadata labels for categorization. Descriptive only — nothing
         // selects on these, and they are never unified upward into a #Component.
         // Matching lives in matchLabels below. Example:
         // {"resource.opmodel.dev/category": "workload"}
@@ -62,28 +62,28 @@ Defines a resource of deployment within the system.
         annotations?: #LabelsAnnotationsType
     }
 
-    // matchLabels: this resource's MATCHING identity — the keys a
+    // matchLabels: this resource's matching identity — the keys a
     // #ComponentTransformer.requiredLabels predicate selects on. A #Component
-    // unifies its attached primitives' matchLabels WHOLESALE, so every key written
-    // here participates in matching and nothing else does. A key MAY be declared
+    // unifies its attached primitives' matchLabels wholesale, so every key written
+    // here participates in matching and nothing else does. A key may be declared
     // required (`"<key>"!: <disj>`). Never rendered.
     matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
 
     // nameConstraint: the name rule a kind this primitive renders enforces on the
     // owning component's metadata.resourceName; top when the primitive is
     // indifferent, which is the default. A hidden definition field: never
-    // optional, never guarded on presence. MAY be computed from this primitive's
+    // optional, never guarded on presence. May be computed from this primitive's
     // own fields.
     #nameConstraint: _
 
     // fulfilment: where this contract's implementation is expected to come from.
     // "catalog" (the default): the declaring catalog implements it. "provider":
-    // the catalog ships no transformer and a platform must carry EXACTLY ONE
+    // the catalog ships no transformer and a platform must carry exactly one
     // registry entry (path with major) whose transformers require it. A
     // declaration the kernel counts against, not an enforcement.
     fulfilment: *"catalog" | "provider"
 
-    // MUST be an OpenAPIv3 compatible schema
+    // Must be an OpenAPIv3 compatible schema
     // The field and schema exposed by this definition
     spec!: (strings.ToCamel(metadata.#definitionName)): _
 }
@@ -133,9 +133,9 @@ Defines additional behavior or characteristics that can be attached to component
         // only — no contract key interpolates it.
         catalogVersion!: #VersionType // Example: "1.0.0"
 
-        // fqn: AUTHORED by the catalog at the definition site, not derived here, so
+        // fqn: authored by the catalog at the definition site, not derived here, so
         // fqn, modulePath and catalogVersion trace to one identity package and a
-        // release moves them together. `core` no longer refuses a value disagreeing
+        // release moves them together. `core` does not refuse a value disagreeing
         // with this definition's own fields; #CatalogMemberFQNGate asserts that
         // agreement at publish.
         fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
@@ -143,7 +143,7 @@ Defines additional behavior or characteristics that can be attached to component
         // Human-readable description of the definition
         description?: string
 
-        // Optional metadata labels for CATEGORIZATION. Descriptive only — nothing
+        // Optional metadata labels for categorization. Descriptive only — nothing
         // selects on these, and they are never unified upward into a #Component.
         // Example: {"trait.opmodel.dev/category": "network"}
         labels?: #LabelsAnnotationsType
@@ -153,17 +153,17 @@ Defines additional behavior or characteristics that can be attached to component
         annotations?: #LabelsAnnotationsType
     }
 
-    // matchLabels: this trait's MATCHING identity — the keys a
+    // matchLabels: this trait's matching identity — the keys a
     // #ComponentTransformer.requiredLabels predicate selects on, unified wholesale
     // into every #Component that attaches this trait. Separate from
     // metadata.labels, which carries categorisation and is never unified upward.
-    // NOT rendered.
+    // Not rendered.
     matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
 
     // nameConstraint: the name rule a kind this primitive renders enforces on the
     // owning component's metadata.resourceName; top when the primitive is
     // indifferent, which is the default. A hidden definition field: never
-    // optional, never guarded on presence. MAY be computed from this primitive's
+    // optional, never guarded on presence. May be computed from this primitive's
     // own fields.
     #nameConstraint: _
 
@@ -175,13 +175,13 @@ Defines additional behavior or characteristics that can be attached to component
     fulfilment: *"catalog" | "provider"
 
     // optional: whether an unhandled demand for this trait fails the render or
-    // degrades to a warning naming the trait. NO DEFAULT HERE: the declaring
-    // catalog states the posture as a default (`bool | *true` or `bool | *false`),
-    // a module may narrow it at the attachment site, and #TraitOptionalGate
-    // refuses a catalog that pins a concrete value.
+    // degrades to a warning naming the trait. `core` sets no default: the
+    // declaring catalog states the posture as a default (`bool | *true` or `bool |
+    // *false`), a module may narrow it at the attachment site, and
+    // #TraitOptionalGate refuses a catalog that pins a concrete value.
     optional: bool
 
-    // MUST be an OpenAPIv3 compatible schema
+    // Must be an OpenAPIv3 compatible schema
     // The field and schema exposed by this definition
     spec!: (strings.ToCamel(metadata.#definitionName)): _
 
@@ -219,12 +219,12 @@ Defines a reusable blueprint that composes resources and traits into a higher-le
         #definitionName: (#KebabToPascal & {"in": name}).out
 
         // Exactly "<catalog registryPath>/blueprints/<apiVersion>" — one base segment
-        // per kind and one version segment beneath it, DERIVED from this blueprint's
+        // per kind and one version segment beneath it, derived from this blueprint's
         // own apiVersion. The version segment never enters the fqn.
         modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/blueprints/v1beta1"
 
         // apiVersion: this contract's own level, and the only component of its key.
-        // A blueprint carries one because it is a PRIMITIVE: it composes resources
+        // A blueprint carries one because it is a primitive: it composes resources
         // and traits rather than introducing vocabulary, but a module attaches it
         // and writes against its `spec`, so it earns the contract key and the
         // additive-only promise that key gates.
@@ -234,9 +234,9 @@ Defines a reusable blueprint that composes resources and traits into a higher-le
         // only — no contract key interpolates it.
         catalogVersion!: #VersionType // Example: "1.0.0"
 
-        // fqn: AUTHORED by the catalog at the definition site, not derived here, so
+        // fqn: authored by the catalog at the definition site, not derived here, so
         // fqn, modulePath and catalogVersion trace to one identity package and a
-        // release moves them together. `core` no longer refuses a value disagreeing
+        // release moves them together. `core` does not refuse a value disagreeing
         // with this definition's own fields; #CatalogMemberFQNGate asserts that
         // agreement at publish.
         fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
@@ -244,7 +244,7 @@ Defines a reusable blueprint that composes resources and traits into a higher-le
         // Human-readable description of the definition
         description?: string
 
-        // Optional metadata labels for CATEGORIZATION. Descriptive only — nothing
+        // Optional metadata labels for categorization. Descriptive only — nothing
         // selects on these, and they are never unified upward into a #Component.
         // Example: {"blueprint.opmodel.dev/category": "workload"}
         labels?: #LabelsAnnotationsType
@@ -254,16 +254,16 @@ Defines a reusable blueprint that composes resources and traits into a higher-le
         annotations?: #LabelsAnnotationsType
     }
 
-    // matchLabels: this blueprint's MATCHING identity — the keys a
+    // matchLabels: this blueprint's matching identity — the keys a
     // #ComponentTransformer.requiredLabels predicate selects on, unified wholesale
     // into every #Component that attaches this blueprint. Separate from
-    // metadata.labels. NOT rendered.
+    // metadata.labels. Not rendered.
     matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateful"}
 
     // nameConstraint: the name rule a kind this primitive renders enforces on the
     // owning component's metadata.resourceName; top when the primitive is
     // indifferent, which is the default. A hidden definition field: never
-    // optional, never guarded on presence. MAY be computed from this primitive's
+    // optional, never guarded on presence. May be computed from this primitive's
     // own fields.
     #nameConstraint: _
 
@@ -273,7 +273,7 @@ Defines a reusable blueprint that composes resources and traits into a higher-le
     // Traits that compose this blueprint (full references)
     composedTraits?: [...#Trait]
 
-    // MUST be an OpenAPIv3 compatible schema
+    // Must be an OpenAPIv3 compatible schema
     // The field and schema exposed by this definition
     spec!: (strings.ToCamel(metadata.#definitionName)): _
 }

@@ -17,3 +17,9 @@ Doc-comment edits only; no constraint, default or closedness changes, so the com
 - [x] 2.5 `AGENTS.md`, `openspec/config.yaml`, `README.md`: name `tools/refgen/` as the one Go program and the new tasks and gate
 - [x] 2.6 Build opmodel.dev against this tree (`task build`, `task lint:sources` in the worktree whose placeholder yields); check heading IDs against every fragment link
 - [x] 2.7 `task check` green, then commit `docs(site): generate the definitions reference from the CUE source`
+
+## 3. Review fixes
+
+- [x] 3.1 `tools/refgen`: leave hidden fields and hidden-only comprehensions out of the spec part (elision first); drop a comment group that opens with `WHY`
+- [x] 3.2 `src/*.cue`: present-tense wording, rewritten one-line summaries, all-caps emphasis lower-cased on published comment lines, contributor rationale moved into WHY blocks
+- [x] 3.3 `task docs:reference`, `task generate:index`; `task check` green, then commit `docs(core): state the published doc comments in present tense and plain case`

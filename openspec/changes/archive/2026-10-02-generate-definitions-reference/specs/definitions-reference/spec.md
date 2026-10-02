@@ -35,12 +35,17 @@ Each entry SHALL follow one order, omitting a part with nothing derivable: summa
 
 ### Requirement: Contributor-only text never reaches a page
 
-The generator SHALL drop every comment group that is not a doc comment or a same-line comment, including `// WHY` blocks, and SHALL strip enhancement decision citations, `SPEC.md` section pointers and experiment references from the text it keeps.
+The generator SHALL drop every comment group that is not a doc comment or a same-line comment, and every group whose first line opens with `WHY`, and SHALL strip enhancement decision citations, `SPEC.md` section pointers and experiment references from the text it keeps. The spec part SHALL leave out hidden (`_`) fields, with their comments, and comprehensions that set only hidden fields; a rule such a field asserts SHALL still appear under enforcement.
 
 #### Scenario: A citation is stripped
 
 - **WHEN** a field's same-line comment reads `(kind prefix + this resource's own apiVersion, 0010:D49)`
 - **THEN** the page shows `(kind prefix + this resource's own apiVersion)`
+
+#### Scenario: Hidden machinery stays off the page
+
+- **WHEN** a definition declares `_leaf: strings.HasSuffix(_ref.registryPath, "/"+name)` and `_leaf: true`
+- **THEN** its spec part shows no `_leaf` field, and its enforcement part states that the expression must hold
 
 #### Scenario: A rationale block is dropped
 

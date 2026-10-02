@@ -33,19 +33,15 @@ Top-level catalog definition.
         // being wrong.
         version!: #VersionType
 
-        // fqn IS the module path; the version does not join it.
+        // fqn is the module path; the version does not join it.
         fqn: #ModulePathType & modulePath
-
-        // The one decomposition of modulePath. registryPath is what the
-        // member stamps below are built on.
-        _ref: #ArtifactRef & {"modulePath": modulePath}
 
         description?: string
         labels?:      #LabelsAnnotationsType
         annotations?: #LabelsAnnotationsType
     }
 
-    // resources: the #Resource contracts this catalog DEFINES, keyed by contract
+    // resources: the #Resource contracts this catalog defines, keyed by contract
     // fqn; listing one requires no adapter. Stamps metadata.modulePath to
     // "<registryPath>/resources/<apiVersion>" and metadata.catalogVersion to the
     // catalog's version, never fqn; an authored value that disagrees is a
@@ -58,7 +54,7 @@ Top-level catalog definition.
         }
     }
 
-    // traits: the #Trait contracts this catalog DEFINES, keyed by contract fqn;
+    // traits: the #Trait contracts this catalog defines, keyed by contract fqn;
     // the #resources stamp under the `traits` segment. A `fulfilment: "provider"`
     // trait is listed here and implemented nowhere in this catalog: this map is
     // what makes it visible.
@@ -70,7 +66,7 @@ Top-level catalog definition.
         }
     }
 
-    // blueprints: the #Blueprint contracts this catalog DEFINES, keyed by contract
+    // blueprints: the #Blueprint contracts this catalog defines, keyed by contract
     // fqn; the #resources stamp under the `blueprints` segment.
     #blueprints: [#ContractFQNType]: #Blueprint & {
         metadata: {
@@ -82,11 +78,11 @@ Top-level catalog definition.
 
     #transformers: [#ImplFQNType]: #ComponentTransformer & {
         metadata: {
-            // The major is split out and NOT re-appended: a transformer
+            // The major is split out and not re-appended: a transformer
             // declares a #PackagePathType, which admits no "@vN".
             modulePath: "\(M._ref.registryPath)/transformers"
 
-            // The catalog's own version IS the build every member of it shipped
+            // The catalog's own version is the build every member of it shipped
             // in, stamped rather than authored per leaf.
             catalogVersion: M.version
         }
@@ -157,10 +153,6 @@ A `#Platform` is a path-keyed registry of catalog entries, each carrying its imp
     #contracts: #ContractInventory
 }
 ```
-
-**Notes**
-
-A platform value is complete on its own.
 
 **Enforcement**
 

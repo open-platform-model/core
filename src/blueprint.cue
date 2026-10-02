@@ -22,7 +22,7 @@ import (
 		// WHY modulePath: 0010:D42 as amended by 0010:D49.
 
 		// Exactly "<catalog registryPath>/blueprints/<apiVersion>" — one base
-		// segment per kind and one version segment beneath it, DERIVED from this
+		// segment per kind and one version segment beneath it, derived from this
 		// blueprint's own apiVersion. The version segment never enters the fqn. See
 		// SPEC.md § 3.3.
 		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/blueprints/v1beta1"
@@ -30,7 +30,7 @@ import (
 		// WHY apiVersion: 0010:D4; 0010:D44.
 
 		// apiVersion: this contract's own level, and the only component of its key.
-		// A blueprint carries one because it is a PRIMITIVE: it composes resources
+		// A blueprint carries one because it is a primitive: it composes resources
 		// and traits rather than introducing vocabulary, but a module attaches it
 		// and writes against its `spec`, so it earns the contract key and the
 		// additive-only promise that key gates.
@@ -44,9 +44,9 @@ import (
 
 		// WHY fqn: 0010:D21.
 
-		// fqn: AUTHORED by the catalog at the definition site, not derived here, so
+		// fqn: authored by the catalog at the definition site, not derived here, so
 		// fqn, modulePath and catalogVersion trace to one identity package and a
-		// release moves them together. `core` no longer refuses a value disagreeing
+		// release moves them together. `core` does not refuse a value disagreeing
 		// with this definition's own fields; #CatalogMemberFQNGate asserts that
 		// agreement at publish.
 		fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
@@ -56,7 +56,7 @@ import (
 
 		// WHY labels: 0010:D36.
 
-		// Optional metadata labels for CATEGORIZATION. Descriptive only — nothing
+		// Optional metadata labels for categorization. Descriptive only — nothing
 		// selects on these, and they are never unified upward into a #Component.
 		// Example: {"blueprint.opmodel.dev/category": "workload"}
 		labels?: #LabelsAnnotationsType
@@ -75,10 +75,10 @@ import (
 
 	// WHY matchLabels: 0010:D36.
 
-	// matchLabels: this blueprint's MATCHING identity — the keys a
+	// matchLabels: this blueprint's matching identity — the keys a
 	// #ComponentTransformer.requiredLabels predicate selects on, unified
 	// wholesale into every #Component that attaches this blueprint. Separate from
-	// metadata.labels. NOT rendered. See SPEC.md § 3.3.
+	// metadata.labels. Not rendered. See SPEC.md § 3.3.
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateful"}
 
 	// WHY: see #Resource.#nameConstraint. The rule and its measured pitfalls are
@@ -90,7 +90,7 @@ import (
 	// nameConstraint: the name rule a kind this primitive renders enforces on the
 	// owning component's metadata.resourceName; top when the primitive is
 	// indifferent, which is the default. A hidden definition field: never
-	// optional, never guarded on presence. MAY be computed from this primitive's
+	// optional, never guarded on presence. May be computed from this primitive's
 	// own fields. See SPEC.md § 3.3.
 	#nameConstraint: _
 
@@ -114,7 +114,7 @@ import (
 	// Traits that compose this blueprint (full references)
 	composedTraits?: [...#Trait]
 
-	// MUST be an OpenAPIv3 compatible schema
+	// Must be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition
 	spec!: (strings.ToCamel(metadata.#definitionName)): _
 }

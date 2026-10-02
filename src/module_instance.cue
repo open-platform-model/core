@@ -43,7 +43,7 @@ import (
 
 		// WHY fqn: 0010:D41.
 
-		// fqn: this instance's own identity — the deployed module's MAJOR-FREE
+		// fqn: this instance's own identity — the deployed module's major-free
 		// registry path, this instance's name, and its namespace. Neither the
 		// module's version nor its major reaches instance identity. See SPEC.md §
 		// 3.5.

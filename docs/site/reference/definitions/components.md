@@ -36,7 +36,7 @@ Definitions on this page: [`#Component`](/docs/reference/definitions/components/
         resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("resourceName \"\(resourceName)\" is not a DNS subdomain (lowercase alphanumerics, hyphens and dots, 1-253 runes)")
 
         // Component labels — descriptive metadata for this component, and the
-        // labels that reach rendered output via #TransformerContext. NOT
+        // labels that reach rendered output via #TransformerContext. Not
         // unified from the attached primitives, and nothing matches on them;
         // matching has its own field, matchLabels.
         labels?: #LabelsAnnotationsType
@@ -56,63 +56,18 @@ Definitions on this page: [`#Component`](/docs/reference/definitions/components/
     // Blueprints applied to this component
     #blueprints?: #BlueprintMap
 
-    // The wholesale unification of every attached primitive's matchLabels:
-    // the provenance of the public matchLabels field, which IS this value.
-    // Embeds each primitive's matchLabels struct whole; never iterates the
-    // labels themselves.
-    _matchLabelsFromPrimitives: {
-        for _, resource in #resources {
-            if resource.matchLabels != _|_ {resource.matchLabels}
-        }
-        if #traits != _|_ {
-            for _, trait in #traits {
-                if trait.matchLabels != _|_ {trait.matchLabels}
-            }
-        }
-        if #blueprints != _|_ {
-            for _, blueprint in #blueprints {
-                if blueprint.matchLabels != _|_ {blueprint.matchLabels}
-            }
-        }
-    }
-
     matchLabels: _matchLabelsFromPrimitives
-
-    // matchLabels is DERIVED, and this is the enforcement: a size difference
-    // between the union and the field is exactly "this component contributed
-    // a key of its own". IF THIS FIRES: put the key on the primitive that
-    // owns it, or attach a blueprint that answers it.
-    _matchLabelsAreDerived: len(matchLabels) == len(_matchLabelsFromPrimitives)
-    _matchLabelsAreDerived: true
 
     // Instance context injected by the parent #Module via its #components
     // pattern constraint. Hidden definition slot — module authors never set
     // this directly.
     #instance: #InstanceIdentity
 
-    // Every attached primitive's #nameConstraint, unified into one
-    // conjunction; top when none declares one. Collected UNCONDITIONALLY,
-    // with no existence guard.
-    _nameConstraints: _
-    for _, resource in #resources {_nameConstraints: resource.#nameConstraint}
-    if #traits != _|_ {
-        for _, trait in #traits {_nameConstraints: trait.#nameConstraint}
-    }
-
-    if #blueprints != _|_ {
-        for _, blueprint in #blueprints {_nameConstraints: blueprint.#nameConstraint}
-    }
-
-    // The assertion: the RESOLVED resourceName satisfies every attached
-    // constraint. Refuses naming the string, the violated bound and the
-    // constraint type's definition site. The interpolation is load-bearing.
-    _nameFits: "\(metadata.resourceName)" & _nameConstraints
-
     // Single source of truth for this component's computed names.
     // `resourceName` reads straight from metadata (cascade lives there); DNS
     // variants derive deterministically from resourceName +
     // #instance.namespace + #instance.clusterDomain. Authors inside a
-    // component's `spec` body MUST use `#ctx.components.<self-id>.dns.fqdn`.
+    // component's `spec` body must use `#ctx.components.<self-id>.dns.fqdn`.
     #names: {
         resourceName: metadata.resourceName
         dns: {
@@ -122,27 +77,9 @@ Definitions on this page: [`#Component`](/docs/reference/definitions/components/
         }
     }
 
-    _allFields: {
-        for _, resource in #resources {
-            if resource.spec != _|_ {resource.spec}
-        }
-        if #traits != _|_ {
-            for _, trait in #traits {
-                if trait.spec != _|_ {trait.spec}
-            }
-        }
-        if #blueprints != _|_ {
-            for _, blueprint in #blueprints {
-                if blueprint.spec != _|_ {blueprint.spec}
-            }
-        }
-    }
-
     // Fields exposed by this component (merged from all resources, traits, and blueprints)
     // Automatically turned into a spec.
     // Must be made concrete by the user.
-    // Have to do it this way because if we allowed the spec flattened in the root of the component
-    // we would have to open the #Module definition which would make it impossible to properly validate.
     spec: close({
         _allFields
     })

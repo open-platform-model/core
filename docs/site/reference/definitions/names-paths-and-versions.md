@@ -102,7 +102,7 @@ CUE enforces each of these rules on a value unified with `#ServiceNameType`:
 
 ## #SnakeNameType
 
-snake_case name — lowercase alphanumeric with underscores.
+A snake_case name — lowercase alphanumeric with underscores.
 
 **At a glance**
 
@@ -227,8 +227,6 @@ CUE enforces each of these rules on a value unified with `#PackagePathType`:
 #ArtifactRef: {
     modulePath!: #ModulePathType
 
-    _p: strings.SplitN(modulePath, "@", 2)
-
     // registryPath: the OCI repository. Tags hang off this, and it is the
     // major-free identity of the artifact's lineage. Typed #PackagePathType so
     // a value still carrying a major is refused by the type rather than
@@ -280,7 +278,7 @@ The identity-bearing version component of a CUE module path — what [`#Artifact
 
 **Notes**
 
-A MODULE major, which the registry assigns; not a contract level ([`#APIVersionType`](/docs/reference/definitions/names-paths-and-versions/#apiversiontype)).
+A module major, which the registry assigns; not a contract level ([`#APIVersionType`](/docs/reference/definitions/names-paths-and-versions/#apiversiontype)).
 
 **Enforcement**
 
@@ -295,7 +293,7 @@ CUE enforces each of these rules on a value unified with `#MajorVersionType`:
 
 ## #APIVersionType
 
-A PRIMITIVE's contract level — the value its author moves when the primitive's shape breaks, independent of the catalog's module major and of the catalog's release SemVer.
+A primitive's contract level — the value its author moves when the primitive's shape breaks, independent of the catalog's module major and of the catalog's release SemVer.
 
 **At a glance**
 
@@ -366,7 +364,7 @@ CUE enforces each of these rules on a value unified with `#APIVersionGated`:
 
 ## #VersionType
 
-A Semantic Versioning 2.0.0 version, with optional prerelease and build metadata.
+A version string in Semantic Versioning form, with optional prerelease and build metadata.
 
 **At a glance**
 
@@ -400,7 +398,7 @@ CUE enforces each of these rules on a value unified with `#VersionType`:
 
 ## #ContractFQNType
 
-What a module DEMANDS — path/name@vN, where vN is the primitive's own [`#APIVersionType`](/docs/reference/definitions/names-paths-and-versions/#apiversiontype).
+What a module demands — path/name@vN, where vN is the primitive's own [`#APIVersionType`](/docs/reference/definitions/names-paths-and-versions/#apiversiontype).
 
 **At a glance**
 
@@ -438,7 +436,7 @@ CUE enforces each of these rules on a value unified with `#ContractFQNType`:
 
 ## #ImplFQNType
 
-What a platform EXECUTES — path/name@semver, the full SemVer of the build the definition shipped in.
+What a platform executes — path/name@semver, the full SemVer of the build the definition shipped in.
 
 **At a glance**
 
@@ -476,7 +474,7 @@ CUE enforces each of these rules on a value unified with `#ImplFQNType`:
 
 ## #FQNType
 
-Either form, for a consumer holding both.
+Either key form, a contract FQN or an implementation FQN, for a consumer that holds both.
 
 **At a glance**
 
@@ -493,7 +491,7 @@ Either form, for a consumer holding both.
 
 **Notes**
 
-Exported for that, and deliberately unused inside `core`: every field and map key here names ONE role and takes that role's type, which is what keeps a wrong-form key inexpressible rather than merely unmatched.
+Unused inside `core`, deliberately: every field and map key here names one role and takes that role's type, which keeps a wrong-form key inexpressible rather than merely unmatched.
 
 ## #UUIDType
 

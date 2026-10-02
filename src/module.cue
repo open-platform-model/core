@@ -13,7 +13,7 @@ import (
 	metadata: {
 		// WHY name: 0010:D8.
 
-		// name: snake_case, and the leaf of modulePath. A module name has ONE
+		// name: snake_case, and the leaf of modulePath. A module name has one
 		// spelling: it is the CUE package name, the registry-path leaf and the value
 		// in the module.opmodel.dev/name label, and package names cannot contain
 		// hyphens. The kebab-case #NameType stays on #Resource / #Trait /
@@ -29,7 +29,7 @@ import (
 
 		// WHY fqn: 0010:D1.
 
-		// fqn IS the module path — nothing is recombined, and neither `name` nor
+		// fqn is the module path — nothing is recombined, and neither `name` nor
 		// `version` is interpolated into it. Artifact identity therefore
 		// distinguishes majors and nothing finer: @v2 and @v3 are distinct modules
 		// under both CUE and Go semantics, while every release inside a major shares
@@ -39,7 +39,7 @@ import (
 		// WHY registryPath: 0010:D41.
 
 		// registryPath: the major-free identity of the module lineage.
-		// #ModuleInstance derives its own fqn from THIS rather than from fqn, so
+		// #ModuleInstance derives its own fqn from this rather than from fqn, so
 		// instance identity survives a major bump; it is also the OCI repository
 		// every address-composition site in `cli` and `library` collapses into.
 		registryPath: _ref.registryPath // Example: "example.com/modules/example_module"
@@ -67,9 +67,9 @@ import (
 		// non-conformant carries no consumer-runnable major check. Bounded by
 		// 0011:D8/D12/D21 at publish.
 
-		// Unique identifier for the module, computed as a UUID v5 (SHA1) of the FQN using the OPM namespace UUID.
-		// The formula is unchanged; its input is the module path, so a uuid
-		// moves on a major bump and on nothing else.
+		// Unique identifier for the module, computed as a UUID v5 (SHA1) of the
+		// FQN using the OPM namespace UUID. Its input is the module path, so a
+		// uuid moves on a major bump and on nothing else.
 		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
 
 		description?: string
@@ -106,7 +106,7 @@ import (
 
 	// Value schema - constraints and defaults.
 	// Developers define the configuration contract and reference it in their components.
-	// MUST be OpenAPIv3 compliant (no CUE templating - for/if statements)
+	// Must be OpenAPIv3 compliant (no CUE templating - for/if statements)
 	#config: _
 
 	// debugValues: Example values for testing and debugging.
@@ -117,7 +117,7 @@ import (
 	// SPEC.md § 3.2 Rationale.
 
 	// Values a freshly initialized instance package starts from.
-	// Optional; MAY be non-concrete. Not checked against #config here.
+	// Optional; may be non-concrete. Not checked against #config here.
 	// See SPEC.md § 3.2.
 	initValues?: _
 

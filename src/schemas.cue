@@ -36,29 +36,29 @@ import (
 	$description?: string
 }
 
-// #SecretLiteral: user provides the actual value.
-// The transformer creates a K8s Secret with this data entry.
+// #SecretLiteral is the #Secret variant that carries the value itself. The
+// transformer creates a Kubernetes Secret holding it as one data entry.
 #SecretLiteral: {
 	#SecretType
 
 	value!: string
 }
 
-// #SecretK8sRef: points to a pre-existing K8s Secret in the cluster.
-// OPM emits no resource — the Secret already exists.
-// OPM only wires the secretKeyRef in env vars.
+// #SecretK8sRef is the #Secret variant that points to a Kubernetes Secret
+// already in the cluster. OPM emits no resource for it and only wires the
+// secretKeyRef in env vars.
 #SecretK8sRef: {
 	#SecretType
 
-	secretName!: string // pre-existing K8s Secret name
-	remoteKey!:  string // key within that K8s Secret
+	secretName!: string // name of the existing Kubernetes Secret
+	remoteKey!:  string // key within that Secret
 }
 
 /////////////////////////////////////////////////////////////////
 //// Config Schemas
 /////////////////////////////////////////////////////////////////
 
-// #SecretSchema: Secret specification for K8s Secret resources.
+// #SecretSchema: Secret specification for Kubernetes Secret resources.
 // data holds either #Secret entries (auto-discovered via #AutoSecrets) or plain
 // strings (manually defined secrets, e.g. computed config files).
 // name is auto-populated from the map key by the catalog resource that holds

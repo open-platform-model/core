@@ -154,8 +154,7 @@ import (
 
 // A #Platform is a path-keyed registry of catalog entries, each carrying its
 // imported catalog, plus the derived #composedTransformers fold over the
-// enabled entries and the derived #contracts inventory. A platform value is
-// complete on its own. See SPEC.md § 3.4.
+// enabled entries and the derived #contracts inventory. See SPEC.md § 3.4.
 #Platform: {
 	kind: "Platform"
 

@@ -32,25 +32,23 @@ Definitions on this page: [`#IdentityPackage`](/docs/reference/definitions/publi
     // implementation key interpolates.
     Version!: #VersionType
 
-    _ref: #ArtifactRef & {modulePath: ModulePath}
-
     // RegistryPath: the OCI repository, major-free. Projected through
     // #ArtifactRef rather than split again here — one decomposition site is the
     // whole point of that definition.
     RegistryPath: _ref.registryPath // "opmodel.dev/catalogs/opm"
 
-    // Major: the major the PATH declares.
+    // Major: the major the path declares.
     Major: _ref.major // "v1"
 
     // VersionMajor: derived from Version, never authored, and asserted equal to
     // the major the path declares. The assertion is the second declaration below —
-    // unification is the check. THIS IS THE ONLY ASSERTION OF THAT RELATION IN THE
-    // SYSTEM; deleting it removes the relation outright.
+    // unification is the check. This is the only assertion of that relation in the
+    // system; deleting it removes the relation outright.
     VersionMajor: "v" + strings.SplitN(Version, ".", 2)[0]
     VersionMajor: Major
 
     // kindPrefix: the path prefix every catalog member of a given kind hangs off.
-    // The major is NOT re-appended — a catalog member declares a
+    // The major is not re-appended — a catalog member declares a
     // #PackagePathType. Exactly one base prefix per kind; a contract kind files
     // one apiVersion segment beneath it, a transformer at the prefix itself.
     // Enumerated, not a pattern constraint.
@@ -65,7 +63,7 @@ Definitions on this page: [`#IdentityPackage`](/docs/reference/definitions/publi
 
 **Notes**
 
-The file it types is `identity/identity.cue`, at the root of a module or a catalog. A PUBLISH GATE, not a field of any artifact: a publishing tool unifies the loaded package against it.
+The file it types is `identity/identity.cue`, at the root of a module or a catalog. A publish gate, not a field of any artifact: a publishing tool unifies the loaded package against it.
 
 **Enforcement**
 
@@ -77,7 +75,7 @@ CUE enforces each of these rules on a value unified with `#IdentityPackage`:
 
 ## #CatalogMemberFQNGate
 
-`#CatalogMemberFQNGate` is the rule a publishing tool unifies every catalog member against — primitive OR transformer — to check that what the catalog AUTHORED agrees with what its identity package IMPLIES.
+`#CatalogMemberFQNGate` is the rule a publishing tool unifies every catalog member against — primitive or transformer — to check that what the catalog authored agrees with what its identity package implies.
 
 **At a glance**
 
@@ -98,7 +96,7 @@ CUE enforces each of these rules on a value unified with `#IdentityPackage`:
     declaredModulePath!:     #PackagePathType
     declaredCatalogVersion!: #VersionType
 
-    // Optional at the top level and REQUIRED for the three primitive kinds. A
+    // Optional at the top level and required for the three primitive kinds. A
     // transformer declares none — it carries no apiVersion at all — so requiring
     // it unconditionally would force every transformer to author a value nothing
     // reads.
@@ -107,41 +105,26 @@ CUE enforces each of these rules on a value unified with `#IdentityPackage`:
         declaredAPIVersion!: #APIVersionType
     }
 
-    // What identity/identity.cue implies. The path must sit under THIS catalog; a
-    // CONTRACT kind files one segment beneath its kind prefix, under the member's
+    // What identity/identity.cue implies. The path must sit under this catalog; a
+    // contract kind files one segment beneath its kind prefix, under the member's
     // own apiVersion, a transformer at the prefix itself. The provenance must
-    // name THIS build.
+    // name this build.
     declaredModulePath: [
         if kind == "transformers" {identity.kindPrefix[kind]},
         identity.kindPrefix[kind] + "/" + declaredAPIVersion,
     ][0]
     declaredCatalogVersion: identity.Version
 
-    // The key is interpolated from the CONTRACT for the three primitive kinds and
-    // from the BUILD for a transformer. List-index form: the transformer arm is
-    // selected before the optional is reached.
-    _keyVersion: [
-        if kind == "transformers" {identity.Version},
-        declaredAPIVersion,
-    ][0]
-
-    // The KEY does not carry the filing segment: the apiVersion reaches a
+    // The key does not carry the filing segment: the apiVersion reaches a
     // contract key once, as its "@vN" suffix, never as a path component. Filing
     // is versioned; the key space stays flat.
     declaredFQN: identity.kindPrefix[kind] + "/" + name + "@" + _keyVersion
-
-    // NOTE what is absent: apiVersion is NOT checked against identity. Nothing
-    // implies it. A primitive's contract level is a judgement its author makes
-    // about that primitive's own shape, independent of the catalog's module major
-    // and of the catalog's release SemVer — which is the entire point of the
-    // field. A gate that derived it would be asserting a relation that does not
-    // exist.
 }
 ```
 
 **Notes**
 
-A PUBLISH GATE, not part of any artifact: each `declared*` field is stated twice, once as authored and once as implied, and unification does the comparing.
+A publish gate, not part of any artifact: each `declared*` field is stated twice, once as authored and once as implied, and unification does the comparing.
 
 **Enforcement**
 
@@ -168,25 +151,12 @@ What `opm catalog publish` unifies against, once per published [`#Trait`](/docs/
 #TraitOptionalGate: {
     // The value under test: some published trait's `optional`.
     optional: bool
-
-    // RULE 1 — the catalog stated a posture. Interpolation forces the
-    // disjunction to its default, so a trait that never mentions `optional`
-    // fails here. Reported as `incomplete value bool`, and visible only under
-    // `cue vet -c` — which publish runs, and a catalog author's plain
-    // `task vet` does not.
-    _stated: "\(optional)"
-
-    // RULE 2 — and did not PIN it. Both arms must remain admissible, so a
-    // concrete value, which no module could ever override, is refused. Unlike
-    // rule 1 this is visible under plain `cue vet`.
-    _overridable: ((optional & true) != _|_) && ((optional & false) != _|_)
-    _overridable: true
 }
 ```
 
 **Notes**
 
-Takes the FIELD, not the trait, and MUST be unified into a non-hidden value.
+Takes the field, not the trait, and must be unified into a non-hidden value.
 
 **Enforcement**
 

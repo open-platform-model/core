@@ -112,8 +112,21 @@ func paragraphs(lines []string) []*block {
 // cleanComment applies cleanText to raw comment lines and returns the
 // resulting lines, without markers. Paragraphs whose text the rules leave
 // unchanged keep their original line breaks; a changed one is re-wrapped.
+//
+// A group whose first line opens with "WHY" is a rationale block as a whole,
+// even where it sits directly above a field or closing brace, and yields
+// nothing.
 func cleanComment(raw []string, width int) []string {
 	lines := commentLines(raw)
+	for _, l := range lines {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		if isWhyLine(l) {
+			return nil
+		}
+		break
+	}
 	var out []string
 	var para []string
 	emit := func(orig []string) {

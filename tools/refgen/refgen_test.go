@@ -146,3 +146,14 @@ func TestPagesFollowTheDialect(t *testing.T) {
 		t.Errorf("output is not stable: %v", err)
 	}
 }
+
+func TestWhyGroupIsDropped(t *testing.T) {
+	got := cleanComment([]string{"// WHY x: nothing implies it.", "// A second line of the same block."}, 76)
+	if len(got) != 0 {
+		t.Errorf("a WHY group must yield nothing, got %q", got)
+	}
+	got = cleanComment([]string{"// Contract text.", "// WHY: a stray rationale line."}, 76)
+	if len(got) != 1 || got[0] != "Contract text." {
+		t.Errorf("a WHY line inside a doc comment is dropped alone, got %q", got)
+	}
+}

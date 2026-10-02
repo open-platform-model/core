@@ -46,7 +46,7 @@ import (
 
 		// WHY fqn: 0010:D21.
 
-		// fqn: AUTHORED by the catalog at the definition site, not derived here.
+		// fqn: authored by the catalog at the definition site, not derived here.
 		// `core` does not check it against this definition's own name or path;
 		// #CatalogMemberFQNGate asserts the agreement at publish. See SPEC.md § 2.1.
 		fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/resources/container@v1beta1"
@@ -56,7 +56,7 @@ import (
 
 		// WHY labels: 0010:D36.
 
-		// Optional metadata labels for CATEGORIZATION. Descriptive only — nothing
+		// Optional metadata labels for categorization. Descriptive only — nothing
 		// selects on these, and they are never unified upward into a #Component.
 		// Matching lives in matchLabels below. Example:
 		// {"resource.opmodel.dev/category": "workload"}
@@ -91,10 +91,10 @@ import (
 	// "Why `core` names no matching key" and "Why `matchLabels` is not
 	// rendered".
 
-	// matchLabels: this resource's MATCHING identity — the keys a
+	// matchLabels: this resource's matching identity — the keys a
 	// #ComponentTransformer.requiredLabels predicate selects on. A #Component
-	// unifies its attached primitives' matchLabels WHOLESALE, so every key
-	// written here participates in matching and nothing else does. A key MAY
+	// unifies its attached primitives' matchLabels wholesale, so every key
+	// written here participates in matching and nothing else does. A key may
 	// be declared required (`"<key>"!: <disj>`). Never rendered. See SPEC.md
 	// § 2.1.
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
@@ -121,7 +121,7 @@ import (
 	// nameConstraint: the name rule a kind this primitive renders enforces on the
 	// owning component's metadata.resourceName; top when the primitive is
 	// indifferent, which is the default. A hidden definition field: never
-	// optional, never guarded on presence. MAY be computed from this primitive's
+	// optional, never guarded on presence. May be computed from this primitive's
 	// own fields. See SPEC.md § 2.1.
 	#nameConstraint: _
 
@@ -158,13 +158,13 @@ import (
 
 	// fulfilment: where this contract's implementation is expected to come from.
 	// "catalog" (the default): the declaring catalog implements it. "provider":
-	// the catalog ships no transformer and a platform must carry EXACTLY ONE
+	// the catalog ships no transformer and a platform must carry exactly one
 	// registry entry (path with major) whose transformers require it. A
 	// declaration the kernel counts against, not an enforcement. See SPEC.md
 	// § 2.1.
 	fulfilment: *"catalog" | "provider"
 
-	// MUST be an OpenAPIv3 compatible schema
+	// Must be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition
 	spec!: (strings.ToCamel(metadata.#definitionName)): _
 }

@@ -41,6 +41,10 @@ func specSource(src string, d *def) (string, error) {
 		return "", fmt.Errorf("%s vanished from src/%s", d.name, d.file)
 	}
 	ast.SetComments(fld, nil)
+	if err := elide(fld); err != nil {
+		return "", err
+	}
+	dropHidden(fld.Value)
 	ast.Walk(fld.Value, func(n ast.Node) bool {
 		if _, ok := n.(*ast.CommentGroup); ok {
 			return false
@@ -48,15 +52,55 @@ func specSource(src string, d *def) (string, error) {
 		filterComments(n)
 		return true
 	}, nil)
-	if err := elide(fld); err != nil {
-		return "", err
-	}
 	sections(fld.Value)
 	b, err := format.Node(fld, format.UseSpaces(4), format.TabIndent(false))
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimRight(string(b), "\n"), nil
+}
+
+// dropHidden removes hidden (`_`) fields, with their comments, and the
+// comprehensions that only set them: they are the schema's internal
+// machinery, not fields an author writes or reads. The rules they assert
+// still reach the Enforcement part, which reads the unmodified source.
+func dropHidden(n ast.Node) {
+	ast.Walk(n, func(n ast.Node) bool {
+		st, ok := n.(*ast.StructLit)
+		if !ok {
+			return true
+		}
+		kept := st.Elts[:0]
+		for _, e := range st.Elts {
+			if !onlyHidden(e) {
+				kept = append(kept, e)
+			}
+		}
+		st.Elts = kept
+		return true
+	}, nil)
+}
+
+// onlyHidden reports a hidden field, or a comprehension whose body declares
+// nothing but hidden fields.
+func onlyHidden(e ast.Decl) bool {
+	switch e := e.(type) {
+	case *ast.Field:
+		name, ok := plainLabel(e.Label)
+		return ok && strings.HasPrefix(name, "_")
+	case *ast.Comprehension:
+		body, ok := e.Value.(*ast.StructLit)
+		if !ok || len(body.Elts) == 0 {
+			return false
+		}
+		for _, x := range body.Elts {
+			if !onlyHidden(x) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 // filterComments keeps a node's doc and same-line comments, cleaned, and
