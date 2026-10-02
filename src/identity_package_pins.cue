@@ -204,10 +204,9 @@ _pinContractAndImplKeysDiffer: true
 // ever related an entry's `version` to the "@vN" its #registry key carries:
 // not the removed Subscription definition, and not #CatalogEntry, whose key
 // binding constrains modulePath but not the version major (0019:D5); the
-// platform-side check is owned by
-// `library`'s subscription-collapse work, not yet started. The residue is a
-// registry resolution failure on the platform module's catalog import, naming
-// a tag that does not resolve, which is a symptom rather than a diagnosis.
+// platform-side check is unbuilt and tracked as library#160. The residue is a
+// registry resolution failure on the platform module's catalog import, naming a
+// tag that does not resolve, which is a symptom rather than a diagnosis.
 // Treat this case as having no safety net beneath it.
 //
 // The error names the DERIVED field rather than either authored one, which is
