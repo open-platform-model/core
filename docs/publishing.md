@@ -115,7 +115,7 @@ Verified against CUE 0.16.1:
 | `cue mod get opmodel.dev/core@v0.4` | **highest release on v0.4** — branch builds sort below every named channel on that base, so they are never selected here |
 | `cue mod get opmodel.dev/core@v0.4.0-0.dev.<ts>.g<sha>` | exact pin |
 
-Platform subscriptions no longer resolve anything: since `v2.0.0-alpha.3` a `#Platform` names the catalog build it materializes as a scalar (`version: "1.0.0-alpha.7"`), so a branch build reaches a platform only by being written into it. The table above is therefore the whole of the selection surface — it governs `cue.mod` dependency resolution, and nothing else queries a range.
+A platform resolves nothing by itself: since 0019:D5 a `#Platform` imports each catalog through its own module's `cue.mod` and derives the entry's `version` from the embedded catalog, so a branch build reaches a platform only by being pinned in that `cue.mod`. The table above is therefore the whole of the selection surface — it governs `cue.mod` dependency resolution, and nothing else queries a range.
 
 So two pin styles are blessed by this strategy:
 

@@ -80,9 +80,10 @@ import (
 	// is about ownership rather than exposure: an unbuilt check has an owner
 	// (the platform-side major-agreement check belongs to `library`'s
 	// subscription-collapse work, not yet started), where a deleted one would
-	// be a regression nobody holds. What is left today is a materialize-time
-	// registry resolution failure naming a tag — a "@v1" module publishes v1.*
-	// tags, so a 2.0.0 request simply does not resolve. That names the symptom,
+	// be a regression nobody holds. What is left today is a registry
+	// resolution failure on the platform module's catalog import, naming a tag
+	// — a "@v1" module publishes v1.* tags, so a 2.0.0 request simply does not
+	// resolve. That names the symptom,
 	// not the mistake.
 	//
 	// Deleting this assertion therefore removes the relation from the system
