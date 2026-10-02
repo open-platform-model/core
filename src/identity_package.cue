@@ -78,8 +78,8 @@ import (
 	// not #CatalogEntry, whose key binding constrains the embedded catalog's
 	// modulePath but not the version major (0019:D5). The distinction is
 	// about ownership rather than exposure: an unbuilt check has an owner
-	// (the platform-side major-agreement check is unbuilt and tracked as
-	// library#160), where a deleted one would be a regression nobody holds.
+	// (the platform-side major-agreement check is tracked as library#160),
+	// where a deleted one would be a regression nobody holds.
 	// What is left today is a registry resolution failure on the platform
 	// module's catalog import, naming a tag — a "@v1" module publishes v1.*
 	// tags, so a 2.0.0 request simply does not resolve. That names the
