@@ -7,11 +7,11 @@ import (
 // WHY #ComponentTransformer: 0010:D36.
 
 // #ComponentTransformer: Declares how to convert OPM components into
-// platform-specific resources. A transformer matches a component when ALL of
-// the following are true: 1. ALL requiredLabels are present in the component's
-// matchLabels with matching values 2. ALL requiredResources FQNs exist in
-// component #resources 3. ALL requiredTraits FQNs exist in component #traits
-// Matching never reads metadata.labels. See SPEC.md § 4.1.
+// platform-specific resources. A transformer matches a component when every
+// requiredLabels entry is in the component's matchLabels with the same value,
+// every requiredResources FQN is in its #resources, and every requiredTraits
+// FQN is in its #traits. Matching never reads metadata.labels. See SPEC.md
+// § 4.1.
 #ComponentTransformer: {
 	kind: "ComponentTransformer"
 
@@ -35,9 +35,9 @@ import (
 
 	// WHY metadata: 0010:D44.
 
-	// A transformer's identity shape is its OWN — it deliberately shares no
-	// parent definition with the three primitives'. It carries NO apiVersion, and
-	// the struct is CLOSED, so supplying one is a `field not allowed` error. See
+	// A transformer's identity shape is its own — it deliberately shares no
+	// parent definition with the three primitives'. It carries no apiVersion, and
+	// the struct is closed, so supplying one is a `field not allowed` error. See
 	// SPEC.md § 4.1.
 	metadata: {
 		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/transformers"
@@ -46,15 +46,15 @@ import (
 		// WHY catalogVersion: 0010:D4.
 
 		// catalogVersion: the catalog build this transformer shipped in. Unlike a
-		// primitive's, it IS this key's own source component — an operator upgrading
+		// primitive's, it is this key's own source component — an operator upgrading
 		// a catalog is choosing new rendering logic and needs to know which bytes
 		// are running.
 		catalogVersion!: #VersionType // Example: "1.0.0"
 
 		// WHY fqn: 0010:D21.
 
-		// fqn: AUTHORED by the catalog at the definition site, not derived here.
-		// #ImplFQNType, not #ContractFQNType: what a platform EXECUTES is keyed by
+		// fqn: authored by the catalog at the definition site, not derived here.
+		// #ImplFQNType, not #ContractFQNType: what a platform executes is keyed by
 		// its build. #CatalogMemberFQNGate asserts the agreement with modulePath,
 		// name and catalogVersion at publish.
 		fqn!: #ImplFQNType // Example: "opmodel.dev/catalogs/opm/transformers/deployment-transformer@1.0.0"
@@ -78,29 +78,29 @@ import (
 
 	// WHY requiredLabels: 0010:D36.
 
-	// Labels a component MUST carry in its matchLabels to match this transformer.
+	// Labels a component must carry in its matchLabels to match this transformer.
 	// Selection reads #Component.matchLabels — the wholesale unification of the
 	// attached primitives' matchLabels — and never metadata.labels on either
 	// side. Example: A DeploymentTransformer requires stateless workloads:
 	// requiredLabels: {"opm.opmodel.dev/workload-type": "stateless"}
 	requiredLabels?: #LabelsAnnotationsType
 
-	// Labels optionally used by this transformer - component MAY include these
+	// Labels optionally used by this transformer - component may include these
 	// in its matchLabels. If not provided, defaults from the definition can be used.
 	optionalLabels?: #LabelsAnnotationsType
 
-	// Resources required by this transformer - component MUST include these.
+	// Resources required by this transformer - component must include these.
 	// Map key is the FQN, value is the Resource definition (provides access to #defaults).
 	requiredResources?: [#ContractFQNType]: #Resource
 
-	// Resources optionally used by this transformer - component MAY include these.
+	// Resources optionally used by this transformer - component may include these.
 	optionalResources?: [#ContractFQNType]: #Resource
 
-	// Traits required by this transformer - component MUST include these.
+	// Traits required by this transformer - component must include these.
 	// Map key is the FQN, value is the Trait definition (provides access to #defaults).
 	requiredTraits?: [#ContractFQNType]: #Trait
 
-	// Traits optionally used by this transformer - component MAY include these.
+	// Traits optionally used by this transformer - component may include these.
 	optionalTraits?: [#ContractFQNType]: #Trait
 
 	// Catalog hints — purely informational; not used by the matcher.

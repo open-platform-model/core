@@ -30,9 +30,9 @@ import (
 
 		// WHY fqn: 0010:D21.
 
-		// fqn: AUTHORED by the catalog at the definition site, not derived here, so
+		// fqn: authored by the catalog at the definition site, not derived here, so
 		// fqn, modulePath and catalogVersion trace to one identity package and a
-		// release moves them together. `core` no longer refuses a value disagreeing
+		// release moves them together. `core` does not refuse a value disagreeing
 		// with this definition's own fields; #CatalogMemberFQNGate asserts that
 		// agreement at publish.
 		fqn!: #ContractFQNType // Example: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
@@ -42,7 +42,7 @@ import (
 
 		// WHY labels: 0010:D36.
 
-		// Optional metadata labels for CATEGORIZATION. Descriptive only — nothing
+		// Optional metadata labels for categorization. Descriptive only — nothing
 		// selects on these, and they are never unified upward into a #Component.
 		// Example: {"trait.opmodel.dev/category": "network"}
 		labels?: #LabelsAnnotationsType
@@ -57,11 +57,11 @@ import (
 
 	// WHY matchLabels: 0010:D36.
 
-	// matchLabels: this trait's MATCHING identity — the keys a
+	// matchLabels: this trait's matching identity — the keys a
 	// #ComponentTransformer.requiredLabels predicate selects on, unified
 	// wholesale into every #Component that attaches this trait. Separate from
 	// metadata.labels, which carries categorisation and is never unified upward.
-	// NOT rendered. See SPEC.md § 2.2.
+	// Not rendered. See SPEC.md § 2.2.
 	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
 
 	// WHY: see #Resource.#nameConstraint. The rule and its measured pitfalls are
@@ -73,7 +73,7 @@ import (
 	// nameConstraint: the name rule a kind this primitive renders enforces on the
 	// owning component's metadata.resourceName; top when the primitive is
 	// indifferent, which is the default. A hidden definition field: never
-	// optional, never guarded on presence. MAY be computed from this primitive's
+	// optional, never guarded on presence. May be computed from this primitive's
 	// own fields. See SPEC.md § 2.2.
 	#nameConstraint: _
 
@@ -112,14 +112,14 @@ import (
 	// WHY optional: 0010:D28, trait half.
 
 	// optional: whether an unhandled demand for this trait fails the render or
-	// degrades to a warning naming the trait. NO DEFAULT HERE: the declaring
-	// catalog states the
-	// posture as a default (`bool | *true` or `bool | *false`), a module may
-	// narrow it at the attachment site, and #TraitOptionalGate refuses a
-	// catalog that pins a concrete value. See SPEC.md § 2.2.
+	// degrades to a warning naming the trait. `core` sets no default: the
+	// declaring catalog states the posture as a default (`bool | *true` or
+	// `bool | *false`), a module may narrow it at the attachment site, and
+	// #TraitOptionalGate refuses a catalog that pins a concrete value. See
+	// SPEC.md § 2.2.
 	optional: bool
 
-	// MUST be an OpenAPIv3 compatible schema
+	// Must be an OpenAPIv3 compatible schema
 	// The field and schema exposed by this definition
 	spec!: (strings.ToCamel(metadata.#definitionName)): _
 
@@ -141,8 +141,8 @@ import (
 
 // #TraitOptionalGate: what `opm catalog publish` unifies against, once per
 // published #Trait, to hold catalogs to the two rules #Trait.optional cannot
-// express itself: a posture is stated, and it is not pinned. Takes the FIELD,
-// not the trait, and MUST be unified into a non-hidden value. See SPEC.md
+// express itself: a posture is stated, and it is not pinned. Takes the field,
+// not the trait, and must be unified into a non-hidden value. See SPEC.md
 // § 5.1.
 #TraitOptionalGate: {
 	// The value under test: some published trait's `optional`.

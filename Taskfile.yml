@@ -71,6 +71,39 @@ tasks:
     cmds:
       - bash .tasks/doc-check.sh src --strict
 
+  ## Generated definitions reference
+  # The reference pages under docs/site/reference/definitions/ are generated
+  # from the doc comments and shape of src/*.cue by tools/refgen (its own Go
+  # module; nothing in it ships in the CUE module) and committed, because
+  # opmodel.dev builds its pages from this repo's docs/site/. Regenerate after
+  # editing a definition or a doc comment; the check fails CI otherwise.
+
+  docs:reference:
+    desc: Regenerate the definitions reference in docs/site/reference/definitions/ from src/*.cue
+    dir: tools/refgen
+    cmds:
+      - go run .
+
+  docs:reference:check:
+    desc: Fail when the committed definitions reference is stale (writes nothing)
+    dir: tools/refgen
+    cmds:
+      - go run . -check
+
+  refgen:test:
+    desc: Format-check, vet and test the reference generator in tools/refgen
+    dir: tools/refgen
+    cmds:
+      - |
+        set -euo pipefail
+        unformatted=$(gofmt -l .)
+        if [[ -n "$unformatted" ]]; then
+          echo "FAIL: gofmt would change: $unformatted"
+          exit 1
+        fi
+      - go vet ./...
+      - go test ./...
+
   ## Git hooks
 
   hooks:install:
@@ -140,10 +173,12 @@ tasks:
   ## Aggregate
 
   check:
-    desc: Format check, vet, INDEX freshness, SPEC inventory, and doc-comment report
+    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, and definitions reference freshness
     cmds:
       - task: fmt:check
       - task: vet
       - task: generate:index:check
       - task: spec:check
       - task: docs:check
+      - task: refgen:test
+      - task: docs:reference:check

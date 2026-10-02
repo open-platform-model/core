@@ -4,6 +4,9 @@ import (
 	"strings"
 )
 
+// LabelsAnnotationsType: a map from key to a string, int or bool, or a list
+// of them. The type of metadata labels and annotations, of matchLabels, and
+// of a transformer's required and optional labels.
 #LabelsAnnotationsType: [string]: string | int | bool | [string | int | bool]
 
 // NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars
@@ -41,7 +44,7 @@ import (
 
 // WHY #SnakeNameType: 0010:D8.
 
-// SnakeNameType: snake_case name — lowercase alphanumeric with underscores.
+// SnakeNameType: a snake_case name — lowercase alphanumeric with underscores.
 // Same character budget as #NameType; differs only in the separator (`_`
 // instead of `-`), making it a valid CUE identifier (and thus a usable CUE
 // package name / registry-path leaf). #Module.metadata.name's type.
@@ -96,7 +99,7 @@ import (
 // no alpha/beta rung to admit.
 
 // MajorVersionType: the identity-bearing version component of a CUE module
-// path — what #ArtifactRef.major reads off #ModulePathType. A MODULE major,
+// path — what #ArtifactRef.major reads off #ModulePathType. A module major,
 // which the registry assigns; not a contract level (#APIVersionType).
 // Example: "v1", "v0"
 #MajorVersionType: string & =~"^v[0-9]+$"
@@ -111,7 +114,7 @@ import (
 
 // WHY #APIVersionType: 0010:D4/D25.
 
-// APIVersionType: a PRIMITIVE's contract level — the value its author moves
+// APIVersionType: a primitive's contract level — the value its author moves
 // when the primitive's shape breaks, independent of the catalog's module major
 // and of the catalog's release SemVer. Admits the Kubernetes ladder:
 // vNalphaM, vNbetaM, vN.
@@ -173,7 +176,9 @@ import (
 // Example: "opmodel.dev/bundles/game-stack:v1"
 #BundleFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:v[0-9]+$"
 
-// Semver 2.0
+// VersionType: a version string in Semantic Versioning form, with optional
+// prerelease and build metadata.
+// Example: "1.0.0", "2.0.0-beta.3"
 #VersionType: string & =~"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
 // WHY the key is the contract level: a catalog release does not move this key; only a breaking change to the
@@ -192,7 +197,7 @@ import (
 
 // WHY #ContractFQNType: 0010:D4.
 
-// ContractFQNType: what a module DEMANDS — path/name@vN, where vN is the
+// ContractFQNType: what a module demands — path/name@vN, where vN is the
 // primitive's own #APIVersionType. The key a #Resource, #Trait and #Blueprint
 // carries. A catalog release does not move it. Example:
 // "opmodel.dev/catalogs/opm/traits/scaling@v1beta1" Example:
@@ -209,7 +214,7 @@ import (
 
 // WHY #ImplFQNType: 0010:D4.
 
-// ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of
+// ImplFQNType: what a platform executes — path/name@semver, the full SemVer of
 // the build the definition shipped in. The key a #ComponentTransformer
 // carries. Example:
 // "opmodel.dev/catalogs/opm/transformers/deployment-transformer@1.0.0"
@@ -235,17 +240,17 @@ import (
 // contract key from an implementation key, and "@v1" versus "@1.2.0" does that
 // at a glance and in the type.
 
-// FQNType: either form, for a consumer holding both. Exported for that, and
-// deliberately unused inside `core`: every field and map key here names ONE
-// role and takes that role's type, which is what keeps a wrong-form key
-// inexpressible rather than merely unmatched.
+// FQNType: either key form, a contract FQN or an implementation FQN, for a
+// consumer that holds both. Unused inside `core`, deliberately: every field
+// and map key here names one role and takes that role's type, which keeps a
+// wrong-form key inexpressible rather than merely unmatched.
 #FQNType: #ContractFQNType | #ImplFQNType
 
 // UUIDType: RFC 4122 UUID in standard format (lowercase hex)
 #UUIDType: string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
 // OPM namespace UUID for uuid computations via uuid.SHA1 (UUID v5).
-// This UUID MUST remain immutable across all versions — it is the root namespace
+// This UUID must remain immutable across all versions — it is the root namespace
 // for all OPM uuid generation. The CLI uses the same constant.
 OPMNamespace: "11bc6112-a6e8-4021-bec9-b3ad246f9466"
 

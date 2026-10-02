@@ -91,8 +91,7 @@ package core
 
 		// WHY fqn: 0010:D1.
 
-		// fqn IS the module path — the version no longer joins it, and
-		// #CatalogFQNType retires with the derivation it typed.
+		// fqn is the module path; the version does not join it.
 		fqn: #ModulePathType & modulePath
 
 		// The one decomposition of modulePath. registryPath is what the
@@ -119,7 +118,7 @@ package core
 
 	// WHY #resources: 0015:D1.
 
-	// resources: the #Resource contracts this catalog DEFINES, keyed by contract
+	// resources: the #Resource contracts this catalog defines, keyed by contract
 	// fqn; listing one requires no adapter. Stamps metadata.modulePath to
 	// "<registryPath>/resources/<apiVersion>" and metadata.catalogVersion to the
 	// catalog's version, never fqn; an authored value that disagrees is a
@@ -132,7 +131,7 @@ package core
 		}
 	}
 
-	// traits: the #Trait contracts this catalog DEFINES, keyed by contract
+	// traits: the #Trait contracts this catalog defines, keyed by contract
 	// fqn; the #resources stamp under the `traits` segment. A `fulfilment:
 	// "provider"` trait is listed here and implemented nowhere in this
 	// catalog: this map is what makes it visible. See SPEC.md § 3.6.
@@ -144,7 +143,7 @@ package core
 		}
 	}
 
-	// blueprints: the #Blueprint contracts this catalog DEFINES, keyed by
+	// blueprints: the #Blueprint contracts this catalog defines, keyed by
 	// contract fqn; the #resources stamp under the `blueprints` segment.
 	// See SPEC.md § 3.6.
 	#blueprints: [#ContractFQNType]: #Blueprint & {
@@ -157,13 +156,13 @@ package core
 
 	#transformers: [#ImplFQNType]: #ComponentTransformer & {
 		metadata: {
-			// The major is split out and NOT re-appended: a transformer
+			// The major is split out and not re-appended: a transformer
 			// declares a #PackagePathType, which admits no "@vN".
 			modulePath: "\(M._ref.registryPath)/transformers"
 
 			// WHY catalogVersion: 0010:D25.
 
-			// The catalog's own version IS the build every member of it shipped
+			// The catalog's own version is the build every member of it shipped
 			// in, stamped rather than authored per leaf.
 			catalogVersion: M.version
 		}

@@ -8,9 +8,13 @@ CUE module: `opmodel.dev/core@v2`
 
 ```
 +-- docs/
-    +-- site/
-        +-- authoring/
-        +-- concepts/
+|   +-- site/
+|       +-- authoring/
+|       +-- concepts/
+|       +-- reference/
+|           +-- definitions/
++-- tools/
+    +-- refgen/
 ```
 
 ---
@@ -22,15 +26,15 @@ CUE module: `opmodel.dev/core@v2`
 | `#Blueprint` | `blueprint.cue` | #Blueprint: Defines a reusable blueprint that composes resources and traits into a higher-level abstraction |
 | `#BlueprintMap` | `blueprint.cue` |  |
 | `#Catalog` | `catalog.cue` | #Catalog: top-level catalog definition |
-| `#Component` | `component.cue` |  |
+| `#Component` | `component.cue` | #Component is one deployable part of a module: the resources, traits and blueprints it attaches, and the spec their fields merge into |
 | `#ComponentMap` | `component.cue` |  |
-| `#CatalogMemberFQNGate` | `identity_package.cue` | CatalogMemberFQNGate is the rule a publishing tool unifies every catalog member against — primitive OR transformer — to check that what the catalog AUTHORED agrees with what its identity package IMPLIES |
+| `#CatalogMemberFQNGate` | `identity_package.cue` | CatalogMemberFQNGate is the rule a publishing tool unifies every catalog member against — primitive or transformer — to check that what the catalog authored agrees with what its identity package implies |
 | `#IdentityPackage` | `identity_package.cue` | IdentityPackage is the shape an artifact's committed identity package must match — the two values a release moves, plus everything that derives from them |
 | `#Module` | `module.cue` | #Module: The portable application blueprint created by developers and/or platform teams |
 | `#ModuleMap` | `module.cue` |  |
 | `#ComponentNames` | `module_context.cue` | #ComponentNames is the shape of the per-component computed-names projection |
 | `#InstanceIdentity` | `module_context.cue` | #InstanceIdentity carries the deployment-scoped facts that compute per-component names and DNS variants |
-| `#ModuleInstance` | `module_instance.cue` | #ModuleInstance: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version |
+| `#ModuleInstance` | `module_instance.cue` | #ModuleInstance is one deployment of a #Module: the module to deploy, the values that satisfy its #config, and the name and namespace it deploys into |
 | `#ModuleInstanceMap` | `module_instance.cue` |  |
 | `#CatalogEntry` | `platform.cue` | #CatalogEntry declares that a #Platform admits a catalog, by carrying the imported catalog value whole on #catalog |
 | `#ContractInventory` | `platform.cue` | #ContractInventory: what a #Platform derives about the contracts its enabled catalogs define and its enabled transformers require: the members and their defining catalogs, the keys more than one catalog lists, the required demands per contract, the reports and the three booleans they imply |
@@ -46,10 +50,10 @@ CUE module: `opmodel.dev/core@v2`
 | `#Secret` | `schemas.cue` | #Secret is the contract type that module authors place on sensitive fields |
 | `#SecretContentHash` | `schemas.cue` | #SecretContentHash normalizes #Secret entries and plain strings to a string map, then delegates to #ContentHash |
 | `#SecretImmutableName` | `schemas.cue` | #SecretImmutableName computes the K8s resource name for a Secret |
-| `#SecretK8sRef` | `schemas.cue` | #SecretK8sRef: points to a pre-existing K8s Secret in the cluster |
-| `#SecretLiteral` | `schemas.cue` | #SecretLiteral: user provides the actual value |
-| `#SecretSchema` | `schemas.cue` | #SecretSchema: Secret specification for K8s Secret resources |
-| `#SecretType` | `schemas.cue` |  |
+| `#SecretK8sRef` | `schemas.cue` | #SecretK8sRef is the #Secret variant that points to a Kubernetes Secret already in the cluster |
+| `#SecretLiteral` | `schemas.cue` | #SecretLiteral is the #Secret variant that carries the value itself |
+| `#SecretSchema` | `schemas.cue` | #SecretSchema: Secret specification for Kubernetes Secret resources |
+| `#SecretType` | `schemas.cue` | #SecretType holds the fields every #Secret variant embeds: the $opm discriminator, and the $secretName and $dataKey that route the value to a Secret and a key within it |
 | `#Trait` | `trait.cue` | #Trait: Defines additional behavior or characteristics that can be attached to components |
 | `#TraitMap` | `trait.cue` |  |
 | `#TraitOptionalGate` | `trait.cue` | #TraitOptionalGate: what `opm catalog publish` unifies against, once per published #Trait, to hold catalogs to the two rules #Trait |
@@ -57,24 +61,24 @@ CUE module: `opmodel.dev/core@v2`
 | `#TransformerContext` | `transformer.cue` | Provider context passed to transformers |
 | `#TransformerMap` | `transformer.cue` | Map of transformers by fully qualified name |
 | `#APIVersionGated` | `types.cue` | APIVersionGated reports whether the additive-only promise binds at a given apiVersion: false at alpha, which promises nothing and whose publish gate is off, true at beta and GA, which are gated in full |
-| `#APIVersionType` | `types.cue` | APIVersionType: a PRIMITIVE's contract level — the value its author moves when the primitive's shape breaks, independent of the catalog's module major and of the catalog's release SemVer |
+| `#APIVersionType` | `types.cue` | APIVersionType: a primitive's contract level — the value its author moves when the primitive's shape breaks, independent of the catalog's module major and of the catalog's release SemVer |
 | `#ArtifactRef` | `types.cue` | ArtifactRef splits a complete module path into the OCI repository its tags live under and the major it declares |
 | `#BundleFQNType` | `types.cue` | BundleFQNType: FQN for #Bundle — path/name:vN (major version) Example: "opmodel |
-| `#ContractFQNType` | `types.cue` | ContractFQNType: what a module DEMANDS — path/name@vN, where vN is the primitive's own #APIVersionType |
-| `#FQNType` | `types.cue` | FQNType: either form, for a consumer holding both |
-| `#ImplFQNType` | `types.cue` | ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of the build the definition shipped in |
+| `#ContractFQNType` | `types.cue` | ContractFQNType: what a module demands — path/name@vN, where vN is the primitive's own #APIVersionType |
+| `#FQNType` | `types.cue` | FQNType: either key form, a contract FQN or an implementation FQN, for a consumer that holds both |
+| `#ImplFQNType` | `types.cue` | ImplFQNType: what a platform executes — path/name@semver, the full SemVer of the build the definition shipped in |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |
-| `#LabelsAnnotationsType` | `types.cue` |  |
+| `#LabelsAnnotationsType` | `types.cue` | LabelsAnnotationsType: a map from key to a string, int or bool, or a list of them |
 | `#MajorVersionType` | `types.cue` | MajorVersionType: the identity-bearing version component of a CUE module path — what #ArtifactRef |
 | `#ModulePathType` | `types.cue` | ModulePathType: an artifact's complete CUE module path, major suffix mandatory |
 | `#NameType` | `types.cue` | NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars |
 | `#ObjectNameType` | `types.cue` | ObjectNameType: RFC 1123 DNS subdomain — dot-separated DNS labels, max 253 runes |
 | `#PackagePathType` | `types.cue` | PackagePathType: the path a *primitive* declares — a package path inside a module, carrying no major suffix |
 | `#ServiceNameType` | `types.cue` | ServiceNameType: RFC 1035 DNS label — #NameType with an alphabetic first rune |
-| `#SnakeNameType` | `types.cue` | SnakeNameType: snake_case name — lowercase alphanumeric with underscores |
+| `#SnakeNameType` | `types.cue` | SnakeNameType: a snake_case name — lowercase alphanumeric with underscores |
 | `#UUIDType` | `types.cue` | UUIDType: RFC 4122 UUID in standard format (lowercase hex) |
-| `#VersionType` | `types.cue` | Semver 2 |
+| `#VersionType` | `types.cue` | VersionType: a version string in Semantic Versioning form, with optional prerelease and build metadata |
 
 ---
 

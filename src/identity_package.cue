@@ -32,7 +32,7 @@ import (
 // IdentityPackage is the shape an artifact's committed identity package must
 // match — the two values a release moves, plus everything that derives from
 // them. The file it types is `identity/identity.cue`, at the root of a module
-// or a catalog. A PUBLISH GATE, not a field of any artifact: a publishing
+// or a catalog. A publish gate, not a field of any artifact: a publishing
 // tool unifies the loaded package against it. See SPEC.md § 5.2.
 #IdentityPackage: {
 	// WHY ModulePath: 0010:D1.
@@ -54,7 +54,7 @@ import (
 	// whole point of that definition.
 	RegistryPath: _ref.registryPath // "opmodel.dev/catalogs/opm"
 
-	// Major: the major the PATH declares.
+	// Major: the major the path declares.
 	Major: _ref.major // "v1"
 
 	// WHY this is the only assertion of that relation in the system: 0010:D40
@@ -98,8 +98,8 @@ import (
 
 	// VersionMajor: derived from Version, never authored, and asserted equal to
 	// the major the path declares. The assertion is the second declaration below
-	// — unification is the check. THIS IS THE ONLY ASSERTION OF THAT RELATION IN
-	// THE SYSTEM; deleting it removes the relation outright. See SPEC.md § 5.2.
+	// — unification is the check. This is the only assertion of that relation in
+	// the system; deleting it removes the relation outright. See SPEC.md § 5.2.
 	VersionMajor: "v" + strings.SplitN(Version, ".", 2)[0]
 	VersionMajor: Major
 
@@ -127,7 +127,7 @@ import (
 	// WHY kindPrefix: 0010:D1.
 
 	// kindPrefix: the path prefix every catalog member of a given kind hangs off.
-	// The major is NOT re-appended — a catalog member declares a
+	// The major is not re-appended — a catalog member declares a
 	// #PackagePathType. Exactly one base prefix per kind; a contract kind files
 	// one apiVersion segment beneath it, a transformer at the prefix itself.
 	// Enumerated, not a pattern constraint.
@@ -164,8 +164,8 @@ import (
 // is not embedded in the member definitions".
 
 // CatalogMemberFQNGate is the rule a publishing tool unifies every catalog
-// member against — primitive OR transformer — to check that what the catalog
-// AUTHORED agrees with what its identity package IMPLIES. A PUBLISH GATE, not
+// member against — primitive or transformer — to check that what the catalog
+// authored agrees with what its identity package implies. A publish gate, not
 // part of any artifact: each `declared*` field is stated twice, once as
 // authored and once as implied, and unification does the comparing. See
 // SPEC.md § 5.3.
@@ -181,7 +181,7 @@ import (
 
 	// WHY declaredAPIVersion: 0010:D44.
 
-	// Optional at the top level and REQUIRED for the three primitive kinds. A
+	// Optional at the top level and required for the three primitive kinds. A
 	// transformer declares none — it carries no apiVersion at all — so requiring
 	// it unconditionally would force every transformer to author a value nothing
 	// reads.
@@ -198,10 +198,10 @@ import (
 
 	// WHY declaredModulePath: 0010:D17; 0010:D49; 0010:D44.
 
-	// What identity/identity.cue implies. The path must sit under THIS catalog; a
-	// CONTRACT kind files one segment beneath its kind prefix, under the member's
+	// What identity/identity.cue implies. The path must sit under this catalog; a
+	// contract kind files one segment beneath its kind prefix, under the member's
 	// own apiVersion, a transformer at the prefix itself. The provenance must
-	// name THIS build.
+	// name this build.
 	declaredModulePath: [
 		if kind == "transformers" {identity.kindPrefix[kind]},
 		identity.kindPrefix[kind] + "/" + declaredAPIVersion,
@@ -227,13 +227,12 @@ import (
 
 	// WHY declaredFQN: 0010:D49.
 
-	// The KEY does not carry the filing segment: the apiVersion reaches a
+	// The key does not carry the filing segment: the apiVersion reaches a
 	// contract key once, as its "@vN" suffix, never as a path component. Filing
 	// is versioned; the key space stays flat.
 	declaredFQN: identity.kindPrefix[kind] + "/" + name + "@" + _keyVersion
 
-	// NOTE what is absent: apiVersion is NOT checked against identity. Nothing
-	// implies it. A primitive's contract level is a judgement its author makes
+	// WHY apiVersion is not checked against identity: nothing implies it. A primitive's contract level is a judgement its author makes
 	// about that primitive's own shape, independent of the catalog's module
 	// major and of the catalog's release SemVer (0010:D4, D25) —
 	// which is the entire point of the field. A gate that derived it would be

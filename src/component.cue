@@ -1,5 +1,9 @@
 package core
 
+// #Component is one deployable part of a module: the resources, traits and
+// blueprints it attaches, and the spec their fields merge into. A #Module
+// holds its components in #components and hands each one the instance
+// identity it computes its #names from.
 #Component: {
 	kind: "Component"
 
@@ -31,7 +35,7 @@ package core
 		// (0010:D36).
 
 		// Component labels — descriptive metadata for this component, and the
-		// labels that reach rendered output via #TransformerContext. NOT
+		// labels that reach rendered output via #TransformerContext. Not
 		// unified from the attached primitives, and nothing matches on them;
 		// matching has its own field, matchLabels.
 		labels?: #LabelsAnnotationsType
@@ -175,8 +179,7 @@ package core
 
 	// The assertion: the RESOLVED resourceName satisfies every attached
 	// constraint. Refuses naming the string, the violated bound and the
-	// constraint type's definition site. The interpolation is load-bearing;
-	// see below.
+	// constraint type's definition site. The interpolation is load-bearing.
 	_nameFits: "\(metadata.resourceName)" & _nameConstraints
 
 	// WHY: introduced by enhancement 0001 (0001:D2). #Module.#ctx.components
@@ -190,7 +193,7 @@ package core
 	// `resourceName` reads straight from metadata (cascade lives there); DNS
 	// variants derive deterministically from resourceName +
 	// #instance.namespace + #instance.clusterDomain. Authors inside a
-	// component's `spec` body MUST use `#ctx.components.<self-id>.dns.fqdn`.
+	// component's `spec` body must use `#ctx.components.<self-id>.dns.fqdn`.
 	#names: {
 		resourceName: metadata.resourceName
 		dns: {
@@ -216,11 +219,13 @@ package core
 		}
 	}
 
+	// WHY spec is a closed field rather than flattened into the component
+	// root: flattening it would have to open the #Module definition, which
+	// would make it impossible to properly validate.
+
 	// Fields exposed by this component (merged from all resources, traits, and blueprints)
 	// Automatically turned into a spec.
 	// Must be made concrete by the user.
-	// Have to do it this way because if we allowed the spec flattened in the root of the component
-	// we would have to open the #Module definition which would make it impossible to properly validate.
 	spec: close({
 		_allFields
 	})

@@ -9,7 +9,8 @@ context: |
   module (`opmodel.dev/core@v2`). It is the source of truth for OPM: every OPM artifact is typed
   against these definitions, and `library`, `catalog`, `cli`, `opm-operator`, `modules` and the
   deployment repositories all consume it as a published dependency — never by filesystem path.
-  This is a pure CUE repository. There is no Go code here.
+  The schema is pure CUE. The one Go program is the definitions reference generator in
+  `tools/refgen/` (its own Go module), which never ships in the CUE module.
 
   ### I. The Schema Is a Published Contract
   A breaking change to the `core` package is a breaking change for every consumer, and consumers
@@ -115,7 +116,8 @@ context: |
 
   See [AGENTS.md](../AGENTS.md) for full details. This repo has no `CONSTITUTION.md`; this file and
   `AGENTS.md` are the two normative sources, and `Taskfile.yml` wins over both on how commands run.
-  - Language: CUE only. No Go, no other runtime.
+  - Language: CUE only for the schema. Go only in `tools/refgen/`, the reference generator,
+    which is never part of the published module.
   - CUE language floor: `v0.17.0`, declared in `src/cue.mod/module.cue`.
   - Toolchain: pinned separately (CI `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
   - Build/validate entrypoint: `Taskfile.yml`. All raw `cue` invocations run from `src/`.
@@ -167,8 +169,10 @@ context: |
   2. `task vet` — the core schema package validates.
   3. `task generate:index:check` — `src/INDEX.md` is up to date.
   4. `task spec:check` — `SPEC.md` inventory matches the tracked CUE constructs.
+  5. `task docs:reference:check` — the generated definitions reference under
+     `docs/site/reference/definitions/` matches `src/*.cue`.
 
-  Equivalently, `task check` runs all four.
+  `task check` runs all five, plus `task docs:check` and `task refgen:test`.
 
 rules:
   proposal:
@@ -254,6 +258,9 @@ rules:
       in that section's commit (Principle II), never scheduled apart.
     - Include `task generate:index` as a task whenever definitions are added, removed or renamed,
       or the tree under `src/` changes.
+    - Include `task docs:reference` as a task whenever a definition or a doc comment in `src/`
+      changes; a new exported definition must also be placed on a page or excluded in
+      `tools/refgen/groups.go`, or the generator refuses to run.
     - Include the validation gates (`task check`, or the four individually) in every section's commit task, not as a
       trailing section; cross-cutting checks (downstream catalog and consumer builds) go into the last real section before
       its commit.

@@ -6,9 +6,10 @@ import (
 
 // WHY #ModuleInstance: was #ModuleRelease, renamed by 0002:D8.
 
-// #ModuleInstance: The concrete deployment instance
-// Contains: Reference to Module, values, target namespace
-// Users/deployment systems create this to deploy a specific version
+// #ModuleInstance is one deployment of a #Module: the module to deploy, the
+// values that satisfy its #config, and the name and namespace it deploys
+// into. Users and deployment systems create one to deploy a specific version
+// of a module.
 #ModuleInstance: {
 	kind: "ModuleInstance"
 
@@ -42,7 +43,7 @@ import (
 
 		// WHY fqn: 0010:D41.
 
-		// fqn: this instance's own identity — the deployed module's MAJOR-FREE
+		// fqn: this instance's own identity — the deployed module's major-free
 		// registry path, this instance's name, and its namespace. Neither the
 		// module's version nor its major reaches instance identity. See SPEC.md §
 		// 3.5.
