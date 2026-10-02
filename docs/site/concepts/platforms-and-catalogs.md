@@ -12,7 +12,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A catalog defines contracts and implements some of them
 
-<!-- `#Catalog` has `metadata` (`modulePath` with its major, such as `opmodel.dev/catalogs/opm@v4`, and `version`, both read from `identity/identity.cue`), three contract maps (`#resources`, `#traits`, `#blueprints`) and `#transformers`, each keyed by the member's own FQN. The catalog stamps every member's `modulePath` and `catalogVersion`, so a member cannot claim another catalog or build. Name the two first-party catalogs: `opmodel.dev/catalogs/opm@v4`, the abstraction family, and `opmodel.dev/catalogs/k8s@v1`, the raw Kubernetes family. Check against: core/src/catalog.cue, catalog_opm/opm/catalog.cue, catalog_opm/opm/identity/identity.cue, catalog_opm/k8s/catalog.cue, catalog_opm/k8s/identity/identity.cue -->
+<!-- `#Catalog` has `metadata` (`modulePath` with its major, such as `opmodel.dev/catalogs/opm@v4`, and `version`, both read from `identity/identity.cue`), three contract maps (`#resources`, `#traits`, `#blueprints`) and `#transformers`, each keyed by the member's own FQN. The catalog stamps every member's `modulePath` and `catalogVersion`, so a member cannot claim another catalog or build. Name the one first-party catalog, `opmodel.dev/catalogs/opm@v4`. Check against: core/src/catalog.cue, catalog_opm/opm/catalog.cue, catalog_opm/opm/identity/identity.cue -->
 
 ### A platform admits catalogs by import
 

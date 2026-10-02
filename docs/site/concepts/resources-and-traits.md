@@ -26,10 +26,6 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 <!-- Usually the declaring catalog also ships the transformer (`fulfilment: "catalog"`, the default). A `provider` contract is one the declaring catalog deliberately ships no transformer for, such as the opm catalog's `backup@v1alpha1` trait; another catalog on the platform must implement it. Keep the platform side on "Platforms and catalogs". Verify: no catalog in the workspace implements `backup@v1alpha1` today. Check against: core/src/resource.cue (`fulfilment`), core/src/trait.cue (`fulfilment`), catalog_opm/opm/traits/v1alpha1/backup.cue -->
 
-### The raw Kubernetes family
-
-<!-- The `opmodel.dev/catalogs/k8s@v1` catalog carries one resource per Kubernetes kind (`deployment`, `service`, `configmap` and so on) and no traits or blueprints. Each raw resource renders to exactly one object of its kind. It is the escape hatch for what the abstraction resources do not model, and the abstraction members must not depend on it. Point to "Use a raw Kubernetes resource" and "Raw Kubernetes resources". Check against: catalog_opm/k8s/catalog.cue, catalog_opm/k8s/resources/v1/, catalog_opm/k8s/transformers/deployment_transformer.cue, catalog_opm/Taskfile.yml (`vet:layering`) -->
-
 ## Why it is built this way
 
 ### Why a trait is separate from a resource
@@ -86,5 +82,4 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - An unhandled trait resolved `optional: true` warns: kernel, advisory only.
 - `appliesTo` is non-empty and a trait attaches only where it applies: convention (not checked; see Common mistakes).
 - A resource or trait schema marks no defaults: convention.
-- Abstraction members do not depend on the raw family: the catalog's own CI (`task vet:layering`), which none of the four badges names. Verify which badge the writing guide wants for catalog CI.
-Check against: core/src/resource.cue, core/src/trait.cue, cli/internal/publish/catalog_gates.go, cli/internal/publish/gates.go, cli/internal/compat/compat.go, library/opm/internal/renderstage/render.cue.tmpl, library/opm/errors/match.go, catalog_opm/Taskfile.yml, core/SPEC.md §6.3 -->
+Check against: core/src/resource.cue, core/src/trait.cue, cli/internal/publish/catalog_gates.go, cli/internal/publish/gates.go, cli/internal/compat/compat.go, library/opm/internal/renderstage/render.cue.tmpl, library/opm/errors/match.go, core/SPEC.md §6.3 -->
