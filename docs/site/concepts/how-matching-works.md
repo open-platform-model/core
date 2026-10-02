@@ -12,11 +12,11 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Two label sets on a component
 
-<!-- `matchLabels` is the component's matching identity: derived from what it attaches, read only by matching, never rendered. `metadata.labels` is descriptive: not derived, never matched on, and copied onto every rendered object through `#TransformerContext.componentLabels`, including the workload's `spec.selector.matchLabels`, which Kubernetes makes immutable. The opm catalog matches on one key today, `core.opmodel.dev/workload-type`, with the values `stateless`, `stateful`, `daemon`, `task` and `scheduled-task`. Verify: the catalog's `#Container` and workload wrappers also write `core.opmodel.dev/workload-type` into `metadata.labels` (a comment there calls it transitional), so rendered objects and their selectors do carry that key today, although the specification says rendered objects stopped carrying it. Check against: core/src/component.cue, core/src/transformer.cue (`#TransformerContext`), catalog_opm/opm/resources/v1beta1/container.cue (`#Container`), catalog_opm/opm/blueprints/v1beta1/stateless_workload.cue (`#StatelessWorkload`), catalog_opm/opm/transformers/deployment_transformer.cue (`selector`), catalog_opm/opm/traits/v1beta1/pod_metadata.cue, core/SPEC.md §2.1 Rationale, "Why `matchLabels` is not rendered" -->
+<!-- `matchLabels` is the component's matching identity: derived from what it attaches, read only by matching, never rendered. `metadata.labels` is descriptive: not derived, never matched on, and copied onto every rendered object through `#TransformerContext.componentLabels`, including the workload's `spec.selector.matchLabels`, which Kubernetes makes immutable. The opm catalog matches on one key today, `core.opmodel.dev/workload-type`, with the values `stateless`, `stateful`, `daemon`, `task` and `scheduled-task`. Verify: the catalog's `#Container` and workload wrappers also write `core.opmodel.dev/workload-type` into `metadata.labels` (a comment there calls it transitional), so rendered objects and their selectors do carry that key today, although the specification says rendered objects stopped carrying it. Check against: core/src/component.cue, core/src/transformer.cue (`#TransformerContext`), catalog_opm/src/resources/v1beta1/container.cue (`#Container`), catalog_opm/src/blueprints/v1beta1/stateless_workload.cue (`#StatelessWorkload`), catalog_opm/src/transformers/deployment_transformer.cue (`selector`), catalog_opm/src/traits/v1beta1/pod_metadata.cue, core/SPEC.md §2.1 Rationale, "Why `matchLabels` is not rendered" -->
 
 ### What a transformer declares
 
-<!-- `requiredLabels`, `requiredResources` and `requiredTraits` are the conditions; `optionalResources` and `optionalTraits` name what the transformer can use without needing. Use two real transformers: the Deployment transformer requires the `container` resource and `core.opmodel.dev/workload-type: stateless`, and lists `scaling`, `restart-policy` and others as optional traits; the HPA transformer requires `container` and the `scaling` trait and no label. Verify: `optionalLabels` is declared on `#ComponentTransformer`, but the render glue never reads it. Check against: core/src/transformer.cue, catalog_opm/opm/transformers/deployment_transformer.cue, catalog_opm/opm/transformers/hpa_transformer.cue -->
+<!-- `requiredLabels`, `requiredResources` and `requiredTraits` are the conditions; `optionalResources` and `optionalTraits` name what the transformer can use without needing. Use two real transformers: the Deployment transformer requires the `container` resource and `core.opmodel.dev/workload-type: stateless`, and lists `scaling`, `restart-policy` and others as optional traits; the HPA transformer requires `container` and the `scaling` trait and no label. Verify: `optionalLabels` is declared on `#ComponentTransformer`, but the render glue never reads it. Check against: core/src/transformer.cue, catalog_opm/src/transformers/deployment_transformer.cue, catalog_opm/src/transformers/hpa_transformer.cue -->
 
 ### The three checks
 
@@ -24,7 +24,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### One component, several transformers
 
-<!-- A stateless workload with `expose` and automatic scaling matches the Deployment, Service and HPA transformers; each emits its own object, and every matched pair renders. Check against: catalog_opm/opm/transformers/deployment_transformer.cue, catalog_opm/opm/transformers/service_transformer.cue, catalog_opm/opm/transformers/hpa_transformer.cue, library/opm/internal/renderstage/render.cue.tmpl (`rendered`) -->
+<!-- A stateless workload with `expose` and automatic scaling matches the Deployment, Service and HPA transformers; each emits its own object, and every matched pair renders. Check against: catalog_opm/src/transformers/deployment_transformer.cue, catalog_opm/src/transformers/service_transformer.cue, catalog_opm/src/transformers/hpa_transformer.cue, library/opm/internal/renderstage/render.cue.tmpl (`rendered`) -->
 
 ### Verdicts and the gate
 
@@ -46,7 +46,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why the catalog names the keys
 
-<!-- `core` names no matching key, so a catalog can introduce one without a `core` release; the constant `core` used to export for it had no readers. The specification's example key (`opm.opmodel.dev/workload-type`) differs from the key catalog_opm ships (`core.opmodel.dev/workload-type`); write the shipped one. Check against: core/SPEC.md §2.1 Rationale, "Why `core` names no matching key"; catalog_opm/opm/resources/v1beta1/container.cue -->
+<!-- `core` names no matching key, so a catalog can introduce one without a `core` release; the constant `core` used to export for it had no readers. The specification's example key (`opm.opmodel.dev/workload-type`) differs from the key catalog_opm ships (`core.opmodel.dev/workload-type`); write the shipped one. Check against: core/SPEC.md §2.1 Rationale, "Why `core` names no matching key"; catalog_opm/src/resources/v1beta1/container.cue -->
 
 ### Why an unmet demand fails the render
 
@@ -68,7 +68,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A component's `metadata.labels` do not affect matching
 
-<!-- They reach the rendered objects and the workload selectors, never the matcher. Because they land in `spec.selector.matchLabels`, changing them after the first apply changes a selector Kubernetes treats as immutable; pod-only labels go through the `pod-metadata` trait instead. Verify the rejected-update behaviour against a live apply. Check against: core/src/transformer.cue (`componentLabels`), catalog_opm/opm/transformers/deployment_transformer.cue (`selector`), catalog_opm/opm/traits/v1beta1/pod_metadata.cue -->
+<!-- They reach the rendered objects and the workload selectors, never the matcher. Because they land in `spec.selector.matchLabels`, changing them after the first apply changes a selector Kubernetes treats as immutable; pod-only labels go through the `pod-metadata` trait instead. Verify the rejected-update behaviour against a live apply. Check against: core/src/transformer.cue (`componentLabels`), catalog_opm/src/transformers/deployment_transformer.cue (`selector`), catalog_opm/src/traits/v1beta1/pod_metadata.cue -->
 
 ### A component can match more than one transformer
 

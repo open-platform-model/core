@@ -25,7 +25,7 @@ Check against: opm/docs/site/authoring/your-first-module.md, core/src/module.cue
 
    <!-- Types with bounds: `replicas: int & >=1`, `port: int & >0 & <=65535`, an enumeration `serviceType: "ClusterIP" | "NodePort" | "LoadBalancer"`. Reuse catalog schemas for structured values: `res.#Image` (repository, tag and digest; digest may be "" but must be present) and `res.#ResourceRequirementsSchema`. For a constraint repeated across fields, a private helper such as `_#portSchema` outside `#config`.
    Keep `#config` expressible as an OpenAPI v3 schema: no `for`, `if` or comprehensions inside it, because the schema is the module's public contract and non-CUE consumers read it. State this as a rule the author follows. Verify: core/SPEC.md says the library's render pipeline enforces it, but no check exists in library/opm today.
-   Check against: cli/templates/standard/module.cue, catalog_opm/opm/resources/v1beta1/container.cue (#Image, #ResourceRequirementsSchema), modules/DESIGN_PATTERNS.md sections 1 and 7, core/SPEC.md section 3.2 (Constraints and Rationale on #config) -->
+   Check against: cli/templates/standard/module.cue, catalog_opm/src/resources/v1beta1/container.cue (#Image, #ResourceRequirementsSchema), modules/DESIGN_PATTERNS.md sections 1 and 7, core/SPEC.md section 3.2 (Constraints and Rationale on #config) -->
 
 3. Add a default where a working value exists.
 
