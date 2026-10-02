@@ -22,7 +22,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#Blueprint` | `blueprint.cue` | #Blueprint: Defines a reusable blueprint that composes resources and traits into a higher-level abstraction |
 | `#BlueprintMap` | `blueprint.cue` |  |
 | `#Catalog` | `catalog.cue` | #Catalog: top-level catalog definition |
-| `#Component` | `component.cue` |  |
+| `#Component` | `component.cue` | #Component is one deployable part of a module: the resources, traits and blueprints it attaches, and the spec their fields merge into |
 | `#ComponentMap` | `component.cue` |  |
 | `#CatalogMemberFQNGate` | `identity_package.cue` | CatalogMemberFQNGate is the rule a publishing tool unifies every catalog member against — primitive OR transformer — to check that what the catalog AUTHORED agrees with what its identity package IMPLIES |
 | `#IdentityPackage` | `identity_package.cue` | IdentityPackage is the shape an artifact's committed identity package must match — the two values a release moves, plus everything that derives from them |
@@ -30,7 +30,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#ModuleMap` | `module.cue` |  |
 | `#ComponentNames` | `module_context.cue` | #ComponentNames is the shape of the per-component computed-names projection |
 | `#InstanceIdentity` | `module_context.cue` | #InstanceIdentity carries the deployment-scoped facts that compute per-component names and DNS variants |
-| `#ModuleInstance` | `module_instance.cue` | #ModuleInstance: The concrete deployment instance Contains: Reference to Module, values, target namespace Users/deployment systems create this to deploy a specific version |
+| `#ModuleInstance` | `module_instance.cue` | #ModuleInstance is one deployment of a #Module: the module to deploy, the values that satisfy its #config, and the name and namespace it deploys into |
 | `#ModuleInstanceMap` | `module_instance.cue` |  |
 | `#CatalogEntry` | `platform.cue` | #CatalogEntry declares that a #Platform admits a catalog, by carrying the imported catalog value whole on #catalog |
 | `#ContractInventory` | `platform.cue` | #ContractInventory: what a #Platform derives about the contracts its enabled catalogs define and its enabled transformers require: the members and their defining catalogs, the keys more than one catalog lists, the required demands per contract, the reports and the three booleans they imply |
@@ -49,7 +49,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#SecretK8sRef` | `schemas.cue` | #SecretK8sRef: points to a pre-existing K8s Secret in the cluster |
 | `#SecretLiteral` | `schemas.cue` | #SecretLiteral: user provides the actual value |
 | `#SecretSchema` | `schemas.cue` | #SecretSchema: Secret specification for K8s Secret resources |
-| `#SecretType` | `schemas.cue` |  |
+| `#SecretType` | `schemas.cue` | #SecretType holds the fields every #Secret variant embeds: the $opm discriminator, and the $secretName and $dataKey that route the value to a Secret and a key within it |
 | `#Trait` | `trait.cue` | #Trait: Defines additional behavior or characteristics that can be attached to components |
 | `#TraitMap` | `trait.cue` |  |
 | `#TraitOptionalGate` | `trait.cue` | #TraitOptionalGate: what `opm catalog publish` unifies against, once per published #Trait, to hold catalogs to the two rules #Trait |
@@ -65,7 +65,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#ImplFQNType` | `types.cue` | ImplFQNType: what a platform EXECUTES — path/name@semver, the full SemVer of the build the definition shipped in |
 | `#KebabToCamel` | `types.cue` | KebabToCamel converts a kebab-case string to camelCase |
 | `#KebabToPascal` | `types.cue` | KebabToPascal converts a kebab-case string to PascalCase |
-| `#LabelsAnnotationsType` | `types.cue` |  |
+| `#LabelsAnnotationsType` | `types.cue` | LabelsAnnotationsType: a map from key to a string, int or bool, or a list of them |
 | `#MajorVersionType` | `types.cue` | MajorVersionType: the identity-bearing version component of a CUE module path — what #ArtifactRef |
 | `#ModulePathType` | `types.cue` | ModulePathType: an artifact's complete CUE module path, major suffix mandatory |
 | `#NameType` | `types.cue` | NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars |
@@ -74,7 +74,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#ServiceNameType` | `types.cue` | ServiceNameType: RFC 1035 DNS label — #NameType with an alphabetic first rune |
 | `#SnakeNameType` | `types.cue` | SnakeNameType: snake_case name — lowercase alphanumeric with underscores |
 | `#UUIDType` | `types.cue` | UUIDType: RFC 4122 UUID in standard format (lowercase hex) |
-| `#VersionType` | `types.cue` | Semver 2 |
+| `#VersionType` | `types.cue` | VersionType: a Semantic Versioning 2 |
 
 ---
 

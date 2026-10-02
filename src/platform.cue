@@ -155,8 +155,7 @@ import (
 // A #Platform is a path-keyed registry of catalog entries, each carrying its
 // imported catalog, plus the derived #composedTransformers fold over the
 // enabled entries and the derived #contracts inventory. A platform value is
-// complete on its own: no Materialize step, no materialized twin, no reverse
-// index. See SPEC.md § 3.4.
+// complete on its own. See SPEC.md § 3.4.
 #Platform: {
 	kind: "Platform"
 
@@ -167,11 +166,10 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// WHY type: 0014:OQ2.
+	// WHY type: 0014:OQ2. A future enhancement may enforce type-vs-transformer
+	// compatibility; today nothing reads the field.
 
-	// Informational. Future enhancement may enforce type-vs-transformer
-	// compatibility; today it is an authored discriminator the matcher does not
-	// consult.
+	// Informational: an authored discriminator the matcher does not consult.
 	type!: string
 
 	// WHY #registry: 0019:D5; 0001:D13.
@@ -183,8 +181,8 @@ import (
 	#registry: [Path=#ModulePathType]: #CatalogEntry & {#catalog: metadata: modulePath: Path}
 
 	// Derived, never runtime-filled: the fold of every enabled entry's
-	// #transformers, copied per entry by comprehension (see the WHY block
-	// above). Empty when the registry is empty or fully disabled.
+	// #transformers, copied per entry by comprehension. Empty when the
+	// registry is empty or fully disabled.
 	#composedTransformers: {
 		for _, entry in #registry if entry.enable {
 			for fqn, tf in entry.#transformers {(fqn): tf}

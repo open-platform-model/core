@@ -1,5 +1,9 @@
 package core
 
+// #Component is one deployable part of a module: the resources, traits and
+// blueprints it attaches, and the spec their fields merge into. A #Module
+// holds its components in #components and hands each one the instance
+// identity it computes its #names from.
 #Component: {
 	kind: "Component"
 
@@ -175,8 +179,7 @@ package core
 
 	// The assertion: the RESOLVED resourceName satisfies every attached
 	// constraint. Refuses naming the string, the violated bound and the
-	// constraint type's definition site. The interpolation is load-bearing;
-	// see below.
+	// constraint type's definition site. The interpolation is load-bearing.
 	_nameFits: "\(metadata.resourceName)" & _nameConstraints
 
 	// WHY: introduced by enhancement 0001 (0001:D2). #Module.#ctx.components

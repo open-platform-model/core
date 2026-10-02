@@ -25,6 +25,10 @@ import (
 // declaration; users never set them.
 #Secret: #SecretLiteral | #SecretK8sRef
 
+// #SecretType holds the fields every #Secret variant embeds: the $opm
+// discriminator, and the $secretName and $dataKey that route the value to a
+// Secret and a key within it. The schema author sets $secretName and
+// $dataKey; users never do.
 #SecretType: {
 	$opm:          "secret"
 	$secretName!:  #NameType
@@ -57,7 +61,8 @@ import (
 // #SecretSchema: Secret specification for K8s Secret resources.
 // data holds either #Secret entries (auto-discovered via #AutoSecrets) or plain
 // strings (manually defined secrets, e.g. computed config files).
-// name is auto-populated from the map key in resources/config/secret.cue.
+// name is auto-populated from the map key by the catalog resource that holds
+// the schema.
 #SecretSchema: {
 	name!:     string
 	type:      *"Opaque" | "kubernetes.io/service-account-token" | "kubernetes.io/dockercfg" | "kubernetes.io/dockerconfigjson" | "kubernetes.io/basic-auth" | "kubernetes.io/ssh-auth" | "kubernetes.io/tls" | "bootstrap.kubernetes.io/token"
@@ -66,7 +71,8 @@ import (
 }
 
 // #ConfigMapSchema: ConfigMap specification.
-// name is auto-populated from the map key in resources/config/configmap.cue.
+// name is auto-populated from the map key by the catalog resource that holds
+// the schema.
 #ConfigMapSchema: {
 	name!:     string
 	immutable: bool | *false

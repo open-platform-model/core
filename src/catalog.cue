@@ -91,8 +91,7 @@ package core
 
 		// WHY fqn: 0010:D1.
 
-		// fqn IS the module path — the version no longer joins it, and
-		// #CatalogFQNType retires with the derivation it typed.
+		// fqn IS the module path; the version does not join it.
 		fqn: #ModulePathType & modulePath
 
 		// The one decomposition of modulePath. registryPath is what the

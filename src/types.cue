@@ -4,6 +4,9 @@ import (
 	"strings"
 )
 
+// LabelsAnnotationsType: a map from key to a string, int or bool, or a list
+// of them. The type of metadata labels and annotations, of matchLabels, and
+// of a transformer's required and optional labels.
 #LabelsAnnotationsType: [string]: string | int | bool | [string | int | bool]
 
 // NameType: RFC 1123 DNS label — lowercase alphanumeric with hyphens, max 63 chars
@@ -173,7 +176,9 @@ import (
 // Example: "opmodel.dev/bundles/game-stack:v1"
 #BundleFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?:v[0-9]+$"
 
-// Semver 2.0
+// VersionType: a Semantic Versioning 2.0.0 version, with optional prerelease
+// and build metadata.
+// Example: "1.0.0", "2.0.0-beta.3"
 #VersionType: string & =~"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
 // WHY the key is the contract level: a catalog release does not move this key; only a breaking change to the

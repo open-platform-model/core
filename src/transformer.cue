@@ -7,11 +7,11 @@ import (
 // WHY #ComponentTransformer: 0010:D36.
 
 // #ComponentTransformer: Declares how to convert OPM components into
-// platform-specific resources. A transformer matches a component when ALL of
-// the following are true: 1. ALL requiredLabels are present in the component's
-// matchLabels with matching values 2. ALL requiredResources FQNs exist in
-// component #resources 3. ALL requiredTraits FQNs exist in component #traits
-// Matching never reads metadata.labels. See SPEC.md § 4.1.
+// platform-specific resources. A transformer matches a component when every
+// requiredLabels entry is in the component's matchLabels with the same value,
+// every requiredResources FQN is in its #resources, and every requiredTraits
+// FQN is in its #traits. Matching never reads metadata.labels. See SPEC.md
+// § 4.1.
 #ComponentTransformer: {
 	kind: "ComponentTransformer"
 
