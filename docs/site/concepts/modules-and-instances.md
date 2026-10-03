@@ -31,7 +31,7 @@ my_app/
 
 `#config` is the configuration schema: every setting a deployer can change, with its type and, where it has one, its default. OPM's rule is that a module author writes defaults only in `#config`, each marked with `*`, as in `replicas: int & >=1 | *1`. `#components` maps each component name to a component. `debugValues` is example data the CLI renders the module with while you work on it. It is not a set of defaults.
 
-A module can also set `initValues`: the values a new instance of it starts from. It is optional, and it may leave choices open. `opm instance init` writes it into the `values.cue` of the instance package it creates. A module without `initValues` stays valid, and its instances start from its `debugValues` instead.
+A module can also set `initValues`: the values a new instance of it starts from. It is optional, and it may leave choices open. `opm instance init` writes it into the `values.cue` of the instance package it creates. A module without `initValues` stays valid, and its instances start from its `debugValues` if they are fully concrete, else from an empty `values: {}`.
 
 The module path carries the major version, as in `example.com/modules/my_app@v0`. The module's `metadata.name` is snake_case and equals the path's last segment, here `my_app`. `opm module publish` pushes the module to the registry under that path, tagged with the full version from `identity/identity.cue`, such as `0.1.0`. `opm module publish` refuses a version the registry already holds.
 
@@ -186,7 +186,7 @@ Moving an instance to a new version of its module keeps its UUID, even across a 
 
 ### Deleting the record does not always delete the workloads
 
-For an instance the operator owns, deleting the `ModuleInstance` resource leaves the workloads running unless `spec.prune` is `true`. The field has no default, and the CLI never writes it. An instance the CLI owns has no finalizer, so `kubectl delete` on its resource removes the only record of what was applied, and the objects stay. Read [Deletion and pruning](/docs/operating/deletion-and-pruning/) before you delete an instance.
+For an instance the operator owns, deleting the `ModuleInstance` resource leaves the workloads running unless `spec.prune` is `true`. The field's default is `false`, and the CLI never writes it. An instance the CLI owns has no finalizer, so `kubectl delete` on its resource removes the only record of what was applied, and the objects stay. Read [Deletion and pruning](/docs/operating/deletion-and-pruning/) before you delete an instance.
 
 ## What enforces this
 

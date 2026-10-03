@@ -88,7 +88,7 @@ import (
 // #ComponentTransformer carry this; #Module and #Catalog carry
 // #ModulePathType. Also the type of a major-free registry path — see
 // #ArtifactRef.registryPath.
-// Example: "opmodel.dev/catalogs/opm/resources", "opmodel.dev/catalogs/opm/traits"
+// Example: "opmodel.dev/catalogs/opm/resources/v1beta1" (a resource), "opmodel.dev/catalogs/opm/transformers" (a transformer)
 #PackagePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
 
 // WHY two types: left deliberately untouched by 0010:D4. #APIVersionType below is

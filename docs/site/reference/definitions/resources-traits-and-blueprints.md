@@ -67,7 +67,7 @@ Defines a resource of deployment within the system.
     // unifies its attached primitives' matchLabels wholesale, so every key written
     // here participates in matching and nothing else does. A key may be declared
     // required (`"<key>"!: <disj>`). Never rendered.
-    matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
+    matchLabels?: #LabelsAnnotationsType // Example: {"core.opmodel.dev/workload-type": "stateless"}
 
     // nameConstraint: the name rule a kind this primitive renders enforces on the
     // owning component's metadata.resourceName; top when the primitive is
@@ -158,7 +158,7 @@ Defines additional behavior or characteristics that can be attached to component
     // into every #Component that attaches this trait. Separate from
     // metadata.labels, which carries categorisation and is never unified upward.
     // Not rendered.
-    matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
+    matchLabels?: #LabelsAnnotationsType // Example: {"core.opmodel.dev/workload-type": "stateless"}
 
     // nameConstraint: the name rule a kind this primitive renders enforces on the
     // owning component's metadata.resourceName; top when the primitive is
@@ -258,7 +258,7 @@ Defines a reusable blueprint that composes resources and traits into a higher-le
     // #ComponentTransformer.requiredLabels predicate selects on, unified wholesale
     // into every #Component that attaches this blueprint. Separate from
     // metadata.labels. Not rendered.
-    matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateful"}
+    matchLabels?: #LabelsAnnotationsType // Example: {"core.opmodel.dev/workload-type": "stateful"}
 
     // nameConstraint: the name rule a kind this primitive renders enforces on the
     // owning component's metadata.resourceName; top when the primitive is

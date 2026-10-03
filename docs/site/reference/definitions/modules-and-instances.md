@@ -34,8 +34,8 @@ The portable application blueprint created by developers and/or platform teams.
         // #Blueprint, which are not CUE packages.
         name!: #SnakeNameType // Example: "example_module"
 
-        modulePath!: #ModulePathType // Example: "example.com/modules/example_module@v1" (author-supplied in module.cue)
-        version!:    #VersionType    // Example: "0.1.0" (author-supplied in module.cue)
+        modulePath!: #ModulePathType // Example: "example.com/modules/example_module@v1" (from the module's identity package, identity/identity.cue)
+        version!:    #VersionType    // Example: "0.1.0" (from the module's identity package, identity/identity.cue)
 
         // fqn is the module path — nothing is recombined, and neither `name` nor
         // `version` is interpolated into it. Artifact identity therefore
