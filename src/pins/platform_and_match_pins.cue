@@ -408,9 +408,10 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 // application — note the case below is `failGateUnstated`, not
 // `_failGateUnstated` — because `cue vet` does not check hidden fields for
 // completeness, so the same case parked in a `_`-prefixed slot exits 0 under
-// both plain vet and `-c`, and gates nothing. That is why the positive gate
-// pins above are hidden and this one is not, and why the gate's own doc
-// comment states the requirement rather than leaving it to be rediscovered.
+// both plain vet and `-c`, and gates nothing. That is why this case is not
+// hidden, unlike the positive gate pins above (which keep the one pin shape),
+// and why the gate's own doc comment states the requirement rather than
+// leaving it to be rediscovered.
 //
 //  _failUnstatedOptional: core.#Trait & {
 //   metadata: {
