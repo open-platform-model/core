@@ -140,9 +140,9 @@ import (
 }
 
 // WHY #CatalogMemberFQNGate exists and is shaped this way. It is the
-// enforcement point five decisions delegate to. Enhancement 0010:D17,
-// D21, D25, D42 and D49 all state the catalog-member path and FQN rule and
-// implement it nowhere; 0010:D21 in particular REMOVED `core`'s fqn derivation for every
+// enforcement point five decisions delegate to (0010:D17/D21/D25/D42/D49):
+// each states the catalog-member path and FQN rule and implements it
+// nowhere; 0010:D21 in particular REMOVED `core`'s fqn derivation for every
 // catalog member, accepting a measured loss — a catalog on 1.2.0 shipping
 // `fqn: ".../secrets@1.1.0"` passes `cue vet -c` at exit 0 — explicitly in
 // exchange for this gate. Under 0010:D4 a wrong key is permanent: modules match
