@@ -42,10 +42,14 @@ That is the whole platform half today. It decides which transformers, from which
 
 OPM has no platform model. No OPM definition describes a cluster's global settings, the controllers and APIs it is built from, or the services it offers to teams.
 
+One mechanism a platform model would build on already works: a module can extend the platform it runs on. A provider module renders a `TransformerRegistration`, with the opm catalog's `transformer-registration` resource, that claims its catalog implements provider-fulfilled contracts, such as the opm catalog's `backup` trait. Once the operator accepts the claim and the provider's instance reports `Ready`, the catalog joins the platform, and every other module on that platform can use the trait. The module supplied a capability, and the platform offers it to everyone else. No published module uses this mechanism today.
+
 > [!NOTE]
 > **Direction**
 >
-> The platform model is meant to describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. No enhancement designs the platform model as a whole, or a description of a cluster's controllers or APIs. Several draft enhancements design changes to the platform side, and no work has started on them. Two bear most directly on the platform model.
+> OPM aims to model the platform as well as the application. A platform model would describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. Modules would supply what a platform offers, and other modules would consume it, so each model depends on the other. A platform would be portable: an organisation defines one or more and instantiates each onto infrastructure, Kubernetes first and later clouds such as AWS, GCP or OpenStack. [Where OPM is going](/docs/start/vision/) describes the vision and why the project pursues it.
+>
+> No enhancement designs the platform model as a whole, or a description of a cluster's controllers or APIs. Several draft enhancements design changes to the platform side, and no work has started on them. Two bear most directly on the platform model.
 >
 > Enhancement 0026, [Module-Dictated Catalog Versions and the Generated Platform](/enhancements/0026/), changes how a platform admits catalogs. Its design lets a platform admit each catalog with a range of versions. Each module's own pin chooses the version inside that range, and the design refuses a pin outside it.
 >
