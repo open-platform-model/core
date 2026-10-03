@@ -190,8 +190,8 @@ The path a *primitive* declares — a package path inside a module, carrying no 
 **Example**
 
 ```cue
-"opmodel.dev/catalogs/opm/resources"
-"opmodel.dev/catalogs/opm/traits"
+"opmodel.dev/catalogs/opm/resources/v1beta1"
+"opmodel.dev/catalogs/opm/transformers"
 ```
 
 **Notes**

@@ -62,7 +62,7 @@ import (
 	// wholesale into every #Component that attaches this trait. Separate from
 	// metadata.labels, which carries categorisation and is never unified upward.
 	// Not rendered. See SPEC.md § 2.2.
-	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
+	matchLabels?: #LabelsAnnotationsType // Example: {"core.opmodel.dev/workload-type": "stateless"}
 
 	// WHY: see #Resource.#nameConstraint. The rule and its measured pitfalls are
 	// stated once there (SPEC.md § 2.1 Rationale, "Why the primitive declares

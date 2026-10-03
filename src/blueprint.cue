@@ -79,7 +79,7 @@ import (
 	// #ComponentTransformer.requiredLabels predicate selects on, unified
 	// wholesale into every #Component that attaches this blueprint. Separate from
 	// metadata.labels. Not rendered. See SPEC.md § 3.3.
-	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateful"}
+	matchLabels?: #LabelsAnnotationsType // Example: {"core.opmodel.dev/workload-type": "stateful"}
 
 	// WHY: see #Resource.#nameConstraint. The rule and its measured pitfalls are
 	// stated once there (SPEC.md § 2.1 Rationale, "Why the primitive declares

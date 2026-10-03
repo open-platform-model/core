@@ -133,8 +133,8 @@ import (
 	// itself refuses nothing on it.
 	routable: bool & (len(overSubscribed) == 0 && len(collisions) == 0)
 
-	// True exactly when nothing is comparable. The second gate the
-	// generation step (operator, CLI) reads; `core` itself refuses
+	// True exactly when nothing is comparable. The second gate `opm platform
+	// check` and the operator read; the render and `core` itself refuse
 	// nothing on it.
 	discriminated: bool & (len(comparable) == 0)
 }

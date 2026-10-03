@@ -58,7 +58,7 @@ Declares how to convert OPM components into platform-specific resources.
     // Selection reads #Component.matchLabels — the wholesale unification of the
     // attached primitives' matchLabels — and never metadata.labels on either
     // side. Example: A DeploymentTransformer requires stateless workloads:
-    // requiredLabels: {"opm.opmodel.dev/workload-type": "stateless"}
+    // requiredLabels: {"core.opmodel.dev/workload-type": "stateless"}
     requiredLabels?: #LabelsAnnotationsType
 
     // Labels optionally used by this transformer - component may include these

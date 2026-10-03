@@ -20,8 +20,8 @@ import (
 		// #Blueprint, which are not CUE packages.
 		name!: #SnakeNameType // Example: "example_module"
 
-		modulePath!: #ModulePathType // Example: "example.com/modules/example_module@v1" (author-supplied in module.cue)
-		version!:    #VersionType    // Example: "0.1.0" (author-supplied in module.cue)
+		modulePath!: #ModulePathType // Example: "example.com/modules/example_module@v1" (from the module's identity package, identity/identity.cue)
+		version!:    #VersionType    // Example: "0.1.0" (from the module's identity package, identity/identity.cue)
 
 		// The one decomposition of modulePath. registryPath is the OCI
 		// repository (major stripped); major is read from the path.
