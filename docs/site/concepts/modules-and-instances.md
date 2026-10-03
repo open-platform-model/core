@@ -31,7 +31,7 @@ my_app/
 
 `#config` is the configuration schema: every setting a deployer can change, with its type and, where it has one, its default. OPM's rule is that a module author writes defaults only in `#config`, each marked with `*`, as in `replicas: int & >=1 | *1`. `#components` maps each component name to a component. `debugValues` is example data the CLI renders the module with while you work on it. It is not a set of defaults.
 
-A module can also set `initValues`: the values a new instance of it starts from. It is optional, and it may leave choices open. `opm instance init` writes it into the `values.cue` of the instance package it creates. A module without `initValues` stays valid, and its instances start from its `debugValues` if they are fully concrete, else from an empty `values: {}`.
+A module can also set `initValues`: the values a new instance of it starts from. It is optional, and it may leave choices open. `opm instance init` writes it into the `values.cue` of the instance package it creates. A module without `initValues` stays valid.
 
 The module path carries the major version, as in `example.com/modules/my_app@v0`. The module's `metadata.name` is snake_case and equals the path's last segment, here `my_app`. `opm module publish` pushes the module to the registry under that path, tagged with the full version from `identity/identity.cue`, such as `0.1.0`. `opm module publish` refuses a version the registry already holds.
 
@@ -138,7 +138,7 @@ One module is deployed many times, into different namespaces, with different val
 
 The operator prunes by identity. Before it deletes an object the new render no longer produces, it checks the object's `module-instance.opmodel.dev/uuid` label. It skips an object whose label names a different UUID. Instance identity once moved with every module release. After each upgrade, the old objects' labels no longer matched, so the operator skipped the deletes it should have made, left the objects running and reported success.
 
-Instance identity is now computed from the module path without its major version, the instance name and the namespace. An upgrade to a new version, or to a new major, keeps the same UUID, so pruning keeps working across upgrades.
+Instance identity is now computed from the module path without its major version, the instance name and the namespace. An upgrade to a new version, or to a new major such as `@v1` to `@v2`, keeps the same UUID, so pruning keeps working across upgrades. Renaming the instance or moving it to another namespace gives a different UUID, and OPM treats the result as a different instance.
 
 ### Why default object names include the instance name
 
@@ -149,8 +149,6 @@ Two instances of one module can live in one namespace. If objects took the bare 
 ### `debugValues` are not defaults
 
 `debugValues` looks like a set of defaults, and it is not one. It is example data that `opm module vet`, `opm module build` and `opm module apply` use when you pass no `-f` file. Passing `-f` replaces it entirely. An instance package never reads it, and OPM never falls back to it when an instance leaves a setting out. Defaults are the `*` values inside `#config`.
-
-Nor is `debugValues` always what a new instance starts from. When a module sets `initValues`, `opm instance init` uses those and never reads `debugValues`.
 
 ### Values in an instance package are not checked for unknown settings
 
@@ -179,10 +177,6 @@ The Kubernetes recommended labels use `app.kubernetes.io/instance` for the name 
 ```bash
 kubectl get deployments,services -n default -l module-instance.opmodel.dev/name=podinfo
 ```
-
-### Upgrading the module keeps the same instance
-
-Moving an instance to a new version of its module keeps its UUID, even across a new major path such as `@v1` to `@v2`. The ownership label on the live objects still matches. Renaming the instance or moving it to another namespace does not: OPM treats that as a different instance, with a different UUID.
 
 ### Deleting the record does not always delete the workloads
 

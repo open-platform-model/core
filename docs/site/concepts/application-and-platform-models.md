@@ -40,14 +40,14 @@ That is the whole platform half today. It decides which transformers, from which
 
 ### The platform model
 
-OPM has no platform model. No OPM definition describes a cluster's global settings, the controllers and APIs it is built from, or the services it offers to teams.
+OPM has no platform model. No OPM definition describes a cluster's global settings, the controllers and APIs it is built from, or the services it offers to teams. [What OPM does not do](/docs/start/what-opm-does-not-do/#a-model-of-the-platform-itself) lists what OPM has in their place.
 
 One mechanism a platform model would build on already works: a module can extend the platform it runs on. A provider module renders a `TransformerRegistration`, with the opm catalog's `transformer-registration` resource, that claims its catalog implements provider-fulfilled contracts, such as the opm catalog's `backup` trait. Once the operator accepts the claim and the provider's instance reports `Ready`, the catalog joins the platform, and every other module on that platform can use the trait. The module supplied a capability, and the platform offers it to everyone else. No published module uses this mechanism today.
 
 > [!NOTE]
 > **Direction**
 >
-> OPM aims to model the platform as well as the application. A platform model would describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. Modules would supply what a platform offers, and other modules would consume it, so each model depends on the other. A platform would be portable: an organisation defines one or more and instantiates each onto infrastructure, Kubernetes first and later clouds such as AWS, GCP or OpenStack. [Where OPM is going](/docs/start/vision/) describes the vision and why the project pursues it.
+> OPM aims to model the platform as well as the application. Modules would supply what a platform offers, and other modules would consume it, so each model depends on the other. [Where OPM is going](/docs/start/vision/) describes the vision and why the project pursues it.
 >
 > No enhancement designs the platform model as a whole, or a description of a cluster's controllers or APIs. Several draft enhancements design changes to the platform side, and no work has started on them. Two bear most directly on the platform model.
 >
@@ -77,25 +77,21 @@ So the application model does not depend on the shape of any platform. A module 
 
 ## Common mistakes
 
-### OPM does not model your whole platform
-
-The name suggests that OPM describes your cluster: its controllers, its APIs and the services it offers. It does not. OPM models applications, and a platform only as far as rendering needs: the catalogs it admits, the version of each, and the contracts they define and require. [What OPM does not do](/docs/start/what-opm-does-not-do/#a-model-of-the-platform-itself) lists what OPM has in place of a platform model, and [Where OPM is going](/docs/start/vision/) describes where the project wants to take it.
-
 ### The Platform resource is not the platform model
 
 The operator, and the CLI when it renders against the cluster, read a cluster-scoped `Platform` resource, which must be named `cluster`. Its spec holds three fields:
 
-- `type`, the same label as on `#Platform`, which rendering does not consult
+- `type`, the same label as on `#Platform`
 - `registry`, the catalogs the platform subscribes to, each with `enable` and `version`
 - `skewPolicy`, which decides what a render does when the instance pins a newer build of core or an OPM catalog than the platform does: `Warn`, the default, renders against the platform's build and reports the skew, and `Refuse` refuses the render
 
-The operator adds the catalogs of active `TransformerRegistration` claims and records the result in `status.registry`. From that it generates a platform module, the same kind of `#Platform` the CLI renders against. Nothing in the resource describes the cluster's controllers, its APIs or the services it offers.
+The operator adds the catalogs of active `TransformerRegistration` claims and records the result in `status.registry`. From that it generates a platform module, the same kind of `#Platform` the CLI renders against.
 
 ### A provider contract is not a service the platform offers
 
 A provider-fulfilled contract, such as the opm catalog's `backup` trait, looks like a service a platform offers. It is a rendering contract. It says that exactly one catalog on the platform supplies the transformer for the trait. The platform does not describe the backup controller that acts on the rendered objects.
 
-Subscribing to the provider catalog in `spec.registry` installs nothing, and nothing checks that a controller acts on what the catalog renders. A catalog that arrives through a provider module's `TransformerRegistration` joins the platform once that module's instance first reports `Ready`. It stays after that, even if the controller stops.
+Subscribing to the provider catalog in `spec.registry` installs nothing, and nothing checks that a controller acts on what the catalog renders. A provider catalog stays on the platform once its module's instance has first reported `Ready`, even if the controller stops.
 
 ## What enforces this
 
