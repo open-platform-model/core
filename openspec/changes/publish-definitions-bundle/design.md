@@ -120,9 +120,11 @@ Between adoption and G2-switch a new exported definition must be placed in both 
 
 Nothing changes on the site at adoption: v1.0 reads core from git until gate G2-switch, when opmodel.dev's `pull-reference-bundles` switches it to bundles. From G2-switch, v1.0 shows the `docs/core` bundle of the core version the cli pins, so an authored fix on `main` reaches the site only through the next release or a docs revision (`docs.yml` dispatch `mode: revision`, C3 "Docs revisions"), which is dispatched by hand (automation: core#101). `AGENTS.md`'s new paragraph says so.
 
-### D6. Retiring refgen at G2-switch
+### D6. Retiring refgen at G2-switch and G2-edge
 
-Delete `tools/refgen/` (with `go.mod`, `go.sum`, tests), `docs/site/reference/definitions/`, the `docs:reference`, `docs:reference:check` and `refgen:test` tasks and their place in `task check`, `ci.yml`'s "Setup Go", "Test the reference generator" and "Verify the definitions reference is up to date" steps, and the `exclude`. The `markdown` source becomes `{kind: "markdown", dir: "docs/site"}`. `src/INDEX.md`'s hand-maintained tree loses `tools/refgen/` (`task generate:index:check` stays green). Released bundles are unaffected: they were built with the exclude and the extractor's pages.
+**Gate.** G2-switch holds (opmodel.dev#38, 2026-10-04: v1.0 reads core 2.0.0-beta.2 from its bundle). G2-edge is opmodel.dev `add-edge-build` section 2 merged: the site's `sources-main` job, which checks every repository's `main` together, then reads core's `main` from its `edge` docs bundle instead of from a `main` checkout. Retiring earlier would leave that job reading a `docs/site/` without `reference/definitions/`, failing every `main` page that links a definition page until the edge build lands (owner decision 2026-10-04 on `pull-reference-bundles` OQ1: the edge build, not a narrower check).
+
+Delete `tools/refgen/` (with `go.mod`, `go.sum`, tests), `docs/site/reference/definitions/`, the `docs:reference`, `docs:reference:check` and `refgen:test` tasks and their place in `task check`, `ci.yml`'s "Setup Go", "Test the reference generator" and "Verify the definitions reference is up to date" steps, and the `exclude` with its comment in `docs-kit.cue`. The `markdown` source becomes `{kind: "markdown", dir: "docs/site"}`. The `Taskfile.yml` comments that explain the committed pages go with them: the "Generated definitions reference" block and the last sentence of the "Docs bundle" block ("Until opmodel.dev reads the bundle, ..."). `src/INDEX.md`'s hand-maintained tree loses `tools/refgen/` (`task generate:index:check` stays green). Released bundles are unaffected: they were built with the exclude and the extractor's pages.
 
 ## Research & Decisions
 

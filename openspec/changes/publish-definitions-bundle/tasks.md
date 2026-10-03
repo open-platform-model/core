@@ -27,11 +27,12 @@ Gate: section 1 is merged. Part of gate G2-pins (core `v2.0.0-beta.1`, library `
 
 ## 3. Retire tools/refgen
 
-Gate G2-switch: opmodel.dev's v1.0 reads core, cli, library and opm-operator from bundles (docs-kit `docs/orchestration.md`).
+Gates (docs-kit `docs/orchestration.md` step 8): G2-switch, opmodel.dev's v1.0 reads core, cli, library and opm-operator from bundles (holds since opmodel.dev#38, 2026-10-04); and G2-edge, opmodel.dev `add-edge-build` section 2 merged, so the site's `sources-main` job reads core's `main` from its `edge` docs bundle (design.md D6).
 
 - [ ] 3.1 Delete `tools/refgen/` and `docs/site/reference/definitions/`.
-- [ ] 3.2 `Taskfile.yml`: delete `docs:reference`, `docs:reference:check`, `refgen:test` and their comment block, and their two lines in `task check`. `.github/workflows/ci.yml`: delete the "Setup Go", "Test the reference generator" and "Verify the definitions reference is up to date" steps and their comment.
-- [ ] 3.3 `docs-kit.cue`: the `markdown` source becomes `{kind: "markdown", dir: "docs/site"}` (no `exclude`). Verify: `task docs:bundle:check` passes and `out/core/content/reference/definitions/` still holds nine pages.
+- [ ] 3.2 `Taskfile.yml`: delete `docs:reference`, `docs:reference:check`, `refgen:test` and their comment block, and their two lines in `task check`; drop the "Docs bundle" comment's sentence about the committed refgen pages. `.github/workflows/ci.yml`: delete the "Setup Go", "Test the reference generator" and "Verify the definitions reference is up to date" steps and their comment.
+- [ ] 3.3 `docs-kit.cue`: the `markdown` source becomes `{kind: "markdown", dir: "docs/site"}` (no `exclude`, and no comment about it). Verify: `task docs:bundle:check` passes and `out/core/content/reference/definitions/` still holds nine pages.
 - [ ] 3.4 `AGENTS.md`, `README.md`, `openspec/config.yaml`: core is CUE only again (Purpose, Repository Layout, Technology Standards, the refgen rows of "Build And Dev Commands"); validation gate 5 becomes `task docs:bundle:check`; the tasks rule names only `docs-kit.cue`. `src/INDEX.md`: drop `refgen/` from the hand-maintained tree. Verify: `grep -rn "refgen\|docs:reference" --exclude-dir=archive .` finds nothing outside `openspec/changes/`.
-- [ ] 3.5 `openspec archive publish-definitions-bundle --yes`; then set `openspec/specs/definitions-reference/spec.md`'s Purpose to the bundle-built reference. Verify: `openspec validate --specs --strict` passes for `docs-bundle` and `definitions-reference`.
-- [ ] 3.6 `task check` green, then commit `ci(docs): retire tools/refgen and its committed pages`.
+- [ ] 3.5 Check `main` together with this tree: `task docs:bundle`, then in an opmodel.dev checkout `OPM_BUNDLES_LOCAL="core@v1.0=<this worktree>/out/core" task build:edge`. Verify: it builds green, so every other repository's `main` still resolves its links into `/docs/reference/definitions/`.
+- [ ] 3.6 `openspec archive publish-definitions-bundle --yes`; then set `openspec/specs/definitions-reference/spec.md`'s Purpose to the bundle-built reference. Verify: `openspec validate --specs --strict` passes for `docs-bundle` and `definitions-reference`.
+- [ ] 3.7 `task check` green, then commit `ci(docs): retire tools/refgen and its committed pages`.
