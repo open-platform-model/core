@@ -68,7 +68,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A module release keeps the module's identity
 
-<!-- Misreading: publishing `3.0.2` creates a new module or a new instance. Correct: `fqn` and `uuid` are the same for every release inside `@v3`; only the `module.opmodel.dev/version` label on rendered objects changes. A major bump changes the module's uuid and leaves the instance's alone. Check against: core/src/module.cue, core/src/module_instance.cue, core/src/identity_pins.cue -->
+<!-- Misreading: publishing `3.0.2` creates a new module or a new instance. Correct: `fqn` and `uuid` are the same for every release inside `@v3`; only the `module.opmodel.dev/version` label on rendered objects changes. A major bump changes the module's uuid and leaves the instance's alone. Check against: core/src/module.cue, core/src/module_instance.cue, core/src/pins/identity_pins.cue -->
 
 ### The operator's API version is not a contract level
 

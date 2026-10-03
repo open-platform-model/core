@@ -136,6 +136,7 @@ Read these on entry:
 ```text
 src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v2
 src/*.cue                the core schema package (module root lives under src/)
+src/pins/*_pins.cue      test-only package pins: the schema pins; imports core, nothing imports it
 src/INDEX.md             generated definition index (ships inside the CUE module)
 docs/                    schema design notes (tutorial / explanatory)
 docs/site/               site pages opmodel.dev builds (STYLE.md "Site Pages" dialect)
@@ -148,6 +149,8 @@ openspec/                OpenSpec proposals/specs/archives (active change workfl
 ```
 
 `src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the import path is `opmodel.dev/core@v2` with no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) sits at the repo root. A new major (e.g. `@v2` → `@v3`) is the only way the module path changes, and it never adds a sibling package; it is taken only after GA, and during beta a break advances `-beta.N` instead.
+
+`src/pins/` holds the one other package in the module: `pins`, the hidden-field schema pins (`*_pins.cue`). It imports `opmodel.dev/core@v2` and references core as `core.#X`; nothing imports it, so no consumer loads it, while `task vet` (`cue vet ./...` from `src/`) builds and gates it. A pin never goes in package `core`, because every main-instance build of core (the library schema loader's) would then evaluate it.
 
 All raw `cue` invocations run from `src/`. The Taskfile handles this via `dir: src` / `cd src` — see `task fmt`, `task vet`, `task tidy`, `task publish`.
 

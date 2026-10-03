@@ -52,6 +52,9 @@ context: |
   ### IV. Single Package, Single Major
   - `src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the
     import path is `opmodel.dev/core@v2` with no per-version subdirectory.
+  - The published schema is the single `core` package. The schema pins live in the test-only
+    package `pins` in `src/pins/`, which imports `core` and which nothing imports. A pin never goes
+    in package `core`, because every main-instance build of core would evaluate it.
   - A new major (`@v2` → `@v3`) is the only way the module path changes, and it never adds a
     sibling package or a versioned subdirectory. A major is crossed only after GA; during beta a
     break advances `-beta.N` instead (below).

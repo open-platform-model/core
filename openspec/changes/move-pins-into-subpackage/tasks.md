@@ -18,10 +18,10 @@
 
 ## 2. Repo rules and site notes name src/pins/
 
-- [ ] 2.1 `AGENTS.md`:
+- [x] 2.1 `AGENTS.md`:
   - Repository Layout: add a `src/pins/` line (test-only package `pins`, the schema pins, imports `core`, nothing imports it), and extend the paragraph after the tree to say the same.
   - The two `*_pins.cue` exemption sentences in CUE Style Guidelines stay true by file name. Edit them only to name `src/pins/` where they say where the files live.
-- [ ] 2.2 `openspec/config.yaml` Principle IV: add one bullet saying that the published schema is the single `core` package, that pins live in the test-only package `pins` in `src/pins/`, and that a pin never goes in package `core`, because every main-instance build of core would evaluate it. Verify: `openspec validate move-pins-into-subpackage --strict` still passes, since it reads this file.
-- [ ] 2.3 `.claude/skills/core-schema-edit/SKILL.md`: where it covers pins and the doc-comment exemption, state that a new pin goes in `src/pins/` as package `pins` and references core as `core.#X`.
-- [ ] 2.4 `docs/site/`: in every "Check against" HTML comment, change `core/src/<name>_pins.cue` to `core/src/pins/<name>_pins.cue` (`docs/site/concepts/components-and-blueprints.md`, `identity-and-names.md`, `versions.md`, `what-enforces-a-rule.md`). Verify: `grep -rn 'core/src/[a-z_]*_pins.cue' docs/ AGENTS.md .claude/ openspec/config.yaml` prints nothing.
-- [ ] 2.5 `task check` green, then commit `docs: name src/pins as the home of the schema pins`. The section stages no `.cue` file, so the SPEC_IMPACT hook does not fire.
+- [x] 2.2 `openspec/config.yaml` Principle IV: add one bullet saying that the published schema is the single `core` package, that pins live in the test-only package `pins` in `src/pins/`, and that a pin never goes in package `core`, because every main-instance build of core would evaluate it. Verify: `openspec validate move-pins-into-subpackage --strict` still passes, since it reads this file.
+- [x] 2.3 `.claude/skills/core-schema-edit/SKILL.md`: where it covers pins and the doc-comment exemption, state that a new pin goes in `src/pins/` as package `pins` and references core as `core.#X`.
+- [x] 2.4 `docs/site/`: in every "Check against" HTML comment, change `core/src/<name>_pins.cue` to `core/src/pins/<name>_pins.cue` (`docs/site/concepts/components-and-blueprints.md`, `identity-and-names.md`, `versions.md`, `what-enforces-a-rule.md`). Verify: `grep -rn 'core/src/[a-z_]*_pins.cue' docs/ AGENTS.md .claude/ openspec/config.yaml` prints nothing.
+- [x] 2.5 `task check` green, then commit `docs: name src/pins as the home of the schema pins`. The section stages no `.cue` file, so the SPEC_IMPACT hook does not fire.

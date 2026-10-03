@@ -26,7 +26,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Instances are named by module lineage, name and namespace
 
-<!-- `#ModuleInstance.metadata.fqn` is `<module registryPath>:<name>:<namespace>` and `uuid` is a UUID v5 of it. Neither the module's version nor its major is an input, so the uuid survives every upgrade, while a different module path, instance name or namespace gives a different uuid. The uuid is stamped on every rendered object as `module-instance.opmodel.dev/uuid`, and the operator will not prune a live object whose label disagrees with the uuid it recorded. Verify: the CLI's own prune path does not compare this label. Check against: core/src/module_instance.cue, core/src/identity_pins.cue, core/src/transformer.cue (moduleLabels), opm-operator/internal/apply/prune.go, cli/internal/inventory/stale.go -->
+<!-- `#ModuleInstance.metadata.fqn` is `<module registryPath>:<name>:<namespace>` and `uuid` is a UUID v5 of it. Neither the module's version nor its major is an input, so the uuid survives every upgrade, while a different module path, instance name or namespace gives a different uuid. The uuid is stamped on every rendered object as `module-instance.opmodel.dev/uuid`, and the operator will not prune a live object whose label disagrees with the uuid it recorded. Verify: the CLI's own prune path does not compare this label. Check against: core/src/module_instance.cue, core/src/pins/identity_pins.cue, core/src/transformer.cue (moduleLabels), opm-operator/internal/apply/prune.go, cli/internal/inventory/stale.go -->
 
 ### Names and their spellings
 
@@ -48,7 +48,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why instance identity uses the registry path and not the module name
 
-<!-- Module names are not unique: `opmodel.dev/modules/jellyfin` and `example.com/jellyfin` share the name `jellyfin`. Identity built from the name would let an instance of one claim objects left behind by an instance of the other with the same instance name and namespace. A full registry path is unique. Verify: the delete-and-recreate scenario is the realistic case, since two ModuleInstances cannot share a name in one namespace. Check against: core/SPEC.md (§3.5 Rationale, "Why not derive instance identity from the module's `name`"), core/src/identity_pins.cue -->
+<!-- Module names are not unique: `opmodel.dev/modules/jellyfin` and `example.com/jellyfin` share the name `jellyfin`. Identity built from the name would let an instance of one claim objects left behind by an instance of the other with the same instance name and namespace. A full registry path is unique. Verify: the delete-and-recreate scenario is the realistic case, since two ModuleInstances cannot share a name in one namespace. Check against: core/SPEC.md (§3.5 Rationale, "Why not derive instance identity from the module's `name`"), core/src/pins/identity_pins.cue -->
 
 ### Why contract keys are authored and checked at publish
 
@@ -74,7 +74,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A new module major keeps the same instance
 
-<!-- Misreading: moving a module from `@v2` to `@v3` replaces the instance or orphans its objects. Correct: the module's `fqn` and `uuid` change; the instance's `fqn` and `uuid` do not, so the same ModuleInstance keeps owning its objects. Check against: core/src/module_instance.cue, core/src/identity_pins.cue -->
+<!-- Misreading: moving a module from `@v2` to `@v3` replaces the instance or orphans its objects. Correct: the module's `fqn` and `uuid` change; the instance's `fqn` and `uuid` do not, so the same ModuleInstance keeps owning its objects. Check against: core/src/module_instance.cue, core/src/pins/identity_pins.cue -->
 
 ### `app.kubernetes.io/instance` holds the component name
 
@@ -86,7 +86,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ## What enforces this
 
-<!-- cue: a module's or catalog's `fqn` is derived from `modulePath` and a different value conflicts; `metadata.name` must equal the path's last segment (error names `_leaf`: "conflicting values false and true"); `modulePath` must carry `@vN`; component names, instance names and namespaces are DNS labels; an explicit `resourceName` must be a DNS subdomain and satisfy every attached member's name rule; a catalog stamps each member's `modulePath` and `catalogVersion` and refuses a different authored value ("conflicting values"); contract maps take only contract keys and transformer maps only transformer keys. Check against: core/src/module.cue, core/src/component.cue, core/src/catalog.cue, core/src/types.cue, core/src/identity_pins.cue, core/src/component_names_pins.cue -->
+<!-- cue: a module's or catalog's `fqn` is derived from `modulePath` and a different value conflicts; `metadata.name` must equal the path's last segment (error names `_leaf`: "conflicting values false and true"); `modulePath` must carry `@vN`; component names, instance names and namespaces are DNS labels; an explicit `resourceName` must be a DNS subdomain and satisfy every attached member's name rule; a catalog stamps each member's `modulePath` and `catalogVersion` and refuses a different authored value ("conflicting values"); contract maps take only contract keys and transformer maps only transformer keys. Check against: core/src/module.cue, core/src/component.cue, core/src/catalog.cue, core/src/types.cue, core/src/pins/identity_pins.cue, core/src/pins/component_names_pins.cue -->
 
 <!-- publish: every catalog member's `fqn`, filing path and `catalogVersion` must agree with the identity file (#CatalogMemberFQNGate, "<definition> (<package>) is off its catalog's key space"); `metadata.modulePath` and `metadata.version` must come from the identity file ("<file> states a modulePath its identity package does not"); `cue.mod`'s `module:` line must equal the declared path ("<path> disagrees with itself about where it lives"); a module's package name must equal `metadata.name` ("<directory>'s package does not bind to its name"); paths under `opmodel.dev` and `community.opmodel.dev` must fit a fixed shape (see Registry Namespaces). Several of these also run in `opm module vet`. Check against: cli/internal/publish/catalog_gates.go, cli/internal/publish/gates.go, cli/internal/publish/vet.go -->
 

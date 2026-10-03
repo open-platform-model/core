@@ -101,7 +101,7 @@ After (hover shows three lines; the rationale stays in the file, directly above,
 	resourceName: *"\(#instance.name)-\(name)" | #ObjectNameType | error("...")
 ```
 
-`task docs:check` (part of `task check`) fails on every doc comment over 6 lines; `*_pins.cue` fixture files are exempt, hidden `_` fields in schema files are not. Never fix a report by deleting a blank line; split the block and keep the contract as the attached part.
+`task docs:check` (part of `task check`) fails on every doc comment over 6 lines; `*_pins.cue` fixture files are exempt, hidden `_` fields in schema files are not. Pins live only in `src/pins/`, as package `pins`, and reference core as `core.#X`; a new pin never goes in a `src/*.cue` schema file, because package `core` would then make every consumer's main-instance build evaluate it. Never fix a report by deleting a blank line; split the block and keep the contract as the attached part.
 
 ## Workflow
 
