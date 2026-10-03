@@ -1,4 +1,8 @@
-package core
+package pins
+
+import (
+	"opmodel.dev/core@v2"
+)
 
 // Schema-level pins for component matching and contract fulfilment
 // (0010:D36, D32, D28). The catalog-selection pins that lived
@@ -8,14 +12,14 @@ package core
 // fixtures when its 0019 wave re-pins.
 //
 // Companion to identity_pins.cue and written to the same rules: every value
-// here is a HIDDEN top-level field, so `cue vet` evaluates them and fails on a
-// conflict while an importing package never does, and none of them adds a row
-// to src/INDEX.md. MUST-FAIL cases are commented out with the exact error
-// uncommenting yields; each was run once, in place, at the commit that
-// introduced it, and the recorded text is what the tool printed. Where the
-// tool is `cue export` rather than `cue vet` the case says so — a missing
-// required field is not vet-visible, which identity_pins.cue documents at
-// length and this file inherits.
+// here is a HIDDEN top-level field of package `pins`, which nothing imports,
+// so `task vet` evaluates them and fails on a conflict while no consumer ever
+// loads them, and none of them adds a row to src/INDEX.md. MUST-FAIL cases
+// are commented out with the exact error uncommenting yields; each was run
+// once, in place, at the commit that introduced it, and the recorded text is
+// what the tool printed. Where the tool is `cue export` rather than `cue vet`
+// the case says so — a missing required field is not vet-visible, which
+// identity_pins.cue documents at length and this file inherits.
 //
 // As there, the filename must NOT begin with an underscore: CUE skips such
 // files, and every pin below would then vet clean by never running.
@@ -37,7 +41,7 @@ package core
 
 // The container. Declares the workload-type key REQUIRED — the module author
 // must pick — which is the marker no filtered union could preserve.
-_pinMatchContainer: #Resource & {
+_pinMatchContainer: core.#Resource & {
 	metadata: {
 		name:           "container"
 		modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -51,7 +55,7 @@ _pinMatchContainer: #Resource & {
 }
 
 // A second resource in a DIFFERENT category, carrying no matching identity.
-_pinMatchVolumes: #Resource & {
+_pinMatchVolumes: core.#Resource & {
 	metadata: {
 		name:           "volumes"
 		modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -65,7 +69,7 @@ _pinMatchVolumes: #Resource & {
 
 // A trait in a third category. Three categories on one component is what
 // `cue vet` refused when matching rode on metadata.labels.
-_pinMatchExpose: #Trait & {
+_pinMatchExpose: core.#Trait & {
 	metadata: {
 		name:           "expose"
 		modulePath:     "opmodel.dev/catalogs/opm/traits"
@@ -82,7 +86,7 @@ _pinMatchExpose: #Trait & {
 // The blueprint that ANSWERS the container's required key, and adds a second
 // matching key in a namespace `core` does not own — the state the design is
 // for, where the vocabulary belongs to the catalog.
-_pinMatchStateful: #Blueprint & {
+_pinMatchStateful: core.#Blueprint & {
 	metadata: {
 		name:           "stateful-workload"
 		modulePath:     "opmodel.dev/catalogs/opm/blueprints"
@@ -99,7 +103,7 @@ _pinMatchStateful: #Blueprint & {
 	spec: statefulWorkload: replicas: int
 }
 
-_pinInstanceFixture: #InstanceIdentity & {
+_pinInstanceFixture: core.#InstanceIdentity & {
 	name:      "jellyfin"
 	namespace: "media"
 	uuid:      "3f2e1d0c-4b5a-6978-8a9b-0c1d2e3f4a5b"
@@ -108,7 +112,7 @@ _pinInstanceFixture: #InstanceIdentity & {
 // ─── Matching: disjoint labels combine, categories coexist ──────────────────
 
 // One component over all four fixtures — the shape of modules/jellyfin.
-_pinMatchComponent: #Component & {
+_pinMatchComponent: core.#Component & {
 	metadata: name: "jellyfin"
 	#resources: {
 		container: _pinMatchContainer
@@ -160,7 +164,7 @@ _pinComponentLabelsUnfolded: true
 // The context a transformer receives for the component above. componentLabels
 // reads #componentMetadata.labels and nothing else, so a matching key can only
 // arrive here by being copied — which is what makes the absence checkable.
-_pinRenderContext: #TransformerContext & {
+_pinRenderContext: core.#TransformerContext & {
 	#moduleInstanceMetadata: {
 		name:      "jellyfin"
 		namespace: "media"
@@ -225,7 +229,7 @@ _pinCtxInstance: {
 
 _pinCtxComponent: metadata: name: "web"
 
-_pinCtxTransformer: #ComponentTransformer & {
+_pinCtxTransformer: core.#ComponentTransformer & {
 	metadata: {
 		name:           "context-projection"
 		modulePath:     "opmodel.dev/catalogs/opm/transformers"
@@ -293,7 +297,7 @@ _pinFulfilmentDefault: "catalog"
 // The declaration this exists for: a catalog declares `backup` (hypothetical;
 // no catalog ships it today) and nothing renders it. Today that is
 // indistinguishable from an oversight.
-_pinProviderFulfilledTrait: #Trait & {
+_pinProviderFulfilledTrait: core.#Trait & {
 	metadata: {
 		name:           "backup"
 		modulePath:     "opmodel.dev/catalogs/opm/traits"
@@ -321,7 +325,7 @@ _pinTraitPostureAdvisory: "true"
 // THE PROPERTY THE WHOLE SHAPE EXISTS FOR: a module overrides the catalog at
 // the attachment site, in BOTH directions, and neither is a conflict. This is
 // what a concrete value on the trait would have made impossible.
-_pinOptionalTraitComponent: #Component & {
+_pinOptionalTraitComponent: core.#Component & {
 	metadata: name:        "jellyfin"
 	#resources: container: _pinMatchContainer
 	#traits: {
@@ -354,16 +358,19 @@ _pinTraitPostureUnmoved: "false"
 // Both fixtures state a posture as a default, so both pass.
 //
 // THESE PINS ARE HIDDEN, WHICH COSTS RULE 1 ITS TEETH HERE, and the trade is
-// deliberate. The gate must be unified into a NON-hidden value to be checked
-// by `cue vet -c` — but a non-hidden top-level field in this package SHIPS to
-// every consumer of the published module, and this file's whole premise is
-// that an importing package evaluates none of it. So publish gets the
-// non-hidden application (see #TraitOptionalGate's doc comment) and this file
-// keeps the hidden one: rule 2 is still gated here, because it is visible
-// under plain vet, and rule 1 is recorded as a MUST-FAIL case below with the
-// command it was measured with.
-_pinGateTraitPostureRequired: #TraitOptionalGate & {optional: _pinProviderFulfilledTrait.optional}
-_pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.optional}
+// deliberate: every pin keeps the one hidden shape. `cue vet` does not check
+// a hidden field for completeness, so an unstated posture applied here would
+// pass. A NON-hidden application is checked: plain `task vet` would fail on
+// it with the generic "some instances are incomplete" message, and `-c` would
+// name the field. Package `pins` is imported by nothing, so such a field would
+// no longer ship to a consumer; moving the gate pins to that form is a
+// follow-up, out of scope here. So publish gets the non-hidden application
+// (see #TraitOptionalGate's doc comment) and this file keeps the hidden one:
+// rule 2 is still gated here, because it is visible under plain vet, and rule
+// 1 is recorded as a MUST-FAIL case below with the command it was measured
+// with.
+_pinGateTraitPostureRequired: core.#TraitOptionalGate & {optional: _pinProviderFulfilledTrait.optional}
+_pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpose.optional}
 
 // ─── MUST-FAIL: the two rules the gate exists for ───────────────────────────
 
@@ -372,7 +379,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // `cue vet`, because both arms of the check are concrete booleans:
 //   _failGatePinned._overridable: conflicting values false and true
 //
-//  _failPinnedOptional: #Trait & {
+//  _failPinnedOptional: core.#Trait & {
 //   metadata: {
 //    name:           "security-context"
 //    modulePath:     "opmodel.dev/catalogs/opm/traits"
@@ -384,25 +391,29 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 //   appliesTo: [_pinMatchContainer]
 //   spec: securityContext: runAsUser: int
 //  }
-//  _failGatePinned: #TraitOptionalGate & {optional: _failPinnedOptional.optional}
+//  _failGatePinned: core.#TraitOptionalGate & {optional: _failPinnedOptional.optional}
 
 // RULE 1 — a catalog never states a posture at all. THE THIRD CASE IN THIS
-// REPO THAT PLAIN `cue vet` DOES NOT REPORT, and the one that dictates how
-// publish invokes the gate. Measured 2026-08-07 against cue v0.17.1:
+// REPO THAT PLAIN `cue vet` DOES NOT NAME, and the one that dictates how
+// publish invokes the gate. Re-measured 2026-10-03 against cue v0.17.1:
 //
-//   $ cue vet ./...        # exits 0 — nothing reported
+//   $ cue vet ./...        # exits 1 — no field named:
+//   some instances are incomplete; use the -c flag to show errors or -c=false to allow incomplete instances
 //   $ cue vet -c ./...
 //   failGateUnstated.optional: incomplete value bool
 //
-// TWO CONDITIONS, both required. The `-c` flag, because an unstated posture is
-// an INCOMPLETE value rather than a wrong one. And a NON-HIDDEN application —
-// note the case below is `failGateUnstated`, not `_failGateUnstated` — because
-// `cue vet -c` does not check hidden fields, so the same case parked in a
-// `_`-prefixed slot exits 0 and gates nothing. That is why the positive gate
-// pins above are hidden and this one is not, and why the gate's own doc
-// comment states the requirement rather than leaving it to be rediscovered.
+// TWO CONDITIONS, both required to name the failure. The `-c` flag, because
+// an unstated posture is an INCOMPLETE value rather than a wrong one, and
+// plain vet only says that some instance is incomplete. And a NON-HIDDEN
+// application — note the case below is `failGateUnstated`, not
+// `_failGateUnstated` — because `cue vet` does not check hidden fields for
+// completeness, so the same case parked in a `_`-prefixed slot exits 0 under
+// both plain vet and `-c`, and gates nothing. That is why this case is not
+// hidden, unlike the positive gate pins above (which keep the one pin shape),
+// and why the gate's own doc comment states the requirement rather than
+// leaving it to be rediscovered.
 //
-//  _failUnstatedOptional: #Trait & {
+//  _failUnstatedOptional: core.#Trait & {
 //   metadata: {
 //    name:           "expose-unstated"
 //    modulePath:     "opmodel.dev/catalogs/opm/traits"
@@ -413,7 +424,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 //   appliesTo: [_pinMatchContainer]
 //   spec: exposeUnstated: port: int
 //  }
-//  failGateUnstated: #TraitOptionalGate & {optional: _failUnstatedOptional.optional}
+//  failGateUnstated: core.#TraitOptionalGate & {optional: _failUnstatedOptional.optional}
 
 // ─── MUST-FAIL cases ────────────────────────────────────────────────────────
 
@@ -434,7 +445,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // public field never forms. (_failBareContainer below still reports against
 // matchLabels, because a required field that is merely unanswered does form.)
 //
-//  _failDaemonBlueprint: #Blueprint & {
+//  _failDaemonBlueprint: core.#Blueprint & {
 //   metadata: {
 //    name:           "daemon-workload"
 //    modulePath:     "opmodel.dev/catalogs/opm/blueprints"
@@ -447,7 +458,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 //   spec: daemonWorkload: hostNetwork: bool
 //  }
 //
-//  _failMatchLabelConflict: #Component & {
+//  _failMatchLabelConflict: core.#Component & {
 //   metadata: name: "clash"
 //   #resources: container: _pinMatchContainer
 //   #blueprints: {
@@ -473,7 +484,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // v0.17.1) — it admits the key silently, which is why the check is a size
 // comparison rather than the obvious spelling.
 //
-//  _failAuthoredMatchLabel: #Component & {
+//  _failAuthoredMatchLabel: core.#Component & {
 //   metadata: name: "invented"
 //   #resources: container: _pinMatchContainer
 //   #blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1": _pinMatchStateful
@@ -498,7 +509,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // inherits — so the hatch this closes is one nobody uses. A module that needs
 // to answer the key attaches the blueprint that answers it.
 //
-//  _failInlineAnsweredMatchLabel: #Component & {
+//  _failInlineAnsweredMatchLabel: core.#Component & {
 //   metadata: name: "answered"
 //   #resources: container: _pinMatchContainer
 //   matchLabels: "opm.opmodel.dev/workload-type": "daemon"
@@ -514,14 +525,14 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // subscription case above, matchLabels is a REGULAR field, so ordinary
 // concrete evaluation of the component reaches it:
 //
-//   $ cue export -e '_failBareContainer' ./...
+//   $ cue export -e '_failBareContainer' ./pins
 //   _failBareContainer.matchLabels."opm.opmodel.dev/workload-type":
 //     field is required but not present
 //
 // A missing REQUIRED FIELD is the whole point of the recorded error: an
 // incomplete value would render.
 //
-//  _failBareContainer: #Component & {
+//  _failBareContainer: core.#Component & {
 //   metadata: name: "bare"
 //   #resources: container: _pinMatchContainer
 //   #instance: _pinInstanceFixture
@@ -534,7 +545,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // what proves it, rather than a field nothing reads:
 //   _failBlueprintFulfilment.fulfilment: field not allowed
 //
-//  _failBlueprintFulfilment: #Blueprint & {
+//  _failBlueprintFulfilment: core.#Blueprint & {
 //   metadata: {
 //    name:           "stateless-workload"
 //    modulePath:     "opmodel.dev/catalogs/opm/blueprints"
@@ -555,7 +566,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 //   _failThirdFulfilment.fulfilment: conflicting values "catalog" and "external"
 //   _failThirdFulfilment.fulfilment: conflicting values "provider" and "external"
 //
-//  _failThirdFulfilment: #Trait & {
+//  _failThirdFulfilment: core.#Trait & {
 //   metadata: {
 //    name:           "backup"
 //    modulePath:     "opmodel.dev/catalogs/opm/traits"
@@ -596,7 +607,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // be named. Note the projection itself evaluates — both metadata blocks
 // compute; only #runtimeName and the managed-by fold that reads it fail:
 //
-//   $ cue export -e '_failCtxNoRuntimeName.#transform.#context' ./...
+//   $ cue export -e '_failCtxNoRuntimeName.#transform.#context' ./pins
 //   _failCtxNoRuntimeName.#transform.#context.#runtimeName:
 //     field is required but not present
 //   _failCtxNoRuntimeName.#transform.#context.controllerLabels."app.kubernetes.io/managed-by":
@@ -608,7 +619,7 @@ _pinGateTraitPostureAdvisory: #TraitOptionalGate & {optional: _pinMatchExpose.op
 // error reaches the caller that matters. Do not add a pin that appears to
 // check it; there is no vet-visible form.
 //
-//  _failCtxNoRuntimeName: #ComponentTransformer & {
+//  _failCtxNoRuntimeName: core.#ComponentTransformer & {
 //   metadata: {
 //    name:           "context-projection-no-runtime"
 //    modulePath:     "opmodel.dev/catalogs/opm/transformers"

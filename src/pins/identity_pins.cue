@@ -1,13 +1,20 @@
-package core
+package pins
+
+import (
+	"opmodel.dev/core@v2"
+)
 
 // Schema-level pins for the identity model (enhancement 0010).
 //
 // These mirror the cases in enhancements/0010/schemas/target.cue so the
 // properties are pinned where the schema lives rather than only in the design
-// document. Every value here is a HIDDEN top-level field: `cue vet` evaluates
-// them and fails on a conflict, while an importing package never does — so
-// they gate this repo without costing a consumer anything. They also add no
-// row to src/INDEX.md, which lists `#Definition:` names only.
+// document. Every value here is a HIDDEN top-level field of package `pins`,
+// which imports `core` and which nothing imports. `task vet` (`cue vet ./...`
+// from src/) builds this package and fails on a conflict. No consumer ever
+// loads it, whether it imports core or builds core as the main instance, so
+// the pins cost a consumer nothing. They also add no row to src/INDEX.md,
+// which lists `#Definition:` names only. A pin never goes in package `core`:
+// every main-instance build of core would then evaluate it.
 //
 // MUST-FAIL cases are commented out with the exact error uncommenting yields.
 // A commented case is not self-verifying, so each was run once, in place, at
@@ -24,7 +31,7 @@ package core
 
 // The positive case. `fqn` is the path — note it carries "@v2" and not
 // "2.4.1" — and `registryPath` drops the major.
-_pinModuleV2: #Module & {
+_pinModuleV2: core.#Module & {
 	metadata: {
 		name:         "postgres"
 		modulePath:   "opmodel.dev/modules/postgres@v2"
@@ -36,7 +43,7 @@ _pinModuleV2: #Module & {
 
 // Underscores are legal in a module path leaf, because a module path ends in
 // the module's own snake_case name (0010:D8).
-_pinModuleSnakeLeaf: #Module & {
+_pinModuleSnakeLeaf: core.#Module & {
 	metadata: {
 		name:         "cert_manager"
 		modulePath:   "opmodel.dev/modules/cert_manager@v1"
@@ -46,7 +53,7 @@ _pinModuleSnakeLeaf: #Module & {
 }
 
 // The same module one major up. Same lineage, different artifact.
-_pinModuleV3: #Module & {
+_pinModuleV3: core.#Module & {
 	metadata: {
 		name:         "postgres"
 		modulePath:   "opmodel.dev/modules/postgres@v3"
@@ -56,7 +63,7 @@ _pinModuleV3: #Module & {
 }
 
 // A release inside one major. Differs from _pinModuleV2 in `version` only.
-_pinModuleV2Later: #Module & {
+_pinModuleV2Later: core.#Module & {
 	metadata: {
 		name:       "postgres"
 		modulePath: "opmodel.dev/modules/postgres@v2"
@@ -90,7 +97,7 @@ _pinRegistryPathStableAcrossMajor: "opmodel.dev/modules/postgres"
 // A catalog's fqn is its module path too. Hyphens stay legal in non-leaf
 // segments, so an organisation such as github.com/open-platform-model remains
 // expressible; only a module's LEAF is constrained, and only for #Module.
-_pinCatalog: #Catalog & {
+_pinCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "github.com/open-platform-model/catalogs/opm@v1"
 		version:    "1.2.0"
@@ -100,7 +107,7 @@ _pinCatalog: #Catalog & {
 
 // The transformer stamp carries the MAJOR-FREE path. Re-appending the major
 // would produce a value #ComponentTransformer's own #PackagePathType rejects.
-_pinCatalogStamp: #Catalog & {
+_pinCatalogStamp: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/opm@v1"
 		version:    "1.2.0"
@@ -126,7 +133,7 @@ _pinCatalogStamp: #Catalog & {
 // instance under four perturbations of the module it deploys: only the last
 // two move it, and both of them should.
 
-_pinInstanceOnV2: #ModuleInstance & {
+_pinInstanceOnV2: core.#ModuleInstance & {
 	metadata: {
 		name:      "postgres-prod"
 		namespace: "prod"
@@ -137,7 +144,7 @@ _pinInstanceOnV2: #ModuleInstance & {
 }
 
 // A patch release of the same module. Nothing about the instance moves.
-_pinInstanceOnV2Later: #ModuleInstance & {
+_pinInstanceOnV2Later: core.#ModuleInstance & {
 	metadata: {
 		name:      "postgres-prod"
 		namespace: "prod"
@@ -152,7 +159,7 @@ _pinInstanceOnV2Later: #ModuleInstance & {
 // silently orphaning resources: the operator's prune step skips any delete
 // whose live owner label disagrees with the instance UUID it recorded, and it
 // skips WITHOUT erroring.
-_pinInstanceOnV3: #ModuleInstance & {
+_pinInstanceOnV3: core.#ModuleInstance & {
 	metadata: {
 		name:      "postgres-prod"
 		namespace: "prod"
@@ -204,7 +211,7 @@ _pinInstanceOnV2UUIDAbsolute: _pinInstanceOnV2.metadata.uuid & "b6a249c2-6d12-54
 
 // A different module sharing a leaf name. Deriving instance identity from
 // `metadata.name` rather than from the path would collide exactly here.
-_pinOtherOwnerModule: #Module & {
+_pinOtherOwnerModule: core.#Module & {
 	metadata: {
 		name:       "postgres"
 		modulePath: "community.opmodel.dev/m/otherorg/postgres@v2"
@@ -212,7 +219,7 @@ _pinOtherOwnerModule: #Module & {
 	}
 }
 
-_pinInstanceOtherOwner: #ModuleInstance & {
+_pinInstanceOtherOwner: core.#ModuleInstance & {
 	metadata: {
 		name:      "postgres-prod"
 		namespace: "prod"
@@ -223,7 +230,7 @@ _pinInstanceOtherOwner: #ModuleInstance & {
 }
 
 // One module, two namespaces.
-_pinInstanceOtherNamespace: #ModuleInstance & {
+_pinInstanceOtherNamespace: core.#ModuleInstance & {
 	metadata: {
 		name:      "postgres-prod"
 		namespace: "staging"
@@ -234,7 +241,7 @@ _pinInstanceOtherNamespace: #ModuleInstance & {
 }
 
 // One module, one namespace, two instance names.
-_pinInstanceOtherName: #ModuleInstance & {
+_pinInstanceOtherName: core.#ModuleInstance & {
 	metadata: {
 		name:      "postgres-replica"
 		namespace: "prod"
@@ -253,7 +260,7 @@ _pinInstancesDistinct: [true, true, true]
 
 // ─── #ArtifactRef decomposition ─────────────────────────────────────────────
 
-_pinRef: #ArtifactRef & {
+_pinRef: core.#ArtifactRef & {
 	modulePath:   "opmodel.dev/modules/postgres@v2"
 	registryPath: "opmodel.dev/modules/postgres"
 	major:        "v2"
@@ -262,7 +269,7 @@ _pinRef: #ArtifactRef & {
 
 // ─── Primitive paths carry no major ─────────────────────────────────────────
 
-_pinResourcePath: #Resource & {
+_pinResourcePath: core.#Resource & {
 	metadata: {
 		name:           "config-maps"
 		modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -280,7 +287,7 @@ _pinResourcePath: #Resource & {
 // build it shipped in. Every fqn below is AUTHORED (0010:D21) — `core` computes
 // none of them.
 
-_pinContractKeyedResource: #Resource & {
+_pinContractKeyedResource: core.#Resource & {
 	metadata: {
 		name:           "backup"
 		modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -295,7 +302,7 @@ _pinContractKeyedResource: #Resource & {
 // keeps the two keys apart, which is why 0010:D21 retains it: a flat FQN would make
 // primitive names globally unique across all four kinds within one catalog,
 // and catalog_opm already ships a resource named `secrets`.
-_pinContractKeyedTrait: #Trait & {
+_pinContractKeyedTrait: core.#Trait & {
 	metadata: {
 		name:           "backup"
 		modulePath:     "opmodel.dev/catalogs/opm/traits"
@@ -311,7 +318,7 @@ _pinKindSegmentSeparatesKeys: _pinContractKeyedResource.metadata.fqn != _pinCont
 _pinKindSegmentSeparatesKeys: true
 
 // A blueprint is a PRIMITIVE (0010:D44) and carries a contract key on that basis.
-_pinContractKeyedBlueprint: #Blueprint & {
+_pinContractKeyedBlueprint: core.#Blueprint & {
 	metadata: {
 		name:           "stateless-workload"
 		modulePath:     "opmodel.dev/catalogs/opm/blueprints"
@@ -325,7 +332,7 @@ _pinContractKeyedBlueprint: #Blueprint & {
 
 // The adapter. NO apiVersion — see the MUST FAIL case at the bottom, which is
 // what makes the exclusion structural rather than remembered.
-_pinImplKeyedTransformer: #ComponentTransformer & {
+_pinImplKeyedTransformer: core.#ComponentTransformer & {
 	metadata: {
 		name:           "backup-transformer"
 		description:    "renders a backup job"
@@ -344,13 +351,13 @@ _pinImplKeyedTransformer: #ComponentTransformer & {
 //
 // Note what is NOT here: any comparison between two levels. The ladder is
 // interpreted, never ordered.
-_pinGatedAtAlpha: (#APIVersionGated & {apiVersion: "v1alpha1"}).gated
+_pinGatedAtAlpha: (core.#APIVersionGated & {apiVersion: "v1alpha1"}).gated
 _pinGatedAtAlpha: false
 
-_pinGatedAtBeta: (#APIVersionGated & {apiVersion: "v1beta1"}).gated
+_pinGatedAtBeta: (core.#APIVersionGated & {apiVersion: "v1beta1"}).gated
 _pinGatedAtBeta: true
 
-_pinGatedAtGA: (#APIVersionGated & {apiVersion: "v1"}).gated
+_pinGatedAtGA: (core.#APIVersionGated & {apiVersion: "v1"}).gated
 _pinGatedAtGA: true
 
 // ─── MUST VET CLEAN, deliberately (0010:D43 / D45) ───────────────────────────────
@@ -365,7 +372,7 @@ _pinGatedAtGA: true
 // These two cases exist so that reintroducing the `core`-side assertion reads
 // as a CHANGE rather than as a fix — an uncommented passing case with no
 // comment looks like an oversight, and this one is the trade 0010:D43/D45 made.
-_pinModuleMajorSkewAccepted: #Module & {
+_pinModuleMajorSkewAccepted: core.#Module & {
 	metadata: {
 		name:       "postgres"
 		modulePath: "opmodel.dev/modules/postgres@v2"
@@ -373,7 +380,7 @@ _pinModuleMajorSkewAccepted: #Module & {
 	}
 }
 
-_pinCatalogMajorSkewAccepted: #Catalog & {
+_pinCatalogMajorSkewAccepted: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/opm@v1"
 		version:    "2.0.0"
@@ -391,7 +398,7 @@ _pinCatalogMajorSkewAccepted: #Catalog & {
 // the derivation is ever restored, this case must read as a CHANGE rather than
 // as a fix, and an uncommented passing case with no comment reads as an
 // oversight.
-_pinAuthoredFQNSkewAccepted: #Resource & {
+_pinAuthoredFQNSkewAccepted: core.#Resource & {
 	metadata: {
 		name:           "backup"
 		modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -411,7 +418,7 @@ _pinAuthoredFQNSkewAccepted: #Resource & {
 //
 // Here the disagreement is still expressible, but the two values now sit side
 // by side in one struct where the gate can compare them.
-_pinTransformerBuildSkewAccepted: #ComponentTransformer & {
+_pinTransformerBuildSkewAccepted: core.#ComponentTransformer & {
 	metadata: {
 		name:           "backup-transformer"
 		description:    "renders a backup job"
@@ -432,7 +439,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //   _failFqnCarriesVersion.metadata.fqn: conflicting values
 //     "opmodel.dev/modules/postgres@v2" and "opmodel.dev/modules/postgres@2.4.1"
 //
-//  _failFqnCarriesVersion: #Module & {
+//  _failFqnCarriesVersion: core.#Module & {
 //   metadata: {
 //    name:       "postgres"
 //    modulePath: "opmodel.dev/modules/postgres@v2"
@@ -448,7 +455,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //   _failKebabName.metadata.name: invalid value "cert-manager"
 //     (out of bound =~"^[a-z0-9]([a-z0-9_]*[a-z0-9])?$")
 //
-//  _failKebabName: #Module & {
+//  _failKebabName: core.#Module & {
 //   metadata: {
 //    name:       "cert-manager"
 //    modulePath: "opmodel.dev/modules/cert-manager@v1"
@@ -459,7 +466,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 // A name disagreeing with the path's leaf:
 //   _failLeafMismatch.metadata._leaf: conflicting values false and true
 //
-//  _failLeafMismatch: #Module & {
+//  _failLeafMismatch: core.#Module & {
 //   metadata: {
 //    name:       "postgres"
 //    modulePath: "opmodel.dev/modules/mysql@v1"
@@ -475,7 +482,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //   _failNoMajor.metadata._ref.modulePath: invalid value
 //     "opmodel.dev/modules/postgres" (out of bound =~"…@v[0-9]+$")
 //
-//  _failNoMajor: #Module & {
+//  _failNoMajor: core.#Module & {
 //   metadata: {
 //    name:       "postgres"
 //    modulePath: "opmodel.dev/modules/postgres"
@@ -491,7 +498,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //     "opmodel.dev/catalogs/opm/resources@v1"
 //     (out of bound =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$")
 //
-//  _failPrimitiveMajor: #Resource & {
+//  _failPrimitiveMajor: core.#Resource & {
 //   metadata: {
 //    name:           "config-maps"
 //    modulePath:     "opmodel.dev/catalogs/opm/resources@v1"
@@ -517,7 +524,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 // field with nothing to conflict against, so #PackagePathType is all that
 // stands in the way. Both refusals are structural; only the wording differs.
 //
-//  _failRegistryPathCarriesMajor: #Module & {
+//  _failRegistryPathCarriesMajor: core.#Module & {
 //   metadata: {
 //    name:         "postgres"
 //    modulePath:   "opmodel.dev/modules/postgres@v2"
@@ -531,7 +538,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //     "opmodel.dev/catalogs/opm/resources/backup@1.1.0"
 //     (out of bound =~"…@v[0-9]+((alpha|beta)[0-9]+)?$")
 //
-//  _failPrimitiveBuildFQN: #Resource & {
+//  _failPrimitiveBuildFQN: core.#Resource & {
 //   metadata: {
 //    name:           "backup"
 //    modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -547,7 +554,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //     "opmodel.dev/catalogs/opm/transformers/backup-transformer@v1"
 //     (out of bound =~"…@\\d+\\.\\d+\\.\\d+(-…)?(\\+…)?$")
 //
-//  _failTransformerContractFQN: #ComponentTransformer & {
+//  _failTransformerContractFQN: core.#ComponentTransformer & {
 //   metadata: {
 //    name:           "backup-transformer"
 //    description:    "renders a backup job"
@@ -564,7 +571,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //   _failSemverAPIVersion.metadata.apiVersion: invalid value "1.2.0"
 //     (out of bound =~"^v[0-9]+((alpha|beta)[0-9]+)?$")
 //
-//  _failSemverAPIVersion: #Resource & {
+//  _failSemverAPIVersion: core.#Resource & {
 //   metadata: {
 //    name:           "backup"
 //    modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -582,7 +589,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 // inside a definition and is therefore closed:
 //   _failTransformerAPIVersion.metadata.apiVersion: field not allowed
 //
-//  _failTransformerAPIVersion: #ComponentTransformer & {
+//  _failTransformerAPIVersion: core.#ComponentTransformer & {
 //   metadata: {
 //    name:           "backup-transformer"
 //    description:    "renders a backup job"
@@ -601,7 +608,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 // (`apiVersion!: =~"^v[0-9]+…"`) rather than as an error. Only concrete
 // evaluation reports it:
 //
-//   $ cue export -e '_failMissingAPIVersion' ./...
+//   $ cue export -e '_failMissingAPIVersion' ./pins
 //   _failMissingAPIVersion.metadata.apiVersion: field is required but not present
 //
 // That is the correct surfacing — a consumer rendering a module evaluates
@@ -609,7 +616,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 // apiVersion is NOT gated by this repo's own vet run. Do not add a pin here
 // that appears to check it; there is no vet-visible form of this case.
 //
-//  _failMissingAPIVersion: #Resource & {
+//  _failMissingAPIVersion: core.#Resource & {
 //   metadata: {
 //    name:           "backup"
 //    modulePath:     "opmodel.dev/catalogs/opm/resources"
@@ -626,7 +633,7 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //   _failBuildKeyedDemand.requiredResources.
 //     "opmodel.dev/catalogs/opm/resources/backup@1.2.0": field not allowed
 //
-//  _failBuildKeyedDemand: #ComponentTransformer & {
+//  _failBuildKeyedDemand: core.#ComponentTransformer & {
 //   metadata: {
 //    name:           "backup-transformer"
 //    description:    "renders a backup job"
@@ -644,6 +651,6 @@ _pinTransformerBuildSkewAccepted: #ComponentTransformer & {
 //     "opmodel.dev/catalogs/opm/transformers/backup-transformer@v1":
 //     field not allowed
 //
-//  _failContractKeyedTransformerMap: #TransformerMap & {
+//  _failContractKeyedTransformerMap: core.#TransformerMap & {
 //   "opmodel.dev/catalogs/opm/transformers/backup-transformer@v1": _pinImplKeyedTransformer
 //  }

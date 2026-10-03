@@ -14,7 +14,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Refused by CUE
 
-<!-- What `cue` means: the rule is part of a core or catalog definition, so a violating value does not evaluate, and every tool that evaluates it fails the same way with CUE's own error. CUE sees one value and nothing outside it. Example: a module's `metadata.name` must equal the last segment of its `metadata.modulePath`. `name: "postgres"` with `modulePath: "opmodel.dev/modules/mysql@v1"` fails `cue vet` before any OPM tool runs, with `metadata._leaf: conflicting values false and true`. Check against: core/src/module.cue (_leaf), core/src/identity_pins.cue (_failLeafMismatch), core/src/types.cue (#SnakeNameType) -->
+<!-- What `cue` means: the rule is part of a core or catalog definition, so a violating value does not evaluate, and every tool that evaluates it fails the same way with CUE's own error. CUE sees one value and nothing outside it. Example: a module's `metadata.name` must equal the last segment of its `metadata.modulePath`. `name: "postgres"` with `modulePath: "opmodel.dev/modules/mysql@v1"` fails `cue vet` before any OPM tool runs, with `metadata._leaf: conflicting values false and true`. Check against: core/src/module.cue (_leaf), core/src/pins/identity_pins.cue (_failLeafMismatch), core/src/types.cue (#SnakeNameType) -->
 
 ### Refused by the kernel at render
 

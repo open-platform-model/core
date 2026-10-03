@@ -1,16 +1,18 @@
-package core
+package pins
 
 import (
 	"strings"
+
+	"opmodel.dev/core@v2"
 )
 
 // Schema-level pins for the identity package and the catalog-member gate
 // (0011:D21/D22, resting on 0010:D40, D42, D43, D44, D45).
 //
 // Same mechanism as identity_pins.cue, and the same rules apply: every value
-// here is a HIDDEN top-level field, so `cue vet` evaluates it and fails on a
-// conflict while an importing package never does, and none of them adds a row
-// to src/INDEX.md.
+// here is a HIDDEN top-level field of package `pins`, which nothing imports,
+// so `task vet` evaluates it and fails on a conflict while no consumer ever
+// loads it, and none of them adds a row to src/INDEX.md.
 //
 // MUST-FAIL cases are commented out with the exact error uncommenting yields.
 // A commented case is not self-verifying, so each was run once, in place, at
@@ -35,7 +37,7 @@ import (
 
 // A catalog's identity package. Every field below ModulePath/Version is pinned
 // to the value the derivation must produce.
-_pinIdentityCatalog: #IdentityPackage & {
+_pinIdentityCatalog: core.#IdentityPackage & {
 	ModulePath:   "opmodel.dev/catalogs/opm@v1"
 	Version:      "1.2.0"
 	RegistryPath: "opmodel.dev/catalogs/opm"
@@ -53,7 +55,7 @@ _pinIdentityCatalog: #IdentityPackage & {
 // A MODULE's identity package, at a different major. The same definition serves
 // both artifact kinds (0010:D2, 0011:D12) — which is why it ships
 // in `core` rather than in a catalog: a module need not depend on any catalog.
-_pinIdentityModule: #IdentityPackage & {
+_pinIdentityModule: core.#IdentityPackage & {
 	ModulePath:   "opmodel.dev/modules/postgres@v2"
 	Version:      "2.4.1"
 	RegistryPath: "opmodel.dev/modules/postgres"
@@ -64,7 +66,7 @@ _pinIdentityModule: #IdentityPackage & {
 // A prerelease build. The major is read off the FIRST dot-separated component,
 // so a "-alpha.4" suffix must not disturb it — every catalog currently shipping
 // is on a prerelease, so this is the common case rather than an edge one.
-_pinIdentityPrerelease: #IdentityPackage & {
+_pinIdentityPrerelease: core.#IdentityPackage & {
 	ModulePath:   "opmodel.dev/catalogs/opm@v1"
 	Version:      "1.0.0-alpha.4"
 	VersionMajor: "v1"
@@ -72,7 +74,7 @@ _pinIdentityPrerelease: #IdentityPackage & {
 
 // A double-digit major, pinning that the derivation reads the component rather
 // than a single character.
-_pinIdentityDoubleDigitMajor: #IdentityPackage & {
+_pinIdentityDoubleDigitMajor: core.#IdentityPackage & {
 	ModulePath:   "opmodel.dev/modules/postgres@v10"
 	Version:      "10.0.0"
 	Major:        "v10"
@@ -96,7 +98,7 @@ _pinKindPrefixCarriesNoMajor: [false, false, false, false]
 // A resource, filed under its own apiVersion (0010:D49). The key
 // is built from the member's OWN apiVersion, not from the catalog's build
 // (0010:D4) — and note the KEY carries no filing segment.
-_pinGateResource: #CatalogMemberFQNGate & {
+_pinGateResource: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
 	name:                   "config-maps"
@@ -109,7 +111,7 @@ _pinGateResource: #CatalogMemberFQNGate & {
 // A GA raw-family member of the same kind, filing under a DIFFERENT segment of
 // the same prefix — per-member apiVersion is what made the filing segment
 // derived content rather than grouping (0010:D48, D49).
-_pinGateResourceGA: #CatalogMemberFQNGate & {
+_pinGateResourceGA: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
 	name:                   "k8s-deployment"
@@ -121,7 +123,7 @@ _pinGateResourceGA: #CatalogMemberFQNGate & {
 
 // A trait. Same catalog, same build, a different kind segment — which is what
 // keeps two members sharing a name apart (0010:D21).
-_pinGateTrait: #CatalogMemberFQNGate & {
+_pinGateTrait: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "traits"
 	name:                   "scaling"
@@ -135,7 +137,7 @@ _pinGateTrait: #CatalogMemberFQNGate & {
 // is absent: an ARBITRARY grouping segment like the "/workload" catalog_opm
 // once shipped (0010:D42's must-fail case below) — the only admitted segment is the
 // member's own apiVersion.
-_pinGateBlueprint: #CatalogMemberFQNGate & {
+_pinGateBlueprint: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "blueprints"
 	name:                   "stateless-workload"
@@ -157,7 +159,7 @@ _pinKeyOmitsFilingSegment: [false, false]
 // is ABSENT and the case vets clean. Its key is interpolated from the BUILD
 // (0010:D4), which _keyVersion selects before the absent optional is
 // ever reached — so the field costs a transformer nothing.
-_pinGateTransformer: #CatalogMemberFQNGate & {
+_pinGateTransformer: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "transformers"
 	name:                   "configmap-transformer"
@@ -213,7 +215,7 @@ _pinContractAndImplKeysDiffer: true
 // what makes it readable — "VersionMajor" is where the two values meet:
 //   _failIdentityMajorSkew.VersionMajor: conflicting values "v2" and "v3"
 //
-//  _failIdentityMajorSkew: #IdentityPackage & {
+//  _failIdentityMajorSkew: core.#IdentityPackage & {
 //   ModulePath: "opmodel.dev/modules/postgres@v2"
 //   Version:    "3.0.0"
 //  }
@@ -242,7 +244,7 @@ _pinContractAndImplKeysDiffer: true
 //     ".../blueprints/workload/stateless-workload@v1beta1"
 //     (out of bound =~"…@\\d+\\.\\d+\\.\\d+(-…)?(\\+…)?$")
 //
-//  _failGateGroupedBlueprint: #CatalogMemberFQNGate & {
+//  _failGateGroupedBlueprint: core.#CatalogMemberFQNGate & {
 //   identity:               _pinIdentityCatalog
 //   kind:                   "blueprints"
 //   name:                   "stateless-workload"
@@ -261,7 +263,7 @@ _pinContractAndImplKeysDiffer: true
 //     "opmodel.dev/catalogs/opm/resources/v1beta1" and
 //     "opmodel.dev/catalogs/opm/resources"
 //
-//  _failGateFlatContractMember: #CatalogMemberFQNGate & {
+//  _failGateFlatContractMember: core.#CatalogMemberFQNGate & {
 //   identity:               _pinIdentityCatalog
 //   kind:                   "resources"
 //   name:                   "config-maps"
@@ -276,7 +278,7 @@ _pinContractAndImplKeysDiffer: true
 //   _failGateStaleCatalogVersion.declaredCatalogVersion: conflicting values
 //     "1.2.0" and "1.1.0"
 //
-//  _failGateStaleCatalogVersion: #CatalogMemberFQNGate & {
+//  _failGateStaleCatalogVersion: core.#CatalogMemberFQNGate & {
 //   identity:               _pinIdentityCatalog
 //   kind:                   "resources"
 //   name:                   "secrets"
@@ -301,7 +303,7 @@ _pinContractAndImplKeysDiffer: true
 //     ".../transformers/configmap-transformer@1.1.0"
 //     (out of bound =~"…@v[0-9]+((alpha|beta)[0-9]+)?$")
 //
-//  _failGateStaleTransformerFQN: #CatalogMemberFQNGate & {
+//  _failGateStaleTransformerFQN: core.#CatalogMemberFQNGate & {
 //   identity:               _pinIdentityCatalog
 //   kind:                   "transformers"
 //   name:                   "configmap-transformer"
@@ -326,7 +328,7 @@ _pinContractAndImplKeysDiffer: true
 //     "example.com/catalogs/other/resources/config-maps@v1beta1"
 //     (out of bound =~"…@\\d+\\.\\d+\\.\\d+(-…)?(\\+…)?$")
 //
-//  _failGateForeignPath: #CatalogMemberFQNGate & {
+//  _failGateForeignPath: core.#CatalogMemberFQNGate & {
 //   identity:               _pinIdentityCatalog
 //   kind:                   "resources"
 //   name:                   "config-maps"
@@ -349,7 +351,7 @@ _pinContractAndImplKeysDiffer: true
 //     "opmodel.dev/catalogs/opm/components/config-maps@v1beta1"
 //     (out of bound =~"…@\\d+\\.\\d+\\.\\d+(-…)?(\\+…)?$")
 //
-//  _failGateUnknownKind: #CatalogMemberFQNGate & {
+//  _failGateUnknownKind: core.#CatalogMemberFQNGate & {
 //   identity:               _pinIdentityCatalog
 //   kind:                   "components"
 //   name:                   "config-maps"
@@ -366,7 +368,7 @@ _pinContractAndImplKeysDiffer: true
 // case below. A missing required field is an incomplete value, not a wrong
 // one, so only concrete evaluation reports it:
 //
-//   $ cue export -e '_failGateMissingAPIVersion' ./...
+//   $ cue export -e '_failGateMissingAPIVersion' ./pins
 //   _failGateMissingAPIVersion.declaredAPIVersion: field is required but not present
 //   _failGateMissingAPIVersion.declaredFQN: 2 errors in empty disjunction:
 //   _failGateMissingAPIVersion.declaredModulePath: required field missing: declaredAPIVersion
@@ -386,7 +388,7 @@ _pinContractAndImplKeysDiffer: true
 // _pinGateTransformer above vets clean: there the arm IS selected, and the
 // absent optional is never reached.
 //
-//  _failGateMissingAPIVersion: #CatalogMemberFQNGate & {
+//  _failGateMissingAPIVersion: core.#CatalogMemberFQNGate & {
 //   identity:               _pinIdentityCatalog
 //   kind:                   "resources"
 //   name:                   "config-maps"

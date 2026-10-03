@@ -1,15 +1,20 @@
-package core
+package pins
+
+import (
+	"opmodel.dev/core@v2"
+)
 
 // Schema-level pins for the name types and the per-primitive name
 // constraint (0019:D20, D21, D23).
 //
 // Companion to platform_and_match_pins.cue and written to the same rules:
-// every value here is a HIDDEN top-level field, so `cue vet` evaluates it
-// and fails on a conflict while an importing package never does, and none of
-// them adds a row to src/INDEX.md. MUST-FAIL cases are commented out with the
-// exact error uncommenting yields, each run once in place at the commit that
-// introduced it. The filename must NOT begin with an underscore: CUE skips
-// such files, and every pin below would then vet clean by never running.
+// every value here is a HIDDEN top-level field of package `pins`, which
+// nothing imports, so `task vet` evaluates it and fails on a conflict while
+// no consumer ever loads it, and none of them adds a row to src/INDEX.md.
+// MUST-FAIL cases are commented out with the exact error uncommenting yields,
+// each run once in place at the commit that introduced it. The filename must
+// NOT begin with an underscore: CUE skips such files, and every pin below
+// would then vet clean by never running.
 //
 // Every pin here INTERPOLATES the value it asserts. metadata.resourceName is
 // a defaulted disjunction, so the intuitive `_pin: <expr>` then
@@ -27,13 +32,13 @@ package core
 
 // ─── Fixtures: naming surfaces only ─────────────────────────────────────────
 
-_pinNameInstance: #InstanceIdentity & {
+_pinNameInstance: core.#InstanceIdentity & {
 	name:      "prod"
 	namespace: "media"
 }
 
 // An indifferent resource: declares no constraint, so its slot is top.
-_pinNameIndifferent: #Resource & {
+_pinNameIndifferent: core.#Resource & {
 	metadata: {
 		name:           "volumes"
 		modulePath:     "opmodel.dev/catalogs/opm/resources/v1beta1"
@@ -50,7 +55,7 @@ _pinNameIndifferent: #Resource & {
 // position, and the server enforces the label rule on both axes there),
 // top otherwise. List-index form: a default arm would win over the concrete
 // one.
-_pinNameContainer: #Resource & {
+_pinNameContainer: core.#Resource & {
 	metadata: {
 		name:           "container"
 		modulePath:     "opmodel.dev/catalogs/opm/resources/v1beta1"
@@ -60,7 +65,7 @@ _pinNameContainer: #Resource & {
 	}
 	matchLabels: "opm.opmodel.dev/workload-type"!: "stateless" | "stateful" | "daemon"
 	#nameConstraint: [
-		if matchLabels["opm.opmodel.dev/workload-type"] == "stateful" {#NameType},
+		if matchLabels["opm.opmodel.dev/workload-type"] == "stateful" {core.#NameType},
 		_,
 	][0]
 	spec: container: {}
@@ -69,7 +74,7 @@ _pinNameStateless: matchLabels: "opm.opmodel.dev/workload-type": "stateless"
 _pinNameStateful: matchLabels: "opm.opmodel.dev/workload-type":  "stateful"
 
 // Expose: the Service name is the first FQDN label, DNS-1035.
-_pinNameExpose: #Trait & {
+_pinNameExpose: core.#Trait & {
 	metadata: {
 		name:           "expose"
 		modulePath:     "opmodel.dev/catalogs/opm/traits/v1beta1"
@@ -78,12 +83,12 @@ _pinNameExpose: #Trait & {
 		fqn:            "opmodel.dev/catalogs/opm/traits/expose@v1beta1"
 	}
 	appliesTo: [_pinNameContainer]
-	#nameConstraint: #ServiceNameType
+	#nameConstraint: core.#ServiceNameType
 	spec: expose: {}
 }
 
 // The stateful-workload blueprint: the label rule, dots and length.
-_pinNameStatefulBlueprint: #Blueprint & {
+_pinNameStatefulBlueprint: core.#Blueprint & {
 	metadata: {
 		name:           "stateful-workload"
 		modulePath:     "opmodel.dev/catalogs/opm/blueprints/v1beta1"
@@ -92,23 +97,23 @@ _pinNameStatefulBlueprint: #Blueprint & {
 		fqn:            "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1"
 	}
 	composedResources: [_pinNameContainer]
-	#nameConstraint: #NameType
+	#nameConstraint: core.#NameType
 	spec: statefulWorkload: {}
 }
 
 // ─── Pins: the name types ───────────────────────────────────────────────────
 
-_pinObjectNameDots: "\(#ObjectNameType & "zfs.csi.openebs.io")"
+_pinObjectNameDots: "\(core.#ObjectNameType & "zfs.csi.openebs.io")"
 _pinObjectNameDots: "zfs.csi.openebs.io"
 
 // A leading digit: a #NameType, not a #ServiceNameType.
-_pinNameTypeLeadingDigit: "\(#NameType & "1prod-web")"
+_pinNameTypeLeadingDigit: "\(core.#NameType & "1prod-web")"
 _pinNameTypeLeadingDigit: "1prod-web"
 
 // ─── Pins: the assertion admits what it must ────────────────────────────────
 
 // Default under Expose: the qualified default is already DNS-1035.
-_pinNameExposedDefault: #Component & {
+_pinNameExposedDefault: core.#Component & {
 	metadata: name:                                            "web"
 	#resources: container:                                     _pinNameContainer & _pinNameStateless
 	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinNameExpose
@@ -118,7 +123,7 @@ _pinNameExposedDefaultValue: "\(_pinNameExposedDefault.#names.resourceName)"
 _pinNameExposedDefaultValue: "prod-web"
 
 // Dotted override with no dot-hostile primitive: admitted, dots reach DNS.
-_pinNameDottedOverride: #Component & {
+_pinNameDottedOverride: core.#Component & {
 	metadata: {
 		name:         "exporter"
 		resourceName: "metrics.internal.example"
@@ -132,7 +137,7 @@ _pinNameDottedOverrideFqdn: "metrics.internal.example.media.svc.cluster.local"
 // A 65-rune default with no constraint: admitted (the 63-rune guard that
 // refused this before 0019:D20 is retired; both operands are labels, so the
 // default cannot exceed 127 runes and the 253 ceiling is unreachable).
-_pinNameLongDefault: #Component & {
+_pinNameLongDefault: core.#Component & {
 	metadata: name:        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	#resources: container: _pinNameContainer & _pinNameStateless
 	#instance: _pinNameInstance
@@ -141,7 +146,7 @@ _pinNameLongDefaultLen: len(_pinNameLongDefault.#names.resourceName)
 _pinNameLongDefaultLen: 65
 
 // The 127-rune maximum: admitted.
-_pinNameMaxDefault: #Component & {
+_pinNameMaxDefault: core.#Component & {
 	metadata: name:        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 	#resources: container: _pinNameContainer & _pinNameStateless
 	#instance: {name: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", namespace: "media"}
@@ -151,7 +156,7 @@ _pinNameMaxDefaultLen: 127
 
 // Exact override that satisfies Expose: the 0019:D22 spelling for a workload,
 // Service and projection that share one name.
-_pinNameExposedExact: #Component & {
+_pinNameExposedExact: core.#Component & {
 	metadata: {
 		name:         "istiod"
 		resourceName: "istiod"
@@ -165,7 +170,7 @@ _pinNameExposedExactFqdn: "istiod.media.svc.cluster.local"
 
 // Raw stateful container, default: the conditional constraint reads
 // #NameType, which the default satisfies.
-_pinNameStatefulDefault: #Component & {
+_pinNameStatefulDefault: core.#Component & {
 	metadata: name:        "cache"
 	#resources: container: _pinNameContainer & _pinNameStateful
 	#instance: _pinNameInstance
@@ -175,7 +180,7 @@ _pinNameStatefulDefaultValue: "prod-cache"
 
 // Two constraints compose by unification (Expose ∧ stateful = DNS-1035),
 // with no precedence rule written anywhere.
-_pinNameComposed: #Component & {
+_pinNameComposed: core.#Component & {
 	metadata: name:                                                               "db"
 	#resources: container:                                                        _pinNameContainer & _pinNameStateful
 	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1":                    _pinNameExpose
@@ -193,7 +198,7 @@ _pinNameComposedValue: "prod-db"
 //
 // Dotted override + Expose:
 //
-//   _failNameExposedDots: #Component & {
+//   _failNameExposedDots: core.#Component & {
 //   	metadata: {name: "web", resourceName: "web.internal"}
 //   	#resources: container: _pinNameContainer & _pinNameStateless
 //   	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinNameExpose
@@ -205,7 +210,7 @@ _pinNameComposedValue: "prod-db"
 //
 // Leading-digit instance + Expose — the hole #NameType alone left open:
 //
-//   _failNameLeadingDigit: #Component & {
+//   _failNameLeadingDigit: core.#Component & {
 //   	metadata: name: "web"
 //   	#resources: container: _pinNameContainer & _pinNameStateless
 //   	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinNameExpose
@@ -217,7 +222,7 @@ _pinNameComposedValue: "prod-db"
 //
 // Raw stateful container, dotted override (0019:D23):
 //
-//   _failNameStatefulDots: #Component & {
+//   _failNameStatefulDots: core.#Component & {
 //   	metadata: {name: "cache", resourceName: "cache.internal"}
 //   	#resources: container: _pinNameContainer & _pinNameStateful
 //   	#instance: _pinNameInstance
@@ -228,7 +233,7 @@ _pinNameComposedValue: "prod-db"
 //
 // 65-rune default on a raw stateful container (the label rule's length axis):
 //
-//   _failNameStatefulLong: #Component & {
+//   _failNameStatefulLong: core.#Component & {
 //   	metadata: name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 //   	#resources: container: _pinNameContainer & _pinNameStateful
 //   	#instance: _pinNameInstance
@@ -240,7 +245,7 @@ _pinNameComposedValue: "prod-db"
 // 254-rune override, no constraint — the #ObjectNameType ceiling, via the
 // error() arm:
 //
-//   _failNameOverlongOverride: #Component & {
+//   _failNameOverlongOverride: core.#Component & {
 //   	metadata: {name: "x", resourceName: "<254 × a>"}
 //   	#resources: container: _pinNameContainer & _pinNameStateless
 //   	#instance: _pinNameInstance
@@ -252,7 +257,7 @@ _pinNameComposedValue: "prod-db"
 //
 // An invalid explicit name, one message, no default-arm leak:
 //
-//   _failNameBad: #Component & {
+//   _failNameBad: core.#Component & {
 //   	metadata: {name: "x", resourceName: "Bad_Name"}
 //   	#resources: container: _pinNameContainer & _pinNameStateless
 //   	#instance: _pinNameInstance
@@ -266,6 +271,6 @@ _pinNameComposedValue: "prod-db"
 // The projection shape in module_context.cue must not be narrower than the
 // field it projects: a dotted override unified through it must survive.
 // Measured before the fix: `resourceName!: #NameType` there refused this.
-_pinNameProjection:     #ComponentNames & _pinNameDottedOverride.#names
+_pinNameProjection:     core.#ComponentNames & _pinNameDottedOverride.#names
 _pinNameProjectionFqdn: "\(_pinNameProjection.dns.fqdn)"
 _pinNameProjectionFqdn: "metrics.internal.example.media.svc.cluster.local"

@@ -136,6 +136,7 @@ Read these on entry:
 ```text
 src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v2
 src/*.cue                the core schema package (module root lives under src/)
+src/pins/*_pins.cue      test-only package pins: the schema pins; imports core, nothing imports it
 src/INDEX.md             generated definition index (ships inside the CUE module)
 docs/                    schema design notes (tutorial / explanatory)
 docs/site/               site pages opmodel.dev builds (STYLE.md "Site Pages" dialect)
@@ -148,6 +149,8 @@ openspec/                OpenSpec proposals/specs/archives (active change workfl
 ```
 
 `src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the import path is `opmodel.dev/core@v2` with no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) sits at the repo root. A new major (e.g. `@v2` → `@v3`) is the only way the module path changes, and it never adds a sibling package; it is taken only after GA, and during beta a break advances `-beta.N` instead.
+
+`src/pins/` holds the one other package in the module: `pins`, the hidden-field schema pins (`*_pins.cue`). It imports `opmodel.dev/core@v2` and references core as `core.#X`; nothing imports it, so no consumer loads it, while `task vet` (`cue vet ./...` from `src/`) builds and gates it. A pin never goes in package `core`, because every main-instance build of core (the library schema loader's) would then evaluate it.
 
 All raw `cue` invocations run from `src/`. The Taskfile handles this via `dir: src` / `cd src` — see `task fmt`, `task vet`, `task tidy`, `task publish`.
 
@@ -236,7 +239,7 @@ Every `//` block that ends on the line directly above a field or definition is t
 
 - **Before editing any `src/*.cue` file**, load `.claude/skills/core-schema-edit/SKILL.md`. Every change to a tracked construct MUST co-commit with a corresponding update to `SPEC.md`. Three layers enforce this:
   - **Local pre-commit hook** — `task hooks:install` symlinks `.git/hooks/pre-commit` to `.tasks/hooks/pre-commit`. The hook blocks any commit that stages `*.cue` without `SPEC.md` unless `SPEC_IMPACT=none` is set (for whitespace / formatting-only edits).
-  - **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, and SPEC references to renamed or deleted constructs.
+  - **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, SPEC references to renamed or deleted constructs, and any top-level hidden field in package `core` (pins belong in `src/pins/`).
   - **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
 - Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
 - Keep `src/INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated section; update both.

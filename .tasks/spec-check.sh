@@ -13,6 +13,10 @@
 #   - add a #Name line to .tasks/spec-tracked.txt
 #   - add a section to SPEC.md that references #Name
 #
+# Pin placement check: package core (src/*.cue) declares no top-level hidden
+# field. Schema pins live in package pins in src/pins/, which nothing imports;
+# a pin in package core would be evaluated by every main-instance build of it.
+#
 # Does NOT validate field-level details, rationale freshness, or section
 # format — those are review-time concerns, not mechanical ones.
 #
@@ -102,8 +106,17 @@ if [[ -n "$stale_in_spec" ]]; then
   failed=1
 fi
 
+# Pin placement: no top-level hidden field in package core.
+hidden_in_core=$(grep -nE '^_' "$ROOT"/src/*.cue 2>/dev/null || true)
+if [[ -n "$hidden_in_core" ]]; then
+  echo "FAIL: top-level hidden fields in package core (src/*.cue):" >&2
+  printf '%s\n' "$hidden_in_core" | sed "s|^$ROOT/||; s/^/  /" >&2
+  echo "  Fix: pins belong in package pins in src/pins/, which nothing imports." >&2
+  failed=1
+fi
+
 if [[ "$failed" -eq 0 ]]; then
-  echo "OK: SPEC.md inventory matches CUE definitions and allowlist."
+  echo "OK: SPEC.md inventory matches CUE definitions and allowlist; package core declares no pin."
 fi
 
 exit "$failed"

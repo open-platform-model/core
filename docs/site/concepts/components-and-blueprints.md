@@ -24,7 +24,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### The same component with and without a blueprint
 
-<!-- The teaching device: two snippets side by side (the format of the retired v0 page; none of its facts apply). Left: `res.#Container` plus `tr.#Scaling`, with values under `spec.container` and `spec.scaling`. It fails, because nothing answers the container's required key: `matchLabels."core.opmodel.dev/workload-type": field is required but not present`. Right: `bp.#StatelessWorkload` with the same values under `spec: statelessWorkload:`, which renders a Deployment. One sentence on why: the blueprint is where the workload type is answered. Verify the exact error text and path by building the left-hand component with `opm module build`; the recorded text comes from a core pin that uses a different key name. Check against: core/src/platform_and_match_pins.cue (`_failBareContainer`), catalog_opm/src/resources/v1beta1/container.cue, catalog_opm/src/blueprints/v1beta1/stateless_workload.cue, modules/apprise/components.cue -->
+<!-- The teaching device: two snippets side by side (the format of the retired v0 page; none of its facts apply). Left: `res.#Container` plus `tr.#Scaling`, with values under `spec.container` and `spec.scaling`. It fails, because nothing answers the container's required key: `matchLabels."core.opmodel.dev/workload-type": field is required but not present`. Right: `bp.#StatelessWorkload` with the same values under `spec: statelessWorkload:`, which renders a Deployment. One sentence on why: the blueprint is where the workload type is answered. Verify the exact error text and path by building the left-hand component with `opm module build`; the recorded text comes from a core pin that uses a different key name. Check against: core/src/pins/platform_and_match_pins.cue (`_failBareContainer`), catalog_opm/src/resources/v1beta1/container.cue, catalog_opm/src/blueprints/v1beta1/stateless_workload.cue, modules/apprise/components.cue -->
 
 ## Why it is built this way
 
@@ -52,11 +52,11 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### A container needs a workload blueprint
 
-<!-- The misreading: attaching `res.#Container` is enough for a workload. The container declares `core.opmodel.dev/workload-type` required, and only a workload blueprint answers it, so a bare container fails with a missing required field. Check against: catalog_opm/src/resources/v1beta1/container.cue, core/src/platform_and_match_pins.cue (`_failBareContainer`) -->
+<!-- The misreading: attaching `res.#Container` is enough for a workload. The container declares `core.opmodel.dev/workload-type` required, and only a workload blueprint answers it, so a bare container fails with a missing required field. Check against: catalog_opm/src/resources/v1beta1/container.cue, core/src/pins/platform_and_match_pins.cue (`_failBareContainer`) -->
 
 ### The workload type comes from the blueprint, not from a label you set
 
-<!-- The misreading: write `matchLabels: "core.opmodel.dev/workload-type": "stateless"` on the component. It fails the derivation check (`_matchLabelsAreDerived: conflicting values false and true`). Setting the key under `metadata.labels` changes nothing about matching. Attach the blueprint. Check against: core/src/component.cue (`_matchLabelsAreDerived`), core/src/platform_and_match_pins.cue (`_failInlineAnsweredMatchLabel`) -->
+<!-- The misreading: write `matchLabels: "core.opmodel.dev/workload-type": "stateless"` on the component. It fails the derivation check (`_matchLabelsAreDerived: conflicting values false and true`). Setting the key under `metadata.labels` changes nothing about matching. Attach the blueprint. Check against: core/src/component.cue (`_matchLabelsAreDerived`), core/src/pins/platform_and_match_pins.cue (`_failInlineAnsweredMatchLabel`) -->
 
 ### Values go under the blueprint's key
 
@@ -87,4 +87,4 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - A blueprint files under `.../blueprints/<apiVersion>` and its FQN agrees with the catalog's identity: publish (`#CatalogMemberFQNGate` in `opm catalog publish`).
 - `composedResources` is non-empty, a trait in `composedTraits` applies to a composed resource, and both lists agree with what the catalog's wrapper attaches: convention. The specification states the first two as unification failures; core/src/blueprint.cue checks none of them.
 - One default per field, and author defaults only in `#config`: convention.
-Check against: core/src/component.cue, core/src/blueprint.cue, core/src/types.cue, core/src/platform_and_match_pins.cue, cli/internal/publish/catalog_gates.go, cli/internal/cmd/module/vet.go, library/opm/errors/unmatched.go, core/SPEC.md §3.3 Constraints, core/SPEC.md §6.1 -->
+Check against: core/src/component.cue, core/src/blueprint.cue, core/src/types.cue, core/src/pins/platform_and_match_pins.cue, cli/internal/publish/catalog_gates.go, cli/internal/cmd/module/vet.go, library/opm/errors/unmatched.go, core/SPEC.md §3.3 Constraints, core/SPEC.md §6.1 -->
