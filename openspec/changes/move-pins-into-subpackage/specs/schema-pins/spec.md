@@ -18,8 +18,8 @@ Source: owner decision, 2026-10-03.
 
 #### Scenario: Package core declares no top-level hidden field
 
-- **WHEN** the files of package `core` in `src/*.cue` are searched for top-level hidden fields
-- **THEN** `grep -nE "^_" src/*.cue` prints nothing (package `core` declares no top-level hidden field, so it declares no pin)
+- **WHEN** a file of package `core` in `src/*.cue` declares a top-level hidden field
+- **THEN** `task spec:check` fails, names the file and line, and points the author at `src/pins/`; with no such field it passes
 
 ### Requirement: Core's vet gates every pin without a tag
 

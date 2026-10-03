@@ -13,13 +13,12 @@ import (
 // to the same rules: every value here is a HIDDEN top-level field of package
 // `pins`, which nothing imports, so `task vet` evaluates them and fails on a
 // conflict while no consumer ever loads them, and none of them adds a row to
-// src/INDEX.md. Every pin FORCES
-// evaluation (key indexing, len(), or string interpolation): a `_pin: <expr>`
-// followed by `_pin: <literal>` on an unset or defaulted expression asserts
-// nothing, as platform_and_match_pins.cue records. MUST-FAIL cases are
-// commented out with the exact error uncommenting yields; each was run once,
-// in place, at the commit that introduced it, and the recorded text is what
-// `cue vet` printed.
+// src/INDEX.md. Every pin FORCES evaluation (key indexing, len(), or string
+// interpolation): a `_pin: <expr>` followed by `_pin: <literal>` on an unset
+// or defaulted expression asserts nothing, as platform_and_match_pins.cue
+// records. MUST-FAIL cases are commented out with the exact error
+// uncommenting yields; each was run once, in place, at the commit that
+// introduced it, and the recorded text is what `cue vet` printed.
 //
 // As there, the filename must NOT begin with an underscore: CUE skips such
 // files, and every pin below would then vet clean by never running.

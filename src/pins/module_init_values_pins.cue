@@ -8,9 +8,9 @@ import (
 //
 // Hidden top-level fields of package `pins`, as in identity_pins.cue: `task
 // vet` evaluates them and fails on a conflict, no consumer ever loads them,
-// and they add no row to src/INDEX.md. The one MUST-FAIL case is commented out at the bottom
-// with the error `task vet` printed when it was uncommented at the commit
-// that introduced it.
+// and they add no row to src/INDEX.md. The one MUST-FAIL case is commented
+// out at the bottom with the error `task vet` printed when it was uncommented
+// at the commit that introduced it.
 //
 // NOTE ON THE FILENAME: no leading underscore, or CUE skips the file and every
 // pin below vets clean by never running.

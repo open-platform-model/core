@@ -25,3 +25,9 @@
 - [x] 2.3 `.claude/skills/core-schema-edit/SKILL.md`: where it covers pins and the doc-comment exemption, state that a new pin goes in `src/pins/` as package `pins` and references core as `core.#X`.
 - [x] 2.4 `docs/site/`: in every "Check against" HTML comment, change `core/src/<name>_pins.cue` to `core/src/pins/<name>_pins.cue` (`docs/site/concepts/components-and-blueprints.md`, `identity-and-names.md`, `versions.md`, `what-enforces-a-rule.md`). Verify: `grep -rn 'core/src/[a-z_]*_pins.cue' docs/ AGENTS.md .claude/ openspec/config.yaml` prints nothing.
 - [x] 2.5 `task check` green, then commit `docs: name src/pins as the home of the schema pins`. The section stages no `.cue` file, so the SPEC_IMPACT hook does not fire.
+
+## 3. Review fixes
+
+- [x] 3.1 `platform_and_match_pins.cue`: correct the rule-1 record (plain `cue vet ./...` exits 1 with the generic "some instances are incomplete" message; `-c` names the field) and the paragraph on why the gate pins stay hidden. Re-run in a scratch copy.
+- [x] 3.2 `task spec:check` fails on any top-level hidden field in `src/*.cue`, so the "Package core declares no top-level hidden field" scenario is gated. Verify: a scratch `_pinX: 1` in `src/` makes it fail; removed, it passes.
+- [x] 3.3 Label the `platform_contracts_pins.cue` export excerpt as the container key's error and date the re-run; re-wrap the four reflowed headers. `task check` green, then commit `fix(pins): correct the rule-1 vet record and gate pin placement`.

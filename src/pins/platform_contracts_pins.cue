@@ -618,6 +618,8 @@ _pinInventoryOptionalOnlyProvidedBy: "0|true"
 // shape. Measured 2026-09-13, cue v0.17.1, with the requiredTraits guard
 // removed from platform.cue: `cue vet ./...` and `cue vet -c ./...` both
 // exit 0 (the error is incomplete-class and the pins are hidden), while
+// export reports one error per key (re-run against ./pins 2026-10-03; the
+// container key's error, which no longer prints first):
 //
 //   $ cue export -e '_pinInventoryBaseOnly.#contracts.requiredBy' ./pins
 //   _pinInventoryBaseOnly.#contracts.requiredBy."opmodel.dev/catalogs/opm/resources/container@v1beta1":

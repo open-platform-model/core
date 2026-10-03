@@ -9,11 +9,12 @@ import (
 //
 // Companion to platform_and_match_pins.cue and written to the same rules:
 // every value here is a HIDDEN top-level field of package `pins`, which
-// nothing imports, so `task vet` evaluates it and fails on a conflict while no
-// consumer ever loads it, and none of them adds a row to src/INDEX.md. MUST-FAIL cases are commented out with the
-// exact error uncommenting yields, each run once in place at the commit that
-// introduced it. The filename must NOT begin with an underscore: CUE skips
-// such files, and every pin below would then vet clean by never running.
+// nothing imports, so `task vet` evaluates it and fails on a conflict while
+// no consumer ever loads it, and none of them adds a row to src/INDEX.md.
+// MUST-FAIL cases are commented out with the exact error uncommenting yields,
+// each run once in place at the commit that introduced it. The filename must
+// NOT begin with an underscore: CUE skips such files, and every pin below
+// would then vet clean by never running.
 //
 // Every pin here INTERPOLATES the value it asserts. metadata.resourceName is
 // a defaulted disjunction, so the intuitive `_pin: <expr>` then

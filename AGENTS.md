@@ -239,7 +239,7 @@ Every `//` block that ends on the line directly above a field or definition is t
 
 - **Before editing any `src/*.cue` file**, load `.claude/skills/core-schema-edit/SKILL.md`. Every change to a tracked construct MUST co-commit with a corresponding update to `SPEC.md`. Three layers enforce this:
   - **Local pre-commit hook** — `task hooks:install` symlinks `.git/hooks/pre-commit` to `.tasks/hooks/pre-commit`. The hook blocks any commit that stages `*.cue` without `SPEC.md` unless `SPEC_IMPACT=none` is set (for whitespace / formatting-only edits).
-  - **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, and SPEC references to renamed or deleted constructs.
+  - **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, SPEC references to renamed or deleted constructs, and any top-level hidden field in package `core` (pins belong in `src/pins/`).
   - **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
 - Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
 - Keep `src/INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated section; update both.

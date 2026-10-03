@@ -119,7 +119,7 @@ When editing a `core/src/*.cue` file:
 ## Verification gates (mechanical, cannot skip without explicit override)
 
 - **Local pre-commit hook** — refuses any commit that stages `*.cue` without `SPEC.md` unless `SPEC_IMPACT=none` is set. Install with `task hooks:install`.
-- **`task spec:check`** — three-direction inventory check, wired into `task check`. Catches: allowlist entries with no section in SPEC.md; allowlist entries not defined in any `.cue` file (stale allowlist after rename); SPEC.md references not defined in any `.cue` file (stale section after rename).
+- **`task spec:check`** — three-direction inventory check, wired into `task check`. Catches: allowlist entries with no section in SPEC.md; allowlist entries not defined in any `.cue` file (stale allowlist after rename); SPEC.md references not defined in any `.cue` file (stale section after rename). It also fails on any top-level hidden field in `src/*.cue`, since pins live in package `pins` in `src/pins/`.
 - **CI co-update gate** — `.github/workflows/ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
 
 ## Subagent note
