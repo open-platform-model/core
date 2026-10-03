@@ -55,12 +55,15 @@ MODULE_LABEL=$(basename "$REPO_DIR")
 # anyway — git does not track openspec/specs/ or openspec/changes/archive/
 # until something lands in them, so a fresh clone would generate a
 # different tree than the one committed and fail this repo's own gate.
+# The root `out` (task docs:bundle's gitignored preview) is excluded for the
+# same reason: it exists only after a local build.
 print_tree() {
     local dir="$1" prefix="$2"
     local subdirs=()
     mapfile -t subdirs < <(
         find "$dir" -maxdepth 1 -mindepth 1 -type d \
-            ! -name "cue.mod" ! -name "src" ! -name "openspec" ! -name ".*" | sort
+            ! -name "cue.mod" ! -name "src" ! -name "openspec" ! -name ".*" \
+            ! -path "$REPO_DIR/out" | sort
     )
     local total="${#subdirs[@]}" idx=0
     for subdir in "${subdirs[@]}"; do

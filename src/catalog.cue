@@ -105,7 +105,9 @@ package core
 		// same two values. The exposure — a catalog whose identity package is
 		// absent or non-conformant carries no consumer-runnable major check,
 		// and the skew surfaces in a platform author's file instead — is
-		// accepted and bounded by enhancement 0011's publish gates.
+		// accepted and bounded by the gates a publishing tool unifies a
+		// catalog against before it publishes (#IdentityPackage,
+		// #CatalogMemberFQNGate).
 
 		description?: string
 		labels?:      #LabelsAnnotationsType

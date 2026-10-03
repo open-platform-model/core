@@ -63,6 +63,11 @@ jobs:
       - name: Verify the definitions reference is up to date
         run: task docs:reference:check
 
+      # Offline: .opm-docs-version and every docs-kit publish.yml ref name the
+      # same release. The bundle build itself is Docs / check (docs.yml).
+      - name: Verify the docs-kit pins agree
+        run: task docs:pins:check
+
       - name: Reject bare @mentions in the PR title, body and commit messages
         if: github.event_name == 'pull_request'
         env:

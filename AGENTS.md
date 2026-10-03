@@ -142,6 +142,8 @@ docs/                    schema design notes (tutorial / explanatory)
 docs/site/               site pages opmodel.dev builds (STYLE.md "Site Pages" dialect)
 docs/site/reference/definitions/  generated definitions reference (task docs:reference; never hand-edit)
 tools/refgen/            Go generator for that reference (own go.mod; not part of the CUE module)
+docs-kit.cue             the core docs bundle: generated reference plus docs/site/ (docs-kit)
+.opm-docs-version        the docs-kit release that builds the bundle (with every publish.yml ref)
 SPEC.md                  normative schema specification (definitions, constraints, rationale)
 openspec/                OpenSpec proposals/specs/archives (active change workflow)
 .tasks/                  Taskfile script fragments + git hooks
@@ -179,7 +181,11 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 | `task docs:reference`         | Regenerate the definitions reference in `docs/site/reference/definitions/` from `src/*.cue` |
 | `task docs:reference:check`   | Fail when the committed definitions reference is stale        |
 | `task refgen:test`            | gofmt check, vet and test `tools/refgen`                      |
-| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + reference generator and freshness |
+| `task docs:bundle`            | Build the core docs bundle of the work tree into `out/core/` (a local preview of edge) |
+| `task docs:bundle:check`      | Check the docs-kit pins agree, then build and lint the docs bundle without writing `out/` |
+| `task docs:pins:check`        | Refuse a docs-kit `publish.yml` ref that names another release than `.opm-docs-version` (offline) |
+| `task tools:opm-docs`         | Install or reuse `.bin/opm-docs`, the checksum-verified docs-kit release `.opm-docs-version` names |
+| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + reference generator and freshness + docs bundle check |
 
 ### Release & publishing
 
@@ -188,6 +194,10 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 - Before publishing, the job runs `.tasks/publish-probe.sh`, which asks GHCR for the version's manifest, because `cue mod publish` overwrites without asking. A version already present fails the job (exit 1): never publish it again, and roll forward to the next version (`-beta.N+1` during beta). An inconclusive answer fails it too (exit 2): nothing was pushed, so re-run the job.
 - One case needs the next version rather than a re-run: the tag and GitHub Release exist, the module is absent from GHCR and no release PR is pending. That happens when release-please fails after creating the release; a re-run then finds nothing to release and publishes nothing.
 - `task publish` writes only to the local registry (`localhost:5000`), whatever `CUE_REGISTRY` the shell exports. It cannot reach GHCR, even deliberately.
+
+### Docs bundles
+
+`docs-kit.cue` declares one docs bundle, `core`: the definitions reference docs-kit generates from `src/` (docs-kit C17) and the authored pages under `docs/site/`, published to `ghcr.io/open-platform-model/docs/core` by docs-kit's `publish.yml`. `docs.yml` checks every pull request (`Docs / check`) and publishes each push to `main` as `edge`; `release.yml`'s `publish-docs` job publishes each release's bundle after `publish-cue` succeeds. Preview with `task docs:bundle` (pages in `out/core/content/`); `opm-docs serve` previews in a browser from the first docs-kit release that ships it (v0.4.0 does not). A release without a bundle (a skipped `publish-docs`, or a tag from before docs-kit, `v2.0.0-beta.1` at the earliest) is published with `gh workflow run docs.yml --ref main -f mode=release -f tag=vX.Y.Z`. A released page is fixed by a docs revision: land a Markdown-only or comment-only commit on `main`, then `gh workflow run docs.yml --ref main -f mode=revision -f tag=vX.Y.Z -f fix=<40-hex sha>`. Revisions are dispatched by hand (core#101). Once opmodel.dev reads core from the bundle, an authored fix on `main` reaches the site only through a release or a revision. `.opm-docs-version` and every `publish.yml@` ref name the same docs-kit release and move in one PR (`task docs:pins:check`). Until `tools/refgen` retires, a new exported definition is placed in both `tools/refgen/groups.go` and `docs-kit.cue`, on the same page; `task check` fails when either list misses it, and keeping the pages equal is a review matter. The SPEC.md co-update hook and CI gate match every `*.cue`, `docs-kit.cue` included: a commit that changes only `docs-kit.cue` takes `SPEC_IMPACT=none`, and its PR body `Spec-Impact: none`.
 
 ### Commit conventions and release impact
 
@@ -243,8 +253,8 @@ Every `//` block that ends on the line directly above a field or definition is t
   - **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
 - Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
 - Keep `src/INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated section; update both.
-- Run `task docs:reference` after changing a definition or a doc comment in `src/`: the reference pages under `docs/site/reference/definitions/` are generated from them and `task docs:reference:check` fails when they are stale. A new exported definition must be placed on a page or excluded in `tools/refgen/groups.go` (with a reason), or the generator refuses to run. The generator drops `// WHY` blocks and strips enhancement citations, `SPEC.md` pointers and experiment references from doc comments; a doc comment that reads badly once they are gone needs rewording at the source.
-- Run `task check` before finishing — it covers fmt, vet, INDEX freshness, SPEC inventory, the doc-comment limit and the reference in one shot.
+- Run `task docs:reference` after changing a definition or a doc comment in `src/`: the reference pages under `docs/site/reference/definitions/` are generated from them and `task docs:reference:check` fails when they are stale. A new exported definition must be placed on a page or excluded (with a reason) in both `tools/refgen/groups.go` and `docs-kit.cue`, on the same page, or the generator refuses to run and `task docs:bundle:check` fails. The generator drops `// WHY` blocks and strips enhancement citations, `SPEC.md` pointers and experiment references from doc comments; a doc comment that reads badly once they are gone needs rewording at the source.
+- Run `task check` before finishing — it covers fmt, vet, INDEX freshness, SPEC inventory, the doc-comment limit, the reference and the docs bundle check in one shot.
 - **Non-trivial schema work goes through OpenSpec** (`openspec/`, added 2026-08-05). Scaffold with the `openspec-new-change` skill; `openspec/config.yaml` carries the normative rules each artifact must satisfy. Two things it does *not* replace: `SPEC.md`, which is the published specification and is written in the implementing commit itself under `core-schema-edit`; and the enhancement entry, when the change is a slice of one.
   - **Core-scoped slice of a cross-cutting enhancement**: the design lives in `enhancements/NNNN/`, the execution lives in an OpenSpec change here. Cite the decision numbers it satisfies and create `enhancement.yaml` in the change directory at creation time (`implements: [{enhancement: "NNNN", decisions: [D1], resolves: []}]`; validated by `enhancements/schema.cue` `#ChangeDeclaration`). It is the only link between the change and the entry: at archive time `task enhancements:delivery:log FROM=core/openspec/changes/archive/<name> SUMMARY="..."` from the workspace root appends the landing to that entry's `delivery.yaml`, and `task enhancements:delivery:reconcile` catches a change that declared one and was never logged. A change that implements no enhancement carries no such file, which is fine.
   - Apply the mergeable-sections gate before starting work — split requests that do not cut into a handful of green, committable sections using `openspec/config.yaml` § Execution Gate phrasing.

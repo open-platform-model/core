@@ -6,3 +6,7 @@
 
 # Dev scratch
 out.cue
+
+# docs bundle preview (task docs:bundle) and the pinned opm-docs binary
+/out/
+/.bin/
