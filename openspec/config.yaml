@@ -174,8 +174,10 @@ context: |
   4. `task spec:check` — `SPEC.md` inventory matches the tracked CUE constructs.
   5. `task docs:reference:check` — the generated definitions reference under
      `docs/site/reference/definitions/` matches `src/*.cue`.
+  6. `task docs:bundle:check` — the docs-kit pins agree and the core docs bundle
+     (`docs-kit.cue`) builds and lints.
 
-  `task check` runs all five, plus `task docs:check` and `task refgen:test`.
+  `task check` runs all six, plus `task docs:check` and `task refgen:test`.
 
 rules:
   proposal:
@@ -263,7 +265,8 @@ rules:
       or the tree under `src/` changes.
     - Include `task docs:reference` as a task whenever a definition or a doc comment in `src/`
       changes; a new exported definition must also be placed on a page or excluded in
-      `tools/refgen/groups.go`, or the generator refuses to run.
+      both `tools/refgen/groups.go` and `docs-kit.cue`, on the same page, or the generator
+      and `task docs:bundle:check` refuse it (two lists until `tools/refgen` retires).
     - Include the validation gates (`task check`, or the four individually) in every section's commit task, not as a
       trailing section; cross-cutting checks (downstream catalog and consumer builds) go into the last real section before
       its commit.
