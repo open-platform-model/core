@@ -1,8 +1,10 @@
-package core
+package pins
 
 import (
 	"list"
 	"strings"
+
+	"opmodel.dev/core@v2"
 )
 
 // Schema-level pins for the contract inventory (0015:D1, D2,
@@ -12,9 +14,10 @@ import (
 // slice, so the delta is exercised here.
 //
 // Companion to catalog_pins.cue and platform_and_match_pins.cue and written
-// to the same rules: every value here is a HIDDEN top-level field, so `cue
-// vet` evaluates them and fails on a conflict while an importing package
-// never does, and none of them adds a row to src/INDEX.md. Every pin FORCES
+// to the same rules: every value here is a HIDDEN top-level field of package
+// `pins`, which nothing imports, so `task vet` evaluates them and fails on a
+// conflict while no consumer ever loads them, and none of them adds a row to
+// src/INDEX.md. Every pin FORCES
 // evaluation (string interpolation, len(), or key indexing): a `_pin: <expr>`
 // followed by `_pin: <literal>` on an unset or defaulted expression asserts
 // nothing, as platform_and_match_pins.cue records. Lists are pinned through
@@ -47,7 +50,7 @@ import (
 // only the container and `backup`), each shipping its own deployment
 // adapter: the collision shapes, two or three enabled definers of one key.
 
-_pinInventoryContainer: #Resource & {
+_pinInventoryContainer: core.#Resource & {
 	metadata: {
 		name:       "container"
 		apiVersion: "v1beta1"
@@ -58,7 +61,7 @@ _pinInventoryContainer: #Resource & {
 
 // Catalog-fulfilled (the default) and required by nothing: never
 // unfulfilled, because only a provider-fulfilled contract can be.
-_pinInventoryScaling: #Trait & {
+_pinInventoryScaling: core.#Trait & {
 	metadata: {
 		name:       "scaling"
 		apiVersion: "v1beta1"
@@ -71,7 +74,7 @@ _pinInventoryScaling: #Trait & {
 
 // The contract the inventory exists for: provider-fulfilled, listed by the
 // base catalog, implemented by whichever provider catalog the platform adds.
-_pinInventoryBackup: #Trait & {
+_pinInventoryBackup: core.#Trait & {
 	metadata: {
 		name:       "backup"
 		apiVersion: "v1alpha1"
@@ -83,7 +86,7 @@ _pinInventoryBackup: #Trait & {
 	appliesTo: [_pinInventoryContainer]
 }
 
-_pinInventoryStateless: #Blueprint & {
+_pinInventoryStateless: core.#Blueprint & {
 	metadata: {
 		name:       "stateless-workload"
 		apiVersion: "v1alpha1"
@@ -95,7 +98,7 @@ _pinInventoryStateless: #Blueprint & {
 
 // A contract the k8up-shaped catalog defines for itself, so a disabled
 // provider entry has something to NOT contribute to `defined`.
-_pinInventoryRetention: #Trait & {
+_pinInventoryRetention: core.#Trait & {
 	metadata: {
 		name:       "retention"
 		apiVersion: "v1alpha1"
@@ -108,7 +111,7 @@ _pinInventoryRetention: #Trait & {
 
 // The base catalog's one adapter: requiredResources only, no requiredTraits
 // map at all. This is the presence-guard case (see _pinInventoryGuarded).
-_pinInventoryDeployment: #ComponentTransformer & {
+_pinInventoryDeployment: core.#ComponentTransformer & {
 	metadata: {
 		name:        "deployment"
 		fqn:         "opmodel.dev/catalogs/opm/transformers/deployment@1.0.0"
@@ -119,7 +122,7 @@ _pinInventoryDeployment: #ComponentTransformer & {
 
 // k8up's two adapters over one contract. Both require `backup`; the first
 // also requires the container, the second requires `backup` alone.
-_pinInventoryK8upSchedule: #ComponentTransformer & {
+_pinInventoryK8upSchedule: core.#ComponentTransformer & {
 	metadata: {
 		name:        "schedule"
 		fqn:         "opmodel.dev/catalogs/k8up/transformers/schedule@2.0.0"
@@ -129,7 +132,7 @@ _pinInventoryK8upSchedule: #ComponentTransformer & {
 	requiredTraits: (_pinInventoryBackup.metadata.fqn):       _pinInventoryBackup
 }
 
-_pinInventoryK8upPreBackupPod: #ComponentTransformer & {
+_pinInventoryK8upPreBackupPod: core.#ComponentTransformer & {
 	metadata: {
 		name:        "pre-backup-pod"
 		fqn:         "opmodel.dev/catalogs/k8up/transformers/pre-backup-pod@2.0.0"
@@ -140,7 +143,7 @@ _pinInventoryK8upPreBackupPod: #ComponentTransformer & {
 
 // velero's adapter: requiredTraits only, no requiredResources map at all,
 // the mirror of the deployment fixture for the other presence guard.
-_pinInventoryVeleroBackup: #ComponentTransformer & {
+_pinInventoryVeleroBackup: core.#ComponentTransformer & {
 	metadata: {
 		name:        "backup"
 		fqn:         "opmodel.dev/catalogs/velero/transformers/backup@1.4.0"
@@ -149,7 +152,7 @@ _pinInventoryVeleroBackup: #ComponentTransformer & {
 	requiredTraits: (_pinInventoryBackup.metadata.fqn): _pinInventoryBackup
 }
 
-_pinInventoryBaseCatalog: #Catalog & {
+_pinInventoryBaseCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/opm@v1"
 		version:    "1.0.0"
@@ -163,7 +166,7 @@ _pinInventoryBaseCatalog: #Catalog & {
 	#transformers: (_pinInventoryDeployment.metadata.fqn): _pinInventoryDeployment
 }
 
-_pinInventoryK8upCatalog: #Catalog & {
+_pinInventoryK8upCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/k8up@v2"
 		version:    "2.0.0"
@@ -175,7 +178,7 @@ _pinInventoryK8upCatalog: #Catalog & {
 	}
 }
 
-_pinInventoryVeleroCatalog: #Catalog & {
+_pinInventoryVeleroCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/velero@v1"
 		version:    "1.4.0"
@@ -189,7 +192,7 @@ _pinInventoryVeleroCatalog: #Catalog & {
 // catalog-fulfilled bucket, so `comparable` cannot confound the readout, and
 // listing nothing keeps the two majors out of `collisions`, so the readout
 // isolates the provider count.
-_pinInventoryK8upV2BareCatalog: #Catalog & {
+_pinInventoryK8upV2BareCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/k8up@v2"
 		version:    "2.0.0"
@@ -197,7 +200,7 @@ _pinInventoryK8upV2BareCatalog: #Catalog & {
 	#transformers: (_pinInventoryK8upPreBackupPod.metadata.fqn): _pinInventoryK8upPreBackupPod
 }
 
-_pinInventoryK8upV3PreBackupPod: #ComponentTransformer & {
+_pinInventoryK8upV3PreBackupPod: core.#ComponentTransformer & {
 	metadata: {
 		name:        "pre-backup-pod"
 		fqn:         "opmodel.dev/catalogs/k8up/transformers/pre-backup-pod@3.0.0"
@@ -206,7 +209,7 @@ _pinInventoryK8upV3PreBackupPod: #ComponentTransformer & {
 	requiredTraits: (_pinInventoryBackup.metadata.fqn): _pinInventoryBackup
 }
 
-_pinInventoryK8upV3BareCatalog: #Catalog & {
+_pinInventoryK8upV3BareCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/k8up@v3"
 		version:    "3.0.0"
@@ -217,7 +220,7 @@ _pinInventoryK8upV3BareCatalog: #Catalog & {
 // An adapter that names `backup` ONLY under optionalTraits and requires
 // nothing, so it sits in no catalog-fulfilled bucket and `comparable` cannot
 // confound the readout.
-_pinInventoryResticOptional: #ComponentTransformer & {
+_pinInventoryResticOptional: core.#ComponentTransformer & {
 	metadata: {
 		name:        "optional-backup"
 		fqn:         "opmodel.dev/catalogs/restic/transformers/optional-backup@1.0.0"
@@ -226,7 +229,7 @@ _pinInventoryResticOptional: #ComponentTransformer & {
 	optionalTraits: (_pinInventoryBackup.metadata.fqn): _pinInventoryBackup
 }
 
-_pinInventoryResticCatalog: #Catalog & {
+_pinInventoryResticCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/restic@v1"
 		version:    "1.0.0"
@@ -236,7 +239,7 @@ _pinInventoryResticCatalog: #Catalog & {
 
 // A resource only the base catalog's second major lists: the one key a
 // colliding platform still folds into `defined` and `definedBy`.
-_pinInventoryVolume: #Resource & {
+_pinInventoryVolume: core.#Resource & {
 	metadata: {
 		name:       "volume"
 		apiVersion: "v1beta1"
@@ -247,7 +250,7 @@ _pinInventoryVolume: #Resource & {
 
 // The base catalog's adapter at majors v2 and v3. Each requires the
 // container alone, so its predicate equals deployment@1.0.0's.
-_pinInventoryDeploymentV2: #ComponentTransformer & {
+_pinInventoryDeploymentV2: core.#ComponentTransformer & {
 	metadata: {
 		name:        "deployment"
 		fqn:         "opmodel.dev/catalogs/opm/transformers/deployment@2.0.0"
@@ -256,7 +259,7 @@ _pinInventoryDeploymentV2: #ComponentTransformer & {
 	requiredResources: (_pinInventoryContainer.metadata.fqn): _pinInventoryContainer
 }
 
-_pinInventoryDeploymentV3: #ComponentTransformer & {
+_pinInventoryDeploymentV3: core.#ComponentTransformer & {
 	metadata: {
 		name:        "deployment"
 		fqn:         "opmodel.dev/catalogs/opm/transformers/deployment@3.0.0"
@@ -267,7 +270,7 @@ _pinInventoryDeploymentV3: #ComponentTransformer & {
 
 // The base catalog at major v2: its four keys plus `volume`, shipping its
 // own adapter. Beside major v1 every shared key is a collision.
-_pinInventoryBaseV2Catalog: #Catalog & {
+_pinInventoryBaseV2Catalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/opm@v2"
 		version:    "2.0.0"
@@ -286,7 +289,7 @@ _pinInventoryBaseV2Catalog: #Catalog & {
 
 // The base catalog at major v3, listing only the container and `backup`,
 // so a three-major platform has keys at three definers and at two.
-_pinInventoryBaseV3Catalog: #Catalog & {
+_pinInventoryBaseV3Catalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/opm@v3"
 		version:    "3.0.0"
@@ -298,18 +301,18 @@ _pinInventoryBaseV3Catalog: #Catalog & {
 
 // ─── The thirteen platforms ─────────────────────────────────────────────────
 
-_pinInventoryEmpty: #Platform & {
+_pinInventoryEmpty: core.#Platform & {
 	metadata: name: "empty"
 	type: "kubernetes"
 }
 
-_pinInventoryBaseOnly: #Platform & {
+_pinInventoryBaseOnly: core.#Platform & {
 	metadata: name: "base-only"
 	type: "kubernetes"
 	#registry: (_pinInventoryBaseCatalog.metadata.modulePath): #catalog: _pinInventoryBaseCatalog
 }
 
-_pinInventoryOneProvider: #Platform & {
+_pinInventoryOneProvider: core.#Platform & {
 	metadata: name: "one-provider"
 	type: "kubernetes"
 	#registry: {
@@ -318,7 +321,7 @@ _pinInventoryOneProvider: #Platform & {
 	}
 }
 
-_pinInventoryTwoProviders: #Platform & {
+_pinInventoryTwoProviders: core.#Platform & {
 	metadata: name: "two-providers"
 	type: "kubernetes"
 	#registry: {
@@ -328,7 +331,7 @@ _pinInventoryTwoProviders: #Platform & {
 	}
 }
 
-_pinInventoryDisabledProvider: #Platform & {
+_pinInventoryDisabledProvider: core.#Platform & {
 	metadata: name: "disabled-provider"
 	type: "kubernetes"
 	#registry: {
@@ -341,7 +344,7 @@ _pinInventoryDisabledProvider: #Platform & {
 }
 
 // Bug 1: two majors of one provider catalog, beside the defining catalog.
-_pinInventoryTwoMajors: #Platform & {
+_pinInventoryTwoMajors: core.#Platform & {
 	metadata: name: "two-majors"
 	type: "kubernetes"
 	#registry: {
@@ -352,7 +355,7 @@ _pinInventoryTwoMajors: #Platform & {
 }
 
 // Bug 2: two providers while the defining catalog is present and disabled...
-_pinInventoryDefinerDisabled: #Platform & {
+_pinInventoryDefinerDisabled: core.#Platform & {
 	metadata: name: "definer-disabled"
 	type: "kubernetes"
 	#registry: {
@@ -366,7 +369,7 @@ _pinInventoryDefinerDisabled: #Platform & {
 }
 
 // ...and while it is absent from the registry altogether.
-_pinInventoryDefinerAbsent: #Platform & {
+_pinInventoryDefinerAbsent: core.#Platform & {
 	metadata: name: "definer-absent"
 	type: "kubernetes"
 	#registry: {
@@ -377,7 +380,7 @@ _pinInventoryDefinerAbsent: #Platform & {
 
 // The defining catalog beside an entry whose only adapter names `backup` as
 // an optional demand.
-_pinInventoryOptionalOnly: #Platform & {
+_pinInventoryOptionalOnly: core.#Platform & {
 	metadata: name: "optional-only"
 	type: "kubernetes"
 	#registry: {
@@ -387,7 +390,7 @@ _pinInventoryOptionalOnly: #Platform & {
 }
 
 // Two majors of the base catalog, both enabled, sharing four keys.
-_pinInventoryCollide: #Platform & {
+_pinInventoryCollide: core.#Platform & {
 	metadata: name: "collide"
 	type: "kubernetes"
 	#registry: {
@@ -397,7 +400,7 @@ _pinInventoryCollide: #Platform & {
 }
 
 // The same two majors with the second disabled: nothing collides.
-_pinInventoryCollideDisabled: #Platform & {
+_pinInventoryCollideDisabled: core.#Platform & {
 	metadata: name: "collide-disabled"
 	type: "kubernetes"
 	#registry: {
@@ -411,7 +414,7 @@ _pinInventoryCollideDisabled: #Platform & {
 
 // The colliding majors plus two providers of `backup`: a collision and an
 // over-subscription reported together.
-_pinInventoryCollideOverSubscribed: #Platform & {
+_pinInventoryCollideOverSubscribed: core.#Platform & {
 	metadata: name: "collide-over-subscribed"
 	type: "kubernetes"
 	#registry: {
@@ -423,7 +426,7 @@ _pinInventoryCollideOverSubscribed: #Platform & {
 }
 
 // Three majors of the base catalog: two keys at three definers, two at two.
-_pinInventoryCollideThreeMajors: #Platform & {
+_pinInventoryCollideThreeMajors: core.#Platform & {
 	metadata: name: "collide-three-majors"
 	type: "kubernetes"
 	#registry: {
@@ -436,7 +439,7 @@ _pinInventoryCollideThreeMajors: #Platform & {
 // One readout per platform. Lists join over a sorted copy; an empty list
 // joins to "". Interpolation forces every value (the ONE RULE).
 _pinInventoryReadout: {
-	#in: #ContractInventory
+	#in: core.#ContractInventory
 	out: "defined=\(len(#in.defined)) unfulfilled=[\(strings.Join(list.Sort(#in.unfulfilled, list.Ascending), ","))] overSubscribed=[\(strings.Join(list.Sort(#in.overSubscribed, list.Ascending), ","))] fulfilled=\(#in.fulfilled) routable=\(#in.routable) comparable=\(len(#in.comparable)) discriminated=\(#in.discriminated)"
 }
 
@@ -445,7 +448,7 @@ _pinInventoryReadout: {
 // followed by its colliding entries, joined in their own order; `entries`
 // holds that collidingEntries carries colliding keys only.
 _pinInventoryCollisionReadout: {
-	#in: #ContractInventory
+	#in: core.#ContractInventory
 	out: "collisions=[\(strings.Join(#in.collisions, ","))] collidingEntries=[\(strings.Join([for k in #in.collisions {"\(k)=\(strings.Join(#in.collidingEntries[k], "+"))"}], ";"))] entries=\(len(#in.collidingEntries)) routable=\(#in.routable)"
 }
 
@@ -616,7 +619,7 @@ _pinInventoryOptionalOnlyProvidedBy: "0|true"
 // removed from platform.cue: `cue vet ./...` and `cue vet -c ./...` both
 // exit 0 (the error is incomplete-class and the pins are hidden), while
 //
-//   $ cue export -e '_pinInventoryBaseOnly.#contracts.requiredBy' ./
+//   $ cue export -e '_pinInventoryBaseOnly.#contracts.requiredBy' ./pins
 //   _pinInventoryBaseOnly.#contracts.requiredBy."opmodel.dev/catalogs/opm/resources/container@v1beta1":
 //     cannot reference optional field: requiredTraits
 //
@@ -652,13 +655,13 @@ _pinInventoryWithMatchersRequiredBy: _pinInventoryOneProviderRequiredBy
 
 // ─── The definition evaluates with no registry at all ───────────────────────
 
-_pinInventoryBare: (_pinInventoryReadout & {#in: #Platform.#contracts}).out
+_pinInventoryBare: (_pinInventoryReadout & {#in: core.#Platform.#contracts}).out
 _pinInventoryBare: "defined=0 unfulfilled=[] overSubscribed=[] fulfilled=true routable=true comparable=0 discriminated=true"
 
-_pinInventoryBareProvidedBy: "\(len(#Platform.#contracts.providedBy))"
+_pinInventoryBareProvidedBy: "\(len(core.#Platform.#contracts.providedBy))"
 _pinInventoryBareProvidedBy: "0"
 
-_pinInventoryBareCollisions: (_pinInventoryCollisionReadout & {#in: #Platform.#contracts}).out
+_pinInventoryBareCollisions: (_pinInventoryCollisionReadout & {#in: core.#Platform.#contracts}).out
 _pinInventoryBareCollisions: "collisions=[] collidingEntries=[] entries=0 routable=true"
 
 // ─── Two majors sharing keys: collisions, and the value STILL EVALUATES ─────
@@ -741,7 +744,7 @@ _pinInventoryCollideThreeMajorsDefinedBy: "opmodel.dev/catalogs/opm@v2|1|1|3"
 // a platform admits a catalog whole: one transformer per catalog is what lets
 // each platform below carry exactly the pair its scenario is about.
 
-_pinCmpWidget: #Resource & {
+_pinCmpWidget: core.#Resource & {
 	metadata: {
 		name:       "widget"
 		apiVersion: "v1beta1"
@@ -750,7 +753,7 @@ _pinCmpWidget: #Resource & {
 	spec: widget: size: int
 }
 
-_pinCmpGadget: #Resource & {
+_pinCmpGadget: core.#Resource & {
 	metadata: {
 		name:       "gadget"
 		apiVersion: "v1beta1"
@@ -759,7 +762,7 @@ _pinCmpGadget: #Resource & {
 	spec: gadget: size: int
 }
 
-_pinCmpTuning: #Trait & {
+_pinCmpTuning: core.#Trait & {
 	metadata: {
 		name:       "tuning"
 		apiVersion: "v1beta1"
@@ -772,7 +775,7 @@ _pinCmpTuning: #Trait & {
 
 // The provider-fulfilled contract the report must NOT cover: a pair sharing
 // only this one is `overSubscribed`'s business.
-_pinCmpVault: #Trait & {
+_pinCmpVault: core.#Trait & {
 	metadata: {
 		name:       "vault"
 		apiVersion: "v1alpha1"
@@ -784,7 +787,7 @@ _pinCmpVault: #Trait & {
 	appliesTo: [_pinCmpWidget]
 }
 
-_pinCmpBaseCatalog: #Catalog & {
+_pinCmpBaseCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/cmp-base@v1"
 		version:    "1.0.0"
@@ -796,7 +799,7 @@ _pinCmpBaseCatalog: #Catalog & {
 	#traits: (_pinCmpTuning.metadata.fqn): _pinCmpTuning
 }
 
-_pinCmpVaultCatalog: #Catalog & {
+_pinCmpVaultCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/cmp-vault@v1"
 		version:    "1.0.0"
@@ -807,14 +810,14 @@ _pinCmpVaultCatalog: #Catalog & {
 // One adapter, one catalog. `alpha` is the baseline predicate ({widget});
 // every other adapter below is positioned against it.
 _pinCmpOne: {
-	#name: #NameType
+	#name: core.#NameType
 	#demands: {...}
-	out: #Catalog & {
+	out: core.#Catalog & {
 		metadata: {
 			modulePath: "opmodel.dev/catalogs/cmp-\(#name)@v1"
 			version:    "1.0.0"
 		}
-		#transformers: "opmodel.dev/catalogs/cmp-\(#name)/transformers/\(#name)@1.0.0": #ComponentTransformer & {
+		#transformers: "opmodel.dev/catalogs/cmp-\(#name)/transformers/\(#name)@1.0.0": core.#ComponentTransformer & {
 			metadata: {
 				name:        #name
 				fqn:         "opmodel.dev/catalogs/cmp-\(#name)/transformers/\(#name)@1.0.0"
@@ -873,13 +876,13 @@ _pinCmpThetaCatalog: (_pinCmpOne & {#name: "theta", #demands: {
 
 // One catalog carrying two adapters over the provider-fulfilled trait: the
 // k8up shape, in the family where nothing else shares a bucket with them.
-_pinCmpDualCatalog: #Catalog & {
+_pinCmpDualCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/cmp-dual@v1"
 		version:    "1.0.0"
 	}
 	#transformers: {
-		"opmodel.dev/catalogs/cmp-dual/transformers/lambda@1.0.0": #ComponentTransformer & {
+		"opmodel.dev/catalogs/cmp-dual/transformers/lambda@1.0.0": core.#ComponentTransformer & {
 			metadata: {
 				name:        "lambda"
 				fqn:         "opmodel.dev/catalogs/cmp-dual/transformers/lambda@1.0.0"
@@ -887,7 +890,7 @@ _pinCmpDualCatalog: #Catalog & {
 			}
 			requiredTraits: (_pinCmpVault.metadata.fqn): _pinCmpVault
 		}
-		"opmodel.dev/catalogs/cmp-dual/transformers/mu@1.0.0": #ComponentTransformer & {
+		"opmodel.dev/catalogs/cmp-dual/transformers/mu@1.0.0": core.#ComponentTransformer & {
 			metadata: {
 				name:        "mu"
 				fqn:         "opmodel.dev/catalogs/cmp-dual/transformers/mu@1.0.0"
@@ -917,9 +920,9 @@ _pinCmpKappaCatalog: (_pinCmpOne & {#name: "kappa", #demands: {
 // ─── The comparability platforms ────────────────────────────────────────────
 
 _pinCmpPlatform: {
-	#name: #NameType
-	#catalogs: [...#Catalog]
-	out: #Platform & {
+	#name: core.#NameType
+	#catalogs: [...core.#Catalog]
+	out: core.#Platform & {
 		metadata: name: #name
 		type: "kubernetes"
 		#registry: {
@@ -970,7 +973,7 @@ _pinCmpDisabled: _pinCmpIdentical & {
 // "<broader>><narrower>@[<sorted contracts>]", rows joined by a space. An
 // empty report joins to "".
 _pinCmpRows: {
-	#in: #ContractInventory
+	#in: core.#ContractInventory
 	out: strings.Join(list.Sort([for r in #in.comparable {
 		"\(r.broader)>\(r.narrower)@[\(strings.Join(list.Sort(r.contracts, list.Ascending), ","))]"
 	}], list.Ascending), " ")

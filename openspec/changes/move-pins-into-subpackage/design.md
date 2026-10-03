@@ -115,13 +115,13 @@ The paragraph in `platform_and_match_pins.cue` that explains why its gate pins s
 
 **Explored**: The j2 experiment harness (`scratchpad/exp/pins/harness`, cuelang.org/go v0.17.1, go1.26.5) runs `load.Instances` then `cuecontext.New().BuildInstance`, then `LookupPath(#IdentityPackage)` (the cli vet follow-up). It reads `runtime.MemStats` after `runtime.GC()` with the value kept alive, in a fresh process per run, 5 runs each.
 
-| Build | Time (build, ms) | Retained heap (HeapAlloc) | Allocated |
-|---|---|---|---|
-| core as main instance, before (pins in `core`) | 174-241, median 183 | 74.7 MB | 103.5 MB |
-| core as main instance, after (pins in `src/pins/`) | 6.5-10.6, median 7.9 | 2.8 MB | 3.6 MB |
-| package `pins` as main instance, after (what `task vet` builds) | 167-188 | 74.5 MB | 103.1 MB |
+| Build | Time, prototype on a quiet machine (ms) | Time, implementation under load (ms) | Retained heap (HeapAlloc) | Allocated |
+|---|---|---|---|---|
+| core as main instance, before (pins in `core`) | 174-241, median 183 | 965-1880, median 1071 | 74.7 MB | 103.5-104.1 MB |
+| core as main instance, after (pins in `src/pins/`) | 6.5-10.6, median 7.9 | 60-221, median 119 | 2.8 MB | 3.6 MB |
+| package `pins` as main instance, after (what `task vet` builds) | 167-188 | 868-1482, median 1156 | 74.5 MB | 103.3-103.7 MB |
 
-Times depend on the machine. The same build of published `v2.0.0-beta.1` took 0.43-0.48 s in the earlier runs. The memory figures are deterministic to ±0.1 MB. The cost does not disappear: it moves to core's own vet, the one place that should pay it.
+The implementation rows were measured on scratch copies of `src/` at 7c6aba8 (before) and of the finished tree (after), five fresh runs of each, interleaved so the load of other jobs on the machine hit all three alike; the `pins` build reported no error. An earlier uninterleaved before batch gave 558-810 ms, median 694. Times depend on the machine and its load; the ratio holds (about 9x here, about 23x quiet). The same build of published `v2.0.0-beta.1` took 0.43-0.48 s in the earlier runs. The memory figures are deterministic to ±0.1 MB and match the prototype. The cost does not disappear: it moves to core's own vet, the one place that should pay it.
 
 **Decision**: Ship the move as a `perf:` commit.
 

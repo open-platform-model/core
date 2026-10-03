@@ -1,10 +1,14 @@
-package core
+package pins
+
+import (
+	"opmodel.dev/core@v2"
+)
 
 // Schema-level pins for #Module.initValues (enhancement 0016 D3/D4).
 //
-// Hidden top-level fields, as in identity_pins.cue: `cue vet` evaluates them
-// and fails on a conflict, an importing package never does, and they add no
-// row to src/INDEX.md. The one MUST-FAIL case is commented out at the bottom
+// Hidden top-level fields of package `pins`, as in identity_pins.cue: `task
+// vet` evaluates them and fails on a conflict, no consumer ever loads them,
+// and they add no row to src/INDEX.md. The one MUST-FAIL case is commented out at the bottom
 // with the error `task vet` printed when it was uncommented at the commit
 // that introduced it.
 //
@@ -29,13 +33,13 @@ _pinInitBase: {
 }
 
 // A module that validated before initValues existed. The field stays absent.
-_pinInitPlain:  #Module & _pinInitBase
+_pinInitPlain:  core.#Module & _pinInitBase
 _pinInitAbsent: (_pinInitPlain.initValues == _|_) & true
 
 // ─── What #Module accepts in initValues ────────────────────────────────────
 
 // Concrete initValues validate and read back as written.
-_pinInitConcrete: #Module & _pinInitBase & {
+_pinInitConcrete: core.#Module & _pinInitBase & {
 	initValues: {replicas: 2, logLevel: "info"}
 }
 _pinInitConcreteReadBack: _pinInitConcrete.initValues & {replicas: 2, logLevel: "info"}
@@ -43,7 +47,7 @@ _pinInitConcreteReplicas: _pinInitConcrete.initValues.replicas & 2
 
 // Non-concrete initValues validate: a default, an undefaulted disjunction (the
 // "pick one" prompt) and an optional field.
-_pinInitOpen: #Module & _pinInitBase & {
+_pinInitOpen: core.#Module & _pinInitBase & {
 	initValues: {replicas: *2 | int, logLevel: "info" | "debug", port?: int}
 }
 
@@ -55,14 +59,14 @@ _pinInitDisjunctionDebug: _pinInitOpen.initValues.logLevel & "debug"
 // ─── initValues is not checked against #config ─────────────────────────────
 
 // "two" does not satisfy `replicas: int`, and the module still validates.
-_pinInitNonConforming: #Module & _pinInitBase & {
+_pinInitNonConforming: core.#Module & _pinInitBase & {
 	initValues: {replicas: "two"}
 }
 
 // ─── initValues is inert for debugValues and identity ──────────────────────
 
 // Both fields, different content: each reads back its own.
-_pinInitBoth: #Module & _pinInitBase & {
+_pinInitBoth: core.#Module & _pinInitBase & {
 	debugValues: {logLevel: "debug"}
 	initValues: {logLevel: "info"}
 }
@@ -75,7 +79,7 @@ _pinInitSameModuleFQN:  _pinInitPlain.metadata.fqn & _pinInitConcrete.metadata.f
 
 // The same instance deploying the plain module and the one with non-concrete
 // initValues: both validate, and the instance uuid does not move.
-_pinInitInstancePlain: #ModuleInstance & {
+_pinInitInstancePlain: core.#ModuleInstance & {
 	metadata: {
 		name:      "web-prod"
 		namespace: "prod"
@@ -84,7 +88,7 @@ _pinInitInstancePlain: #ModuleInstance & {
 	values: {replicas: 3, logLevel: "info"}
 }
 
-_pinInitInstance: #ModuleInstance & {
+_pinInitInstance: core.#ModuleInstance & {
 	metadata: {
 		name:      "web-prod"
 		namespace: "prod"
@@ -107,4 +111,4 @@ _pinInitSameInstanceLabelsCount: len(_pinInitInstancePlain.metadata.labels) & le
 // A misspelled sibling is still refused. Measured 2026-09-29 with `task vet`:
 //   _pinInitTypo.initValuez: field not allowed
 //
-// _pinInitTypo: #Module & _pinInitBase & {initValuez: {}}
+// _pinInitTypo: core.#Module & _pinInitBase & {initValuez: {}}
