@@ -2,24 +2,24 @@
 
 ### Requirement: Schema pins live in a package no consumer loads
 
-Every schema pin (a hidden top-level field that fixes a property of a core definition, including the commented-out MUST-FAIL cases) MUST be declared in package `pins` in `src/pins/`, in a file named `*_pins.cue`. Package `pins` MUST import `opmodel.dev/core@v2` and reference core constructs only through that import. Package `core` MUST NOT declare a pin, and a file in package `core` MUST NOT read one. Because nothing imports package `pins`, a build of `opmodel.dev/core@v2` MUST NOT load, parse or evaluate a pin, whether the consumer imports core or builds it as the main instance.
+Every schema pin (a hidden top-level field that fixes a property of a core definition, including the commented-out MUST-FAIL cases) MUST be declared in package `pins` in `src/pins/`, in a file named `*_pins.cue`. Package `pins` MUST import `opmodel.dev/core@v2` and reference core constructs only through that import. Package `core` MUST NOT declare a pin, and package `core` MUST NOT import package `pins`. Because nothing imports package `pins`, a build of `opmodel.dev/core@v2` MUST NOT load, parse or evaluate a pin, whether the consumer imports core or builds it as the main instance.
 
-Source: owner decision 2026-10-03, kernel plan task j2.
+Source: owner decision, 2026-10-03.
 
 #### Scenario: Building core as the main instance does not evaluate the pins
 
 - **WHEN** a consumer runs `load.Instances` on `opmodel.dev/core@v2` and `BuildInstance` on the result, as the library schema loader does
-- **THEN** no file under `src/pins/` is loaded, and the build retains what core without pins retains (2.8 MB measured at cue v0.17.1, against 74.7 MB with the pins in package `core`)
+- **THEN** no file under `src/pins/` is among the built instance's files
 
 #### Scenario: A broken pin is invisible to a consumer's build of core
 
 - **WHEN** `src/pins/` holds a pin that conflicts (for example `_pinBroken: 1 & 2`) and a consumer builds core as the main instance
 - **THEN** core's root value carries no error from that pin. Only core's own vet reports it.
 
-#### Scenario: A pin declared in package core is refused at review
+#### Scenario: Package core declares no top-level hidden field
 
-- **WHEN** a change adds a hidden pin field to a `src/*.cue` file in package `core`
-- **THEN** the change does not meet this requirement and the pin moves to `src/pins/`, because every main-instance build of core would evaluate it
+- **WHEN** the files of package `core` in `src/*.cue` are searched for top-level hidden fields
+- **THEN** `grep -nE "^_" src/*.cue` prints nothing (package `core` declares no top-level hidden field, so it declares no pin)
 
 ### Requirement: Core's vet gates every pin without a tag
 

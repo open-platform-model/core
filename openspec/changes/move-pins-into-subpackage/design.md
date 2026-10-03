@@ -25,7 +25,7 @@ No construct in `.tasks/spec-tracked.txt` changes and none is newly tracked. The
 
 - `@if(pins)` tagging. The owner chose the subpackage. `@if` keeps the files parsed (about 1.2 MB and 10 ms per load) and makes a plain `cue vet` skip them silently.
 - The library loader stub (building core through an in-memory instance that aliases its definitions). The owner did not choose it.
-- Having the library loader call `val.Err()`. That is a separate, optional library change.
+- Having the library loader call `val.Err()`. That is the wave-1 sibling library change `fix-duplicate-identity-and-schema-error-memo`, which makes `OCILoader` fail on an errored core build. The two are complementary: once both land, a broken pin cannot fail a consumer's schema load, because the pins are outside core.
 - catalog_opm's `_test*` fields, `vet:fixtures` in its PR CI and its `@if(fixtures)` split. Those are the catalog_opm half of the same owner decision and are planned there.
 - Renaming the pin files. Keeping `*_pins.cue` keeps both name-based exclusions (`doc-check.sh`, `refgen`) correct with no edit to the shared `doc-check.sh`.
 - Rewording the comments in `src/blueprint.cue`, `src/transformer.cue` and `src/identity_package.cue` that name a pin file or a pin. The file names stay unique in the module, and editing a schema file would regenerate the definitions reference for no gain.
@@ -80,6 +80,10 @@ The claim in every header ("an importing package never does — so they gate thi
 
 Wording is final at implementation. The underscore-filename note and the MUST-FAIL convention stay. The exception at the bottom of `identity_pins.cue`, the missing required field measured with `cue export`, also stays, but its recorded command changes. `cue export -e '_failMissingAPIVersion' ./...` from `src/` would now also export package `core`, which has no such field, so the command becomes `cue export -e '_failMissingAPIVersion' ./pins`. It is re-run in place and the recorded output is updated if it differs.
 
+The same applies to every other recorded `cue export` command in the pin files (`identity_package_pins.cue`, `platform_and_match_pins.cue` twice, `platform_contracts_pins.cue`): a `./...` or `./` target fails with `reference "_x" not found` once the field lives in package `pins`, so each becomes `./pins` and is re-run in a scratch copy.
+
+The paragraph in `platform_and_match_pins.cue` that explains why its gate pins stay hidden ("a non-hidden top-level field in this package SHIPS to every consumer") is rewritten too: in package `pins` that reason no longer holds. The gate stays hidden because `task vet` runs without `-c` and the pin shape stays uniform; a non-hidden form checked with `cue vet -c` is now possible but out of scope.
+
 ### D3. The vet gate is unchanged, and proven to still bite
 
 `Taskfile.yml`, `release.yml` and `ci.yml` need no edit: `cue vet ./...` from `src/` loads `./pins` as its own instance and evaluates it. Proven on the prototype: a `zz_broken_pins.cue` holding `_pinBroken: 1 & 2` in `src/pins/` fails `cue vet ./...` with `_pinBroken: conflicting values 2 and 1`, while `cue vet .` (core alone) passes. The implementation repeats this on a scratch copy of the finished tree, never in the worktree.
@@ -126,6 +130,6 @@ Times depend on the machine. The same build of published `v2.0.0-beta.1` took 0.
 ## Risks / Trade-offs
 
 - [A missed `core.` qualification] → it cannot pass silently: an unqualified `#X` in package `pins` is an unresolved reference, and `task vet` fails on it.
-- [A commented MUST-FAIL body left unqualified] → it would fail as "reference not found" instead of the recorded error when uncommented. Mitigation: the rewrite covers comment code lines too (D1), the diff is reviewed for every `#Name` that stays unqualified in a comment, and a sample of cases is uncommented in a scratch copy (tasks 1.4).
+- [A commented MUST-FAIL body left unqualified] → it would fail as "reference not found" instead of the recorded error when uncommented. Mitigation: the rewrite covers comment code lines too (D1), the diff is reviewed for every `#Name` that stays unqualified in a comment, and every commented MUST-FAIL case is uncommented one at a time in a scratch copy by script, asserting no `reference "#..." not found` and the recorded first error (task 1.4).
 - [Someone adds a new pin to `src/*.cue` in package `core`] → it would vet and quietly bring the cost back. Mitigation: `AGENTS.md`, Principle IV and the `core-schema-edit` skill name `src/pins/` as the only place for pins. No mechanical guard is added, because the owner's decision did not ask for one.
 - [A consumer imports `opmodel.dev/core@v2/pins`] → it would pay the cost. Nothing does, and hidden fields cannot be referenced across packages, so an import would gain the importer nothing.
