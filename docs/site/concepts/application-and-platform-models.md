@@ -5,7 +5,7 @@ type: explanation
 weight: 29
 ---
 
-Open Platform Model (OPM) names two models. The application model describes an application and what it needs from a cluster. OPM has it today, as modules, components and instances. The platform model would describe the platform an application runs on. OPM models a platform only as far as rendering needs: the catalogs it admits and the contracts they serve. OPM does not model a cluster's controllers, its APIs or the services it offers to teams.
+Open Platform Model (OPM) names two models. The application model describes an application and what it needs from a cluster. OPM has it today, as modules, components and instances. The platform model would describe the platform an application runs on, and [Where OPM is going](/docs/start/vision/) describes the vision for it. OPM models a platform only as far as rendering needs: the catalogs it admits and the contracts they serve. OPM does not model a cluster's controllers, its APIs or the services it offers to teams.
 
 This page assumes you have read [What OPM is](/docs/start/what-is-opm/). It explains what each model covers, what exists of each today, and why OPM started with the application. The parts of the application model are explained on [Modules and instances](/docs/concepts/modules-and-instances/) and [Components and blueprints](/docs/concepts/components-and-blueprints/), and the platform's catalogs on [Platforms and catalogs](/docs/concepts/platforms-and-catalogs/). OPM's terms are defined in the [Glossary](/docs/reference/glossary/).
 
@@ -79,7 +79,7 @@ So the application model does not depend on the shape of any platform. A module 
 
 ### OPM does not model your whole platform
 
-The name suggests that OPM describes your cluster: its controllers, its APIs and the services it offers. It does not. OPM models applications, and a platform only as far as rendering needs: the catalogs it admits, the version of each, and the contracts they define and require. [What OPM does not do](/docs/start/what-opm-does-not-do/#a-model-of-the-platform-itself) lists what OPM has in place of a platform model.
+The name suggests that OPM describes your cluster: its controllers, its APIs and the services it offers. It does not. OPM models applications, and a platform only as far as rendering needs: the catalogs it admits, the version of each, and the contracts they define and require. [What OPM does not do](/docs/start/what-opm-does-not-do/#a-model-of-the-platform-itself) lists what OPM has in place of a platform model, and [Where OPM is going](/docs/start/vision/) describes where the project wants to take it.
 
 ### The Platform resource is not the platform model
 
