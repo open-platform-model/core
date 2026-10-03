@@ -104,6 +104,40 @@ tasks:
       - go vet ./...
       - go test ./...
 
+  ## Docs bundle
+  #
+  # docs-kit.cue declares one docs bundle, core: the definitions reference
+  # opm-docs generates from src/ (docs-kit C17), plus the authored pages under
+  # docs/site/. CI builds, signs and publishes it through docs-kit's
+  # publish.yml (docs.yml, release.yml). These tasks run the same opm-docs
+  # release locally. The release is pinned in .opm-docs-version and in every
+  # publish.yml ref, and docs:bundle:check refuses the two disagreeing. Until
+  # opmodel.dev reads the bundle, the committed refgen pages above stay and
+  # the markdown source excludes them.
+
+  tools:opm-docs:
+    desc: Install or reuse .bin/opm-docs, the checksum-verified docs-kit release named by .opm-docs-version
+    cmds:
+      - bash .tasks/opm-docs.sh install
+
+  docs:bundle:
+    desc: Build the core docs bundle of the work tree into out/core/ (a local preview of edge)
+    deps: [tools:opm-docs]
+    cmds:
+      - .bin/opm-docs build --project core --out out
+
+  docs:pins:check:
+    desc: Refuse a docs-kit publish.yml ref under .github/workflows/ that names another release than .opm-docs-version (offline)
+    cmds:
+      - bash .tasks/opm-docs.sh pin-check
+
+  docs:bundle:check:
+    desc: Check the docs-kit pins agree, then build and lint the core docs bundle into a temporary directory
+    deps: [tools:opm-docs]
+    cmds:
+      - task: docs:pins:check
+      - .bin/opm-docs check --project core
+
   ## Git hooks
 
   hooks:install:
@@ -173,7 +207,7 @@ tasks:
   ## Aggregate
 
   check:
-    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, and definitions reference freshness
+    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, and the docs bundle check
     cmds:
       - task: fmt:check
       - task: vet
@@ -182,3 +216,4 @@ tasks:
       - task: docs:check
       - task: refgen:test
       - task: docs:reference:check
+      - task: docs:bundle:check
