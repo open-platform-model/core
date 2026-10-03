@@ -5,7 +5,7 @@ type: explanation
 weight: 29
 ---
 
-Open Platform Model (OPM) names two models. The application model describes an application and what it needs from a cluster. OPM has it today, as modules, components and instances. The platform model would describe the platform an application runs on. OPM models a platform only as far as rendering needs: the catalogs it admits and the contracts they serve. OPM does not model a cluster's controllers, its APIs or the services it offers to teams.
+Open Platform Model (OPM) names two models. The application model describes an application and what it needs from a cluster. OPM has it today, as modules, components and instances. The platform model would describe the platform an application runs on, and [Where OPM is going](/docs/start/vision/) describes the vision for it. OPM models a platform only as far as rendering needs: the catalogs it admits and the contracts they serve. OPM does not model a cluster's controllers, its APIs or the services it offers to teams.
 
 This page assumes you have read [What OPM is](/docs/start/what-is-opm/). It explains what each model covers, what exists of each today, and why OPM started with the application. The parts of the application model are explained on [Modules and instances](/docs/concepts/modules-and-instances/) and [Components and blueprints](/docs/concepts/components-and-blueprints/), and the platform's catalogs on [Platforms and catalogs](/docs/concepts/platforms-and-catalogs/). OPM's terms are defined in the [Glossary](/docs/reference/glossary/).
 
@@ -42,10 +42,14 @@ That is the whole platform half today. It decides which transformers, from which
 
 OPM has no platform model. No OPM definition describes a cluster's global settings, the controllers and APIs it is built from, or the services it offers to teams.
 
+One mechanism a platform model would build on already works: a module can extend the platform it runs on. A provider module renders a `TransformerRegistration`, with the opm catalog's `transformer-registration` resource, that claims its catalog implements provider-fulfilled contracts, such as the opm catalog's `backup` trait. Once the operator accepts the claim and the provider's instance reports `Ready`, the catalog joins the platform, and every other module on that platform can use the trait. The module supplied a capability, and the platform offers it to everyone else. No published module uses this mechanism today.
+
 > [!NOTE]
 > **Direction**
 >
-> The platform model is meant to describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. No enhancement designs the platform model as a whole, or a description of a cluster's controllers or APIs. Several draft enhancements design changes to the platform side, and no work has started on them. Two bear most directly on the platform model.
+> OPM aims to model the platform as well as the application. A platform model would describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. Modules would supply what a platform offers, and other modules would consume it, so each model depends on the other. A platform would be portable: an organisation defines one or more and instantiates each onto infrastructure, Kubernetes first and later clouds such as AWS, GCP or OpenStack. [Where OPM is going](/docs/start/vision/) describes the vision and why the project pursues it.
+>
+> No enhancement designs the platform model as a whole, or a description of a cluster's controllers or APIs. Several draft enhancements design changes to the platform side, and no work has started on them. Two bear most directly on the platform model.
 >
 > Enhancement 0026, [Module-Dictated Catalog Versions and the Generated Platform](/enhancements/0026/), changes how a platform admits catalogs. Its design lets a platform admit each catalog with a range of versions. Each module's own pin chooses the version inside that range, and the design refuses a pin outside it.
 >
@@ -75,7 +79,7 @@ So the application model does not depend on the shape of any platform. A module 
 
 ### OPM does not model your whole platform
 
-The name suggests that OPM describes your cluster: its controllers, its APIs and the services it offers. It does not. OPM models applications, and a platform only as far as rendering needs: the catalogs it admits, the version of each, and the contracts they define and require. [What OPM does not do](/docs/start/what-opm-does-not-do/#a-model-of-the-platform-itself) lists what OPM has in place of a platform model.
+The name suggests that OPM describes your cluster: its controllers, its APIs and the services it offers. It does not. OPM models applications, and a platform only as far as rendering needs: the catalogs it admits, the version of each, and the contracts they define and require. [What OPM does not do](/docs/start/what-opm-does-not-do/#a-model-of-the-platform-itself) lists what OPM has in place of a platform model, and [Where OPM is going](/docs/start/vision/) describes where the project wants to take it.
 
 ### The Platform resource is not the platform model
 
