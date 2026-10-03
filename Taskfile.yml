@@ -12,16 +12,17 @@ tasks:
   ## CUE schema
 
   fmt:
-    desc: Format all CUE files
-    dir: src
+    desc: Format all CUE files (the schema under src/ and docs-kit.cue)
     cmds:
-      - cue fmt ./...
+      - (cd src && cue fmt ./...)
+      - cue fmt docs-kit.cue
 
   fmt:check:
     desc: Verify CUE files are formatted (fails if any file would change)
     cmds:
       - (cd src && cue fmt ./...)
-      - git diff --exit-code -- 'src/*.cue'
+      - cue fmt docs-kit.cue
+      - git diff --exit-code -- 'src/*.cue' docs-kit.cue
 
   vet:
     desc: Validate the core schema package
