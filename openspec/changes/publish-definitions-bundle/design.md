@@ -4,13 +4,13 @@ core publishes `opmodel.dev/core@v2` from `src/` on each release-please release 
 
 docs-kit contracts read: C5 (`publish.yml`, its modes and caller permissions), C6 (`docs-kit.cue`, `markdown` `include`/`exclude`), C9 (signing identity, tag-pinned `publish.yml`), C12 (`.opm-docs-version`, the local tool install), C14 (repository commands; core runs none), C15 (docs placement, `owns`), C17 (`cue-definitions`). They are defined by docs-kit's `generalize-build-assembly`, `add-cue-definitions-extractor` and `add-authored-docs`. The reference adopter is catalog_opm: `.github/workflows/docs.yml`, `release.yml` job `publish-docs`, `Taskfile.yml` tasks `tools:opm-docs`, `docs:bundle`, `docs:pins:check`, `docs:bundle:check`, and `.tasks/opm-docs.sh`.
 
-No `src/*.cue` file changes, so no construct in `.tasks/spec-tracked.txt` moves and no `SPEC.md` section changes; no definition's closedness, defaults or required fields change.
+Two comments change in `src/catalog.cue` and `src/identity_package.cue` (comment text only); no construct in `.tasks/spec-tracked.txt` moves, no `SPEC.md` section changes, and no definition's closedness, defaults or required fields change.
 
 ## Goals / Non-Goals
 
 **Goals:** core's docs bundle with its authored pages and its generated reference at the same URLs as today; publishing on every release; deleting refgen once the site reads the bundle.
 
-**Non-Goals:** new or reworded doc comments; the site's switch; the library and cli releases of the cascade.
+**Non-Goals:** doc-comment rewrites beyond the two comments with enhancement prose; the site's switch; the library and cli releases of the cascade.
 
 ## Decisions
 
@@ -67,17 +67,17 @@ bundles: core: {
 	}, {
 		// The authored pages ship in the same bundle (docs-kit DESIGN decision
 		// 20). The exclude keeps refgen's committed pages out while the site
-		// still reads core from git; section 3 deletes both.
+		// still reads core from git; both go at G2-switch.
 		kind: "markdown", dir: "docs/site", exclude: ["reference/definitions/"]
 	}]
 }
 ```
 
-`citations` stays at its default, `strip`, which is refgen's rule ("Contributor-only text never reaches a page"). The entries the bundle generates MUST equal refgen's committed pages without their marker comments; a difference is either fixed in docs-kit before G2-core or accepted as a planned difference in C17's parity record (docs-kit `add-cue-definitions-extractor` task 2.2). Section 1 checks it again at core's adopting commit, because core may change doc comments after docs-kit's parity run.
+`citations` stays at its default, `strip`, which is refgen's rule ("Contributor-only text never reaches a page"). `strip` removes a citation in canonical form (`0010:D21`) but not prose such as "enhancement 0011's publish gates" or a list of bare `D21, D25`; the two comments that hold such prose (`src/catalog.cue:100-108`, `src/identity_package.cue:139-143`) are reworded in section 1, in a doc-comment-only commit (`SPEC_IMPACT=none`), and the parity check looks for any other. The entries the bundle generates MUST equal refgen's committed pages without their marker comments; a difference is either fixed in docs-kit before G2-core or accepted as a planned difference in C17's parity record (docs-kit `add-cue-definitions-extractor` task 2.2). Section 1 checks it again at core's adopting commit, because core may change doc comments after docs-kit's parity run.
 
-### D2. Two placement lists until section 3
+### D2. Two placement lists until G2-switch
 
-Between sections 1 and 3 a new exported definition must be placed in both `tools/refgen/groups.go` (else `task docs:reference:check` fails) and `docs-kit.cue` (else `task docs:bundle:check` fails, C17 D3). Both checks run in `task check`, so neither list can be forgotten; keeping the same page is a review matter. `openspec/config.yaml`'s tasks rule names both lists for that window, and section 3 reduces it to `docs-kit.cue`.
+Between adoption and G2-switch a new exported definition must be placed in both `tools/refgen/groups.go` (else `task docs:reference:check` fails) and `docs-kit.cue` (else `task docs:bundle:check` fails, C17 D3). Both checks run in `task check`, so neither list can be forgotten; keeping the same page is a review matter. `openspec/config.yaml`'s tasks rule names both lists for that window, and the retirement at G2-switch reduces it to `docs-kit.cue`.
 
 ### D3. Publishing
 
@@ -114,20 +114,20 @@ Between sections 1 and 3 a new exported definition must be placed in both `tools
 
 ### D5. What the site sees, and when
 
-Nothing changes on the site at section 1: v1.0 reads core from git, and the bundle is not pulled until opmodel.dev's `pull-reference-bundles` section 2 (G2-switch). From G2-switch, v1.0 shows the `docs/core` bundle of the core version the cli pins, so an authored fix on `main` reaches the site only through the next release or a docs revision (`docs.yml` dispatch `mode: revision`, C3 "Docs revisions"). `AGENTS.md`'s new paragraph says so.
+Nothing changes on the site at adoption: v1.0 reads core from git until gate G2-switch, when opmodel.dev's `pull-reference-bundles` switches it to bundles. From G2-switch, v1.0 shows the `docs/core` bundle of the core version the cli pins, so an authored fix on `main` reaches the site only through the next release or a docs revision (`docs.yml` dispatch `mode: revision`, C3 "Docs revisions"), which is dispatched by hand (automation: core#101). `AGENTS.md`'s new paragraph says so.
 
-### D6. Section 3 at G2-switch
+### D6. Retiring refgen at G2-switch
 
 Delete `tools/refgen/` (with `go.mod`, `go.sum`, tests), `docs/site/reference/definitions/`, the `docs:reference`, `docs:reference:check` and `refgen:test` tasks and their place in `task check`, `ci.yml`'s "Setup Go", "Test the reference generator" and "Verify the definitions reference is up to date" steps, and the `exclude`. The `markdown` source becomes `{kind: "markdown", dir: "docs/site"}`. `src/INDEX.md`'s hand-maintained tree loses `tools/refgen/` (`task generate:index:check` stays green). Released bundles are unaffected: they were built with the exclude and the extractor's pages.
 
 ## Research & Decisions
 
-### The release that carries the first bundle
+### The bundle the cli pins: a backfill of `v2.0.0-beta.1`
 
-**Context**: The owner wants a fresh core release rather than a backfill of `v2.0.0-beta.1`, because the doc comments the reference shows were rewritten after that tag (core PRs 88 to 92, among them the change that gave `#Component`, `#SecretType` and `#LabelsAnnotationsType` their doc comments). But every core commit since `v2.0.0-beta.1` is `docs:`, `ci:` or `chore:`, which release-please hides, and this change adds only more of the same.
-**Explored**: `git log v2.0.0-beta.1..main` (12 commits, none releasable); `AGENTS.md` ("Commit conventions and release impact": a byte-identical schema is never `feat:` or `fix:`; never add a `release-as` key); docs-kit `docs/orchestration.md` (no `Release-As:` footers: squash merges use a blank body).
-**Decision**: Section 2 publishes from the next core release, whatever carries it. If the owner needs the bundle before a releasable commit lands, the fallback is the dispatched backfill `mode: release`, `tag: v2.0.0-beta.1`, which builds (D3) but shows beta.1's older doc comments and authored pages. The choice is the owner's and is recorded in section 2.
-**Rationale**: Forcing a release breaks two written rules (commit type by schema bytes; no `release-as`); the backfill is the documented recovery path and works for this tag.
+**Context**: Gate G2-pins needs a `docs/core` bundle for the core release the cli's pinned library names. The cli's `main` pins library `v1.0.0-beta.1`, whose `DefaultSchemaModule` is `opmodel.dev/core@v2.0.0-beta.1`. Nothing releasable has landed on core's `main` since that tag (every later commit is `docs:`, `ci:` or `chore:`), and this change adds only more of the same.
+**Explored**: `git log v2.0.0-beta.1..main` (none releasable); the tree at `v2.0.0-beta.1` (`src/cue.mod/module.cue`, `*_pins.cue`, `docs/site/` present, no `reference/definitions/`); C5 release mode (config from `main`, sources from the tag) and C17 D3 (unplaced or unknown names are warnings for a config from outside the tree); `AGENTS.md` (a byte-identical schema is never `feat:` or `fix:`, no `release-as`).
+**Decision**: the owner's (2026-10-03): the first `docs/core` bundle is the release-mode backfill of `v2.0.0-beta.1`, dispatched once section 1 is on `main`; the library needs no re-pin. A fresh core release is optional and publishes through `publish-docs` whenever one is cut. Section 1 dry-runs the backfill locally first (`opm-docs build --release v2.0.0-beta.1 --source <tag worktree>` with `main`'s config).
+**Rationale**: the backfill needs no release and keeps the pins the cli already has. Its cost: the bundle shows beta.1's doc comments and authored pages, which predate the readable doc comments of core PRs 88 to 92. A docs revision (`mode: revision`, one comment-only or Markdown-only commit at a time) can bring later fixes into that bundle; revisions are manual for now (core#101, tracked in docs-kit#16).
 
 ### `publish-docs` gating
 
@@ -138,10 +138,11 @@ Delete `tools/refgen/` (with `go.mod`, `go.sum`, tests), `docs/site/reference/de
 ### Exclude by directory
 
 **Decision**: `exclude: ["reference/definitions/"]` (a directory pattern, C6), not the nine file names.
-**Rationale**: refgen owns the whole directory; a page it adds or removes before section 3 needs no config edit.
+**Rationale**: refgen owns the whole directory; a page it adds or removes before G2-switch needs no config edit.
 
 ## Risks / Trade-offs
 
 - Parity drift between docs-kit's recorded parity run and core's adopting commit: section 1 checks it (task 1.6) and stops for a docs-kit fix rather than accept an unplanned difference.
-- Site freshness changes at G2-switch (D5): authored fixes on `main` no longer appear on the next site build. The workspace `AGENTS.md` rule "A docs-only fix in `core` ... cuts no release: `opmodel.dev` builds their docs from ... `main`" stops being true then; it is a workspace edit outside this change.
+- Site freshness changes at G2-switch (D5): authored fixes on `main` no longer appear on the next site build; they need a manual docs revision (core#101). The workspace `AGENTS.md` rule "A docs-only fix in `core` ... cuts no release: `opmodel.dev` builds their docs from ... `main`" stops being true then; docs-kit's orchestration schedules that workspace edit at G2-switch.
+- The backfilled bundle shows `v2.0.0-beta.1`'s older doc comments until a revision or a new release replaces it.
 - The two placement lists can disagree on a page between sections 1 and 3 (D2).
