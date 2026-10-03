@@ -28,9 +28,9 @@ Not in this change: any definition, constraint or default in `src/*.cue` (only t
 
 ## Impact
 
-**Release classification: no release.** Every commit is `ci:` or `docs:`; the published CUE module changes in two comments only, which ride the next release (Principle I does not apply, no beta break licence, no `catalogs/opm` involvement, no schema surface for Principle V). `SPEC.md` does not move; the comment commit uses `SPEC_IMPACT=none` with that reason.
+**Release classification: no release.** Every commit is `ci:`, `docs:` or `chore:` (one: `chore(index)`, which keeps the gitignored `out/` preview out of `src/INDEX.md`'s tree), and the PR squashes as `ci(docs):`; the published CUE module changes in two comments only, which ride the next release (Principle I does not apply, no beta break licence, no `catalogs/opm` involvement, no schema surface for Principle V). `SPEC.md` does not move; the comment commit uses `SPEC_IMPACT=none` with that reason.
 
-No release is needed: section 2 backfills `v2.0.0-beta.1`, the core version the cli already pins through library `v1.0.0-beta.1`. See design.md "The bundle the cli pins".
+No release is needed: section 2 backfills `v2.0.0-beta.1`, the core version the cli already pins through library `v1.0.0-beta.1`. Release PR core#106 (`2.0.0-beta.2`, from `606498b` `perf(pins)`) is independent of this change; merged after section 1, its run publishes the beta.2 bundle through `publish-docs`, merged before, it needs a `mode=release` dispatch for `v2.0.0-beta.2` (design.md "The bundle the cli pins"). See design.md "The bundle the cli pins".
 
 **Downstream consumers:**
 
