@@ -97,7 +97,7 @@ import (
 	// written here participates in matching and nothing else does. A key may
 	// be declared required (`"<key>"!: <disj>`). Never rendered. See SPEC.md
 	// § 2.1.
-	matchLabels?: #LabelsAnnotationsType // Example: {"opm.opmodel.dev/workload-type": "stateless"}
+	matchLabels?: #LabelsAnnotationsType // Example: {"core.opmodel.dev/workload-type": "stateless"}
 
 	// WHY the primitive declares it: #Component collects every attached
 	// primitive's slot into one conjunction and asserts the resolved name
