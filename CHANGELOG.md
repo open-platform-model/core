@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-beta.2](https://github.com/open-platform-model/core/compare/v2.0.0-beta.1...v2.0.0-beta.2) (2026-10-03)
+
+
+### Performance Improvements
+
+* **pins:** move the schema pins into a src/pins subpackage ([#103](https://github.com/open-platform-model/core/issues/103)) ([606498b](https://github.com/open-platform-model/core/commit/606498b4724f580ae087e49f45313a682e5e0400))
+
 ## [2.0.0-beta.1](https://github.com/open-platform-model/core/compare/v2.0.0-alpha.13...v2.0.0-beta.1) (2026-09-30)
 
 
