@@ -9,10 +9,15 @@ on:
   # protected main branch needs this route.
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   ci:
     name: Validate schema
     runs-on: ubuntu-latest
+    # PR-tree code runs here, so the token only reads.
+    permissions:
+      contents: read
     steps:
       - name: Clone the code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

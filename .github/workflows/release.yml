@@ -5,11 +5,9 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-  packages: write
-  actions: write
+# Each job grants exactly what its steps use; a job added without its own
+# block gets nothing.
+permissions: {}
 
 env:
   CUE_VERSION: 'v0.17.1'
@@ -20,6 +18,13 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
+    # The only reader of the release App key. The release Environment admits
+    # main only, so no branch run can read it.
+    environment: release
+    # release-please acts with the App token; GITHUB_TOKEN only dispatches CI.
+    permissions:
+      actions: write
+      contents: read
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -63,6 +68,9 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       # Publishing runs here, in the same workflow run that the release-PR
       # merge triggers — NOT from a push:tags trigger. A tag pushed by
@@ -111,8 +119,7 @@ jobs:
   # does not serve. When this job does not run, docs.yml's dispatch
   # (mode release) publishes the release instead. No version is passed:
   # opm-docs reads it from the tag.
-  # The workflow-level permissions carry no id-token; this job grants what
-  # publish.yml's release mode needs and nothing more.
+  # This job grants what publish.yml's release mode needs and nothing more.
   publish-docs:
     name: Publish the core docs bundle
     needs: [release-please, publish-cue]
