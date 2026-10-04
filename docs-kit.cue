@@ -5,8 +5,7 @@
 // publish it to ghcr.io/open-platform-model/docs/core.
 //
 // Every exported definition in src/ goes on exactly one page or in exclude
-// with a reason, or the build fails. Until tools/refgen retires, place a new
-// definition in tools/refgen/groups.go too, on the same page.
+// with a reason, or the build fails.
 bundles: core: {
 	placement: {kind: "docs", root: "/docs/", owns: ["reference/definitions/"]}
 	version: {from: "tag", prefix: "v"}
@@ -90,11 +89,8 @@ bundles: core: {
 			"#BundleFQNType":       "types #Bundle, which core does not define"
 		}
 	}, {
-		// The authored pages. The exclude keeps refgen's committed pages out
-		// of the bundle while opmodel.dev still reads core from git (docs-kit
-		// C15); it and tools/refgen go when the site reads the bundle.
+		// The authored pages.
 		kind: "markdown"
 		dir:  "docs/site"
-		exclude: ["reference/definitions/"]
 	}]
 }

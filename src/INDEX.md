@@ -8,13 +8,9 @@ CUE module: `opmodel.dev/core@v2`
 
 ```
 +-- docs/
-|   +-- site/
-|       +-- authoring/
-|       +-- concepts/
-|       +-- reference/
-|           +-- definitions/
-+-- tools/
-    +-- refgen/
+    +-- site/
+        +-- authoring/
+        +-- concepts/
 ```
 
 ---
