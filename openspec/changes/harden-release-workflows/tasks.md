@@ -1,10 +1,10 @@
 ## 1. Workflow credentials
 
-- [ ] 1.1 `release.yml`: replace the workflow-level `permissions` with `{}`; give `release-please` `environment: release` and `permissions: {actions: write, contents: read}`, and `publish-cue` `permissions: {contents: read, packages: write}` (design D1, D2). Leave `publish-docs` and `notify-downstream` unchanged.
-- [ ] 1.2 `ci.yml`: add top-level `permissions: {}` and job `ci` `permissions: {contents: read}`.
-- [ ] 1.3 `branch-publish.yml`: top-level `permissions: {}`, job `publish` `permissions: {contents: read, packages: write}`; add `release-please--**`, `deps/cascade` and `dependabot/**` to `branches-ignore` (design D3).
-- [ ] 1.4 Verify: every workflow has a top-level `permissions:` and every job its own; exactly one job reads `RELEASE_APP_PRIVATE_KEY` and it declares `environment: release`; no `actions/cache`, `cache:` or `type=gha` in any workflow; `actionlint` reports nothing new; `task cascade:wiring:check` passes unchanged.
-- [ ] 1.5 `task check` green, then commit `ci: scope every workflow token and gate the release key on the release environment`
+- [x] 1.1 `release.yml`: replace the workflow-level `permissions` with `{}`; give `release-please` `environment: release` and `permissions: {actions: write, contents: read}`, and `publish-cue` `permissions: {contents: read, packages: write}` (design D1, D2). Leave `publish-docs` and `notify-downstream` unchanged.
+- [x] 1.2 `ci.yml`: add top-level `permissions: {}` and job `ci` `permissions: {contents: read}`.
+- [x] 1.3 `branch-publish.yml`: top-level `permissions: {}`, job `publish` `permissions: {contents: read, packages: write}`; add `release-please--**`, `deps/cascade` and `dependabot/**` to `branches-ignore` (design D3).
+- [x] 1.4 Verify: every workflow has a top-level `permissions:` and every job its own; exactly one job reads `RELEASE_APP_PRIVATE_KEY` and it declares `environment: release`; no `actions/cache`, `cache:` or `type=gha` in any workflow; `actionlint` reports nothing new; `task cascade:wiring:check` passes unchanged.
+- [x] 1.5 `task check` green, then commit `ci: scope every workflow token and gate the release key on the release environment`
 
 ## 2. Review and update config
 

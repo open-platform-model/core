@@ -4,10 +4,14 @@ on:
   push:
     branches-ignore:
       - main
+      # Bot-pushed heads never run branch code with packages: write before a
+      # human has looked at them: the release App's release PR head, the
+      # cascade App's head, and Dependabot (whose token is read-only anyway).
+      - 'release-please--**'
+      - deps/cascade
+      - 'dependabot/**'
 
-permissions:
-  contents: read
-  packages: write
+permissions: {}
 
 env:
   CUE_VERSION: 'v0.17.1'
@@ -20,6 +24,9 @@ jobs:
     # Forks have no access to GITHUB_TOKEN with packages:write — skip cleanly.
     if: github.event.repository.fork == false
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Clone the code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
