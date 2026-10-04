@@ -130,20 +130,22 @@ jobs:
       mode: release
       tag: ${{ needs.release-please.outputs.tag_name }}
 
-  # Tell the cascade downstreams (catalog_opm, library) that this release is
-  # on GHCR. needs publish-cue with the default success() gate: a failed or
-  # skipped module publish notifies nobody. publish-docs is not a need, so a
-  # docs failure never holds back the dispatch. The shared workflow mints the
-  # opm-cascade App token in this repo's main-only `cascade` Environment; this
-  # job passes no secret and grants only contents: read. Set the repo variable
-  # CASCADE_NOTIFY=off to stop core's releases from dispatching. See the
-  # workspace RELEASING.md, "Notify after publish".
+  # Caller-owned: this job declares the main-only `cascade` Environment and
+  # passes the opm-cascade App key (and client id) only as inputs to the
+  # SHA-pinned cascade-notify action, which mints the token itself.
   notify-downstream:
     name: Notify downstream
     needs: [release-please, publish-cue]
     if: needs.release-please.outputs.release_created == 'true' && vars.CASCADE_NOTIFY != 'off'
+    runs-on: ubuntu-latest
+    environment: cascade
+    timeout-minutes: 20
     permissions:
       contents: read
-    uses: open-platform-model/.github/.github/workflows/cascade-notify.yml@main
-    with:
-      tag: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - name: Notify downstream
+        uses: open-platform-model/.github/.github/actions/cascade-notify@2376ffae4bfc665f327d51581350dea694c01504 # .github main
+        with:
+          tag: ${{ needs.release-please.outputs.tag_name }}
+          client-id: ${{ vars.CASCADE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CASCADE_APP_PRIVATE_KEY }}
