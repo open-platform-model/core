@@ -1,0 +1,14 @@
+# core's values for the release-cascade wiring check (.tasks/cascade/wiring-check.sh,
+# a byte-identical copy from open-platform-model/.github at the pinned SHA).
+# Data only, read with yq. The .github README, "The wiring check", documents each key.
+pin-comment: .github main
+receiver: false
+env-allow: [CUE_VERSION, CUE_REGISTRY]
+publish-workflows: [release.yml, branch-publish.yml, docs.yml]
+ci:
+  workflow: ci.yml
+  job: ci
+notify:
+  needs: [release-please, publish-cue]
+  if: needs.release-please.outputs.release_created == 'true' && vars.CASCADE_NOTIFY != 'off'
+  tag: ${{ needs.release-please.outputs.tag_name }}
