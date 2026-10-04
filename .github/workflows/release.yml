@@ -130,9 +130,8 @@ jobs:
       mode: release
       tag: ${{ needs.release-please.outputs.tag_name }}
 
-  # Caller-owned: this job declares the main-only `cascade` Environment and
-  # passes the opm-cascade App key (and client id) only as inputs to the
-  # SHA-pinned cascade-notify action, which mints the token itself.
+  # Caller-owned: declares `environment: cascade` and passes the App key to the
+  # pinned cascade-notify action as an input.
   notify-downstream:
     name: Notify downstream
     needs: [release-please, publish-cue]
