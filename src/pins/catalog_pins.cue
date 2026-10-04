@@ -216,3 +216,29 @@ _pinContractEmptyMaps: "000"
 //   }
 //   #traits: "opmodel.dev/catalogs/opm/transformers/backup@4.1.0": _pinContractProviderTrait
 //  }
+
+// An authored provides that disagrees with the derived one (beta.1 kernel
+// plan h2). provides is derived from the provider-fulfilled requirements of
+// #transformers, never authored, so a catalog whose adapter requires `backup`
+// cannot claim to provide nothing. A list of another length is refused on
+// the length; a same-length list naming another contract would instead read
+// `provides.0: conflicting values`. The second line is the read's cascade:
+//   _failProvidesDisagrees.provides: incompatible list lengths (0 and 1)
+//   _failProvidesDisagrees.provides: invalid interpolation: incompatible list lengths (0 and 1)
+//
+//  _failProvidesDisagrees: core.#Catalog & {
+//   metadata: {
+//    modulePath: "opmodel.dev/catalogs/k8up@v4"
+//    version:    "4.1.0"
+//   }
+//   #transformers: "opmodel.dev/catalogs/k8up/transformers/schedule@4.1.0": core.#ComponentTransformer & {
+//    metadata: {
+//     name:        "schedule"
+//     fqn:         "opmodel.dev/catalogs/k8up/transformers/schedule@4.1.0"
+//     description: "Pin fixture: an adapter requiring the provider-fulfilled backup"
+//    }
+//    requiredTraits: (_pinContractProviderTrait.metadata.fqn): _pinContractProviderTrait
+//   }
+//   provides: []
+//  }
+//  _failProvidesDisagreesRead: "\(len(_failProvidesDisagrees.provides))"
