@@ -145,6 +145,15 @@ Delete `tools/refgen/` (with `go.mod`, `go.sum`, tests), `docs/site/reference/de
 
 Exit 0, 20 pages (the nine reference pages and the eleven authored pages beta.1's `docs/site/` holds; the tree has no `reference/definitions/`, so the `exclude` matches nothing, which a backfill ignores), version `2.0.0-beta.1`, `source.ref` `v2.0.0-beta.1`, 11 pages with an `edit` path. `opm-docs lint --bundle` of the result: OK. Three C17 D3 warnings, all "has no summary" (doc comment missing or holding nothing a reader sees): `#Component` (`src/component.cue`), `#SecretType` (`src/schemas.cue`), `#LabelsAnnotationsType` (`src/types.cue`); each keeps an empty summary. No unplaced or unknown names. This matches C17's parity record ("three warnings").
 
+**Published (section 2).** Both bundles are on GHCR, and `ghcr.io/open-platform-model/docs/core` is public and linked to `open-platform-model/core` (`gh api /orgs/open-platform-model/packages/container/docs%2Fcore`, 2026-10-04).
+
+| Version | Run | Digest | Tags |
+| --- | --- | --- | --- |
+| `2.0.0-beta.1` (backfill, `mode: release`, owner dispatch) | Docs <https://github.com/open-platform-model/core/actions/runs/37129268405> | `sha256:30f3dbc7ec8bc0a15586ec8a318b0ef54ad53b609520b5f9b748890a350818ee` | `2.0.0-beta.1`, `2.0.0-beta.1.0` |
+| `2.0.0-beta.2` (release run of core#106's merge, `3047eca`, job `publish-docs`) | Release <https://github.com/open-platform-model/core/actions/runs/37136547454> | `sha256:5c4014b742a22401e8c3775af850be5cff93849c2cfbe28cccc858463377c7a6` | `2.0.0-beta.2`, `2.0.0-beta.2.0`, `2.0`, `2` |
+
+beta.2 merged after section 1, so its own release run published it and needed no dispatch. The minor and major tags (`2.0`, `2`) name the newest release, beta.2, so beta.1's bundle is reached by its full and release tags only. Verification, anonymously (empty `DOCKER_CONFIG`): `crane digest` resolves every tag above to the digest in its row, and `cosign verify` of each digest with docs-kit C9's flags (`--certificate-oidc-issuer https://token.actions.githubusercontent.com`, `--certificate-identity-regexp '^https://github\.com/open-platform-model/docs-kit/\.github/workflows/publish\.yml@refs/tags/v[0-9]'`, `--certificate-github-workflow-repository open-platform-model/core`, `--certificate-github-workflow-ref refs/heads/main`) exits 0 for both.
+
 ### `publish-docs` gating
 
 **Context**: catalog_opm gates on a `published` output of its publish job, with `always()`. core's `publish-cue` has no such output.
