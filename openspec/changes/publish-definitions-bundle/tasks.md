@@ -19,11 +19,11 @@ Gate G2-core: docs-kit's `add-cue-definitions-extractor`, `add-authored-docs` an
 
 Gate: section 1 is merged. Part of gate G2-pins (core `v2.0.0-beta.1`, library `v1.0.0-beta.1` and opm-operator `v1.0.0-beta.4` backfilled, then cli `v1.0.0-beta.6`). This section's deliverable is a publishing operation (the owner's), so its steps are the implementation.
 
-- [ ] 2.1 Owner: dispatch `gh workflow run docs.yml --ref main -f mode=release -f tag=v2.0.0-beta.1` (owner decision 2026-10-03; design.md "The bundle the cli pins"). A fresh core release is optional; when one is cut, `publish-docs` publishes it too.
-- [ ] 2.2 Owner: check `ghcr.io/open-platform-model/docs/core` is public and linked to `open-platform-model/core` on its first push (change it in the package settings if not).
-- [ ] 2.3 Verify the full, release, minor and major tags of `2.0.0-beta.1`: `cosign verify` with docs-kit C9's identity flags, or `opm-docs pull` with a scratch `bundles.cue` that names `core` under `docs`, anonymously. Verify: every tag verifies.
-- [ ] 2.4 Record in design.md the run URL, the published version and digest, and the verification; tell the cli that core's part of G2-pins holds.
-- [ ] 2.5 `openspec validate publish-definitions-bundle --strict` passes; `task check` green, then commit `docs(openspec): record the first core docs bundle`.
+- [x] 2.1 Owner: dispatch `gh workflow run docs.yml --ref main -f mode=release -f tag=v2.0.0-beta.1` (owner decision 2026-10-03; design.md "The bundle the cli pins"). A fresh core release is optional; when one is cut, `publish-docs` publishes it too.
+- [x] 2.2 Owner: check `ghcr.io/open-platform-model/docs/core` is public and linked to `open-platform-model/core` on its first push (change it in the package settings if not).
+- [x] 2.3 Verify the full, release, minor and major tags of `2.0.0-beta.1`: `cosign verify` with docs-kit C9's identity flags, or `opm-docs pull` with a scratch `bundles.cue` that names `core` under `docs`, anonymously. Verify: every tag verifies.
+- [x] 2.4 Record in design.md the run URL, the published version and digest, and the verification; tell the cli that core's part of G2-pins holds.
+- [x] 2.5 `openspec validate publish-definitions-bundle --strict` passes; `task check` green, then commit `docs(openspec): record the first core docs bundle`.
 
 ## 3. Retire tools/refgen
 
