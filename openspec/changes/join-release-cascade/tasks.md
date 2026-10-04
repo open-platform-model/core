@@ -17,9 +17,9 @@ Rebuilt to the Phase 3 wiring contract (version 3.1), `.github` `openspec/change
 
 ## 3. Release docs
 
-- [ ] 3.1 `AGENTS.md` "Release & publishing": replace the version 2 bullet with the caller-owned job running the pinned `cascade-notify` action (key passed only as the `private-key` input), its targets, the pin and how it moves (a `ci(deps)` pin PR, `compare` check), `task cascade:wiring:check` in "Validate schema", `CASCADE_NOTIFY=off`, the bad-pin failure mode (only notify fails; fixed by a pin PR), recovery by "Re-run failed jobs" and why never "Re-run all jobs" (design D4), `v1` releases do not notify, and no receiver or gates in core. Add `task cascade:wiring:check` where the guide lists tasks.
-- [ ] 3.2 `README.md` "Release lifecycle": keep the notify bullet; make it name the pinned action and the wiring check only if the bullet would otherwise mislead.
-- [ ] 3.3 `task check` green, then commit `docs(release): document the pinned cascade notify job`
+- [x] 3.1 `AGENTS.md` "Release & publishing": replace the version 2 bullet with the caller-owned job running the pinned `cascade-notify` action (key passed only as the `private-key` input), its targets, the pin and how it moves (a `ci(deps)` pin PR, `compare` check), `task cascade:wiring:check` in "Validate schema", `CASCADE_NOTIFY=off`, the bad-pin failure mode (only notify fails; fixed by a pin PR), recovery by "Re-run failed jobs" and why never "Re-run all jobs" (design D4), `v1` releases do not notify, and no receiver or gates in core. Add `task cascade:wiring:check` where the guide lists tasks.
+- [x] 3.2 `README.md` "Release lifecycle": keep the notify bullet; make it name the pinned action and the wiring check only if the bullet would otherwise mislead.
+- [x] 3.3 `task check` green, then commit `docs(release): document the pinned cascade notify job`
 
 ## 4. Final checks
 
