@@ -275,7 +275,7 @@ import (
 			}
 		}
 
-		// Per provider-fulfilled contract some enabled transformer requires,
+		// Per provider-fulfilled contract some enabled catalog's transformer requires,
 		// the set of registry keys whose transformers require it: each enabled
 		// entry's #catalog.provides folded by registry key, so the platform and
 		// the catalog state one rule. Iterated per entry, so the key stays visible.
