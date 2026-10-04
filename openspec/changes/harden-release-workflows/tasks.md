@@ -8,10 +8,10 @@
 
 ## 2. Review and update config
 
-- [ ] 2.1 Add `.github/CODEOWNERS` with the plan's header line and owners for `/.github/`, `/.tasks/`, `/Taskfile*.yml`, `/release-please-config.json`, `/.release-please-manifest.json` (no `/.cascade-frozen`, no `/hack/`: neither exists).
-- [ ] 2.2 Add `.github/dependabot.yml`: `github-actions`, directory `/`, weekly, prefix `ci`, ignoring `open-platform-model/docs-kit*` and `open-platform-model/.github*`, with the same comments cli and library carry.
-- [ ] 2.3 `AGENTS.md` "Release & publishing": record the `release` Environment on `release-please`, the per-job permissions rule, the bot heads `branch-publish.yml` skips, and CODEOWNERS.
-- [ ] 2.4 `task check` green, then commit `ci: add code owners and dependabot for actions`
+- [x] 2.1 Add `.github/CODEOWNERS` with the plan's header line and owners for `/.github/`, `/.tasks/`, `/Taskfile*.yml`, `/release-please-config.json`, `/.release-please-manifest.json` (no `/.cascade-frozen`, no `/hack/`: neither exists).
+- [x] 2.2 Add `.github/dependabot.yml`: `github-actions`, directory `/`, weekly, prefix `ci`, ignoring `open-platform-model/docs-kit*` and `open-platform-model/.github*`, with the same comments cli and library carry.
+- [x] 2.3 `AGENTS.md` "Release & publishing": record the `release` Environment on `release-please`, the per-job permissions rule, the bot heads `branch-publish.yml` skips, and CODEOWNERS.
+- [x] 2.4 `task check` green, then commit `ci: add code owners and dependabot for actions`
 
 ## 3. Final checks
 
