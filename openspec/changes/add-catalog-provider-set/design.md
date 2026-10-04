@@ -21,7 +21,7 @@ At `origin/main` (ced0952, core v2.0.0-beta.2 plus ci), `#Catalog` (`src/catalog
 
 - `library/opm/catalog/provides.go`, `Catalog.Provides()`: the same walk over one catalog's `#transformers`, returning a sorted, deduplicated, non-nil slice.
 
-Files this change touches: `src/catalog.cue`, `src/platform.cue`, `src/pins/platform_contracts_pins.cue`, `SPEC.md`, and `src/INDEX.md` (regenerated). Tracked constructs whose SPEC.md sections move: `#Catalog` (§3.6) and `#Platform` (§3.4). `#ContractInventory`'s shape does not change, so its §3.4 subsection only changes where the `providedBy` constraint says the set is drawn from. No construct is newly tracked: `provides` is a field of the tracked `#Catalog`.
+Files this change touches: `src/catalog.cue`, `src/platform.cue`, `src/pins/platform_contracts_pins.cue`, `src/pins/catalog_pins.cue` (one commented must-fail pin), `SPEC.md`, and `src/INDEX.md` (regenerated). Tracked constructs whose SPEC.md sections move: `#Catalog` (§3.6) and `#Platform` (§3.4). `#ContractInventory`'s shape does not change, so its §3.4 subsection only changes where the `providedBy` constraint says the set is drawn from. No construct is newly tracked: `provides` is a field of the tracked `#Catalog`.
 
 ## Goals / Non-Goals
 
@@ -81,7 +81,7 @@ Files this change touches: `src/catalog.cue`, `src/platform.cue`, `src/pins/plat
 - **`let`, not a hidden helper field.** The intermediate set has no reader outside the field, so a `let` adds no surface. Measured during planning: it evaluates on cue v0.17.1 inside `#Catalog` and on every inventory fixture.
 - **Derived from the demand entries, not the contract maps.** A provider catalog implements contracts another catalog defines, so reading its own `#traits` would give the empty set for exactly the catalogs this field exists for. This is the plan entry's note and the Go fold's documented reason.
 - **Concreteness.** `fulfilment` defaults to `"catalog"` on `#Resource` and `#Trait`, so every demand entry's comparison is concrete and `provides` is concrete on any catalog whose transformers evaluate. On the bare definition, `#transformers` is a pattern with no entries, so `core.#Catalog.provides` is `[]`.
-- **Closedness, defaults, required fields.** `#Catalog` stays closed; it admits one more regular field. No default and no required field changes. An authored `provides` that agrees unifies; one that disagrees is a `conflicting values` error, which is the intent for a derived field.
+- **Closedness, defaults, required fields.** `#Catalog` stays closed; it admits one more regular field. No default and no required field changes. An authored `provides` that agrees unifies; one that disagrees fails validation on `provides`, which is the intent for a derived field. The error text depends on the shape of the disagreement (measured on cue v0.17.1 during plan review): a different length, such as `provides: []` on a catalog that provides `backup`, gives `incompatible list lengths (0 and 1)`; a same-length list naming another contract gives `provides.0: conflicting values`. Task 1.3 records the exact text the must-fail pin prints.
 - **Error handling vs the Go fold.** The Go fold errors when a `fulfilment` is present but not a concrete string. In CUE, the same input makes `provides` incomplete or a conflict, which the library sees as an error on decode. The library change states how it maps that (out of scope here).
 
 ### The platform reuses the field
@@ -115,8 +115,13 @@ Section 1 is `feat(catalog):`, a new field on the published surface. Section 2 c
 
 ### Where the parity pins live
 
-**Context**: `_providerSet` is a hidden field of package `core`, so package `pins` cannot read it.
+**Context**: `_providerSet` is a hidden field of package `core`, so package `pins` cannot read it. After section 2, `providedBy` is itself the fold of `#catalog.provides`, so a pin that folds `provides` and compares it with `providedBy` would compare the field with itself and prove nothing independent (plan review).
 
-**Decision**: The parity pins compare against the regular `#contracts.providedBy`, which is `_providerSet` sorted per key. They live in `src/pins/platform_contracts_pins.cue` beside the fixtures they reuse. A small hidden definition in that file folds the enabled entries' `provides` the way `_providerSet` does.
+**Decision**: The parity pins live in `src/pins/platform_contracts_pins.cue` beside the fixtures they reuse. A hidden reference definition there re-derives the provider set with the per-transformer rule, independently of `src/`: it walks a catalog's `#transformers`, presence-guards `requiredResources` and `requiredTraits`, and keeps the keys whose requirement reads `fulfilment == "provider"`. Two comparisons use it:
 
-**Rationale**: It reuses existing fixtures and needs no core-side hidden field access.
+- per catalog: the reference set equals each fixture catalog's `provides` (beside the literal pins on the same values);
+- per platform: the reference set of every enabled entry, folded by registry key and sorted, equals `#contracts.providedBy`.
+
+So after section 2 the pins still compare the field against a second statement of the rule, not against itself. The literal `providedBy` pins already in the file remain the absolute proof. A new provider fixture requires a provider-fulfilled `#Resource` under `requiredResources` (no existing pin exercises that arm; every existing provider fixture is a trait), with a literal `provides` pin and its own parity platform.
+
+**Rationale**: It reuses existing fixtures, needs no core-side hidden field access, and keeps an independent statement of the rule after the platform stops carrying one. The ADR-012 parity in the library (the decoded field against the Go fold) is `lib-h2`'s obligation, not this change's.
