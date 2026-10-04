@@ -128,6 +128,8 @@ On a failed `publish-cue` that a re-run then fixes, the same "Re-run failed jobs
    - `cascade-notify.yml` on `.github` `main` still declares `tag` as a required string input and `org-github-ref` with default `main`, declares no `secrets:`, and its job still declares `environment: cascade`.
 
    If either fails, the PR does not merge (a missing workflow would fail core's whole Release run, Risks).
+
+   State at task 1.1 (2026-10-04): core's Environment, variable, secret and `sha_pinning_required: false` checks pass. `cascade-notify.yml` on branch `feat/add-release-cascade-workflows` (04bc25d, not yet on `origin`) has the expected interface, and its source map sends `core` to `catalog_opm library`. **E1 and E1b have not run**: the sandbox cycle stopped before its first run, on supervisor preconditions. No run URL exists yet, so this check is open.
 3. This change's PR (`ci: join the release cascade`) is reviewed and merged by the supervisor. `ci` cuts no release, so merging it starts no notify.
 4. The first core release after that is the first live notify. The supervisor checks its run: `notify-downstream` is green, and catalog_opm and library each show a `repository_dispatch` run (or none yet, if their receiver has not merged).
 

@@ -129,3 +129,21 @@ jobs:
       project: core
       mode: release
       tag: ${{ needs.release-please.outputs.tag_name }}
+
+  # Tell the cascade downstreams (catalog_opm, library) that this release is
+  # on GHCR. needs publish-cue with the default success() gate: a failed or
+  # skipped module publish notifies nobody. publish-docs is not a need, so a
+  # docs failure never holds back the dispatch. The shared workflow mints the
+  # opm-cascade App token in this repo's main-only `cascade` Environment; this
+  # job passes no secret and grants only contents: read. Set the repo variable
+  # CASCADE_NOTIFY=off to stop core's releases from dispatching. See the
+  # workspace RELEASING.md, "Notify after publish".
+  notify-downstream:
+    name: Notify downstream
+    needs: [release-please, publish-cue]
+    if: needs.release-please.outputs.release_created == 'true' && vars.CASCADE_NOTIFY != 'off'
+    permissions:
+      contents: read
+    uses: open-platform-model/.github/.github/workflows/cascade-notify.yml@main
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
