@@ -17,8 +17,8 @@ src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v2
 src/*.cue                the core schema package
 src/INDEX.md             generated definition index
 docs/                    schema design notes
-docs/site/               site pages; reference/definitions/ is generated (task docs:reference)
-tools/refgen/            Go generator for the definitions reference (not part of the CUE module)
+docs/site/               site pages; the definitions reference is generated into the docs bundle
+docs-kit.cue             the core docs bundle (docs-kit)
 SPEC.md                  normative schema specification
 ```
 
