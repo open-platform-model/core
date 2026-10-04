@@ -23,6 +23,6 @@ Rebuilt to the Phase 3 wiring contract (version 3.1), `.github` `openspec/change
 
 ## 4. Final checks
 
-- [ ] 4.1 Contract §10.1 item 11 re-grep on the branch; every hit fixed or allowed (archived or superseded text, design history sections that say they are superseded).
-- [ ] 4.2 Gates: `task check`, actionlint 1.7.12, `task cascade:wiring:check`, `shellcheck .tasks/cascade/wiring-check.sh`, `openspec validate join-release-cascade --strict`.
-- [ ] 4.3 Commit the ticked task list as `docs(openspec): record the join-release-cascade rebuild checks`
+- [x] 4.1 Contract §10.1 item 11 re-grep on the branch; every hit fixed or allowed (archived or superseded text, design history sections that say they are superseded).
+- [x] 4.2 Gates: `task check`, actionlint 1.7.12, `task cascade:wiring:check`, `shellcheck .tasks/cascade/wiring-check.sh`, `openspec validate join-release-cascade --strict`.
+- [x] 4.3 Commit the ticked task list as `docs(openspec): record the join-release-cascade rebuild checks`
