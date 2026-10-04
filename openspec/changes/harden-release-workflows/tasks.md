@@ -15,5 +15,5 @@
 
 ## 3. Final checks
 
-- [ ] 3.1 Gates: `task check`, `actionlint`, `task cascade:wiring:check`, `openspec validate harden-release-workflows --strict`.
-- [ ] 3.2 Commit the ticked task list as `docs(openspec): record the harden-release-workflows checks`
+- [x] 3.1 Gates: `task check`, `actionlint`, `task cascade:wiring:check`, `openspec validate harden-release-workflows --strict`.
+- [x] 3.2 Commit the ticked task list as `docs(openspec): record the harden-release-workflows checks`
