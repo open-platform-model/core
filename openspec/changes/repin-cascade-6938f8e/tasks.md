@@ -9,7 +9,9 @@
 
 - [x] 2.1 Delta for `release-cascade`: the new refusals and the README citation at `6938f8e`.
 - [x] 2.2 `AGENTS.md` "Release & publishing": the CI step also compares the copy and refuses code around the step.
+- [x] 2.3 Commit `docs(cascade): record the copy comparison and CI step rules at 6938f8e`.
 
 ## 3. Final checks
 
 - [x] 3.1 Gates: `task check`, `actionlint`, `bash .tasks/cascade/wiring-check.sh --pin-on-main`, `openspec validate repin-cascade-6938f8e --strict`.
+- [x] 3.2 Commit `docs(cascade): close the repin-cascade-6938f8e task list`.
