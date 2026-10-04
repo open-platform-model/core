@@ -37,8 +37,12 @@ jobs:
         with:
           version: 3.x
 
+      # The canonical check (a byte-identical copy from .github at the pinned
+      # SHA), plus the API check that the SHA is on .github main.
       - name: Verify the cascade wiring
-        run: task cascade:wiring:check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .tasks/cascade/wiring-check.sh --pin-on-main
 
       # The schema imports only the CUE standard library, so vet runs fully
       # offline — no registry service needed.
