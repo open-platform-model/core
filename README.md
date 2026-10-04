@@ -30,6 +30,7 @@ SPEC.md                  normative schema specification
 - Merging the release PR tags `vX.Y.Z` and creates the GitHub Release.
 - The same `release.yml` run then publishes the module — a `publish-cue` job gated on release-please's `release_created` output runs `cue mod publish vX.Y.Z` against `ghcr.io/open-platform-model`.
 - Before it publishes, the job probes GHCR and refuses a version that is already there. A published version is never overwritten: a broken release is fixed by releasing the next version.
+- Once the module is published, the run notifies catalog_opm and library so their release cascade picks up the new version (workspace `RELEASING.md`).
 
 The CUE module path is on major `@v2`, currently shipping `v2.0.0-beta.N` prereleases (enhancement 0010).
 
