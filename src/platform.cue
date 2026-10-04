@@ -276,19 +276,12 @@ import (
 		}
 
 		// Per provider-fulfilled contract some enabled transformer requires,
-		// the set of registry keys whose transformers require it. Iterated
-		// per entry, not over #composedTransformers, so the key stays
-		// visible; the demand maps are presence-guarded as for requiredBy.
+		// the set of registry keys whose transformers require it: each enabled
+		// entry's #catalog.provides folded by registry key, so the platform and
+		// the catalog state one rule. Iterated per entry, so the key stays visible.
 		_providerSet: {
 			for rkey, entry in #registry if entry.enable
-			for _, tf in entry.#transformers {
-				if tf.requiredResources != _|_ {
-					for fqn, req in tf.requiredResources if req.fulfilment == "provider" {(fqn): (rkey): true}
-				}
-				if tf.requiredTraits != _|_ {
-					for fqn, req in tf.requiredTraits if req.fulfilment == "provider" {(fqn): (rkey): true}
-				}
-			}
+			for _, fqn in entry.#catalog.provides {(fqn): (rkey): true}
 		}
 		providedBy: {for fqn, ps in _providerSet {(fqn): list.Sort([for k, _ in ps {k}], list.Ascending)}}
 		unfulfilled: [for fqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "provider" if providedBy[fqn] == _|_ {fqn}]
