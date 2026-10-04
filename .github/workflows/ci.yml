@@ -32,6 +32,9 @@ jobs:
         with:
           version: 3.x
 
+      - name: Verify the cascade wiring
+        run: task cascade:wiring:check
+
       # The schema imports only the CUE standard library, so vet runs fully
       # offline — no registry service needed.
       - name: Check CUE formatting

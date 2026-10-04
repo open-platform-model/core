@@ -97,6 +97,11 @@ tasks:
     cmds:
       - bash .tasks/opm-docs.sh pin-check
 
+  cascade:wiring:check:
+    desc: Check the release-cascade caller workflows (Phase 3 wiring contract 10.1)
+    cmds:
+      - bash .tasks/cascade/wiring-check.sh
+
   docs:bundle:check:
     desc: Check the docs-kit pins agree, then build and lint the core docs bundle into a temporary directory
     deps: [tools:opm-docs]
@@ -173,7 +178,7 @@ tasks:
   ## Aggregate
 
   check:
-    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, and the docs bundle check
+    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, and the cascade wiring check
     cmds:
       - task: fmt:check
       - task: vet
@@ -181,3 +186,4 @@ tasks:
       - task: spec:check
       - task: docs:check
       - task: docs:bundle:check
+      - task: cascade:wiring:check
