@@ -6,7 +6,7 @@ Defines how a published core release takes part in the cross-repo release cascad
 
 ### Requirement: A published core release notifies its cascade downstreams
 
-After a release is published, core's release run MUST send one `upstream-released` notification naming core and the release tag to each of its cascade downstreams, catalog_opm and library, and to no other repo. The notification MUST start only after the module publish for that tag has succeeded, so a downstream is never told about a version GHCR does not serve. A failed or skipped module publish MUST NOT notify. The docs bundle publish MUST NOT gate the notification, and the notification MUST NOT gate the docs bundle publish.
+After a release of `opmodel.dev/core@v2` is published from `main`, core's release run MUST send an `upstream-released` notification naming core and the release tag to each of its cascade downstreams, catalog_opm and library, and to no other repo: at least one per published release, one per run attempt. A repeat is harmless, because a receiver re-resolves the newest published version itself. A maintenance release of `opmodel.dev/core@v1` from the `v1` branch MUST NOT notify: every downstream pins `@v2`. The notification MUST start only after the module publish for that tag has succeeded, so a downstream is never told about a version GHCR does not serve. A failed or skipped module publish MUST NOT notify. The docs bundle publish MUST NOT gate the notification, and the notification MUST NOT gate the docs bundle publish.
 
 The tag is the release tag release-please created, for example `v2.0.0-beta.3`. The payload carries only the source and the tag; which repos are notified is fixed by the shared notify workflow, not chosen by core.
 
@@ -34,6 +34,11 @@ Source: workspace `RELEASING.md`, "Notify after publish" and "repository_dispatc
 - **WHEN** the module publish succeeds and the docs bundle publish for the same release fails
 - **THEN** catalog_opm and library are still notified
 
+#### Scenario: A v1 maintenance release notifies nobody
+
+- **WHEN** the release PR on the `v1` branch is merged and a `v1.1.x` patch of `opmodel.dev/core@v1` is published
+- **THEN** no downstream is notified, and the `@v2` line's notification is unaffected
+
 ### Requirement: The notification runs with the cascade App only, and can be switched off
 
 The notification MUST authenticate with a token from the `opm-cascade` App, minted inside a job that runs in core's `cascade` Environment, whose deployments are limited to `main`. core's release job that starts it MUST grant the built-in token no more than read access to contents, and MUST NOT pass any secret to the shared workflow. The release App's key MUST NOT be used for the notification.
@@ -42,7 +47,7 @@ The repo variable `CASCADE_NOTIFY` set to exactly `off` MUST stop core's release
 
 A notification that fails after its retries MUST fail the release run visibly. Re-sending it MUST NOT re-publish the module; re-running the failed job sends the notification again for the same tag.
 
-Source: workspace `RELEASING.md`, "repository_dispatch", "Stop switches" and "Owner settings", "The opm-cascade App".
+Source: workspace `RELEASING.md`, "repository_dispatch", "Stop switches" and "Owner settings", "The opm-cascade App". "Stop switches" lists `CASCADE_NOTIFY` once the Phase 3 wiring contract's §14 amendment lands, which happens before this change merges.
 
 #### Scenario: Notify is switched off
 
@@ -57,7 +62,7 @@ Source: workspace `RELEASING.md`, "repository_dispatch", "Stop switches" and "Ow
 #### Scenario: A lost dispatch is recovered without a re-publish
 
 - **WHEN** the notification to library fails after its retries, while the module is already published
-- **THEN** the release run is red, catalog_opm has still been notified, and re-running the failed job re-sends the notification for the same tag without running the module publish again
+- **THEN** the release run is red, catalog_opm has still been notified, and re-running the failed job re-sends the notification for the same tag to both catalog_opm and library without running the module publish again
 
 #### Scenario: The notification never uses the release credentials
 

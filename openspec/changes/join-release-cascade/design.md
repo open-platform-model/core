@@ -66,8 +66,12 @@ Appended after `publish-docs` in `.github/workflows/release.yml`, exactly as con
 | release cut, publish succeeds, `publish-docs` fails | success | runs (docs is not a need) |
 | `CASCADE_NOTIFY=off` | unchanged | skipped |
 | notify fails after its retries | success | failed; run is red |
+| `cascade-notify.yml` missing or invalid on `.github` `main` | not run: the whole run fails at startup, before any `if` is read, so `release-please` does not run either | not run |
+| a `v1` maintenance release (core's `v1` branch has its own `release.yml`) | not this workflow | not this workflow: `v1` releases notify nobody |
 
-"Re-run failed jobs" on the last row re-runs `notify-downstream` only: GitHub reuses the outputs of the successful `release-please` and `publish-cue`, so the module is not published again and the probe is not asked again. The re-run dispatches to both targets again, which is harmless: a receiver re-resolves "newest published" itself and never trusts the payload's version (`RELEASING.md`, "repository_dispatch").
+"Re-run failed jobs" on the notify-failure row re-runs `notify-downstream` only: GitHub reuses the outputs of the successful `release-please` and `publish-cue`, so the module is not published again and the probe is not asked again. The re-run dispatches to both targets again, which is harmless: a receiver re-resolves "newest published" itself and never trusts the payload's version (`RELEASING.md`, "repository_dispatch"). So the spec asks for at least one notification per published release, one per run attempt, not exactly one.
+
+Never use "Re-run all jobs" there: it re-runs `publish-cue`, whose GHCR probe refuses the already published version (exit 1), so notify is skipped and the run stays red with a misleading publish failure. If `publish-docs` failed too, "Re-run failed jobs" re-runs it as well, so the guarantee is that the *module* is never re-published.
 
 On a failed `publish-cue` that a re-run then fixes, the same "Re-run failed jobs" also runs the skipped dependents, so notify fires after the successful re-run.
 
@@ -83,7 +87,7 @@ On a failed `publish-cue` that a re-run then fixes, the same "Re-run failed jobs
 ### How the switch is written
 
 **Context**: contract §4.4 adds `CASCADE_NOTIFY=off` as a new stop switch, to be added to `RELEASING.md` "Stop switches" by the contract §14 workspace amendment.
-**Explored**: core's repo variables (`gh api repos/open-platform-model/core/actions/variables`: none on 2026-10-04); the `vars` context on a reusable-workflow caller job's `if`.
+**Explored**: core's repo variables (`gh api repos/open-platform-model/core/actions/variables`: none on 2026-10-04; `vars` also reads org-level variables, which were not checked: listing them needs `admin:org`); the `vars` context on a reusable-workflow caller job's `if`.
 **Decision**: `vars.CASCADE_NOTIFY != 'off'` in the caller's `if`, outside `${{ }}`, since the core `if` has no `!cancelled()` term (contract §4.5 notes the in-brace form only for the `${{ }}` cases).
 **Rationale**: an unset variable reads as the empty string, which is not `off`, so notify is on by default and only an explicit `off` stops it. The caller reads `vars` itself, so nothing depends on how a called workflow sees `vars` (contract §5 rationale, applied the same way here).
 
@@ -109,8 +113,9 @@ On a failed `publish-cue` that a re-run then fixes, the same "Re-run failed jobs
 
 ## Risks / Trade-offs
 
-- **E1 is unproven.** That a called job's `environment: cascade` resolves the caller repo's Environment secret is undocumented (r-wiring finding 1). → `add-release-cascade-workflows` proves it in the sandbox before it merges, and this change merges only after it. If E1 fails, contract §13.1 moves the Environment into a caller-side job and this change is revised first.
-- **A red release run after a successful publish.** A failed dispatch makes the run red although the release is complete. → Accepted: the red job makes a lost dispatch visible (contract §4.1 step 6). Recovery is "Re-run failed jobs" (D2) or waiting for the downstreams' daily sweep; it never involves re-publishing.
+- **E1 is unproven.** GitHub's reusable-workflow docs say a called job's `environment` makes that Environment's secrets available; what no one has observed yet is that the Environment resolved is the caller repo's, so that core's `cascade` secret reaches the job (r-wiring finding 1). → `add-release-cascade-workflows` proves it in the sandbox before it merges, and this change merges only after it. If E1 fails, contract §13.1 moves the Environment into a caller-side job and this change is revised first.
+- **The release workflow depends on `.github` `main` at startup.** GitHub resolves a called reusable workflow when the run starts, before any job's `if` is read. If `cascade-notify.yml` is missing from `.github` `main`, or a later commit there makes it invalid, core's whole Release run fails at startup: `release-please` and `publish-cue` do not run, not only notify. `CASCADE_NOTIFY=off` cannot help, because the `if` is never read. → The merge order (this change after `add-release-cascade-workflows`, with a pre-merge check, Migration Plan step 2) and `.github`'s required `Resolver tests` check, which runs actionlint on its workflows, guard against it. The fix for a startup failure is a revert PR in core or a fix PR in `.github`.
+- **A red release run after a successful publish.** A failed dispatch makes the run red although the release is complete. → Accepted: the red job makes a lost dispatch visible (contract §4.1 step 6). Recovery is "Re-run failed jobs", never "Re-run all jobs" (D2), or waiting for the downstreams' daily sweep; it never re-publishes the module.
 - **A burst of core releases.** Two releases in quick succession send two dispatches. → The downstream receiver's concurrency group collapses them, and it re-resolves "newest" (`RELEASING.md`, "Concurrency").
 - **The shared key reaches all seven repos.** Any job running in a `cascade` Environment can mint a token for every repo the App is installed on (contract Facts, §11.5). → This change adds no holder of the key: the Environment already exists, and only a `main` run can enter it. core's `main` ruleset requires a PR.
 - **Before downstream joins.** A dispatch to catalog_opm or library before their receivers merge returns 204 and starts nothing (contract §1). Nothing is lost: their receivers' first sweep resolves the newest core anyway.
@@ -118,11 +123,24 @@ On a failed `publish-cue` that a re-run then fixes, the same "Re-run failed jobs
 ## Migration Plan
 
 1. `.github` `add-release-cascade-workflows` merges (after its sandbox cycle and the contract §14 `RELEASING.md` amendments).
-2. This change's PR (`ci: join the release cascade`) is reviewed and merged by the supervisor. `ci` cuts no release, so merging it starts no notify.
-3. The first core release after that is the first live notify. The supervisor checks its run: `notify-downstream` is green, and catalog_opm and library each show a `repository_dispatch` run (or none yet, if their receiver has not merged).
+2. Before merging this change's PR, the supervisor checks:
+   - the E1 and E1b rows of `add-release-cascade-workflows`' `design.md` "Sandbox cycle" table are recorded as passing, each with its run URL;
+   - `cascade-notify.yml` on `.github` `main` still declares `tag` as a required string input and `org-github-ref` with default `main`, declares no `secrets:`, and its job still declares `environment: cascade`.
 
-Rollback: set `CASCADE_NOTIFY=off` in core (immediate), or revert the job in a `ci:` PR.
+   If either fails, the PR does not merge (a missing workflow would fail core's whole Release run, Risks).
+3. This change's PR (`ci: join the release cascade`) is reviewed and merged by the supervisor. `ci` cuts no release, so merging it starts no notify.
+4. The first core release after that is the first live notify. The supervisor checks its run: `notify-downstream` is green, and catalog_opm and library each show a `repository_dispatch` run (or none yet, if their receiver has not merged).
+
+Rollback: `CASCADE_NOTIFY=off` in core (immediate) covers a failing notify only. A Release run that fails at startup, because `cascade-notify.yml` is missing or invalid on `.github` `main`, ignores the switch: it needs a revert of the job in a `ci:` PR (or a fix PR in `.github`).
 
 ## Open Questions
 
 - None for core. E1, the workflows-permission rule and E6 are decided in `add-release-cascade-workflows`; only E1 can change this change (Risks, first bullet).
+
+## Plan review (2026-10-04)
+
+Applied: the `@main` startup coupling (Risks, D2, Rollback, the AGENTS.md task), the `@v2`-from-`main` scope with a `v1` scenario, "at least one notification per run attempt", the "Re-run all jobs" trap, the pre-merge E1/E1b and interface check (Migration Plan step 2), and the E1 and org-variable wording.
+
+Applied differently: the review asked that task 1.1 require E1 and E1b to have passed before task 1.2 starts, with section 1 as a spike. Not taken as written. E1 can only be proven by `add-release-cascade-workflows`' sandbox cycle, never by a core run, and contract §1 lets this change be written in parallel. So 1.1 records the E1/E1b state, stops on a recorded failure, and the evidence gates the merge (Migration Plan step 2) instead of the edit.
+
+Left to the supervisor: the "(the four only; core has neither)" line belongs in the contract §14 `RELEASING.md` amendment, which this change does not own. The proposal records it.
