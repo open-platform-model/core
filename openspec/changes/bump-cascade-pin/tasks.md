@@ -14,5 +14,5 @@
 
 ## 3. Final checks
 
-- [ ] 3.1 Gates: `task check`, `actionlint`, `bash .tasks/cascade/wiring-check.sh --pin-on-main`, `openspec validate bump-cascade-pin --strict`, compare status `identical` or `ahead`.
-- [ ] 3.2 Commit the ticked task list.
+- [x] 3.1 Gates: `task check`, `actionlint`, `bash .tasks/cascade/wiring-check.sh --pin-on-main`, `openspec validate bump-cascade-pin --strict`, compare status `identical` or `ahead`.
+- [x] 3.2 Commit the ticked task list.
