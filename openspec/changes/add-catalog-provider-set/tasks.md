@@ -19,3 +19,10 @@
 - [x] 2.3 (Not triggered: every pin stayed green at 2.1, so the refactor stands.) If any pin fails at 2.1 and the cause is a real difference between the two rules, revert 2.1 and 2.2, write the finding under `design.md` § Research & Decisions, and make this section's commit `docs(openspec): record why the platform keeps its own provider fold` instead.
 - [x] 2.4 Cross-cutting check: confirm no consumer authors a top-level `provides` on a catalog (`grep -rnE '^\s*provides\s*:' --include=*.cue --include=*.go` over `catalog_opm/src`, `opm-operator/test/fixtures`, `library/opm`, read only, in the main checkouts). Registration-spec `provides` fields (catalog_opm `src/resources/v1alpha1/transformer_registration.cue`, `src/transformers/transformer_registration_transformer*.cue`, opm-operator `test/fixtures/modules/backup_provider/components.cue`) are not `#Catalog` roots; record only catalog-root hits in the report. None was found at planning.
 - [x] 2.5 `task fmt`, stage the files, then `task check` green, then commit `refactor(platform): fold the provider count from each catalog's provider set`.
+
+## 3. PR-stage review fixes
+
+- [x] 3.1 Merge freshly fetched `origin/main` into the branch (core#118 brought ci.yml, Taskfile.yml and AGENTS.md); the SPEC.md co-update gate in ci.yml still passes because SPEC.md changes beside `src/*.cue`.
+- [x] 3.2 Pin the exclusions the code review found unguarded: a catalog-fulfilled required trait (`_pinProvidesEpsilon`), required labels (`_pinProvidesGamma`) and a provider-fulfilled resource named only under `optionalResources` (`_pinProvidesS3Optional`), each three-way against the reference. Verify that dropping the requiredTraits fulfilment filter and adding an optionalResources arm each fail `task vet`, then restore.
+- [x] 3.3 SPEC.md §3.4 and `design.md`: `providedBy` reads each enabled entry's `#catalog.#transformers` through `provides`; the entry's `#transformers` is an unauthored readout, and core#119 tracks whether it should refuse authored keys.
+- [x] 3.4 Cite library ADR-012 in comments and delta specs instead of the walkthrough task id.

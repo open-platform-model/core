@@ -12,7 +12,7 @@ import (
 // from the enabled entries' contract maps and the required demands of
 // their transformers. The enhancement ships no examples.cue for this
 // slice, so the delta is exercised here. Also pinned here: each fixture
-// catalog's own provider set, #Catalog.provides (beta.1 kernel plan h2),
+// catalog's own provider set, #Catalog.provides (library ADR-012),
 // against literals and against a reference re-derivation, and its fold per
 // registry key against #contracts.providedBy.
 //
@@ -791,7 +791,7 @@ _pinInventoryCollideThreeMajorsCollisions: "collisions=[opmodel.dev/catalogs/opm
 _pinInventoryCollideThreeMajorsDefinedBy: "\(_pinInventoryCollideThreeMajors.#contracts.definedBy["opmodel.dev/catalogs/opm/resources/volume@v1beta1"])|\(len(_pinInventoryCollideThreeMajors.#contracts.defined))|\(len(_pinInventoryCollideThreeMajors.#contracts.definedBy))|\(len(_pinInventoryCollideThreeMajors.#composedTransformers))"
 _pinInventoryCollideThreeMajorsDefinedBy: "opmodel.dev/catalogs/opm@v2|1|1|3"
 
-// ─── Per-catalog provider sets: #Catalog.provides (h2) ──────────────────────
+// ─── Per-catalog provider sets: #Catalog.provides ───────────────────────────
 //
 // Three statements of one rule are pinned against each other: a literal per
 // fixture, the field core derives, and _pinProviderRef below, which
@@ -864,6 +864,40 @@ _pinProvidesRestic: "\(len((_pinProviderRef & {#cat: _pinInventoryResticCatalog}
 // The bare definition, with no #transformers entry, provides nothing.
 _pinProvidesBare: "\(len(core.#Catalog.provides))|\(strings.Join(core.#Catalog.provides, ","))"
 _pinProvidesBare: "0|"
+
+// A catalog-fulfilled REQUIRED trait (tuning) beside a catalog-fulfilled
+// resource: neither counts, so a requiredTraits arm that dropped the
+// fulfilment filter reads one entry here.
+_pinProvidesEpsilon: "\(len(_pinCmpEpsilonCatalog.provides))|\(strings.Join(_pinCmpEpsilonCatalog.provides, ","))"
+_pinProvidesEpsilon: "0|"
+_pinProvidesEpsilon: "\(len((_pinProviderRef & {#cat: _pinCmpEpsilonCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinCmpEpsilonCatalog}).out, ","))"
+
+// Required labels are a predicate, not a contract demand.
+_pinProvidesGamma: "\(len(_pinCmpGammaCatalog.provides))|\(strings.Join(_pinCmpGammaCatalog.provides, ","))"
+_pinProvidesGamma: "0|"
+_pinProvidesGamma: "\(len((_pinProviderRef & {#cat: _pinCmpGammaCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinCmpGammaCatalog}).out, ","))"
+
+// The provider-fulfilled bucket named only under optionalResources: an
+// optional resource demand is consumption, not provision.
+_pinInventoryS3OptionalCatalog: core.#Catalog & {
+	metadata: {
+		modulePath: "opmodel.dev/catalogs/s3-optional@v1"
+		version:    "1.0.0"
+	}
+	#transformers: "opmodel.dev/catalogs/s3-optional/transformers/bucket@1.0.0": core.#ComponentTransformer & {
+		metadata: {
+			name:        "bucket"
+			fqn:         "opmodel.dev/catalogs/s3-optional/transformers/bucket@1.0.0"
+			description: "Pin fixture: an adapter naming a provider-fulfilled resource as optional"
+		}
+		requiredResources: (_pinInventoryContainer.metadata.fqn): _pinInventoryContainer
+		optionalResources: (_pinInventoryBucket.metadata.fqn):    _pinInventoryBucket
+	}
+}
+
+_pinProvidesS3Optional: "\(len(_pinInventoryS3OptionalCatalog.provides))|\(strings.Join(_pinInventoryS3OptionalCatalog.provides, ","))"
+_pinProvidesS3Optional: "0|"
+_pinProvidesS3Optional: "\(len((_pinProviderRef & {#cat: _pinInventoryS3OptionalCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinInventoryS3OptionalCatalog}).out, ","))"
 
 // ─── providedBy is the fold of the enabled entries' provider sets ───────────
 //

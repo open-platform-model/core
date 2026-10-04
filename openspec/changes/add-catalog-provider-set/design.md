@@ -93,13 +93,13 @@ _providerSet: {
 }
 ```
 
-`providedBy`, `unfulfilled` and `overSubscribed` are unchanged. `entry.#transformers` is `#TransformerMap & #catalog.#transformers`, so the transformers the old fold walked are the ones `#catalog.provides` is derived from. Registry-key counting is unchanged: two adapters in one entry still contribute one key, two majors still two.
+`providedBy`, `unfulfilled` and `overSubscribed` are unchanged for every catalog-authored transformer. `entry.#transformers` is `#TransformerMap & #catalog.#transformers`, a readout that is not authored, so on any platform that writes no transformer on the entry the transformers the old fold walked are the ones `#catalog.provides` is derived from. The pattern does admit an extra key written on the entry: such a transformer still reaches `#composedTransformers` and `requiredBy`, but `providedBy` now reads each enabled entry's `#catalog.#transformers` (through `provides`) and skips it. Code review measured that difference on a probe (old fold `providedBy={backup:[opm@v1]}`, new fold `{}`). No consumer writes entry-level transformers today; core#119 tracks whether the readout should refuse authored keys. SPEC.md §3.4 states the rule as reading `#catalog.#transformers`. Registry-key counting is unchanged: two adapters in one entry still contribute one key, two majors still two.
 
 In one platform build, CUE resolves one core version (MVS), and `#CatalogEntry.#catalog: #Catalog` unifies every embedded catalog with that core's `#Catalog`. So an embedded catalog whose own `cue.mod` pins an older core still gets `provides` derived inside the platform build. The "old catalog" case only arises when a catalog is evaluated standalone at its own pin, which is the library's acquire path and is handled by the library fallback.
 
 ### Commit types
 
-Section 1 is `feat(catalog):`, a new field on the published surface. Section 2 changes the bytes of `src/platform.cue` but no derived value, which the existing literal pins prove, so it is `refactor(platform):` and cuts no release on its own.
+Section 1 is `feat(catalog):`, a new field on the published surface. Section 2 changes the bytes of `src/platform.cue` but no derived value of any catalog-authored transformer, which the existing literal pins prove (the entry-authored case above is not a supported input), so it is `refactor(platform):` and cuts no release on its own.
 
 ## Research & Decisions
 

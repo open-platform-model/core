@@ -217,8 +217,8 @@ _pinContractEmptyMaps: "000"
 //   #traits: "opmodel.dev/catalogs/opm/transformers/backup@4.1.0": _pinContractProviderTrait
 //  }
 
-// An authored provides that disagrees with the derived one (beta.1 kernel
-// plan h2). provides is derived from the provider-fulfilled requirements of
+// An authored provides that disagrees with the derived one (library
+// ADR-012). provides is derived from the provider-fulfilled requirements of
 // #transformers, never authored, so a catalog whose adapter requires `backup`
 // cannot claim to provide nothing. A list of another length is refused on
 // the length; a same-length list naming another contract would instead read
