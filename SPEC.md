@@ -867,7 +867,7 @@ Implementation: [`platform.cue`](src/platform.cue).
 
 #### Definition
 
-A `#ModuleInstance` is the concrete deployment instance — a `#Module` paired with the values that satisfy its `#config`, plus the instance-scoped identity (name, namespace, uuid, cluster domain) that flows into every component as `#ctx.instance`. A `#ModuleInstance` is what the CLI, a CI pipeline, or the controller actually renders into platform-specific resources.
+A `#ModuleInstance` is the concrete deployment instance — a `#Module` paired with the values that satisfy its `#config`, plus the instance-scoped identity (name, namespace, uuid, cluster domain) that flows into every component as `#ctx.instance`. A `#ModuleInstance` is what a platform operator, a CI pipeline, or the controller actually renders into platform-specific resources.
 
 Renamed from `#ModuleRelease` (enhancement 0002).
 
