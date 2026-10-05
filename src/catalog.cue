@@ -44,11 +44,11 @@ import "list"
 // `metadata.modulePath` to "\(_ref.registryPath)/transformers" — the MAJOR-FREE
 // path, because a transformer declares a #PackagePathType — and
 // `metadata.catalogVersion` to the catalog's version. It does NOT stamp
-// `metadata.fqn`: under 0010:D21 an fqn is AUTHORED at the
-// definition site rather than derived, and the map key carries the
-// transformer's own fqn by authoring convention: core checks the key's form
-// only, and the publish gate never reads it. 0001:D18 lockstep on the build stays structural, since
-// the stamp is what supplies the key's version component.
+// `metadata.fqn`: under 0010:D21 an fqn is AUTHORED at the definition site
+// rather than derived, and the map key carries the transformer's own fqn by
+// authoring convention: core checks the key's form only, and the publish
+// gate never reads it. 0001:D18 lockstep on the build stays structural,
+// since the stamp is what supplies the key's version component.
 //
 // `M=metadata` is a field-label alias (0001:D25). It binds the
 // label `M` to the metadata field path so the pattern constraint can reach
@@ -126,8 +126,9 @@ import "list"
 	}
 
 	// WHY one stamping rule for three maps, why it binds fqn to the key, and
-	// why it reads apiVersion through a label alias: the file header. #traits and #blueprints below
-	// carry the same stamp under their own kind segment and point here.
+	// why it reads apiVersion through a label alias: the file header.
+	// #traits and #blueprints below carry the same stamp under their own
+	// kind segment and point here.
 
 	// WHY #resources: 0015:D1.
 

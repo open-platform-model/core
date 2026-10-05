@@ -174,7 +174,9 @@ import (
 // demand match), so a short key validated and then demanded a contract no
 // transformer supplies. The key stays `string` so a wrong key reports
 // `conflicting values "<key>" and "<fqn>"`, naming both strings; a
-// `#ContractFQNType` key would report `field not allowed` and name neither.
+// `#ContractFQNType` key would report `field not allowed` at the key and
+// never name the fqn. With fqn unset, a short key is still refused: the key
+// fills fqn and fails its `#ContractFQNType` bound.
 // SPEC.md § 3.1 Rationale, "Why an attachment key must equal the member's fqn".
 
 // ResourceMap: the resources attached to a component, each keyed by its own

@@ -46,13 +46,16 @@ package core
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// Resources applied for this component
+	// Resources applied for this component, each keyed by its own
+	// metadata.fqn; any other key is refused at vet.
 	#resources: #ResourceMap
 
-	// Traits applied to this component
+	// Traits applied to this component, each keyed by its own
+	// metadata.fqn; any other key is refused at vet.
 	#traits?: #TraitMap
 
-	// Blueprints applied to this component
+	// Blueprints applied to this component, each keyed by its own
+	// metadata.fqn; any other key is refused at vet.
 	#blueprints?: #BlueprintMap
 
 	// NO demand-side optionality marker for RESOURCES, and the absence is a
