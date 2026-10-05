@@ -18,7 +18,7 @@ Source: workspace `RELEASING.md`, "Notify after publish" and "repository_dispatc
 #### Scenario: A release whose module is published notifies catalog_opm and library
 
 - **WHEN** the release PR for `v2.0.0-beta.3` is merged and the module publish for `v2.0.0-beta.3` succeeds
-- **THEN** catalog_opm and library each receive an `upstream-released` dispatch with source `core` and tags `["v2.0.0-beta.3"]`, and cli and opm-operator receive none
+- **THEN** catalog_opm and library each receive an `upstream-released` dispatch with source `core` and tags `["v2.0.0-beta.3"]`, and cli and opm-controller receive none
 
 #### Scenario: A failed module publish notifies nobody
 

@@ -40,7 +40,7 @@ Defines how a deployed `#ModuleInstance` derives its own identity, separately fr
 
 For one `{module registry path, name, namespace}` triple, `#ModuleInstance.metadata.uuid` MUST NOT change when the module's `version` changes, and MUST NOT change when the module path's **major** changes.
 
-This is the requirement the ownership label depends on: the operator skips deleting any live object whose owner label disagrees with the instance UUID it recorded, so an instance UUID that moves on upgrade orphans whatever the new render stopped emitting, while reporting success.
+This is the requirement the ownership label depends on: the controller skips deleting any live object whose owner label disagrees with the instance UUID it recorded, so an instance UUID that moves on upgrade orphans whatever the new render stopped emitting, while reporting success.
 
 #### Scenario: A patch release does not move the instance UUID
 
