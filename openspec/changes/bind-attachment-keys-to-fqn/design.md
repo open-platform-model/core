@@ -44,7 +44,7 @@ Files this change touches: `src/resource.cue`, `src/trait.cue`, `src/blueprint.c
 
 **Non-Goals:**
 
-- Binding `#Catalog.#transformers` (SD13). Every published transformer already matches its key, so binding it later costs one more tightening and nothing else.
+- Binding `#Catalog.#transformers` (outside the j3 decision). Every published transformer already matches its key, so binding it later costs one more tightening and nothing else.
 - Binding the transformer demand maps (`requiredResources`, `optionalResources`, `requiredTraits`, `optionalTraits`).
 - Checking `appliesTo` (core#99).
 - Changing `task vet` to `cue vet -c`. Plain vet now fails on rule 1. `-c` would also name the field, and that stays a possible follow-up.
@@ -70,7 +70,7 @@ Files this change touches: `src/resource.cue`, `src/trait.cue`, `src/blueprint.c
 #BlueprintMap: [FQN=string]: #Blueprint & {metadata: fqn: FQN}
 ```
 
-The key stays `string` rather than `#ContractFQNType`. The member's own `fqn!: #ContractFQNType` already refuses a non-contract key. Keeping `string` means a short key reports `conflicting values "container" and "<fqn>"`, which names the fix. A typed key would report `field not allowed` and name neither string. The exact doc-comment wording may move during implementation. It must stay within six lines (`task docs:check`), with the rationale in the WHY block. The other two maps carry a two-line pointer to the `#ResourceMap` WHY block (AGENTS.md "Doc comments", tier 2).
+The key stays `string` rather than `#ContractFQNType`. The member's own `fqn!: #ContractFQNType` already refuses a non-contract key. Keeping `string` means a short key reports `conflicting values "container" and "<fqn>"`, which names the fix. A typed key would report `field not allowed` at the key and never name the fqn. The exact doc-comment wording may move during implementation. It must stay within six lines (`task docs:check`), with the rationale in the WHY block. The other two maps carry a two-line pointer to the `#ResourceMap` WHY block (AGENTS.md "Doc comments", tier 2).
 
 ### The catalog maps
 
@@ -140,7 +140,7 @@ The text everywhere says what cue v0.17.1 prints for a non-hidden application of
 ### `#transformers`
 
 **Context**: The research counted seven key-to-member maps, but the owner's sentence names the component and catalog member maps. SPEC §3.6 says the transformer key-to-fqn agreement is asserted at publish by `#CatalogMemberFQNGate`. That is false: the cli fills the gate from the member definitions it finds by package (`cli/internal/publish/catalog_gates.go`) and never reads a `#Catalog` map key. The transformer key is checked for form only, and this change rewrites the §3.6 bullet to say so.
-**Decision**: SD13. Bind the six attachment maps, and leave `#transformers` as is.
+**Decision**: bind the six attachment maps the j3 decision names, and leave `#transformers` as is.
 **Rationale**: The decision covers attachment maps. All 23 to 29 published transformers per release match their keys, so binding `#transformers` later costs one more tightening and nothing else.
 
 ## Risks / Trade-offs
@@ -161,7 +161,7 @@ Run 2026-10-05 on cue v0.17.1, in scratch copies only; no consumer repo was chan
 
 | Consumer (origin/main) | Command | beta.3 | beta.99 | Note |
 | --- | --- | --- | --- | --- |
-| catalog_opm `src/` (3d92d84) | `task vet` (plain and `-t fixtures`), `task vet:fixtures` | — | pass | 71 rendered-output fixtures evaluate |
+| catalog_opm `src/` (3d92d84) | `task vet` (plain and `-t fixtures`), `task vet:fixtures` | pass | pass | 71 rendered-output fixtures evaluate |
 | Published `opmodel.dev/catalogs/opm@v4` 4.1.0, 4.1.1, 4.2.0, 4.3.0, 4.3.1, 4.4.0-4.4.5, 4.5.0-4.5.2, 4.6.0 (source pulled from GHCR, vetted as main module) | `cue vet ./...`, and `-t fixtures` where the release has fixture files | pass (as pinned) | pass | |
 | Published `catalogs/opm` v2.0.0-alpha.1 to alpha.8, v2.0.0, v3.0.0, v4.0.0, v4.0.1 | `cue vet ./...` | fail | fail | Pre-existing: identical error sets on beta.3 and beta.99 (label-count and transformer fixtures broken by earlier core releases); no `metadata.fqn` conflict in either. Key audit below finds every key fqn-shaped. |
 | Published `catalogs/k8s` v1.0.0-alpha.1 to beta.2, `catalogs/kubernetes` v2.0.0-alpha.1 | `cue vet ./...` | pass (as pinned) | pass | `catalogs/kubernetes` v1.2.0 is on core@v1, so unaffected |
@@ -171,10 +171,16 @@ Run 2026-10-05 on cue v0.17.1, in scratch copies only; no consumer repo was chan
 | library `testdata/render/registry/*` (14 modules) | served: each published to the scratch registry at its directory version (with `source: kind: "self"` added in scratch; `bprov` v1.0.0 published from a `cue mod tidy` copy, because it is not tidy), then `cue vet ./...`; `-c=false` for app_bk0, app_maj0, web_app v0.1.0 and v0.2.0, which carry unfilled values by design | pass | pass | |
 | cli (bd4d1a7c): examples, hack/platform, internal/workflow/render/testdata/skip-unprovided, templates/{advanced,minimal,standard}, tests/e2e/testdata/{duplicate-identities,operator-owned,vet-errors/*}, tests/fixtures/{modules/podinfo,valid/*}, tests/integration/{inst-tree,module-apply}/testdata | `cue vet ./...` | pass | pass | |
 | cli internal/instinit/testdata/initvalues, tests/e2e/testdata/vet-errors/open-debug-values | `cue vet -c=false ./...` | pass | pass | incomplete by design (plain vet says so on both builds) |
-| opm-operator (9b83611): `modules/opm_operator`, hack/testdata/operator-module-release-check/module, internal/source/testdata/minimal-module, test/fixtures/catalogs/{backup,provider}, test/fixtures/modulepackages/{hello,hello_web,podinfo,redis}, test/fixtures/modules/{backup_consumer,backup_provider,hello,hello_web,podinfo,redis} | `cue vet ./...` | pass | pass | |
+| opm-operator (9b83611, and again at 2ae1207 on the PR-stage build): `modules/opm_operator`, hack/testdata/operator-module-release-check/module, internal/source/testdata/minimal-module, test/fixtures/catalogs/{backup,provider}, test/fixtures/modulepackages/{hello,hello_web,podinfo,redis}, test/fixtures/modules/{backup_consumer,backup_provider,hello,hello_web,podinfo,redis} | `cue vet ./...` | pass | pass | |
 
 No consumer was left NOT VETTED.
 
 **Key audit.** A scan of every `#resources`, `#traits` and `#blueprints` struct written in CUE or in a Go string (`.cue`, `.go`, `.tmpl`) flagged any key that is neither an `(… .metadata.fqn)` expression nor a quoted contract FQN. It flagged 10 keys in core at 8dbb7e7 (the short pin keys this change rewrites), and 0 in: this branch's `src/` (51 keys), catalog_opm main (92), every published catalog release above (up to 92 per release), library (94), cli (8) and opm-operator (1). The Go-embedded component maps are five `#resources: %q:` sites in library `opm/kernel/` tests (`integration_fixtures_test.go` twice, `parity_probe_test.go`, `flow_synth_catalog_import_test.go`, `flow_synth_imported_test.go`), each filled with `containerFQN`, the same value as the member's `fqn`. cli and opm-operator embed no attachment map in Go; opm-operator's `internal/render/demand.go` only reads `#resources` and `#traits`. `registrytest.BuildCatalog` writes `#transformers` only.
 
-**Still to run at the PR stage.** Re-run the library fixture vet and the Go-embedded audit against library `origin/main` once `lib-i3d2` and `lib-b1g2` have merged.
+**PR-stage re-run (2026-10-05).** After merging `origin/main` (f3a730b) and the review fixes, which change comments and the spec check only, the branch's `src/` was published again as the scratch `v2.0.0-beta.99` to a fresh `cue mod registry` holding all 145 GHCR core tags, with a fresh `CUE_CACHE_DIR`. Fresh shallow clones were vetted on beta.3 and beta.99:
+
+- opm-operator `origin/main` 2ae1207: all 15 CUE modules (`modules/opm_operator`, the release-check module, `internal/source/testdata/minimal-module`, the catalog, module-package and module fixtures) pass on both builds with identical (empty) error sets. Positive control: a scratch `#resources: volumes: res.#VolumesResource` in `modules/opm_operator` fails with `conflicting values "opmodel.dev/catalogs/opm/resources/volumes@v1beta1" and "volumes"`.
+- library `origin/main` 168c736 (still the commit vetted above; library#194 and library#197 have not merged): the 21 testdata and module directories and all 14 `testdata/render/registry/*` fixtures, served again from the scratch registry, pass on both builds; app_bk0, app_maj0 and web_app v0.1.0 and v0.2.0 pass with `-c=false` as before. No fixture was left NOT VETTED.
+- catalog_opm `origin/main` 3d92d84: `task vet` and `task vet:fixtures` (71 fixtures) pass on beta.3 and on beta.99.
+- Key audit over the three clones: 187 keys, 0 not fqn-shaped. The five Go-embedded library sites are unchanged.
+- Key audit of the open library PR heads library#194, #195, #196 and #197: 0 keys not fqn-shaped, and no Go-embedded attachment map beyond the same five `%q` sites.

@@ -25,7 +25,7 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
 
 ## 2. Bind the catalog contract maps
 
-`#Catalog.#resources`, `#traits` and `#blueprints` bind each member's `metadata.fqn` to its key. `#transformers` is unchanged (SD13).
+`#Catalog.#resources`, `#traits` and `#blueprints` bind each member's `metadata.fqn` to its key. `#transformers` is unchanged (outside the j3 decision).
 
 - [x] 2.1 In `src/catalog.cue`, rewrite the three contract-map patterns as `[K=#ContractFQNType]` and add `fqn: K` beside the stamps (`design.md` § The catalog maps). Update the `#resources` doc comment ("never fqn" becomes "binds fqn to the key") and the `#traits` and `#blueprints` doc comments if they repeat it. In the file header, the paragraph "It does NOT stamp `metadata.fqn`" stays true for `#transformers`. Add one sentence saying that the contract maps bind fqn to the key. Then verify that `cue vet .` passes.
 - [x] 2.2 In `src/pins/catalog_pins.cue:99-116`, replace `_pinContractKeyNotCompared` and its read-back with:
@@ -36,7 +36,7 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
 
   Re-run each existing commented catalog must-fail case (`_failContractFilingDrift`, `_failContractStaleBuild`, `_failContractWrongKind`, `_failContractBuildKey`) in place and update any recorded text that changed. Mutation check: remove each catalog bind in turn and confirm that `task vet` fails. Rename the banner to "A contract key must equal its member's fqn". Grep `src/pins/` for any other contract-map entry that does not key by fqn, and re-key it.
 - [x] 2.3 Update `SPEC.md` §3.6 `#Catalog`:
-  - Constraints: replace the bullet "The contract maps do NOT stamp or bind `metadata.fqn` ..." with the bind rule (key MUST equal `metadata.fqn`, a differing key fails with `conflicting values` naming both, an unset fqn takes the key, the key stays `#ContractFQNType`, `#CatalogMemberFQNGate` still checks fqn against the identity package at publish). Rewrite the `#transformers` bullet "The pattern does NOT stamp `metadata.fqn`" (around SPEC.md:1048): the transformer key is checked for form only, and neither core nor the publish gate compares it to the transformer's fqn (the gate is filled from member definitions and never reads a map key); binding it is a possible follow-up (SD13).
+  - Constraints: replace the bullet "The contract maps do NOT stamp or bind `metadata.fqn` ..." with the bind rule (key MUST equal `metadata.fqn`, a differing key fails with `conflicting values` naming both, an unset fqn takes the key, the key stays `#ContractFQNType`, `#CatalogMemberFQNGate` still checks fqn against the identity package at publish). Rewrite the `#transformers` bullet "The pattern does NOT stamp `metadata.fqn`" (around SPEC.md:1048): the transformer key is checked for form only, and neither core nor the publish gate compares it to the transformer's fqn (the gate is filled from member definitions and never reads a map key); binding it is a possible follow-up.
   - Shape: show `fqn: K` in the three contract-map patterns.
   - Rationale: rework "Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`" (the transformer stamp still does not; the contract maps bind it to the key, which derives nothing), and add "Why contract keys are bound and transformer keys are not" (owner decision j3 covers attachment maps; all published transformers already match; binding them is a later tightening).
   - §2.1 Constraint bullet on `metadata.fqn` (around SPEC.md:106): the definition derives nothing, but inside the six attachment maps the key binds fqn (a disagreeing value is refused, an unset fqn takes the key).
@@ -47,7 +47,7 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
 
 ## 3. Apply the publish gates as non-hidden pins and correct the rule-1 text
 
-This is the wave-1 follow-up folded in by SD14. The posture gate gets its teeth under plain `task vet`.
+This is the wave-1 follow-up folded into this change. The posture gate gets its teeth under plain `task vet`.
 
 - [x] 3.1 Rename the seven gate applications without their `_` prefix, and update every reference: `pinGateTraitPostureRequired` and `pinGateTraitPostureAdvisory` (`src/pins/platform_and_match_pins.cue`), and `pinGateResource`, `pinGateResourceGA`, `pinGateTrait`, `pinGateBlueprint` and `pinGateTransformer` (`src/pins/identity_package_pins.cue`, including the read-backs at :153-188). Then verify that `cue vet ./...` and `cue vet -c ./...` both pass from `src/`.
 - [x] 3.2 Rewrite the pin comments:
@@ -79,10 +79,17 @@ This is the wave-1 follow-up folded in by SD14. The posture gate gets its teeth 
     - a grep audit of CUE embedded in Go tests (library `opm/kernel/*_test.go`, cli `check_test.go`, `members_test.go`, `instance_build_test.go`, and any other `#resources`/`#traits`/`#blueprints` literal in `*_test.go`), recording every key that is not an fqn;
     - `opm-operator/modules/opm_operator`.
 
-  For each consumer, record the path, the core version vetted against, the command and the result. A consumer that does not resolve is recorded as NOT VETTED, never as a pass. At the PR stage, re-run the library fixture vet and the Go-embedded audit against library `origin/main` after `lib-i3d2` and `lib-b1g2` merge.
+  For each consumer, record the path, the core version vetted against, the command and the result. A consumer that does not resolve is recorded as NOT VETTED, never as a pass. At the PR stage, re-run the library fixture vet and the Go-embedded audit against library `origin/main`, and audit the keys of the open library PRs that add CUE (library#194, library#197).
 - [x] 4.4 Classify every failure by cause. For a key-to-fqn conflict, check whether the member belongs to a PUBLISHED catalog release, that is, under `opmodel.dev/catalogs/*` on GHCR.
   - **OWNER STOP (0021:D7:R5):** a published mis-keyed member does not get fixed here. Finish this section, record its exact path and release, and report it FIRST. The merge waits for the owner's sign-off.
   - An unpublished mis-key in a fixture or a module is listed for a follow-up in its own repo. It is not fixed here.
   - A failure with another cause, such as a registry fetch or a pre-existing break, is recorded as unrelated, and the same vet is re-run against `origin/main`'s core to confirm it. A fixture that fails the same way on both builds is still recorded as NOT VETTED, with the reason.
 - [x] 4.5 Write the results into `design.md` § Re-vet against this build. Confirm or correct the last sentence of the proposal's Migration note from that record, and make it name the published opm 4.1.0-4.6.0 audit and the re-vet build.
 - [x] 4.6 `task check` must pass. Commit `docs: point appliesTo at core#99 and record the consumer re-vet`. This section stages no `*.cue` file, so the SPEC.md co-update hook does not fire.
+
+## 5. PR-stage review fixes and re-vet
+
+- [x] 5.1 Reword the `#Component` `#resources`, `#traits` and `#blueprints` field doc comments to state the rule (each keyed by its own `metadata.fqn`; any other key is refused at vet), so the generated definitions reference shows it while `#ResourceMap`, `#TraitMap` and `#BlueprintMap` stay excluded as map shorthand.
+- [x] 5.2 Add a `task spec:check` rule that refuses an uncommented hidden top-level field in `src/pins/*.cue` whose value applies `core.#TraitOptionalGate` or `core.#CatalogMemberFQNGate`, naming the requirement "Publish-gate pins are applied non-hidden". Mutation check: renaming `pinGateTraitPostureAdvisory` to `_pinGateTraitPostureAdvisory` in a scratch copy fails the check.
+- [x] 5.3 State the unset-fqn case in SPEC §3.1, §3.6 and the Migration note: a short key with `fqn` unset is still refused (out of bound on the component maps, `field not allowed` on the catalog maps). Correct the typed-key rationale: `field not allowed` names the key and never the fqn.
+- [x] 5.4 Merge `origin/main`, publish the branch's `src/` again as the scratch `v2.0.0-beta.99`, and re-vet opm-operator at its current `origin/main`, the library at its current `origin/main` (fixtures, served registry fixtures and the Go-embedded audit) and catalog_opm on both builds. Record the results in `design.md`.
