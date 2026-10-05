@@ -9,11 +9,11 @@ Open Platform Model (OPM) separates what an application is from where it runs. A
 
 The instance holds your values, and OPM unifies them with the module's configuration schema. Nothing is substituted into a template. A wrong type in a setting the module uses fails the render, before anything reaches the cluster. A module has no templates at all: its components are data, and the transformers in the platform's catalogs turn them into Kubernetes objects. OPM computes the instance's identity from the module path without its major version, the instance name and the namespace, so the identity survives every upgrade of the module. An instance exists in two forms: the `#ModuleInstance` CUE value that renders, and the `ModuleInstance` custom resource (`opmodel.dev/v1alpha1`) that records it on the cluster.
 
-This page explains what a module and an instance hold, how an instance reaches a cluster, and why OPM splits them this way. The identity formulas are on [Identity and names](/docs/concepts/identity-and-names/), and version numbers on [Versions in OPM](/docs/concepts/versions/). Whether the CLI or the operator manages an instance is on [Who owns an instance](/docs/concepts/who-owns-an-instance/), and deletion is on [Deletion and pruning](/docs/operating/deletion-and-pruning/). The definitions themselves are in the [modules and instances reference](/docs/reference/definitions/modules-and-instances/).
+This page explains what a module and an instance hold, how an instance reaches a cluster, and why OPM splits them this way. The identity formulas are on [Identity and names](/docs/concepts/identity-and-names/), and version numbers on [Versions in OPM](/docs/concepts/versions/). Whether the CLI or the controller manages an instance is on [Who owns an instance](/docs/concepts/who-owns-an-instance/), and deletion is on [Deletion and pruning](/docs/operating/deletion-and-pruning/). The definitions themselves are in the [modules and instances reference](/docs/reference/definitions/modules-and-instances/).
 
 ## How it works
 
-A published module, your values, a name and a namespace make an instance. OPM renders the instance against a platform, whose catalogs supply the transformers, and the result is a set of plain Kubernetes objects. The CLI or the operator applies the objects and keeps a record of them on the cluster.
+A published module, your values, a name and a namespace make an instance. OPM renders the instance against a platform, whose catalogs supply the transformers, and the result is a set of plain Kubernetes objects. The CLI or the controller applies the objects and keeps a record of them on the cluster.
 
 {{< opm/module-to-cluster >}}
 
@@ -83,11 +83,11 @@ The instance's `components` are the module's `#components`, evaluated with your 
 
 {{< opm/three-ways-to-deploy >}}
 
-1. **The CLI renders and applies it.** `opm instance apply instance.cue` deploys an instance package you wrote. `opm module apply` builds an instance around a module directory, or around a published module you name, so you can try the module without writing an instance. It takes the values from the files you pass with `-f`, or else from the module's `debugValues`. It names the instance after the module, with underscores turned into hyphens and `-debug` appended (`my-app-debug` for `my_app`), unless you pass `--name`. For a new instance, or one the CLI already owns, both commands apply the objects themselves and record them in a `ModuleInstance` resource with `spec.owner: cli`. Against an instance the operator owns, they write the module and values into the resource and wait for the operator to apply them.
-1. **The operator reconciles a `ModuleInstance` resource.** You write the resource with kubectl or keep it in Git. It names a published module in `spec.module.path` and `spec.module.version` and carries your values in `spec.values`. The operator fetches the module from the registry, builds the instance with the resource's name and namespace, renders it against the cluster's platform and applies the objects.
-1. **The operator renders a `ModulePackage`.** It points at a Flux source in `spec.sourceRef` and at a directory in `spec.path` that holds an authored `instance.cue`. The operator renders it only when it evaluates to a `#ModuleInstance`. A `ModulePackage` records its objects in its own status, not in a `ModuleInstance`.
+1. **The CLI renders and applies it.** `opm instance apply instance.cue` deploys an instance package you wrote. `opm module apply` builds an instance around a module directory, or around a published module you name, so you can try the module without writing an instance. It takes the values from the files you pass with `-f`, or else from the module's `debugValues`. It names the instance after the module, with underscores turned into hyphens and `-debug` appended (`my-app-debug` for `my_app`), unless you pass `--name`. For a new instance, or one the CLI already owns, both commands apply the objects themselves and record them in a `ModuleInstance` resource with `spec.owner: cli`. Against an instance the controller owns, they write the module and values into the resource and wait for the controller to apply them.
+1. **The controller reconciles a `ModuleInstance` resource.** You write the resource with kubectl or keep it in Git. It names a published module in `spec.module.path` and `spec.module.version` and carries your values in `spec.values`. The controller fetches the module from the registry, builds the instance with the resource's name and namespace, renders it against the cluster's platform and applies the objects.
+1. **The controller renders a `ModulePackage`.** It points at a Flux source in `spec.sourceRef` and at a directory in `spec.path` that holds an authored `instance.cue`. The controller renders it only when it evaluates to a `#ModuleInstance`. A `ModulePackage` records its objects in its own status, not in a `ModuleInstance`.
 
-No command moves an instance between the CLI and the operator. See [Who owns an instance](/docs/concepts/who-owns-an-instance/).
+No command moves an instance between the CLI and the controller. See [Who owns an instance](/docs/concepts/who-owns-an-instance/).
 
 ### What a rendered object carries from its instance
 
@@ -112,7 +112,7 @@ metadata:
 
 In this example the instance and its component are both named `podinfo`, so several labels show the same name. They differ when the names differ.
 
-`module-instance.opmodel.dev/name` and `module-instance.opmodel.dev/uuid` name the instance. The UUID is the ownership label: before the operator prunes an object, it compares this label with the instance's UUID. `module.opmodel.dev/name`, `module.opmodel.dev/version` and `module.opmodel.dev/uuid` name the module the object came from. `app.kubernetes.io/managed-by` is `opm-cli` when the CLI rendered the object and `opm-controller` when the operator did. How the two UUIDs are computed is on [Identity and names](/docs/concepts/identity-and-names/).
+`module-instance.opmodel.dev/name` and `module-instance.opmodel.dev/uuid` name the instance. The UUID is the ownership label: before the controller prunes an object, it compares this label with the instance's UUID. `module.opmodel.dev/name`, `module.opmodel.dev/version` and `module.opmodel.dev/uuid` name the module the object came from. `app.kubernetes.io/managed-by` is `opm-cli` when the CLI rendered the object and `opm-controller` when the controller did. How the two UUIDs are computed is on [Identity and names](/docs/concepts/identity-and-names/).
 
 ## Why it is built this way
 
@@ -136,7 +136,7 @@ One module is deployed many times, into different namespaces, with different val
 
 ### Why instance identity ignores the module version
 
-The operator prunes by identity. Before it deletes an object the new render no longer produces, it checks the object's `module-instance.opmodel.dev/uuid` label. It skips an object whose label names a different UUID. Instance identity once moved with every module release. After each upgrade, the old objects' labels no longer matched, so the operator skipped the deletes it should have made, left the objects running and reported success.
+The controller prunes by identity. Before it deletes an object the new render no longer produces, it checks the object's `module-instance.opmodel.dev/uuid` label. It skips an object whose label names a different UUID. Instance identity once moved with every module release. After each upgrade, the old objects' labels no longer matched, so the controller skipped the deletes it should have made, left the objects running and reported success.
 
 Instance identity is now computed from the module path without its major version, the instance name and the namespace. An upgrade to a new version, or to a new major such as `@v1` to `@v2`, keeps the same UUID, so pruning keeps working across upgrades. Renaming the instance or moving it to another namespace gives a different UUID, and OPM treats the result as a different instance.
 
@@ -152,11 +152,11 @@ Two instances of one module can live in one namespace. If objects took the bare 
 
 ### Values in an instance package are not checked for unknown settings
 
-OPM checks values against `#config` and refuses a setting the schema does not have, with `field not allowed`. It does this for a file you pass with `-f`, for a module's `debugValues` in the `opm module` commands, and for a `ModuleInstance` resource's `spec.values` in the operator. Values written in the instance package itself, in `values.cue` or in a `values` field of `instance.cue`, are not checked that way by the CLI. `opm instance vet`, `build`, `diff` and `apply` ignore a misspelled setting there, and the render succeeds without it. For an instance the operator owns, `opm instance apply` writes the package's values into the resource's `spec.values`, and the operator then refuses the setting with `field not allowed`. The operator does not check them when it renders a `ModulePackage`. Run `opm instance build` and read the output when you change a setting there.
+OPM checks values against `#config` and refuses a setting the schema does not have, with `field not allowed`. It does this for a file you pass with `-f`, for a module's `debugValues` in the `opm module` commands, and for a `ModuleInstance` resource's `spec.values` in the controller. Values written in the instance package itself, in `values.cue` or in a `values` field of `instance.cue`, are not checked that way by the CLI. `opm instance vet`, `build`, `diff` and `apply` ignore a misspelled setting there, and the render succeeds without it. For an instance the controller owns, `opm instance apply` writes the package's values into the resource's `spec.values`, and the controller then refuses the setting with `field not allowed`. The controller does not check them when it renders a `ModulePackage`. Run `opm instance build` and read the output when you change a setting there.
 
 ### The `ModuleInstance` resource is a record, not the thing that renders
 
-The `ModuleInstance` custom resource is the cluster's record of an instance: its owner, the objects applied for it in `status.inventory`, and its status. For an instance the operator owns, it also carries the desired module path, version and values. What renders is the CUE `#ModuleInstance` value, built from the instance package or, by the operator, from the resource's spec. A resource the CLI owns carries `spec.module` and `spec.values` too, but the operator does not act on them while `spec.owner` is `cli`.
+The `ModuleInstance` custom resource is the cluster's record of an instance: its owner, the objects applied for it in `status.inventory`, and its status. For an instance the controller owns, it also carries the desired module path, version and values. What renders is the CUE `#ModuleInstance` value, built from the instance package or, by the controller, from the resource's spec. A resource the CLI owns carries `spec.module` and `spec.values` too, but the controller does not act on them while `spec.owner` is `cli`.
 
 ### Local modules reach the cluster only through the CLI
 
@@ -168,7 +168,7 @@ deps: "opmodel.dev/modules/web_app@v1": replaceWith: "../web_app"
 
 A relative path is resolved from the package's root. The CLI's render commands honour the file and warn that a local replacement is in effect. An instance the CLI applies this way carries the annotation `module-instance.opmodel.dev/source: local` on its `ModuleInstance` resource. CUE never publishes `local-module.cue`, and `opm module publish` refuses a module that carries one unless you pass `--skip-override-check`.
 
-The operator never renders a local module. `spec.module` holds a registry path and a version, and nothing else. A `ModulePackage` whose instance package carries `local-module.cue` replacements is refused, because the operator does not enable local replacements. `opm instance apply` and `opm module apply` refuse to send a module resolved from local bytes to an instance the operator owns. Publish the module first, then let the operator deploy it.
+The controller never renders a local module. `spec.module` holds a registry path and a version, and nothing else. A `ModulePackage` whose instance package carries `local-module.cue` replacements is refused, because the controller does not enable local replacements. `opm instance apply` and `opm module apply` refuse to send a module resolved from local bytes to an instance the controller owns. Publish the module first, then let the controller deploy it.
 
 ### `app.kubernetes.io/instance` holds the component name
 
@@ -180,7 +180,7 @@ kubectl get deployments,services -n default -l module-instance.opmodel.dev/name=
 
 ### Deleting the record does not always delete the workloads
 
-For an instance the operator owns, deleting the `ModuleInstance` resource leaves the workloads running unless `spec.prune` is `true`. The field's default is `false`, and the CLI never writes it. An instance the CLI owns has no finalizer, so `kubectl delete` on its resource removes the only record of what was applied, and the objects stay. Read [Deletion and pruning](/docs/operating/deletion-and-pruning/) before you delete an instance.
+For an instance the controller owns, deleting the `ModuleInstance` resource leaves the workloads running unless `spec.prune` is `true`. The field's default is `false`, and the CLI never writes it. An instance the CLI owns has no finalizer, so `kubectl delete` on its resource removes the only record of what was applied, and the objects stay. Read [Deletion and pruning](/docs/operating/deletion-and-pruning/) before you delete an instance.
 
 ## What enforces this
 
@@ -191,7 +191,7 @@ Each rule names what refuses a violation. [What enforces a rule](/docs/concepts/
 - `publish`: The version's major agrees with the module path's major. `opm module publish` refuses a mismatch, and `opm module vet` runs the same identity check.
 - `publish`: A version is published once. `opm module publish` refuses a version the registry already holds.
 - `cue`: A value a component reads has the type `#config` gives it. Unification inside `#ModuleInstance` refuses a wrong type there.
-- `kernel`: Values from a `-f` file, a module's `debugValues` and a `ModuleInstance` resource's `spec.values` have no setting `#config` lacks. The render refuses one with `field not allowed`, in the CLI's vet, build, diff and apply commands and in the operator's reconcile.
+- `kernel`: Values from a `-f` file, a module's `debugValues` and a `ModuleInstance` resource's `spec.values` have no setting `#config` lacks. The render refuses one with `field not allowed`, in the CLI's vet, build, diff and apply commands and in the controller's reconcile.
 - `cue`: An instance's name and namespace are DNS labels (`#NameType`).
 - `cue`: Every component receives the instance's identity. A component that sets `#instance` to a different identity conflicts with the module's wiring.
 - `convention`: A module author writes defaults only inside `#config`, never on component fields. Nothing checks it.

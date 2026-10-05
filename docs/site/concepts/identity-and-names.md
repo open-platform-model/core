@@ -26,7 +26,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Instances are named by module lineage, name and namespace
 
-<!-- `#ModuleInstance.metadata.fqn` is `<module registryPath>:<name>:<namespace>` and `uuid` is a UUID v5 of it. Neither the module's version nor its major is an input, so the uuid survives every upgrade, while a different module path, instance name or namespace gives a different uuid. The uuid is stamped on every rendered object as `module-instance.opmodel.dev/uuid`, and the operator will not prune a live object whose label disagrees with the uuid it recorded. Verify: the CLI's own prune path does not compare this label. Check against: core/src/module_instance.cue, core/src/pins/identity_pins.cue, core/src/transformer.cue (moduleLabels), opm-operator/internal/apply/prune.go, cli/internal/inventory/stale.go -->
+<!-- `#ModuleInstance.metadata.fqn` is `<module registryPath>:<name>:<namespace>` and `uuid` is a UUID v5 of it. Neither the module's version nor its major is an input, so the uuid survives every upgrade, while a different module path, instance name or namespace gives a different uuid. The uuid is stamped on every rendered object as `module-instance.opmodel.dev/uuid`, and the controller will not prune a live object whose label disagrees with the uuid it recorded. Verify: the CLI's own prune path does not compare this label. Check against: core/src/module_instance.cue, core/src/pins/identity_pins.cue, core/src/transformer.cue (moduleLabels), opm-controller/internal/apply/prune.go, cli/internal/inventory/stale.go -->
 
 ### Names and their spellings
 
@@ -44,7 +44,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why instance identity leaves out the version and the major
 
-<!-- The module uuid answers "which module is this" and has to change with the major. The instance uuid answers "which live objects does this instance own" and has to survive every upgrade. When the instance uuid derived from a module identity that included the version, every release moved the ownership label, and the operator skipped the deletes it should have made while reporting success. Check against: core/SPEC.md (§3.5 Rationale), core/src/module_instance.cue, opm-operator/internal/apply/prune.go -->
+<!-- The module uuid answers "which module is this" and has to change with the major. The instance uuid answers "which live objects does this instance own" and has to survive every upgrade. When the instance uuid derived from a module identity that included the version, every release moved the ownership label, and the controller skipped the deletes it should have made while reporting success. Check against: core/SPEC.md (§3.5 Rationale), core/src/module_instance.cue, opm-controller/internal/apply/prune.go -->
 
 ### Why instance identity uses the registry path and not the module name
 

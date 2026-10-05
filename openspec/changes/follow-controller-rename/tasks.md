@@ -1,9 +1,9 @@
 ## 1. Concept pages and design notes
 
-- [ ] 1.1 `docs/site/concepts/who-owns-an-instance.md`: front matter description, enum text (`cli` or `controller`), headings ("A controller-managed instance", "Why the controller adds no finalizer ...", "Why the CLI edits a controller-managed instance ...", "A ModuleInstance with no owner is controller-managed", "`spec.prune` is read by the controller only"), `opm controller install --crds-only`, and every Check-against path.
-- [ ] 1.2 The other concept pages (`application-and-platform-models.md`, `how-matching-works.md`, `identity-and-names.md`, `modules-and-instances.md`, `platforms-and-catalogs.md`, `versions.md`, `what-enforces-a-rule.md`): product noun, the "controller's API version" heading, `opm controller install`, `GateControllerVersionCeiling`, Check-against paths. Keep the Kubernetes-generic operator comparison in `platforms-and-catalogs.md` and "a platform operator" in `versions.md`.
-- [ ] 1.3 `docs/adapters.md`: the runtime list and the `#runtimeName` example.
-- [ ] 1.4 `task docs:bundle:check` green, then commit `docs(concepts): name the controller in the concept pages`.
+- [x] 1.1 `docs/site/concepts/who-owns-an-instance.md`: front matter description, enum text (`cli` or `controller`), headings ("A controller-managed instance", "Why the controller adds no finalizer ...", "Why the CLI edits a controller-managed instance ...", "A ModuleInstance with no owner is controller-managed", "`spec.prune` is read by the controller only"), `opm controller install --crds-only`, and every Check-against path.
+- [x] 1.2 The other concept pages (`application-and-platform-models.md`, `how-matching-works.md`, `identity-and-names.md`, `modules-and-instances.md`, `platforms-and-catalogs.md`, `versions.md`, `what-enforces-a-rule.md`): product noun, the "controller's API version" heading, `opm controller install`, `GateControllerVersionCeiling`, Check-against paths. Keep the Kubernetes-generic operator comparison in `platforms-and-catalogs.md` and "a platform operator" in `versions.md`.
+- [x] 1.3 `docs/adapters.md`: the runtime list and the `#runtimeName` example.
+- [x] 1.4 `task docs:bundle:check` green, then commit `docs(concepts): name the controller in the concept pages`.
 
 ## 2. Specification, schema comments and repo rules
 

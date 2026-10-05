@@ -2,7 +2,7 @@
 
 Adapters are the translation layer between the OPM application model and a concrete target runtime. They describe what a target supports and how Components render into target-specific resources.
 
-Adapters consume [Constructs](constructs.md) and [Primitives](primitives.md), but live outside the composition hierarchy — they do not appear inside a Module's `#components` or as part of a Module's portable definition. They are wired into the runtime (CLI, operator, compile pipeline) at deploy time.
+Adapters consume [Constructs](constructs.md) and [Primitives](primitives.md), but live outside the composition hierarchy — they do not appear inside a Module's `#components` or as part of a Module's portable definition. They are wired into the runtime (CLI, controller, compile pipeline) at deploy time.
 
 See [Definition Types](definition-types.md) for the full taxonomy.
 
@@ -77,7 +77,7 @@ The `#TransformerContext` a `#transform` body reads is a projection of the other
 
 - `#moduleInstanceMetadata` — name, namespace, fqn, version, uuid, labels, annotations, projected from `#moduleInstance` (version through the instance's module metadata).
 - `#componentMetadata` — name, labels, annotations, projected from the matched Component. The name is the component's own `metadata.name`, never the `#components`-map key it sat under.
-- `#runtimeName` — identity of the runtime executing the transform (e.g., `"opm-cli"` for the CLI, `"opm-controller"` for the operator). Stamped onto every rendered resource as `app.kubernetes.io/managed-by`. The one field the runtime fills.
+- `#runtimeName` — identity of the runtime executing the transform (e.g., `"opm-cli"` for the CLI, `"opm-controller"` for the controller). Stamped onto every rendered resource as `app.kubernetes.io/managed-by`. The one field the runtime fills.
 - Computed `labels` / `annotations` — final maps merged from module, component, and controller layers, ready to apply to the output.
 
 Runtimes must populate `#runtimeName` and nothing else; CUE evaluation fails if it is missing (see SPEC.md § 4.1, including the transitional fill rule for staged runtimes).
