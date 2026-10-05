@@ -49,21 +49,21 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
 
 This is the wave-1 follow-up folded in by SD14. The posture gate gets its teeth under plain `task vet`.
 
-- [ ] 3.1 Rename the seven gate applications without their `_` prefix, and update every reference: `pinGateTraitPostureRequired` and `pinGateTraitPostureAdvisory` (`src/pins/platform_and_match_pins.cue`), and `pinGateResource`, `pinGateResourceGA`, `pinGateTrait`, `pinGateBlueprint` and `pinGateTransformer` (`src/pins/identity_package_pins.cue`, including the read-backs at :153-188). Then verify that `cue vet ./...` and `cue vet -c ./...` both pass from `src/`.
-- [ ] 3.2 Rewrite the pin comments:
+- [x] 3.1 Rename the seven gate applications without their `_` prefix, and update every reference: `pinGateTraitPostureRequired` and `pinGateTraitPostureAdvisory` (`src/pins/platform_and_match_pins.cue`), and `pinGateResource`, `pinGateResourceGA`, `pinGateTrait`, `pinGateBlueprint` and `pinGateTransformer` (`src/pins/identity_package_pins.cue`, including the read-backs at :153-188). Then verify that `cue vet ./...` and `cue vet -c ./...` both pass from `src/`.
+- [x] 3.2 Rewrite the pin comments:
   - Replace the "THESE PINS ARE HIDDEN, WHICH COSTS RULE 1 ITS TEETH" paragraph in `platform_and_match_pins.cue` with the non-hidden rule: the gate pins are regular fields, plain `task vet` fails an unstated posture, and `-c` names it.
   - Amend the file headers of `platform_and_match_pins.cue` and `identity_package_pins.cue`, and of `identity_pins.cue` if it states the rule for every pin ("every value here is a HIDDEN top-level field"), to name the gate-pin exception.
   - In `AGENTS.md` (the `src/pins/` paragraph, around :153, and the doc-comment exemption, around :245) and `.claude/skills/core-schema-edit/SKILL.md` (around :104), name the gate-pin exception, and rest the `*_pins.cue` doc-comment exemption on the docs-kit skip of `*_pins.cue` and on package `pins` being imported by nothing, not on every field being hidden. Do not touch `.tasks/doc-check.sh` (byte-locked with catalog_opm).
   - The commented must-fail gate cases (`_failGatePinned` and the seven `_failGate*` cases) keep the hidden shape; say so in the headers.
   - Re-run the commented `failGateUnstated` case in place under both `cue vet ./...` and `cue vet -c ./...`, and confirm that the recorded block matches the output.
-- [ ] 3.3 In the `src/trait.cue` `#TraitOptionalGate` RULE 1 comment (around :150-155), replace "visible only under `cue vet -c` ... a catalog author's plain `task vet` does not" with what is measured: plain `cue vet` exits 1 with the generic "some instances are incomplete" message, and `cue vet -c` names the field. Reword the RULE 2 comment ("Unlike rule 1 this is visible under plain `cue vet`") to say that rule 2 is named under plain vet, while rule 1 only fails it. Keep the comment within the doc-comment limit. Check the WHY paragraph "IT MUST BE UNIFIED INTO A NON-HIDDEN VALUE" and keep it if it is still true.
-- [ ] 3.4 Update `SPEC.md` §5.1:
+- [x] 3.3 In the `src/trait.cue` `#TraitOptionalGate` RULE 1 comment (around :150-155), replace "visible only under `cue vet -c` ... a catalog author's plain `task vet` does not" with what is measured: plain `cue vet` exits 1 with the generic "some instances are incomplete" message, and `cue vet -c` names the field. Reword the RULE 2 comment ("Unlike rule 1 this is visible under plain `cue vet`") to say that rule 2 is named under plain vet, while rule 1 only fails it. Keep the comment within the doc-comment limit. Check the WHY paragraph "IT MUST BE UNIFIED INTO A NON-HIDDEN VALUE" and keep it if it is still true.
+- [x] 3.4 Update `SPEC.md` §5.1:
   - Shape: the RULE 1 comment no longer says "Visible only under `cue vet -c`", and the RULE 2 comment says rule 2 is named under plain vet while rule 1 only fails it.
   - Constraints: "Rule 2 fails under plain `cue vet`; rule 1 does not" becomes "plain `cue vet` exits non-zero on rule 1 without naming the field; `-c` names it, which is why publish runs it".
   - Rationale: "Why the two rules are stated separately" no longer says that plain vet does not report rule 1.
 
   Grep `SPEC.md` and `docs/` for any other "plain `cue vet`" claim about rule 1 and fix it. Then verify that `task spec:check` passes.
-- [ ] 3.5 Run `task generate:index:check`. The renamed pins add no INDEX row, because the generator reads `#` definitions only. Run `task docs:check`. Run `task fmt` and stage the files, then `task check` must pass. Commit `test(pins): apply the publish gates as non-hidden pins and correct the rule-1 vet text`.
+- [x] 3.5 Run `task generate:index:check`. The renamed pins add no INDEX row, because the generator reads `#` definitions only. Run `task docs:check`. Run `task fmt` and stage the files, then `task check` must pass. Commit `test(pins): apply the publish gates as non-hidden pins and correct the rule-1 vet text`.
 
 ## 4. Document appliesTo as unchecked and re-vet the consumers
 

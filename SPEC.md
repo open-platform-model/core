@@ -1223,12 +1223,13 @@ It is not part of any artifact. A catalog does not carry it, a module never sees
 
     // RULE 1 — the catalog stated a posture. Interpolation forces the
     // disjunction to its default, so a Trait that never mentions `optional`
-    // fails here. Visible only under `cue vet -c`.
+    // fails here. Plain `cue vet` exits 1 without naming the field;
+    // `cue vet -c` names it.
     _stated: "\(optional)"
 
     // RULE 2 — and did not PIN it. Both arms must remain admissible, so a
-    // concrete value — which no module could override — is refused. Visible
-    // under plain `cue vet`.
+    // concrete value — which no module could override — is refused. Plain
+    // `cue vet` names this conflict; rule 1 only fails it.
     _overridable: ((optional & true) != _|_) && ((optional & false) != _|_)
     _overridable: true
 }
@@ -1240,15 +1241,15 @@ Implementation: [`trait.cue`](src/trait.cue).
 
 - A publishing tool MUST unify **every** published `#Trait`'s `optional` against this gate, and MUST surface CUE's own error rather than reformulating it.
 - The gate MUST be given the **field**, not the Trait. `#TraitOptionalGate & {trait: SomeTrait}` would draw the Trait's `spec` into concreteness checking, and a `spec` is a schema that MUST NOT be concrete.
-- The gate MUST be unified into a **non-hidden** value. `cue vet -c` does not check hidden fields, so a gate placed in a `_`-prefixed field passes while checking nothing.
-- The check MUST be run with concrete evaluation (`cue vet -c` or equivalent). Rule 2 fails under plain `cue vet`; **rule 1 does not** — an unstated posture is an incomplete value, not a wrong one.
+- The gate MUST be unified into a **non-hidden** value. `cue vet`, plain or `-c`, does not check hidden fields for completeness, so a gate placed in a `_`-prefixed field passes rule 1 while checking nothing.
+- The check MUST be run with concrete evaluation (`cue vet -c` or equivalent). Plain `cue vet` exits non-zero on both rules, but it names only rule 2: on rule 1, an incomplete value rather than a wrong one, it prints `some instances are incomplete` and no field. `-c` names the field, which is why publish runs it.
 - A Trait whose catalog states `optional: bool | *true` or `optional: bool | *false` MUST pass. A Trait that never states `optional` MUST fail rule 1. A Trait whose catalog writes a concrete `optional: true` or `optional: false` MUST fail rule 2.
 
 #### Rationale
 
 - **Why a gate rather than a schema constraint.** The property is "a catalog may supply a default but not a value", and CUE cannot express it in a field: a field admits a concrete value or it does not, and `#Trait.optional` must admit one — that is exactly what a module writes at the attachment site. What distinguishes the two cases is *who wrote it*, which the schema cannot see and a publish-time check can.
 - **Why it unifies rather than compares.** Same mechanism 0011:D21/D22 chose for identity: a hand-rolled expected-versus-found comparison is a second statement of the rule that drifts from the first. Unifying against a shipped definition keeps one statement, and the author reads CUE's error at the field.
-- **Why the two rules are stated separately even though both are about `optional`.** They fail differently and are caught by different invocations, and a reader who knows only one of them will build a check that misses the other. Rule 2 is a conflict between two concrete booleans, which plain `cue vet` reports. Rule 1 is an incomplete value, which it does not. A gate that ran without `-c` would enforce half of itself silently.
+- **Why the two rules are stated separately even though both are about `optional`.** They fail differently and are caught by different invocations, and a reader who knows only one of them will build a check that misses the other. Rule 2 is a conflict between two concrete booleans, which plain `cue vet` reports at the field. Rule 1 is an incomplete value: plain `cue vet` exits non-zero on it with the generic "some instances are incomplete" message and names nothing, and only `-c` says which trait failed. A gate run without `-c` would enforce rule 1 without telling the author where.
 - **Why the gate takes a `bool` and not a `#Trait`.** Narrowing the input to the one field is what keeps the gate from demanding that a Trait's `spec` be concrete. It also makes the gate reusable against any `bool` a future rule wants the same property from, without teaching it about Traits.
 
 #### See also

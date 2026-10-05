@@ -12,9 +12,13 @@ import (
 // fixtures when its 0019 wave re-pins.
 //
 // Companion to identity_pins.cue and written to the same rules: every value
-// here is a HIDDEN top-level field of package `pins`, which nothing imports,
-// so `task vet` evaluates them and fails on a conflict while no consumer ever
-// loads them, and none of them adds a row to src/INDEX.md. MUST-FAIL cases
+// here is a top-level field of package `pins`, which nothing imports, so
+// `task vet` evaluates them and fails on a conflict while no consumer ever
+// loads them, and none of them adds a row to src/INDEX.md. Every value is
+// HIDDEN except the two gate applications (pinGateTraitPosture*), which are
+// regular fields so that `cue vet` checks them for completeness (SPEC.md
+// § 5.1); the commented _failGatePinned keeps the hidden shape, because it
+// records a conflict, which a hidden field reports too. MUST-FAIL cases
 // are commented out with the exact error uncommenting yields; each was run
 // once, in place, at the commit that introduced it, and the recorded text is
 // what the tool printed. Where the tool is `cue export` rather than `cue vet`
@@ -511,20 +515,16 @@ _pinTraitPostureUnmoved: "false"
 //
 // Both fixtures state a posture as a default, so both pass.
 //
-// THESE PINS ARE HIDDEN, WHICH COSTS RULE 1 ITS TEETH HERE, and the trade is
-// deliberate: every pin keeps the one hidden shape. `cue vet` does not check
-// a hidden field for completeness, so an unstated posture applied here would
-// pass. A NON-hidden application is checked: plain `task vet` would fail on
-// it with the generic "some instances are incomplete" message, and `-c` would
-// name the field. Package `pins` is imported by nothing, so such a field would
-// no longer ship to a consumer; moving the gate pins to that form is a
-// follow-up, out of scope here. So publish gets the non-hidden application
-// (see #TraitOptionalGate's doc comment) and this file keeps the hidden one:
-// rule 2 is still gated here, because it is visible under plain vet, and rule
-// 1 is recorded as a MUST-FAIL case below with the command it was measured
-// with.
-_pinGateTraitPostureRequired: core.#TraitOptionalGate & {optional: _pinProviderFulfilledTrait.optional}
-_pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpose.optional}
+// THESE TWO PINS ARE REGULAR FIELDS, NOT HIDDEN, the one exception to this
+// file's pin shape. `cue vet` does not check a hidden field for completeness,
+// so an unstated posture applied in a hidden pin would pass. Applied here as
+// regular fields, both rules have teeth under plain `task vet`: rule 2 fails
+// it with the conflict named, and rule 1 fails it with the generic "some
+// instances are incomplete" message, which `cue vet -c` turns into the field
+// name (the recorded failGateUnstated case below). Package `pins` is imported
+// by nothing, so the regular fields still ship to no consumer.
+pinGateTraitPostureRequired: core.#TraitOptionalGate & {optional: _pinProviderFulfilledTrait.optional}
+pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpose.optional}
 
 // ─── MUST-FAIL: the two rules the gate exists for ───────────────────────────
 
@@ -549,7 +549,7 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 
 // RULE 1 — a catalog never states a posture at all. THE THIRD CASE IN THIS
 // REPO THAT PLAIN `cue vet` DOES NOT NAME, and the one that dictates how
-// publish invokes the gate. Re-measured 2026-10-03 against cue v0.17.1:
+// publish invokes the gate. Re-measured 2026-10-05 against cue v0.17.1:
 //
 //   $ cue vet ./...        # exits 1 — no field named:
 //   some instances are incomplete; use the -c flag to show errors or -c=false to allow incomplete instances
@@ -563,9 +563,8 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 // `_failGateUnstated` — because `cue vet` does not check hidden fields for
 // completeness, so the same case parked in a `_`-prefixed slot exits 0 under
 // both plain vet and `-c`, and gates nothing. That is why this case is not
-// hidden, unlike the positive gate pins above (which keep the one pin shape),
-// and why the gate's own doc comment states the requirement rather than
-// leaving it to be rediscovered.
+// hidden, like the positive gate pins above, and why the gate's own doc
+// comment states the requirement rather than leaving it to be rediscovered.
 //
 //  _failUnstatedOptional: core.#Trait & {
 //   metadata: {
