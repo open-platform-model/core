@@ -8,7 +8,9 @@
 ## 2. Spec
 
 - [x] 2.1 Delta for `release-cascade`: the README citation at `0f9c6ac`.
+- [x] 2.2 Commit `docs(cascade): cite the .github README at 0f9c6ac in release-cascade`.
 
 ## 3. Final checks
 
 - [x] 3.1 Gates: `task check`, `actionlint`, `bash .tasks/cascade/wiring-check.sh --pin-on-main`, `openspec validate repin-cascade-0f9c6ac --strict`.
+- [x] 3.2 Commit `docs(cascade): close the repin-cascade-0f9c6ac task list`.
