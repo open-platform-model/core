@@ -162,4 +162,9 @@ import (
 	_overridable: true
 }
 
-#TraitMap: [string]: #Trait
+// WHY bound: the #ResourceMap WHY block.
+
+// TraitMap: the traits attached to a component, each keyed by its own
+// contract fqn. A key that differs from the member's metadata.fqn is a
+// conflict. See SPEC.md § 3.1.
+#TraitMap: [FQN=string]: #Trait & {metadata: fqn: FQN}

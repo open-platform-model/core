@@ -20,7 +20,7 @@ CUE module: `opmodel.dev/core@v2`
 | Definition | File | Description |
 |---|---|---|
 | `#Blueprint` | `blueprint.cue` | #Blueprint: Defines a reusable blueprint that composes resources and traits into a higher-level abstraction |
-| `#BlueprintMap` | `blueprint.cue` |  |
+| `#BlueprintMap` | `blueprint.cue` | BlueprintMap: the blueprints a component implements, each keyed by its own contract fqn |
 | `#Catalog` | `catalog.cue` | #Catalog: top-level catalog definition |
 | `#Component` | `component.cue` | #Component is one deployable part of a module: the resources, traits and blueprints it attaches, and the spec their fields merge into |
 | `#ComponentMap` | `component.cue` |  |
@@ -36,7 +36,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#ContractInventory` | `platform.cue` | #ContractInventory: what a #Platform derives about the contracts its enabled catalogs define and its enabled transformers require: the members and their defining catalogs, the keys more than one catalog lists, the required demands per contract, the reports and the three booleans they imply |
 | `#Platform` | `platform.cue` | A #Platform is a path-keyed registry of catalog entries, each carrying its imported catalog, plus the derived #composedTransformers fold over the enabled entries and the derived #contracts inventory |
 | `#Resource` | `resource.cue` | #Resource: Defines a resource of deployment within the system |
-| `#ResourceMap` | `resource.cue` |  |
+| `#ResourceMap` | `resource.cue` | ResourceMap: the resources attached to a component, each keyed by its own contract fqn |
 | `#AutoSecrets` | `schemas.cue` | #AutoSecrets discovers all #Secret instances from a resolved config and groups them by $secretName/$dataKey in one step |
 | `#ConfigMapSchema` | `schemas.cue` | #ConfigMapSchema: ConfigMap specification |
 | `#ContentHash` | `schemas.cue` | #ContentHash computes a deterministic 10-character hex hash of a string data map |
@@ -51,7 +51,7 @@ CUE module: `opmodel.dev/core@v2`
 | `#SecretSchema` | `schemas.cue` | #SecretSchema: Secret specification for Kubernetes Secret resources |
 | `#SecretType` | `schemas.cue` | #SecretType holds the fields every #Secret variant embeds: the $opm discriminator, and the $secretName and $dataKey that route the value to a Secret and a key within it |
 | `#Trait` | `trait.cue` | #Trait: Defines additional behavior or characteristics that can be attached to components |
-| `#TraitMap` | `trait.cue` |  |
+| `#TraitMap` | `trait.cue` | TraitMap: the traits attached to a component, each keyed by its own contract fqn |
 | `#TraitOptionalGate` | `trait.cue` | #TraitOptionalGate: what `opm catalog publish` unifies against, once per published #Trait, to hold catalogs to the two rules #Trait |
 | `#ComponentTransformer` | `transformer.cue` | #ComponentTransformer: Declares how to convert OPM components into platform-specific resources |
 | `#TransformerContext` | `transformer.cue` | Provider context passed to transformers |

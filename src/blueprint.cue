@@ -119,4 +119,9 @@ import (
 	spec!: (strings.ToCamel(metadata.#definitionName)): _
 }
 
-#BlueprintMap: [string]: #Blueprint
+// WHY bound: the #ResourceMap WHY block.
+
+// BlueprintMap: the blueprints a component implements, each keyed by its
+// own contract fqn. A key that differs from the member's metadata.fqn is a
+// conflict. See SPEC.md § 3.1.
+#BlueprintMap: [FQN=string]: #Blueprint & {metadata: fqn: FQN}
