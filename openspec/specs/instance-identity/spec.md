@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines how a deployed `#ModuleInstance` derives its own identity, separately from the identity of the module it deploys. The instance FQN composes the module's major-free `registryPath` with the instance's `name` and `namespace`, so that instance identity survives both a version change and a major bump while still distinguishing modules, namespaces and instance names. The operator's ownership label depends on this stability.
+Defines how a deployed `#ModuleInstance` derives its own identity, separately from the identity of the module it deploys. The instance FQN composes the module's major-free `registryPath` with the instance's `name` and `namespace`, so that instance identity survives both a version change and a major bump while still distinguishing modules, namespaces and instance names. The controller's ownership label depends on this stability.
 
 ## Requirements
 

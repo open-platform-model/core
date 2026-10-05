@@ -93,7 +93,7 @@ can reword them.
 
 This repo defines and publishes the Open Platform Model **core schema** as a versioned CUE module (`opmodel.dev/core@v2`).
 
-The schema is the source of truth for OPM. Every OPM artifact is typed against these definitions, and downstream repos (`library`, `catalog`, `cli`, `opm-operator`, `modules`, `releases`) consume `core` as a published dependency — never by filesystem path.
+The schema is the source of truth for OPM. Every OPM artifact is typed against these definitions, and downstream repos (`library`, `catalog`, `cli`, `opm-controller`, `modules`, `releases`) consume `core` as a published dependency — never by filesystem path.
 
 The schema is pure CUE: definitions plus the tooling to validate and publish them. The definitions reference on opmodel.dev is generated from `src/` by docs-kit when the docs bundle is built; nothing generated is committed.
 

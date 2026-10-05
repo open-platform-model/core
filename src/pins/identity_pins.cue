@@ -159,7 +159,7 @@ _pinInstanceOnV2Later: core.#ModuleInstance & {
 
 // A MAJOR bump. The module's own uuid moved (pinned above); the instance's
 // does not, because registryPath carries no major. This is the case that was
-// silently orphaning resources: the operator's prune step skips any delete
+// silently orphaning resources: the controller's prune step skips any delete
 // whose live owner label disagrees with the instance UUID it recorded, and it
 // skips WITHOUT erroring.
 _pinInstanceOnV3: core.#ModuleInstance & {
@@ -189,7 +189,7 @@ _pinInstanceOwnerLabel: _pinInstanceOnV2.metadata.labels["module-instance.opmode
 //
 // These two are absolute, and they are what make the formula a contract. A
 // module's uuid is what a registry dedupes on. An instance's is what the
-// operator's prune step compares against a live object's owner label, so a
+// controller's prune step compares against a live object's owner label, so a
 // silent change to it makes every upgrade skip the deletes it should perform,
 // leave the objects running, and report success — the exact failure 0010:D41 exists
 // to prevent, arrived at from a different direction.

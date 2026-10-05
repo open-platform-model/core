@@ -82,7 +82,7 @@ fi
 #      identifiers are even consulted — so moving to the next minor makes it
 #      strictly worse, not better.
 #   2. RETIRED in v2.0.0-alpha.4, and kept here because it was a load-bearing
-#      half of the argument: explicit range subscriptions (the opm-operator's
+#      half of the argument: explicit range subscriptions (the opm-controller's
 #      platform registry filters) admitted prereleases deliberately and were
 #      unaffected by the `@vN` stable-preference rule, so a next-minor dev
 #      build won any range whose minor had no release of its own. A #Platform

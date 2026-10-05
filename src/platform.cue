@@ -81,7 +81,7 @@ import (
 	// WHY unfulfilled: 0015:D18.
 
 	// Defined provider-fulfilled resources and traits with no providedBy
-	// key. A report the operator surfaces as a non-gating condition; never
+	// key. A report the controller surfaces as a non-gating condition; never
 	// a refusal. Blueprints never appear, nor does a contract no enabled
 	// catalog defines.
 	unfulfilled: [...#ContractFQNType]
@@ -129,12 +129,12 @@ import (
 	fulfilled: bool & (len(unfulfilled) == 0)
 
 	// True exactly when nothing is over-subscribed and no contract key
-	// collides. The gate the generation step (operator, CLI) reads; `core`
+	// collides. The gate the generation step (controller, CLI) reads; `core`
 	// itself refuses nothing on it.
 	routable: bool & (len(overSubscribed) == 0 && len(collisions) == 0)
 
 	// True exactly when nothing is comparable. The second gate `opm platform
-	// check` and the operator read; the render and `core` itself refuse
+	// check` and the controller read; the render and `core` itself refuse
 	// nothing on it.
 	discriminated: bool & (len(comparable) == 0)
 }
@@ -192,7 +192,7 @@ import (
 	// assertion inside #Platform is a bottom on the first over-subscribed
 	// contract, so the value cannot name it and every diagnostic reads a
 	// failed value. `routable: false` is the value the generation step
-	// (operator, CLI) refuses on. Under 0015:D18 the refusal named
+	// (controller, CLI) refuses on. Under 0015:D18 the refusal named
 	// `overSubscribed` and `definedBy`; since collisions are reported it
 	// names `overSubscribed` or `collisions` (with `collidingEntries`),
 	// whichever made the platform not routable. `fulfilled: false` is surfaced as a

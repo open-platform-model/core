@@ -199,7 +199,7 @@ import (
 	// evaluation fails if the runtime forgets to fill this. The value is stamped
 	// verbatim onto every rendered resource as "app.kubernetes.io/managed-by".
 	// Runtimes are expected to fill this with their own identity (e.g. "opm-cli"
-	// for the CLI, "opm-controller" for the operator).
+	// for the CLI, "opm-controller" for the controller).
 	#runtimeName!: #NameType
 
 	// WHY #Component.matchLabels is DELIBERATELY absent from every fold here: a
