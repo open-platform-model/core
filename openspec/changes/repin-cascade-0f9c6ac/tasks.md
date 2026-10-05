@@ -7,8 +7,8 @@
 
 ## 2. Spec
 
-- [ ] 2.1 Delta for `release-cascade`: the README citation at `0f9c6ac`.
+- [x] 2.1 Delta for `release-cascade`: the README citation at `0f9c6ac`.
 
 ## 3. Final checks
 
-- [ ] 3.1 Gates: `task check`, `actionlint`, `bash .tasks/cascade/wiring-check.sh --pin-on-main`, `openspec validate repin-cascade-0f9c6ac --strict`.
+- [x] 3.1 Gates: `task check`, `actionlint`, `bash .tasks/cascade/wiring-check.sh --pin-on-main`, `openspec validate repin-cascade-0f9c6ac --strict`.
