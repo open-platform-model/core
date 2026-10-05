@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.0-beta.3](https://github.com/open-platform-model/core/compare/v2.0.0-beta.2...v2.0.0-beta.3) (2026-10-05)
+
+
+### Features
+
+* **catalog:** derive the provider-fulfilled contracts a catalog implements ([#120](https://github.com/open-platform-model/core/issues/120)) ([517ae7b](https://github.com/open-platform-model/core/commit/517ae7ba13376c3c102353d5e8e9ca8f00eb453b))
+
 ## [2.0.0-beta.2](https://github.com/open-platform-model/core/compare/v2.0.0-beta.1...v2.0.0-beta.2) (2026-10-03)
 
 
