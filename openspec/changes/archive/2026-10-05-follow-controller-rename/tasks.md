@@ -7,7 +7,7 @@
 
 ## 2. Specification, schema comments and repo rules
 
-- [x] 2.1 `SPEC.md`: the product mentions (render-gate list, `initValues` consumers, the `#CatalogEntry.version` writer, the `#matchers` reader check, the D18 rationale, `#ModuleInstance` definition and ownership-label constraints, the `#Catalog.provides` rationale). Keep "a cluster with no operator" (provider operator) and "Helm operators".
+- [x] 2.1 `SPEC.md`: the product mentions (render-gate list, `initValues` consumers, the `#CatalogEntry.version` writer, the `#matchers` reader check, the D18 rationale, `#ModuleInstance` definition and ownership-label constraints, the `#Catalog.provides` rationale). Rename "a cluster with no operator" to "a cluster with no controller" (OPM's own, per the skip-unprovided proposal). Keep "Helm operators".
 - [x] 2.2 Comments in `src/platform.cue`, `src/module_instance.cue`, `src/transformer.cue` (`#runtimeName`), `src/pins/identity_pins.cue`. Keep the human "operator upgrading" in `src/transformer.cue` and `src/types.cue`. Run `task generate:index` and review the diff.
 - [x] 2.3 Main specs: edit the `instance-identity` Purpose line in place; the four MODIFIED requirement bodies land at archive.
 - [x] 2.4 `AGENTS.md`, `openspec/config.yaml` (constitution consumer list and the proposal rule) and `.tasks/branch-tag.sh` comment name `opm-controller`.

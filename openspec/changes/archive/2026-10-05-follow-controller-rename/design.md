@@ -11,9 +11,9 @@ The controller repo `opm-operator` becomes `opm-controller` (owner decisions rec
 ## Decisions
 
 - The substitution is by exact pattern, never a bare word rule. Patterns, in order: `opm-operator` to `opm-controller`; `cli/internal/cmd/operator/` to `cli/internal/cmd/controller/`; `cli/internal/operator/` to `cli/internal/controller/`; `opm operator install` to `opm controller install`; `GateOperatorVersionCeiling` to `GateControllerVersionCeiling`; then, per line after review, the product noun (`an operator` to `a controller`, `operator` to `controller`, `Operator` to `Controller`).
-- Lines where "operator" is not the product stay: the human role ("a platform operator", "an operator upgrading a catalog"), Kubernetes-generic ("an operator's bundle", "the set of operators installed in a cluster"), "Helm operators", and SPEC.md's "a deployer on a cluster with no operator", which names the provider's own operator (for example k8up), not OPM's.
+- Lines where "operator" is not the product stay: the human role ("a platform operator", "an operator upgrading a catalog"), Kubernetes-generic ("an operator's bundle", "the set of operators installed in a cluster"), and "Helm operators". SPEC.md's "a deployer on a cluster with no operator" names OPM's own product (the skip-unprovided proposal says "a cluster without the operator, where no provider can ever be registered"), so it becomes "no controller".
 - `opm-operator/internal/controller/...` becomes `opm-controller/internal/controller/...`: the controller repo keeps its `internal/controller` package (controller-runtime reconcilers).
-- `src/*.cue` edits are comment-only. Doc comments are replayed into `src/INDEX.md` and the definitions reference, so `task generate:index` is re-run; the commit uses `SPEC_IMPACT=none` only if `SPEC.md` is not in the same commit.
+- `src/*.cue` edits are comment-only. Doc comments are replayed into `src/INDEX.md` and the definitions reference, so `task generate:index` is re-run; the PR body carries `Spec-Impact: none`; a commit trailer is optional.
 
 ## Risks / Trade-offs
 

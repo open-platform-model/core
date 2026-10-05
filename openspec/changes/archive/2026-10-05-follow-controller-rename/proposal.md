@@ -10,7 +10,7 @@ core names the product in prose only: the concept pages it ships to opmodel.dev,
 - `docs/adapters.md`, `SPEC.md`, `AGENTS.md`, `openspec/config.yaml` and `.tasks/branch-tag.sh` say "controller" or `opm-controller` where they meant the product.
 - `src/*.cue` doc comments and WHY blocks that name the product say "controller". Comment text only: no field, constraint, default or closedness moves, so the evaluated schema is identical. The PR needs the line `Spec-Impact: none` for the CI co-update gate, although `SPEC.md` changes in the same PR.
 - Four main-spec requirement bodies (`contract-fulfilment`, `instance-identity`, `platform-contract-inventory`, `release-cascade`) are MODIFIED with the new name; no requirement or scenario title carries the word, so nothing is retitled. The `instance-identity` Purpose line is edited in place.
-- Kept as written: `CHANGELOG.md` and `openspec/changes/archive/**` (history), the human "platform operator" and "an operator upgrading a catalog", Kubernetes-generic "operators installed in a cluster", "Helm operators", and the provider's own operator in "a cluster with no operator".
+- Kept as written: `CHANGELOG.md` and `openspec/changes/archive/**` (history), the human "platform operator" and "an operator upgrading a catalog", Kubernetes-generic "operators installed in a cluster", and "Helm operators".
 - Not here: `.tasks/cascade/wiring-check.sh` names `opm-operator` twice, but it is a byte-identical copy of the `.github` wiring script whose hash the pin round checks, so it moves only with the `.github` pin round that retires the old repo name.
 
 ## Release class
