@@ -43,3 +43,8 @@ Source: follow-up from the change that moved the pins into `src/pins/` (2026-10-
 
 - **WHEN** the same unstated-posture case is applied in a hidden field (`_failGateUnstated`)
 - **THEN** `cue vet ./...` and `cue vet -c ./...` both exit 0, which is why a gate pin may not be hidden
+
+#### Scenario: spec:check refuses a hidden applied gate pin
+
+- **WHEN** an uncommented line in `src/pins/*.cue` declares a hidden top-level field whose value starts `core.#TraitOptionalGate` or `core.#CatalogMemberFQNGate`
+- **THEN** `task spec:check` fails, names the file and line and this requirement, and tells the author to drop the leading underscore; commented must-fail cases are not matched

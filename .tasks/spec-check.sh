@@ -13,6 +13,9 @@
 #   - add a #Name line to .tasks/spec-tracked.txt
 #   - add a section to SPEC.md that references #Name
 #
+# Gate pin check: an applied (uncommented) publish-gate pin in src/pins/ is a
+# regular field, never hidden, so cue vet checks its completeness.
+#
 # Pin placement check: package core (src/*.cue) declares no top-level hidden
 # field. Schema pins live in package pins in src/pins/, which nothing imports;
 # a pin in package core would be evaluated by every main-instance build of it.
@@ -115,8 +118,23 @@ if [[ -n "$hidden_in_core" ]]; then
   failed=1
 fi
 
+# Gate pins: an applied (uncommented) pin that applies a publish gate is a
+# regular field. cue vet checks only regular fields for completeness, so a
+# hidden gate pin with an unstated posture vets clean and checks nothing.
+# Commented must-fail cases keep the hidden shape and are not matched here.
+hidden_gate_pins=$(
+  grep -nE '^[[:space:]]*_[A-Za-z0-9_]+:[[:space:]]*core\.#(TraitOptionalGate|CatalogMemberFQNGate)\b' \
+    "$ROOT"/src/pins/*.cue 2>/dev/null || true
+)
+if [[ -n "$hidden_gate_pins" ]]; then
+  echo "FAIL: hidden publish-gate pins in src/pins/ (requirement \"Publish-gate pins are applied non-hidden\"):" >&2
+  printf '%s\n' "$hidden_gate_pins" | sed "s|^$ROOT/||; s/^/  /" >&2
+  echo "  Fix: drop the leading underscore so cue vet checks the gate (SPEC.md § 5.1)." >&2
+  failed=1
+fi
+
 if [[ "$failed" -eq 0 ]]; then
-  echo "OK: SPEC.md inventory matches CUE definitions and allowlist; package core declares no pin."
+  echo "OK: SPEC.md inventory matches CUE definitions and allowlist; package core declares no pin; gate pins are non-hidden."
 fi
 
 exit "$failed"
