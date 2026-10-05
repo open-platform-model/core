@@ -96,24 +96,92 @@ _pinContractCatalog: core.#Catalog & {
 _pinContractStamps: "\(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.modulePath) \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.catalogVersion)"
 _pinContractStamps: "opmodel.dev/catalogs/opm/resources/v1beta1 4.1.0 | opmodel.dev/catalogs/opm/traits/v1beta1 4.1.0 | opmodel.dev/catalogs/opm/blueprints/v1alpha1 4.1.0"
 
-// ─── Key and fqn are not compared by core ───────────────────────────────────
+// ─── A contract key must equal its member's fqn ─────────────────────────────
 
-// A well-formed contract key that differs from the member's authored fqn.
-// `core` enforces the key's FORM only; the agreement between key, fqn and the
-// identity package is #CatalogMemberFQNGate's at publish (0010:D21), as it
-// already is for #transformers. The member validates, receives the stamps,
-// and its fqn is untouched by the key it sits under.
-_pinContractKeyNotCompared: core.#Catalog & {
+// Each contract map binds the member's metadata.fqn to its key (SPEC.md
+// § 3.6). The catalog above keys every member by its own fqn, so the bind is
+// a no-op there; read each fqn back through its key to show it.
+_pinContractKeyedFQNs: "\(_pinContractCatalog.#resources[_pinContractResource.metadata.fqn].metadata.fqn)|\(_pinContractCatalog.#traits[_pinContractTrait.metadata.fqn].metadata.fqn)|\(_pinContractCatalog.#blueprints[_pinContractBlueprint.metadata.fqn].metadata.fqn)"
+_pinContractKeyedFQNs: "opmodel.dev/catalogs/opm/resources/container@v1beta1|opmodel.dev/catalogs/opm/traits/scaling@v1beta1|opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"
+
+// BIND-FILL: one member per map that leaves fqn UNSET. The bind fills each
+// from its key. Without the bind the read-back is an unset required field,
+// which `cue vet` never reports in a hidden pin, so the three read-backs are
+// also in Taskfile.yml's `task vet` export list: losing any one map's bind
+// fails `task vet` there.
+_pinContractFillCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/opm@v4"
 		version:    "4.1.0"
 	}
 	#transformers: {}
-	#traits: "opmodel.dev/catalogs/opm/traits/autoscale@v1beta1": _pinContractTrait
+	#resources: "opmodel.dev/catalogs/opm/resources/fill-resource@v1beta1": core.#Resource & {
+		metadata: {name: "fill-resource", apiVersion: "v1beta1"}
+		spec: fillResource: size: int
+	}
+	#traits: "opmodel.dev/catalogs/opm/traits/fill-trait@v1beta1": core.#Trait & {
+		metadata: {name: "fill-trait", apiVersion: "v1beta1"}
+		optional: bool | *true
+		appliesTo: [_pinContractResource]
+		spec: fillTrait: port: int
+	}
+	#blueprints: "opmodel.dev/catalogs/opm/blueprints/fill-blueprint@v1beta1": core.#Blueprint & {
+		metadata: {name: "fill-blueprint", apiVersion: "v1beta1"}
+		composedResources: [_pinContractResource]
+		spec: fillBlueprint: replicas: int
+	}
 }
+_pinContractFillResourceFQN:  "\(_pinContractFillCatalog.#resources["opmodel.dev/catalogs/opm/resources/fill-resource@v1beta1"].metadata.fqn)"
+_pinContractFillResourceFQN:  "opmodel.dev/catalogs/opm/resources/fill-resource@v1beta1"
+_pinContractFillTraitFQN:     "\(_pinContractFillCatalog.#traits["opmodel.dev/catalogs/opm/traits/fill-trait@v1beta1"].metadata.fqn)"
+_pinContractFillTraitFQN:     "opmodel.dev/catalogs/opm/traits/fill-trait@v1beta1"
+_pinContractFillBlueprintFQN: "\(_pinContractFillCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/fill-blueprint@v1beta1"].metadata.fqn)"
+_pinContractFillBlueprintFQN: "opmodel.dev/catalogs/opm/blueprints/fill-blueprint@v1beta1"
 
-_pinContractKeyNotComparedRead: "\(_pinContractKeyNotCompared.#traits["opmodel.dev/catalogs/opm/traits/autoscale@v1beta1"].metadata.fqn)|\(_pinContractKeyNotCompared.#traits["opmodel.dev/catalogs/opm/traits/autoscale@v1beta1"].metadata.modulePath)"
-_pinContractKeyNotComparedRead: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1|opmodel.dev/catalogs/opm/traits/v1beta1"
+// MUST FAIL (commented; observed cue v0.17.1, this commit): a well-formed
+// contract key that differs from the member's authored fqn. Before this bind
+// `core` checked the key's form only, and this case was a POSITIVE pin
+// (_pinContractKeyNotCompared). Each also prints the cascade line
+// `spec.<name>: field not allowed`, as the cases under MUST FAIL below do.
+//
+// A trait under another trait's key:
+//   _failContractKeyMismatch.#traits."opmodel.dev/catalogs/opm/traits/autoscale@v1beta1".metadata.fqn: conflicting values
+//     "opmodel.dev/catalogs/opm/traits/autoscale@v1beta1" and "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
+//
+//  _failContractKeyMismatch: core.#Catalog & {
+//   metadata: {
+//    modulePath: "opmodel.dev/catalogs/opm@v4"
+//    version:    "4.1.0"
+//   }
+//   #transformers: {}
+//   #traits: "opmodel.dev/catalogs/opm/traits/autoscale@v1beta1": _pinContractTrait
+//  }
+//
+// A resource under another resource's key:
+//   _failContractResourceMisKeyed.#resources."opmodel.dev/catalogs/opm/resources/volumes@v1beta1".metadata.fqn: conflicting values
+//     "opmodel.dev/catalogs/opm/resources/volumes@v1beta1" and "opmodel.dev/catalogs/opm/resources/container@v1beta1"
+//
+//  _failContractResourceMisKeyed: core.#Catalog & {
+//   metadata: {
+//    modulePath: "opmodel.dev/catalogs/opm@v4"
+//    version:    "4.1.0"
+//   }
+//   #transformers: {}
+//   #resources: "opmodel.dev/catalogs/opm/resources/volumes@v1beta1": _pinContractResource
+//  }
+//
+// A blueprint under another blueprint's key:
+//   _failContractBlueprintMisKeyed.#blueprints."opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1alpha1".metadata.fqn: conflicting values
+//     "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1alpha1" and "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"
+//
+//  _failContractBlueprintMisKeyed: core.#Catalog & {
+//   metadata: {
+//    modulePath: "opmodel.dev/catalogs/opm@v4"
+//    version:    "4.1.0"
+//   }
+//   #transformers: {}
+//   #blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1alpha1": _pinContractBlueprint
+//  }
 
 // ─── Publishing a contract requires no adapter ──────────────────────────────
 

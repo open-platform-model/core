@@ -27,15 +27,15 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
 
 `#Catalog.#resources`, `#traits` and `#blueprints` bind each member's `metadata.fqn` to its key. `#transformers` is unchanged (SD13).
 
-- [ ] 2.1 In `src/catalog.cue`, rewrite the three contract-map patterns as `[K=#ContractFQNType]` and add `fqn: K` beside the stamps (`design.md` § The catalog maps). Update the `#resources` doc comment ("never fqn" becomes "binds fqn to the key") and the `#traits` and `#blueprints` doc comments if they repeat it. In the file header, the paragraph "It does NOT stamp `metadata.fqn`" stays true for `#transformers`. Add one sentence saying that the contract maps bind fqn to the key. Then verify that `cue vet .` passes.
-- [ ] 2.2 In `src/pins/catalog_pins.cue:99-116`, replace `_pinContractKeyNotCompared` and its read-back with:
+- [x] 2.1 In `src/catalog.cue`, rewrite the three contract-map patterns as `[K=#ContractFQNType]` and add `fqn: K` beside the stamps (`design.md` § The catalog maps). Update the `#resources` doc comment ("never fqn" becomes "binds fqn to the key") and the `#traits` and `#blueprints` doc comments if they repeat it. In the file header, the paragraph "It does NOT stamp `metadata.fqn`" stays true for `#transformers`. Add one sentence saying that the contract maps bind fqn to the key. Then verify that `cue vet .` passes.
+- [x] 2.2 In `src/pins/catalog_pins.cue:99-116`, replace `_pinContractKeyNotCompared` and its read-back with:
   - a commented must-fail case `_failContractKeyMismatch` that records the conflicting-values error (re-run in place under that name; `design.md` has the text measured at planning);
   - a positive read-back pin for each of the three maps, keyed by fqn;
   - commented must-fail cases for a mis-keyed resource member and a mis-keyed blueprint member;
   - three catalog bind-fill read-backs, one per contract map, each added to the `task vet` export list.
 
   Re-run each existing commented catalog must-fail case (`_failContractFilingDrift`, `_failContractStaleBuild`, `_failContractWrongKind`, `_failContractBuildKey`) in place and update any recorded text that changed. Mutation check: remove each catalog bind in turn and confirm that `task vet` fails. Rename the banner to "A contract key must equal its member's fqn". Grep `src/pins/` for any other contract-map entry that does not key by fqn, and re-key it.
-- [ ] 2.3 Update `SPEC.md` §3.6 `#Catalog`:
+- [x] 2.3 Update `SPEC.md` §3.6 `#Catalog`:
   - Constraints: replace the bullet "The contract maps do NOT stamp or bind `metadata.fqn` ..." with the bind rule (key MUST equal `metadata.fqn`, a differing key fails with `conflicting values` naming both, an unset fqn takes the key, the key stays `#ContractFQNType`, `#CatalogMemberFQNGate` still checks fqn against the identity package at publish). Rewrite the `#transformers` bullet "The pattern does NOT stamp `metadata.fqn`" (around SPEC.md:1048): the transformer key is checked for form only, and neither core nor the publish gate compares it to the transformer's fqn (the gate is filled from member definitions and never reads a map key); binding it is a possible follow-up (SD13).
   - Shape: show `fqn: K` in the three contract-map patterns.
   - Rationale: rework "Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`" (the transformer stamp still does not; the contract maps bind it to the key, which derives nothing), and add "Why contract keys are bound and transformer keys are not" (owner decision j3 covers attachment maps; all published transformers already match; binding them is a later tightening).
@@ -43,7 +43,7 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
   - §2.1 Rationale "Why `fqn` is authored rather than computed": add one sentence saying that the attachment maps now also refuse a key that disagrees with fqn.
 
   Then verify that `task spec:check` passes.
-- [ ] 2.4 Run `task generate:index` if a doc comment changed. Run `task fmt` and stage the files, then `task check` must pass. Commit `feat(catalog)!: bind contract member keys to the member's fqn`, with a `BREAKING CHANGE:` footer that names the catalog maps.
+- [x] 2.4 Run `task generate:index` if a doc comment changed. Run `task fmt` and stage the files, then `task check` must pass. Commit `feat(catalog)!: bind contract member keys to the member's fqn`, with a `BREAKING CHANGE:` footer that names the catalog maps.
 
 ## 3. Apply the publish gates as non-hidden pins and correct the rule-1 text
 
