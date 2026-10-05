@@ -29,6 +29,37 @@ tasks:
     dir: src
     cmds:
       - cue vet ./...
+      # cue vet never reports an incomplete hidden pin, so a regression that
+      # leaves #Catalog.provides optional or incomplete would pass silently.
+      # Exporting the provider pins demands concrete values (SPEC §3.6).
+      - |
+        cue export ./pins -e '[
+          _pinInventoryBareProvidedBy,
+          _pinInventoryBaseOnlyProvidedBy,
+          _pinInventoryCollideOverSubscribedProvidedBy,
+          _pinInventoryDefinerAbsentProvidedBy,
+          _pinInventoryDefinerDisabledProvidedBy,
+          _pinInventoryDisabledProviderProvidedBy,
+          _pinInventoryEmptyProvidedBy,
+          _pinInventoryOneProviderProvidedBy,
+          _pinInventoryOptionalOnlyProvidedBy,
+          _pinInventoryTwoMajorsProvidedBy,
+          _pinInventoryTwoProvidersProvidedBy,
+          _pinParityDisabledProvider,
+          _pinParityOneProvider,
+          _pinParityResourceProvider,
+          _pinParityTwoMajors,
+          _pinParityTwoProviders,
+          _pinProvidesBare,
+          _pinProvidesBase,
+          _pinProvidesEpsilon,
+          _pinProvidesGamma,
+          _pinProvidesK8up,
+          _pinProvidesRestic,
+          _pinProvidesS3,
+          _pinProvidesS3Optional,
+          _pinProvidesVelero,
+        ]' >/dev/null
 
   tidy:
     desc: Tidy the CUE module manifest

@@ -1,5 +1,7 @@
 package core
 
+import "list"
+
 // WHY it is authored this way. The full authoring shape:
 //
 //
@@ -71,14 +73,16 @@ package core
 // `M=metadata` field-label alias", "Why the pattern stamps `modulePath` +
 // `catalogVersion` but not `fqn`", "Why a catalog publishes its contracts as
 // members", "Why the contract stamp carries the member's apiVersion segment
-// while the transformer stamp does not" and "Why the member is the primitive
-// itself rather than a projection".
+// while the transformer stamp does not", "Why the member is the primitive
+// itself rather than a projection" and "Why a catalog derives the contracts
+// it provides".
 
 // #Catalog: top-level catalog definition. Authoring shape uses the modules
 // pattern — bare `c.#Catalog` at file root, fields written at package level,
 // no `Catalog:` wrapper; identity comes from the sibling `identity/` package.
-// Publishes the contracts it defines (#resources, #traits, #blueprints)
-// beside the transformers that implement them (#transformers). See SPEC.md § 3.6.
+// Publishes the contracts it defines (#resources, #traits, #blueprints) beside
+// the transformers that implement them (#transformers), and derives the
+// provider-fulfilled contracts those require (provides). See SPEC.md § 3.6.
 #Catalog: {
 	kind: "Catalog"
 	M=metadata: {
@@ -155,6 +159,31 @@ package core
 			catalogVersion: M.version
 		}
 	}
+
+	// Every provider-fulfilled contract some transformer requires, deduplicated
+	// through struct keys. Both demand maps are optional on #ComponentTransformer,
+	// so each is presence-guarded before comprehending.
+	let providerSet = {
+		for _, tf in #transformers {
+			if tf.requiredResources != _|_ {
+				for fqn, req in tf.requiredResources if req.fulfilment == "provider" {(fqn): true}
+			}
+			if tf.requiredTraits != _|_ {
+				for fqn, req in tf.requiredTraits if req.fulfilment == "provider" {(fqn): true}
+			}
+		}
+	}
+
+	// WHY provides: library ADR-012 moves one derived rule into core at a
+	// time; this is the rule Catalog.Provides() folds in Go and the
+	// 0015:D11 claim check compares against. SPEC.md § 3.6 Rationale,
+	// "Why a catalog derives the contracts it provides".
+
+	// provides: the provider-fulfilled contracts this catalog implements,
+	// sorted and deduplicated: every requiredResources or requiredTraits
+	// key of its #transformers whose requirement reads fulfilment
+	// "provider". Derived, never authored. See SPEC.md § 3.6.
+	provides: [...#ContractFQNType] & list.Sort([for fqn, _ in providerSet {fqn}], list.Ascending)
 
 	#transformers: [#ImplFQNType]: #ComponentTransformer & {
 		metadata: {

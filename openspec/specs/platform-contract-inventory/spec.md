@@ -147,9 +147,9 @@ A `#Platform` with no enabled entries MUST derive empty `defined`, `definedBy`, 
 
 ### Requirement: The inventory names the registry entries providing each contract
 
-`#contracts.providedBy` MUST map every contract FQN that some enabled transformer names in its `requiredResources` or `requiredTraits` with a requirement whose `fulfilment` is `"provider"` to the ascending-sorted list of registry keys (the catalog module path with its major, `path@vN`) of the enabled entries whose transformers do so. It is derived per registry entry, over every transformer of every enabled entry, and it MUST NOT depend on whether any enabled entry defines the contract. Fulfilment MUST be read from the transformer's own requirement value, never from the defining catalog's member. A key MUST be present exactly when at least one enabled entry provides the contract. Optional demands, required labels, catalog-fulfilled requirements, blueprints and disabled entries MUST NOT contribute. Each registry key MUST appear at most once per contract, however many of that entry's transformers require it.
+`#contracts.providedBy` MUST map every contract FQN that some transformer of an enabled entry's `#catalog` names in its `requiredResources` or `requiredTraits` with a requirement whose `fulfilment` is `"provider"` to the ascending-sorted list of registry keys (the catalog module path with its major, `path@vN`) of the enabled entries whose transformers do so. It is derived per registry entry, over the transformers of every enabled entry's `#catalog.#transformers`, and it MUST NOT depend on whether any enabled entry defines the contract. It MUST equal the fold, by registry key, of every enabled entry's `#catalog.provides` (catalog-contracts), so the platform and the catalog state one rule. A transformer written on the entry's own `#transformers` readout rather than in the catalog is outside that fold: the readout is not authored (core#119 tracks whether to refuse it). Fulfilment MUST be read from the transformer's own requirement value, never from the defining catalog's member. A key MUST be present exactly when at least one enabled entry provides the contract. Optional demands, required labels, catalog-fulfilled requirements, blueprints and disabled entries MUST NOT contribute. Each registry key MUST appear at most once per contract, however many of that entry's transformers require it.
 
-Source: corrects the delivery of 0015:D2 (a refusal names both catalog paths) by exposing the paths it names.
+Source: corrects the delivery of 0015:D2 (a refusal names both catalog paths) by exposing the paths it names. The fold over `#catalog.provides` follows library ADR-012.
 
 #### Scenario: One provider entry through two adapters is one key
 
@@ -175,6 +175,11 @@ Source: corrects the delivery of 0015:D2 (a refusal names both catalog paths) by
 
 - **WHEN** an entry with `enable: false` has a transformer requiring a provider-fulfilled trait
 - **THEN** that entry's registry key appears in no `providedBy` list
+
+#### Scenario: A provider-fulfilled resource requirement folds through the catalog's provides
+
+- **WHEN** an enabled entry `opmodel.dev/catalogs/s3@v1` ships a transformer requiring the provider-fulfilled resource `opmodel.dev/catalogs/s3/resources/bucket@v1alpha1` under `requiredResources` and the provider-fulfilled `backup` trait under `requiredTraits`, so its `#catalog.provides` lists both
+- **THEN** `providedBy` maps each of the two FQNs to `["opmodel.dev/catalogs/s3@v1"]`
 
 ### Requirement: Over-subscription counts providing registry entries, not transformers
 
