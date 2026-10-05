@@ -151,4 +151,30 @@ The text everywhere says what cue v0.17.1 prints for a non-hidden application of
 
 ## Re-vet against this build
 
-Filled in by section 4. For each consumer: the path, the core version it was vetted against, the command, and the result. Any mis-keyed member is listed with its exact path and marked PUBLISHED or unpublished.
+Run 2026-10-05 on cue v0.17.1, in scratch copies only; no consumer repo was changed.
+
+**The build.** The branch's `src/` at commit a01ccd3 (sections 1-3) was published as the throwaway version `opmodel.dev/core@v2.0.0-beta.99` to a private in-memory `cue mod registry` on 127.0.0.1:5917, never to GHCR or the shared `localhost:5000`. All 145 published `opmodel.dev/core` tags were copied into it from GHCR with `crane copy`, so module-graph resolution of older core versions still worked. `CUE_REGISTRY` routed `opmodel.dev/core` (and, for the library registry fixtures, `testing.opmodel.dev`) to that registry and everything else to GHCR, with a private `CUE_CACHE_DIR`. Each consumer was copied twice, its core requirement set (or added) to `v2.0.0-beta.3` (origin/main's core, the baseline) and to `v2.0.0-beta.99` (this branch), and vetted on both. The cache held only `core@v2.0.0-beta.99` after the first run, which confirms resolution went through the override.
+
+**Positive controls.** A component keyed `#resources: container: #ContainerResource`, added to a scratch copy of catalog_opm `src/resources/v1beta1` and of `modules/apprise` (under `#components`), failed plain `cue vet` with `... .#resources.container.metadata.fqn: conflicting values "opmodel.dev/catalogs/opm/resources/container@v1beta1" and "container"`. Plain vet therefore reaches attachments in both regular fields and definitions, and the override was live.
+
+**Result: no mis-keyed member anywhere. No OWNER STOP (0021:D7:R5) fired.**
+
+| Consumer (origin/main) | Command | beta.3 | beta.99 | Note |
+| --- | --- | --- | --- | --- |
+| catalog_opm `src/` (3d92d84) | `task vet` (plain and `-t fixtures`), `task vet:fixtures` | — | pass | 71 rendered-output fixtures evaluate |
+| Published `opmodel.dev/catalogs/opm@v4` 4.1.0, 4.1.1, 4.2.0, 4.3.0, 4.3.1, 4.4.0-4.4.5, 4.5.0-4.5.2, 4.6.0 (source pulled from GHCR, vetted as main module) | `cue vet ./...`, and `-t fixtures` where the release has fixture files | pass (as pinned) | pass | |
+| Published `catalogs/opm` v2.0.0-alpha.1 to alpha.8, v2.0.0, v3.0.0, v4.0.0, v4.0.1 | `cue vet ./...` | fail | fail | Pre-existing: identical error sets on beta.3 and beta.99 (label-count and transformer fixtures broken by earlier core releases); no `metadata.fqn` conflict in either. Key audit below finds every key fqn-shaped. |
+| Published `catalogs/k8s` v1.0.0-alpha.1 to beta.2, `catalogs/kubernetes` v2.0.0-alpha.1 | `cue vet ./...` | pass (as pinned) | pass | `catalogs/kubernetes` v1.2.0 is on core@v1, so unaffected |
+| modules fleet (eb4cb97): apprise, cert_manager, gotify, istio_ambient, k8up, metallb, ntfy, web_app | `cue vet ./...` | pass | pass | |
+| opm-modules (f16a187, read only): fileflows, intel_gpu_device_plugin, intel_gpu_exporter, jellyfin, jellystat, jellyswarrm, nvidia_device_plugin, nvidia_gpu_exporter, radarr, sabnzbd, seerr, sonarr | `cue vet ./...` | pass | pass | |
+| library (168c736): `modules/opm_platform`, `testdata`, `testdata/modules/web_app`, `testdata/parity`, `testdata/parity/opm_platform`, the 15 `testdata/render/{instance*,platform*,scenarios}` modules | `cue vet ./...` | pass | pass | render modules need the served registry fixtures below |
+| library `testdata/render/registry/*` (14 modules) | served: each published to the scratch registry at its directory version (with `source: kind: "self"` added in scratch; `bprov` v1.0.0 published from a `cue mod tidy` copy, because it is not tidy), then `cue vet ./...`; `-c=false` for app_bk0, app_maj0, web_app v0.1.0 and v0.2.0, which carry unfilled values by design | pass | pass | |
+| cli (bd4d1a7c): examples, hack/platform, internal/workflow/render/testdata/skip-unprovided, templates/{advanced,minimal,standard}, tests/e2e/testdata/{duplicate-identities,operator-owned,vet-errors/*}, tests/fixtures/{modules/podinfo,valid/*}, tests/integration/{inst-tree,module-apply}/testdata | `cue vet ./...` | pass | pass | |
+| cli internal/instinit/testdata/initvalues, tests/e2e/testdata/vet-errors/open-debug-values | `cue vet -c=false ./...` | pass | pass | incomplete by design (plain vet says so on both builds) |
+| opm-operator (9b83611): `modules/opm_operator`, hack/testdata/operator-module-release-check/module, internal/source/testdata/minimal-module, test/fixtures/catalogs/{backup,provider}, test/fixtures/modulepackages/{hello,hello_web,podinfo,redis}, test/fixtures/modules/{backup_consumer,backup_provider,hello,hello_web,podinfo,redis} | `cue vet ./...` | pass | pass | |
+
+No consumer was left NOT VETTED.
+
+**Key audit.** A scan of every `#resources`, `#traits` and `#blueprints` struct written in CUE or in a Go string (`.cue`, `.go`, `.tmpl`) flagged any key that is neither an `(… .metadata.fqn)` expression nor a quoted contract FQN. It flagged 10 keys in core at 8dbb7e7 (the short pin keys this change rewrites), and 0 in: this branch's `src/` (51 keys), catalog_opm main (92), every published catalog release above (up to 92 per release), library (94), cli (8) and opm-operator (1). The Go-embedded component maps are five `#resources: %q:` sites in library `opm/kernel/` tests (`integration_fixtures_test.go` twice, `parity_probe_test.go`, `flow_synth_catalog_import_test.go`, `flow_synth_imported_test.go`), each filled with `containerFQN`, the same value as the member's `fqn`. cli and opm-operator embed no attachment map in Go; opm-operator's `internal/render/demand.go` only reads `#resources` and `#traits`. `registrytest.BuildCatalog` writes `#transformers` only.
+
+**Still to run at the PR stage.** Re-run the library fixture vet and the Go-embedded audit against library `origin/main` once `lib-i3d2` and `lib-b1g2` have merged.

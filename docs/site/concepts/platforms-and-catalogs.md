@@ -94,6 +94,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - One entry per catalog path, and one build per catalog major: cue (map semantics) and CUE's module resolution.
 - A catalog stamps each member's `modulePath` and `catalogVersion`, and a divergent authored value conflicts: cue.
 - A contract map key is a contract FQN and a transformer key an implementation FQN: cue.
+- An attachment or contract map key equals the member's fqn: cue (conflicting values). A transformer key is checked for form only; nothing compares it to the transformer's fqn.
 - A catalog's `version` is concrete: cue (an unstamped catalog is an incomplete value).
 - A catalog's version major agrees with its path, and every member's FQN agrees with the identity package: publish (`#IdentityPackage`, `#CatalogMemberFQNGate` in `opm catalog publish`).
 - Changes to beta and GA contracts are additive only: publish (the compatibility gate).
@@ -102,4 +103,4 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - An unfulfilled provider contract: nothing refuses it until a module demands it, then kernel, unless the render's caller asked to skip unprovided demands.
 - Comparable transformer pairs: reported by `opm platform check`, validation exit, and by the operator (Platform `Ready=False`, reason `ComparablePredicates`); the render gate does not refuse them.
 - Every provider contract a catalog declares is listed in its contract maps: the catalog's own CI (`task vet:listing` in catalog_opm), not a publish gate. Verify which badge the writing guide wants for catalog CI.
-Check against: core/src/platform.cue, core/src/catalog.cue, core/src/identity_package.cue, cli/internal/publish/catalog_gates.go, cli/internal/publish/gates.go, cli/internal/compat/compat.go, cli/internal/cmd/platform/check.go, library/opm/internal/renderstage/render.cue.tmpl, library/opm/errors/collision.go, opm-operator/internal/status/conditions.go, opm-operator/internal/controller/platform_inventory.go, catalog_opm/Taskfile.yml -->
+Check against: core/src/platform.cue, core/src/catalog.cue, core/src/resource.cue, core/src/identity_package.cue, cli/internal/publish/catalog_gates.go, cli/internal/publish/gates.go, cli/internal/compat/compat.go, cli/internal/cmd/platform/check.go, library/opm/internal/renderstage/render.cue.tmpl, library/opm/errors/collision.go, opm-operator/internal/status/conditions.go, opm-operator/internal/controller/platform_inventory.go, catalog_opm/Taskfile.yml -->

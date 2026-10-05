@@ -67,9 +67,9 @@ This is the wave-1 follow-up folded in by SD14. The posture gate gets its teeth 
 
 ## 4. Document appliesTo as unchecked and re-vet the consumers
 
-- [ ] 4.1 In `SPEC.md`, the `appliesTo` text stays as is: unchecked, surfacing at render. Add a pointer to core#99 (open: enforce or drop) in §2.2 Constraints (around :216) and Rationale (:220), §3.1 Constraints (:336) and §3.3 Constraints (:552). Do not change `src/trait.cue`'s `appliesTo!` field.
-- [ ] 4.2 In the "What enforces this" outline comments of `docs/site/concepts/platforms-and-catalogs.md` and `docs/site/concepts/components-and-blueprints.md`, add the line "An attachment or contract map key equals the member's fqn: cue (conflicting values)". Add `core/src/resource.cue` to the "Check against" list where it is missing. Verify that `task docs:bundle:check` passes.
-- [ ] 4.3 Re-vet the consumers against this branch's build, in scratch copies only (`mktemp -d` under the session scratchpad), and never commit to those repos.
+- [x] 4.1 In `SPEC.md`, the `appliesTo` text stays as is: unchecked, surfacing at render. Add a pointer to core#99 (open: enforce or drop) in §2.2 Constraints (around :216) and Rationale (:220), §3.1 Constraints (:336) and §3.3 Constraints (:552). Do not change `src/trait.cue`'s `appliesTo!` field.
+- [x] 4.2 In the "What enforces this" outline comments of `docs/site/concepts/platforms-and-catalogs.md` and `docs/site/concepts/components-and-blueprints.md`, add the line "An attachment or contract map key equals the member's fqn: cue (conflicting values)". Add `core/src/resource.cue` to the "Check against" list where it is missing. Verify that `task docs:bundle:check` passes.
+- [x] 4.3 Re-vet the consumers against this branch's build, in scratch copies only (`mktemp -d` under the session scratchpad), and never commit to those repos.
   - Serve the branch's core under a throwaway version that never reaches GHCR. Use `task publish VERSION=...` to `localhost:5000`, or `cue mod registry` in scratch. Route `opmodel.dev/core` to that registry and resolve the rest from GHCR. If the module graph asks for older core versions, copy them in. Any equivalent module override is acceptable.
   - Then bump each scratch consumer's core requirement and vet it:
     - catalog_opm `src/`: `task vet` (both passes) and `task vet:fixtures` (the if fixtures build attribute files build components);
@@ -80,9 +80,9 @@ This is the wave-1 follow-up folded in by SD14. The posture gate gets its teeth 
     - `opm-operator/modules/opm_operator`.
 
   For each consumer, record the path, the core version vetted against, the command and the result. A consumer that does not resolve is recorded as NOT VETTED, never as a pass. At the PR stage, re-run the library fixture vet and the Go-embedded audit against library `origin/main` after `lib-i3d2` and `lib-b1g2` merge.
-- [ ] 4.4 Classify every failure by cause. For a key-to-fqn conflict, check whether the member belongs to a PUBLISHED catalog release, that is, under `opmodel.dev/catalogs/*` on GHCR.
+- [x] 4.4 Classify every failure by cause. For a key-to-fqn conflict, check whether the member belongs to a PUBLISHED catalog release, that is, under `opmodel.dev/catalogs/*` on GHCR.
   - **OWNER STOP (0021:D7:R5):** a published mis-keyed member does not get fixed here. Finish this section, record its exact path and release, and report it FIRST. The merge waits for the owner's sign-off.
   - An unpublished mis-key in a fixture or a module is listed for a follow-up in its own repo. It is not fixed here.
   - A failure with another cause, such as a registry fetch or a pre-existing break, is recorded as unrelated, and the same vet is re-run against `origin/main`'s core to confirm it. A fixture that fails the same way on both builds is still recorded as NOT VETTED, with the reason.
-- [ ] 4.5 Write the results into `design.md` § Re-vet against this build. Confirm or correct the last sentence of the proposal's Migration note from that record, and make it name the published opm 4.1.0-4.6.0 audit and the re-vet build.
-- [ ] 4.6 `task check` must pass. Commit `docs: point appliesTo at core#99 and record the consumer re-vet`. This section stages no `*.cue` file, so the SPEC.md co-update hook does not fire.
+- [x] 4.5 Write the results into `design.md` § Re-vet against this build. Confirm or correct the last sentence of the proposal's Migration note from that record, and make it name the published opm 4.1.0-4.6.0 audit and the re-vet build.
+- [x] 4.6 `task check` must pass. Commit `docs: point appliesTo at core#99 and record the consumer re-vet`. This section stages no `*.cue` file, so the SPEC.md co-update hook does not fire.
