@@ -44,10 +44,11 @@ import "list"
 // `metadata.modulePath` to "\(_ref.registryPath)/transformers" — the MAJOR-FREE
 // path, because a transformer declares a #PackagePathType — and
 // `metadata.catalogVersion` to the catalog's version. It does NOT stamp
-// `metadata.fqn`: under 0010:D21 an fqn is AUTHORED at the
-// definition site rather than derived, and the map key already carries the
-// transformer's own fqn. 0001:D18 lockstep on the build stays structural, since
-// the stamp is what supplies the key's version component.
+// `metadata.fqn`: under 0010:D21 an fqn is AUTHORED at the definition site
+// rather than derived, and the map key carries the transformer's own fqn by
+// authoring convention: core checks the key's form only, and the publish
+// gate never reads it. 0001:D18 lockstep on the build stays structural,
+// since the stamp is what supplies the key's version component.
 //
 // `M=metadata` is a field-label alias (0001:D25). It binds the
 // label `M` to the metadata field path so the pattern constraint can reach
@@ -56,6 +57,11 @@ import "list"
 // and fails cue vet with "reference M not found". Experiment 09 validated
 // both sound forms (label alias + hidden mirror); the label alias is
 // chosen for inline locality.
+//
+// The contract maps DO bind `metadata.fqn`: each binds it to the member's map
+// key, so a member listed under another contract's key is a conflict. That
+// derives nothing — the key and the fqn are both authored, and core now
+// requires them to agree.
 //
 // The contract maps (#resources, #traits, #blueprints) list what the catalog
 // DEFINES, separately from what its #transformers implement (enhancement
@@ -70,8 +76,9 @@ import "list"
 // (measured on cue v0.17.1). The transformer stamp stays flat: a transformer
 // carries no apiVersion (0010:D44). SPEC.md § 3.6 Rationale, "Why a single
 // `#Catalog` construct instead of a `#Module.#defines` block", "Why the
-// `M=metadata` field-label alias", "Why the pattern stamps `modulePath` +
-// `catalogVersion` but not `fqn`", "Why a catalog publishes its contracts as
+// `M=metadata` field-label alias", "Why the transformer pattern stamps
+// `modulePath` + `catalogVersion` but not `fqn`", "Why contract keys are bound
+// and transformer keys are not", "Why a catalog publishes its contracts as
 // members", "Why the contract stamp carries the member's apiVersion segment
 // while the transformer stamp does not", "Why the member is the primitive
 // itself rather than a projection" and "Why a catalog derives the contracts
@@ -118,19 +125,21 @@ import "list"
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// WHY one stamping rule for three maps, and why it reads apiVersion
-	// through a label alias: the file header. #traits and #blueprints below
-	// carry the same stamp under their own kind segment and point here.
+	// WHY one stamping rule for three maps, why it binds fqn to the key, and
+	// why it reads apiVersion through a label alias: the file header.
+	// #traits and #blueprints below carry the same stamp under their own
+	// kind segment and point here.
 
 	// WHY #resources: 0015:D1.
 
 	// resources: the #Resource contracts this catalog defines, keyed by contract
-	// fqn; listing one requires no adapter. Stamps metadata.modulePath to
-	// "<registryPath>/resources/<apiVersion>" and metadata.catalogVersion to the
-	// catalog's version, never fqn; an authored value that disagrees is a
-	// conflict. See SPEC.md § 3.6.
-	#resources: [#ContractFQNType]: #Resource & {
+	// fqn; listing one requires no adapter. Binds metadata.fqn to the key and
+	// stamps metadata.modulePath to "<registryPath>/resources/<apiVersion>" and
+	// metadata.catalogVersion to the catalog's version; an authored value that
+	// disagrees is a conflict. See SPEC.md § 3.6.
+	#resources: [K=#ContractFQNType]: #Resource & {
 		metadata: {
+			fqn:            K
 			A=apiVersion:   #APIVersionType
 			modulePath:     "\(M._ref.registryPath)/resources/\(A)"
 			catalogVersion: M.version
@@ -141,8 +150,9 @@ import "list"
 	// fqn; the #resources stamp under the `traits` segment. A `fulfilment:
 	// "provider"` trait is listed here and implemented nowhere in this
 	// catalog: this map is what makes it visible. See SPEC.md § 3.6.
-	#traits: [#ContractFQNType]: #Trait & {
+	#traits: [K=#ContractFQNType]: #Trait & {
 		metadata: {
+			fqn:            K
 			A=apiVersion:   #APIVersionType
 			modulePath:     "\(M._ref.registryPath)/traits/\(A)"
 			catalogVersion: M.version
@@ -152,8 +162,9 @@ import "list"
 	// blueprints: the #Blueprint contracts this catalog defines, keyed by
 	// contract fqn; the #resources stamp under the `blueprints` segment.
 	// See SPEC.md § 3.6.
-	#blueprints: [#ContractFQNType]: #Blueprint & {
+	#blueprints: [K=#ContractFQNType]: #Blueprint & {
 		metadata: {
+			fqn:            K
 			A=apiVersion:   #APIVersionType
 			modulePath:     "\(M._ref.registryPath)/blueprints/\(A)"
 			catalogVersion: M.version

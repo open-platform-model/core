@@ -135,9 +135,10 @@ import (
 // SomeTrait}` would drag the trait's `spec` into concreteness checking under
 // `cue vet -c`, and a spec is a SCHEMA that must never be concrete.
 //
-// WHY it MUST BE UNIFIED INTO A NON-HIDDEN VALUE. `cue vet -c` does not check
-// hidden fields, so a gate parked in a `_`-prefixed slot passes silently while
-// checking nothing. SPEC.md § 5.1 Rationale.
+// WHY it MUST BE UNIFIED INTO A NON-HIDDEN VALUE. `cue vet`, plain or `-c`,
+// does not check hidden fields for completeness, so a gate parked in a
+// `_`-prefixed slot passes rule 1 silently while checking nothing. SPEC.md
+// § 5.1 Rationale.
 
 // #TraitOptionalGate: what `opm catalog publish` unifies against, once per
 // published #Trait, to hold catalogs to the two rules #Trait.optional cannot
@@ -150,16 +151,20 @@ import (
 
 	// RULE 1 — the catalog stated a posture. Interpolation forces the
 	// disjunction to its default, so a trait that never mentions `optional`
-	// fails here. Reported as `incomplete value bool`, and visible only under
-	// `cue vet -c` — which publish runs, and a catalog author's plain
-	// `task vet` does not.
+	// fails here as `incomplete value bool`. Plain `cue vet` exits 1 without
+	// naming the field; `cue vet -c`, which publish runs, names it.
 	_stated: "\(optional)"
 
 	// RULE 2 — and did not PIN it. Both arms must remain admissible, so a
-	// concrete value, which no module could ever override, is refused. Unlike
-	// rule 1 this is visible under plain `cue vet`.
+	// concrete value, which no module could ever override, is refused. Plain
+	// `cue vet` names this conflict; rule 1 only fails it.
 	_overridable: ((optional & true) != _|_) && ((optional & false) != _|_)
 	_overridable: true
 }
 
-#TraitMap: [string]: #Trait
+// WHY bound: the #ResourceMap WHY block.
+
+// TraitMap: the traits attached to a component, each keyed by its own
+// contract fqn. A key that differs from the member's metadata.fqn is a
+// conflict. See SPEC.md § 3.1.
+#TraitMap: [FQN=string]: #Trait & {metadata: fqn: FQN}

@@ -12,9 +12,13 @@ import (
 // fixtures when its 0019 wave re-pins.
 //
 // Companion to identity_pins.cue and written to the same rules: every value
-// here is a HIDDEN top-level field of package `pins`, which nothing imports,
-// so `task vet` evaluates them and fails on a conflict while no consumer ever
-// loads them, and none of them adds a row to src/INDEX.md. MUST-FAIL cases
+// here is a top-level field of package `pins`, which nothing imports, so
+// `task vet` evaluates them and fails on a conflict while no consumer ever
+// loads them, and none of them adds a row to src/INDEX.md. Every value is
+// HIDDEN except the two gate applications (pinGateTraitPosture*), which are
+// regular fields so that `cue vet` checks them for completeness (SPEC.md
+// § 5.1); the commented _failGatePinned keeps the hidden shape, because it
+// records a conflict, which a hidden field reports too. MUST-FAIL cases
 // are commented out with the exact error uncommenting yields; each was run
 // once, in place, at the commit that introduced it, and the recorded text is
 // what the tool printed. Where the tool is `cue export` rather than `cue vet`
@@ -115,8 +119,8 @@ _pinInstanceFixture: core.#InstanceIdentity & {
 _pinMatchComponent: core.#Component & {
 	metadata: name: "jellyfin"
 	#resources: {
-		container: _pinMatchContainer
-		volumes:   _pinMatchVolumes
+		(_pinMatchContainer.metadata.fqn): _pinMatchContainer
+		(_pinMatchVolumes.metadata.fqn):   _pinMatchVolumes
 	}
 	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1":                    _pinMatchExpose
 	#blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1": _pinMatchStateful
@@ -148,8 +152,8 @@ _pinMatchUnified: {workloadType: "stateful", tier: "data"}
 // the case that broke every design that unified metadata.labels. Asserted by
 // reading each primitive's own label back, since nothing folds them upward.
 _pinCategoriesCoexist: [
-	_pinMatchComponent.#resources.container.metadata.labels["resource.opmodel.dev/category"],
-	_pinMatchComponent.#resources.volumes.metadata.labels["resource.opmodel.dev/category"],
+	_pinMatchComponent.#resources[_pinMatchContainer.metadata.fqn].metadata.labels["resource.opmodel.dev/category"],
+	_pinMatchComponent.#resources[_pinMatchVolumes.metadata.fqn].metadata.labels["resource.opmodel.dev/category"],
 	_pinMatchComponent.#traits["opmodel.dev/catalogs/opm/traits/expose@v1beta1"].metadata.labels["trait.opmodel.dev/category"],
 ]
 _pinCategoriesCoexist: ["workload", "storage", "network"]
@@ -158,6 +162,160 @@ _pinCategoriesCoexist: ["workload", "storage", "network"]
 // Pinned as a disunification check: the field is absent, not merely empty.
 _pinComponentLabelsUnfolded: _pinMatchComponent.metadata.labels == _|_
 _pinComponentLabelsUnfolded: true
+
+// ─── Attachment keys equal the member's fqn ─────────────────────────────────
+//
+// #ResourceMap, #TraitMap and #BlueprintMap bind each entry's metadata.fqn to
+// the key it sits under (SPEC.md § 3.1). A key that differs is a conflict
+// naming both strings; a member that leaves fqn unset takes the key.
+
+// One positive pin per map: an entry keyed by its own fqn validates, and is
+// read back through an interpolation of that fqn (the ONE RULE above).
+_pinAttachKeyed: core.#Component & {
+	metadata: name:                                "keyed"
+	#resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
+	#traits: (_pinMatchExpose.metadata.fqn):       _pinMatchExpose
+	#blueprints: (_pinMatchStateful.metadata.fqn): _pinMatchStateful
+	#instance: _pinInstanceFixture
+	spec: {
+		container: image:           "jellyfin:1"
+		expose: port:               8096
+		statefulWorkload: replicas: 1
+	}
+}
+_pinAttachKeyedResource:  "\(_pinAttachKeyed.#resources[_pinMatchContainer.metadata.fqn].metadata.name)"
+_pinAttachKeyedResource:  "container"
+_pinAttachKeyedTrait:     "\(_pinAttachKeyed.#traits[_pinMatchExpose.metadata.fqn].metadata.name)"
+_pinAttachKeyedTrait:     "expose"
+_pinAttachKeyedBlueprint: "\(_pinAttachKeyed.#blueprints[_pinMatchStateful.metadata.fqn].metadata.name)"
+_pinAttachKeyedBlueprint: "stateful-workload"
+
+// Entries a component gets by EMBEDDING a fragment, the way a module embeds a
+// catalog wrapper (bp.#StatelessWorkload): the fragment writes each entry by
+// fqn, so the bind is a no-op and every attachment reads back by its key.
+_pinAttachFragment: core.#Component & {
+	#resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
+	#traits: (_pinMatchExpose.metadata.fqn):       _pinMatchExpose
+	#blueprints: (_pinMatchStateful.metadata.fqn): _pinMatchStateful
+}
+_pinAttachEmbedded: core.#Component & {
+	_pinAttachFragment
+	metadata: name: "embedded"
+	#instance: _pinInstanceFixture
+	spec: {
+		container: image:           "jellyfin:1"
+		expose: port:               8096
+		statefulWorkload: replicas: 1
+	}
+}
+_pinAttachEmbeddedRead: "\(_pinAttachEmbedded.#resources[_pinMatchContainer.metadata.fqn].metadata.name)|\(_pinAttachEmbedded.#traits[_pinMatchExpose.metadata.fqn].metadata.name)|\(_pinAttachEmbedded.#blueprints[_pinMatchStateful.metadata.fqn].metadata.name)"
+_pinAttachEmbeddedRead: "container|expose|stateful-workload"
+
+// BIND-FILL: three members that leave fqn UNSET, attached under contract
+// keys. The bind fills each fqn from its key. Without the bind the read-back
+// is an unset required field, which `cue vet` never reports in a hidden pin
+// (the interpolation stays incomplete rather than conflicting), so these
+// three are also in Taskfile.yml's `task vet` export list: losing any one
+// map's bind fails `task vet` there.
+_pinAttachFillResource: core.#Resource & {
+	metadata: {
+		name:           "fill-resource"
+		modulePath:     "opmodel.dev/catalogs/opm/resources"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.0.0"
+	}
+	spec: fillResource: size: int
+}
+_pinAttachFillTrait: core.#Trait & {
+	metadata: {
+		name:           "fill-trait"
+		modulePath:     "opmodel.dev/catalogs/opm/traits"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.0.0"
+	}
+	optional: bool | *true
+	appliesTo: [_pinAttachFillResource]
+	spec: fillTrait: port: int
+}
+_pinAttachFillBlueprint: core.#Blueprint & {
+	metadata: {
+		name:           "fill-blueprint"
+		modulePath:     "opmodel.dev/catalogs/opm/blueprints"
+		apiVersion:     "v1beta1"
+		catalogVersion: "1.0.0"
+	}
+	composedResources: [_pinAttachFillResource]
+	spec: fillBlueprint: replicas: int
+}
+_pinAttachFill: core.#Component & {
+	metadata: name:                                                            "fill"
+	#resources: "opmodel.dev/catalogs/opm/resources/fill-resource@v1beta1":    _pinAttachFillResource
+	#traits: "opmodel.dev/catalogs/opm/traits/fill-trait@v1beta1":             _pinAttachFillTrait
+	#blueprints: "opmodel.dev/catalogs/opm/blueprints/fill-blueprint@v1beta1": _pinAttachFillBlueprint
+	#instance: _pinInstanceFixture
+	spec: {
+		fillResource: size:      1
+		fillTrait: port:         80
+		fillBlueprint: replicas: 1
+	}
+}
+_pinAttachFillResourceFQN:  "\(_pinAttachFill.#resources["opmodel.dev/catalogs/opm/resources/fill-resource@v1beta1"].metadata.fqn)"
+_pinAttachFillResourceFQN:  "opmodel.dev/catalogs/opm/resources/fill-resource@v1beta1"
+_pinAttachFillTraitFQN:     "\(_pinAttachFill.#traits["opmodel.dev/catalogs/opm/traits/fill-trait@v1beta1"].metadata.fqn)"
+_pinAttachFillTraitFQN:     "opmodel.dev/catalogs/opm/traits/fill-trait@v1beta1"
+_pinAttachFillBlueprintFQN: "\(_pinAttachFill.#blueprints["opmodel.dev/catalogs/opm/blueprints/fill-blueprint@v1beta1"].metadata.fqn)"
+_pinAttachFillBlueprintFQN: "opmodel.dev/catalogs/opm/blueprints/fill-blueprint@v1beta1"
+
+// MUST-FAIL (commented; observed cue v0.17.1, this commit). Each refuses at
+// `cue vet` with a conflict on the entry's metadata.fqn that names the key and
+// the fqn. The conflict empties the member, so CUE also prints follow-on
+// `field not allowed` lines on the component's spec; only the first line is
+// quoted.
+//
+// A SHORT key, the shape this bind exists to refuse:
+//   _failShortResourceKey.#resources.container.metadata.fqn:
+//     conflicting values "container" and "opmodel.dev/catalogs/opm/resources/container@v1beta1"
+//
+//  _failShortResourceKey: core.#Component & {
+//   metadata: name: "short"
+//   #resources: container: _pinMatchContainer
+//   #instance: _pinInstanceFixture
+//   spec: container: image: "jellyfin:1"
+//  }
+//
+// A trait under ANOTHER trait's fqn:
+//   _failTraitMisKeyed.#traits."opmodel.dev/catalogs/opm/traits/scaling@v1beta1".metadata.fqn:
+//     conflicting values "opmodel.dev/catalogs/opm/traits/scaling@v1beta1" and
+//     "opmodel.dev/catalogs/opm/traits/expose@v1beta1"
+//
+//  _failTraitMisKeyed: core.#Component & {
+//   metadata: name: "miskeyed-trait"
+//   #resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
+//   #traits: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1": _pinMatchExpose
+//   #blueprints: (_pinMatchStateful.metadata.fqn): _pinMatchStateful
+//   #instance: _pinInstanceFixture
+//   spec: {
+//    container: image:           "jellyfin:1"
+//    expose: port:               8096
+//    statefulWorkload: replicas: 1
+//   }
+//  }
+//
+// A blueprint under ANOTHER blueprint's fqn:
+//   _failBlueprintMisKeyed.#blueprints."opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1".metadata.fqn:
+//     conflicting values "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1" and
+//     "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1"
+//
+//  _failBlueprintMisKeyed: core.#Component & {
+//   metadata: name: "miskeyed-blueprint"
+//   #resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
+//   #blueprints: "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1": _pinMatchStateful
+//   #instance: _pinInstanceFixture
+//   spec: {
+//    container: image:           "jellyfin:1"
+//    statefulWorkload: replicas: 1
+//   }
+//  }
 
 // ─── Matching identity is not rendered ──────────────────────────────────────
 
@@ -326,8 +484,8 @@ _pinTraitPostureAdvisory: "true"
 // the attachment site, in BOTH directions, and neither is a conflict. This is
 // what a concrete value on the trait would have made impossible.
 _pinOptionalTraitComponent: core.#Component & {
-	metadata: name:        "jellyfin"
-	#resources: container: _pinMatchContainer
+	metadata: name:                                "jellyfin"
+	#resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
 	#traits: {
 		// the catalog says required; this component can do without it
 		"opmodel.dev/catalogs/opm/traits/backup@v1beta1": _pinProviderFulfilledTrait & {optional: true}
@@ -357,20 +515,16 @@ _pinTraitPostureUnmoved: "false"
 //
 // Both fixtures state a posture as a default, so both pass.
 //
-// THESE PINS ARE HIDDEN, WHICH COSTS RULE 1 ITS TEETH HERE, and the trade is
-// deliberate: every pin keeps the one hidden shape. `cue vet` does not check
-// a hidden field for completeness, so an unstated posture applied here would
-// pass. A NON-hidden application is checked: plain `task vet` would fail on
-// it with the generic "some instances are incomplete" message, and `-c` would
-// name the field. Package `pins` is imported by nothing, so such a field would
-// no longer ship to a consumer; moving the gate pins to that form is a
-// follow-up, out of scope here. So publish gets the non-hidden application
-// (see #TraitOptionalGate's doc comment) and this file keeps the hidden one:
-// rule 2 is still gated here, because it is visible under plain vet, and rule
-// 1 is recorded as a MUST-FAIL case below with the command it was measured
-// with.
-_pinGateTraitPostureRequired: core.#TraitOptionalGate & {optional: _pinProviderFulfilledTrait.optional}
-_pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpose.optional}
+// THESE TWO PINS ARE REGULAR FIELDS, NOT HIDDEN, the one exception to this
+// file's pin shape. `cue vet` does not check a hidden field for completeness,
+// so an unstated posture applied in a hidden pin would pass. Applied here as
+// regular fields, both rules have teeth under plain `task vet`: rule 2 fails
+// it with the conflict named, and rule 1 fails it with the generic "some
+// instances are incomplete" message, which `cue vet -c` turns into the field
+// name (the recorded failGateUnstated case below). Package `pins` is imported
+// by nothing, so the regular fields still ship to no consumer.
+pinGateTraitPostureRequired: core.#TraitOptionalGate & {optional: _pinProviderFulfilledTrait.optional}
+pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpose.optional}
 
 // ─── MUST-FAIL: the two rules the gate exists for ───────────────────────────
 
@@ -395,7 +549,7 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 
 // RULE 1 — a catalog never states a posture at all. THE THIRD CASE IN THIS
 // REPO THAT PLAIN `cue vet` DOES NOT NAME, and the one that dictates how
-// publish invokes the gate. Re-measured 2026-10-03 against cue v0.17.1:
+// publish invokes the gate. Re-measured 2026-10-05 against cue v0.17.1:
 //
 //   $ cue vet ./...        # exits 1 — no field named:
 //   some instances are incomplete; use the -c flag to show errors or -c=false to allow incomplete instances
@@ -409,9 +563,8 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 // `_failGateUnstated` — because `cue vet` does not check hidden fields for
 // completeness, so the same case parked in a `_`-prefixed slot exits 0 under
 // both plain vet and `-c`, and gates nothing. That is why this case is not
-// hidden, unlike the positive gate pins above (which keep the one pin shape),
-// and why the gate's own doc comment states the requirement rather than
-// leaving it to be rediscovered.
+// hidden, like the positive gate pins above, and why the gate's own doc
+// comment states the requirement rather than leaving it to be rediscovered.
 //
 //  _failUnstatedOptional: core.#Trait & {
 //   metadata: {
@@ -460,10 +613,10 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 //
 //  _failMatchLabelConflict: core.#Component & {
 //   metadata: name: "clash"
-//   #resources: container: _pinMatchContainer
+//   #resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
 //   #blueprints: {
-//    stateful: _pinMatchStateful
-//    daemon:   _failDaemonBlueprint
+//    (_pinMatchStateful.metadata.fqn):    _pinMatchStateful
+//    (_failDaemonBlueprint.metadata.fqn): _failDaemonBlueprint
 //   }
 //   #instance: _pinInstanceFixture
 //  }
@@ -486,7 +639,7 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 //
 //  _failAuthoredMatchLabel: core.#Component & {
 //   metadata: name: "invented"
-//   #resources: container: _pinMatchContainer
+//   #resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
 //   #blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1": _pinMatchStateful
 //   matchLabels: "fragment.opmodel.dev/invented": "yes"
 //   #instance: _pinInstanceFixture
@@ -511,7 +664,7 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 //
 //  _failInlineAnsweredMatchLabel: core.#Component & {
 //   metadata: name: "answered"
-//   #resources: container: _pinMatchContainer
+//   #resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
 //   matchLabels: "opm.opmodel.dev/workload-type": "daemon"
 //   #instance: _pinInstanceFixture
 //   spec: container: image: "jellyfin:1"
@@ -534,7 +687,7 @@ _pinGateTraitPostureAdvisory: core.#TraitOptionalGate & {optional: _pinMatchExpo
 //
 //  _failBareContainer: core.#Component & {
 //   metadata: name: "bare"
-//   #resources: container: _pinMatchContainer
+//   #resources: (_pinMatchContainer.metadata.fqn): _pinMatchContainer
 //   #instance: _pinInstanceFixture
 //   spec: container: image: "jellyfin:1"
 //  }

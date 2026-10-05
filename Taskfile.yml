@@ -30,10 +30,17 @@ tasks:
     cmds:
       - cue vet ./...
       # cue vet never reports an incomplete hidden pin, so a regression that
-      # leaves #Catalog.provides optional or incomplete would pass silently.
-      # Exporting the provider pins demands concrete values (SPEC §3.6).
+      # leaves #Catalog.provides optional or incomplete, or drops the bind of
+      # an attachment map key to its member's fqn, would pass silently.
+      # Exporting these pins demands concrete values (SPEC §3.1, §3.6).
       - |
         cue export ./pins -e '[
+          _pinAttachFillBlueprintFQN,
+          _pinAttachFillResourceFQN,
+          _pinAttachFillTraitFQN,
+          _pinContractFillBlueprintFQN,
+          _pinContractFillResourceFQN,
+          _pinContractFillTraitFQN,
           _pinInventoryBareProvidedBy,
           _pinInventoryBaseOnlyProvidedBy,
           _pinInventoryCollideOverSubscribedProvidedBy,

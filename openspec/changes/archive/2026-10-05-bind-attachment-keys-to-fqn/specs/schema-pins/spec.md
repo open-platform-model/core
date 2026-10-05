@@ -1,10 +1,4 @@
-# schema-pins Specification
-
-## Purpose
-
-Where core's schema pins live and how they are gated: in the test-only package `pins` under `src/pins/`, which imports core and which nothing imports, so `task vet` evaluates every pin while no consumer's build of core loads one.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Schema pins live in a package no consumer loads
 
@@ -27,19 +21,7 @@ Source: owner decision, 2026-10-03.
 - **WHEN** a file of package `core` in `src/*.cue` declares a top-level hidden field
 - **THEN** `task spec:check` fails, names the file and line, and points the author at `src/pins/`; with no such field it passes
 
-### Requirement: Core's vet gates every pin without a tag
-
-`task vet` (`cue vet ./...` from `src/`) MUST build package `pins` and fail on any pin that does not evaluate cleanly. No build tag or extra flag is involved, so no vet site can skip the pins by omission. A recorded MUST-FAIL error MUST be the error that the commented case gives when it is uncommented in place in `src/pins/`.
-
-#### Scenario: A conflicting pin fails the vet
-
-- **WHEN** a pin in `src/pins/` conflicts with the core definition it unifies with (for example a module whose `metadata.name` disagrees with the leaf of its `modulePath`)
-- **THEN** `task vet` fails and names the pin and the conflicting path (`_failLeafMismatch.metadata._leaf: conflicting values false and true`)
-
-#### Scenario: A consistent pin set passes the vet
-
-- **WHEN** every pin in `src/pins/` evaluates cleanly against the core definitions it unifies with
-- **THEN** `task vet` passes, and `cue vet .` from `src/` (package `core` alone) passes too
+## ADDED Requirements
 
 ### Requirement: Publish-gate pins are applied non-hidden
 

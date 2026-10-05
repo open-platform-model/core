@@ -9,10 +9,13 @@ import (
 // These mirror the cases in enhancements/0010/schemas/target.cue so the
 // properties are pinned where the schema lives rather than only in the design
 // document. Every value here is a HIDDEN top-level field of package `pins`,
-// which imports `core` and which nothing imports. `task vet` (`cue vet ./...`
-// from src/) builds this package and fails on a conflict. No consumer ever
-// loads it, whether it imports core or builds core as the main instance, so
-// the pins cost a consumer nothing. They also add no row to src/INDEX.md,
+// which imports `core` and which nothing imports. (The one exception in the
+// package: a pin that APPLIES a publish gate is a regular field, because
+// `cue vet` checks only regular fields for completeness; see the gate pins
+// in platform_and_match_pins.cue and identity_package_pins.cue.) `task vet`
+// (`cue vet ./...` from src/) builds this package and fails on a conflict.
+// No consumer ever loads it, whether it imports core or builds core as the
+// main instance, so the pins cost a consumer nothing. They also add no row to src/INDEX.md,
 // which lists `#Definition:` names only. A pin never goes in package `core`:
 // every main-instance build of core would then evaluate it.
 //

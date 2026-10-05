@@ -10,9 +10,14 @@ import (
 // (0011:D21/D22, resting on 0010:D40, D42, D43, D44, D45).
 //
 // Same mechanism as identity_pins.cue, and the same rules apply: every value
-// here is a HIDDEN top-level field of package `pins`, which nothing imports,
-// so `task vet` evaluates it and fails on a conflict while no consumer ever
-// loads it, and none of them adds a row to src/INDEX.md.
+// here is a top-level field of package `pins`, which nothing imports, so
+// `task vet` evaluates it and fails on a conflict while no consumer ever loads
+// it, and none of them adds a row to src/INDEX.md. Every value is HIDDEN
+// except the five gate applications (pinGate*), which are regular fields:
+// SPEC.md § 5.1 requires a gate to be unified into a non-hidden value, since
+// `cue vet` checks only regular fields for completeness. The commented
+// MUST-FAIL gate cases (_failGate*) keep the hidden shape: each records a
+// conflict, which a hidden field reports too, and was measured that way.
 //
 // MUST-FAIL cases are commented out with the exact error uncommenting yields.
 // A commented case is not self-verifying, so each was run once, in place, at
@@ -98,7 +103,7 @@ _pinKindPrefixCarriesNoMajor: [false, false, false, false]
 // A resource, filed under its own apiVersion (0010:D49). The key
 // is built from the member's OWN apiVersion, not from the catalog's build
 // (0010:D4) — and note the KEY carries no filing segment.
-_pinGateResource: core.#CatalogMemberFQNGate & {
+pinGateResource: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
 	name:                   "config-maps"
@@ -111,7 +116,7 @@ _pinGateResource: core.#CatalogMemberFQNGate & {
 // A GA raw-family member of the same kind, filing under a DIFFERENT segment of
 // the same prefix — per-member apiVersion is what made the filing segment
 // derived content rather than grouping (0010:D48, D49).
-_pinGateResourceGA: core.#CatalogMemberFQNGate & {
+pinGateResourceGA: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
 	name:                   "k8s-deployment"
@@ -123,7 +128,7 @@ _pinGateResourceGA: core.#CatalogMemberFQNGate & {
 
 // A trait. Same catalog, same build, a different kind segment — which is what
 // keeps two members sharing a name apart (0010:D21).
-_pinGateTrait: core.#CatalogMemberFQNGate & {
+pinGateTrait: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "traits"
 	name:                   "scaling"
@@ -137,7 +142,7 @@ _pinGateTrait: core.#CatalogMemberFQNGate & {
 // is absent: an ARBITRARY grouping segment like the "/workload" catalog_opm
 // once shipped (0010:D42's must-fail case below) — the only admitted segment is the
 // member's own apiVersion.
-_pinGateBlueprint: core.#CatalogMemberFQNGate & {
+pinGateBlueprint: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "blueprints"
 	name:                   "stateless-workload"
@@ -150,8 +155,8 @@ _pinGateBlueprint: core.#CatalogMemberFQNGate & {
 // The filing segment never enters the key (0010:D49): filing is
 // versioned, the key space stays flat.
 _pinKeyOmitsFilingSegment: [
-	strings.Contains(_pinGateResource.declaredFQN, "/v1beta1/"),
-	strings.Contains(_pinGateResourceGA.declaredFQN, "/v1/"),
+	strings.Contains(pinGateResource.declaredFQN, "/v1beta1/"),
+	strings.Contains(pinGateResourceGA.declaredFQN, "/v1/"),
 ]
 _pinKeyOmitsFilingSegment: [false, false]
 
@@ -159,7 +164,7 @@ _pinKeyOmitsFilingSegment: [false, false]
 // is ABSENT and the case vets clean. Its key is interpolated from the BUILD
 // (0010:D4), which _keyVersion selects before the absent optional is
 // ever reached — so the field costs a transformer nothing.
-_pinGateTransformer: core.#CatalogMemberFQNGate & {
+pinGateTransformer: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "transformers"
 	name:                   "configmap-transformer"
@@ -172,10 +177,10 @@ _pinGateTransformer: core.#CatalogMemberFQNGate & {
 // build. Stated against the two versions side by side, because a gate that had
 // silently keyed everything on identity.Version would satisfy the transformer
 // case above on its own.
-_pinPrimitiveKeysOnAPIVersion: strings.HasSuffix(_pinGateResource.declaredFQN, "@v1beta1")
+_pinPrimitiveKeysOnAPIVersion: strings.HasSuffix(pinGateResource.declaredFQN, "@v1beta1")
 _pinPrimitiveKeysOnAPIVersion: true
 
-_pinTransformerKeysOnBuild: strings.HasSuffix(_pinGateTransformer.declaredFQN, "@1.2.0")
+_pinTransformerKeysOnBuild: strings.HasSuffix(pinGateTransformer.declaredFQN, "@1.2.0")
 _pinTransformerKeysOnBuild: true
 
 // DIRECTION THREE is the MUST-FAIL case at the bottom of this file: a primitive
@@ -185,7 +190,7 @@ _pinTransformerKeysOnBuild: true
 // The two keys are structurally distinct forms, not two spellings of one form.
 // #FQNType is a disjunction of exactly these two, and the gate must not have
 // collapsed them.
-_pinContractAndImplKeysDiffer: _pinGateResource.declaredFQN != _pinGateTransformer.declaredFQN
+_pinContractAndImplKeysDiffer: pinGateResource.declaredFQN != pinGateTransformer.declaredFQN
 _pinContractAndImplKeysDiffer: true
 
 // ─── MUST FAIL ──────────────────────────────────────────────────────────────
@@ -256,7 +261,7 @@ _pinContractAndImplKeysDiffer: true
 
 // The OTHER half of the 0010:D49 filing pin — a contract member filing FLAT at its
 // kind prefix, the shape that was conformant before 0010:D49 and is refused after
-// it. A transformer filing flat stays conformant (_pinGateTransformer above);
+// it. A transformer filing flat stays conformant (pinGateTransformer above);
 // only the three contract kinds carry the derived segment. Measured
 // 2026-08-10:
 //   _failGateFlatContractMember.declaredModulePath: conflicting values
@@ -385,7 +390,7 @@ _pinContractAndImplKeysDiffer: true
 // places the apiVersion reaches, each reporting its absence. That is the
 // conditional working as designed — the transformer arm was not selected, so
 // evaluation reached the optional and found nothing. It is also why
-// _pinGateTransformer above vets clean: there the arm IS selected, and the
+// pinGateTransformer above vets clean: there the arm IS selected, and the
 // absent optional is never reached.
 //
 //  _failGateMissingAPIVersion: core.#CatalogMemberFQNGate & {

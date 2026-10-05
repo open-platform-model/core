@@ -169,4 +169,17 @@ import (
 	spec!: (strings.ToCamel(metadata.#definitionName)): _
 }
 
-#ResourceMap: [string]: #Resource
+// WHY the key is bound to the member's fqn: every reader treats the key as
+// the member's identity (the platform's contract fold, the render build's
+// demand match), so a short key validated and then demanded a contract no
+// transformer supplies. The key stays `string` so a wrong key reports
+// `conflicting values "<key>" and "<fqn>"`, naming both strings; a
+// `#ContractFQNType` key would report `field not allowed` at the key and
+// never name the fqn. With fqn unset, a short key is still refused: the key
+// fills fqn and fails its `#ContractFQNType` bound.
+// SPEC.md § 3.1 Rationale, "Why an attachment key must equal the member's fqn".
+
+// ResourceMap: the resources attached to a component, each keyed by its own
+// contract fqn. A key that differs from the member's metadata.fqn is a
+// conflict; an unset fqn takes the key. See SPEC.md § 3.1.
+#ResourceMap: [FQN=string]: #Resource & {metadata: fqn: FQN}
