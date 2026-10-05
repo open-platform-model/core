@@ -9,10 +9,11 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
 - [ ] 1.3 In `src/pins/platform_and_match_pins.cue`, re-key `container:` and `volumes:` (:118-119) and `#resources: container:` (:330) by `(_pinMatchContainer.metadata.fqn)` and `(_pinMatchVolumes.metadata.fqn)`. Change the read-backs at :151-152 to index `[_pinMatchContainer.metadata.fqn]` and `[_pinMatchVolumes.metadata.fqn]`. Re-key the commented twins (:463, 489, 514, 537) and re-measure them as in 1.2.
 - [ ] 1.4 Under a new banner "Attachment keys equal the member's fqn" in `src/pins/platform_and_match_pins.cue`, add:
   - A positive pin per map (resource, trait, blueprint): a component keyed by fqn, read back by an interpolation of the entry's `metadata.fqn`.
-  - A bind-fill pin: a member that leaves `fqn` unset, attached under its contract key, whose read-back `metadata.fqn` equals the key. Add this pin to the `cue export ./pins -e '[...]'` list in `Taskfile.yml`'s `vet` task, so that an unbound map leaves the read-back incomplete and `task vet` fails.
+  - Three component bind-fill read-backs, one per map (`#ResourceMap`, `#TraitMap`, `#BlueprintMap`): a member that leaves `fqn` unset, attached under its contract key, whose read-back `metadata.fqn` equals the key. Add each to the `cue export ./pins -e '[...]'` list in `Taskfile.yml`'s `vet` task, so that an unbound map leaves its read-back incomplete and `task vet` fails. Update that task's comment to say it also guards the binds.
+  - A positive pin that embeds a fragment-shaped `#Component` writing a blueprint, a resource and a trait by fqn (the scenario "Entries contributed by an embedded blueprint fragment are accepted"), read back by fqn.
   - Three commented must-fail cases: `_failShortResourceKey` (`container:`), a trait under another trait's fqn, and a blueprint under another blueprint's fqn. Record the error that each prints when uncommented in place. Quote the first line, and say that follow-on `field not allowed` lines exist where they do.
 
-  Mutation check: remove the bind from `#TraitMap` only, confirm that `task vet` fails, then restore it.
+  Mutation check: remove the bind from each of `#ResourceMap`, `#TraitMap` and `#BlueprintMap` in turn, confirm each time that `task vet` fails, then restore it.
 - [ ] 1.5 Update `SPEC.md` §3.1 `#Component`:
   - Shape: the three map lines carry a comment saying that the key is bound to the member's fqn.
   - Constraints: add a bullet saying that every `#resources`, `#traits` and `#blueprints` key MUST equal the entry's `metadata.fqn`, and that a differing key fails with `conflicting values "<key>" and "<fqn>"` at `<map>.<key>.metadata.fqn`. A short key such as `container` is refused. A blueprint-contributed entry keyed by fqn validates. The binding derives nothing from `name` or `modulePath`.
@@ -30,13 +31,15 @@ Before editing any `src/*.cue` file, load `.claude/skills/core-schema-edit/SKILL
 - [ ] 2.2 In `src/pins/catalog_pins.cue:99-116`, replace `_pinContractKeyNotCompared` and its read-back with:
   - a commented must-fail case `_failContractKeyMismatch` that records the conflicting-values error (re-run in place under that name; `design.md` has the text measured at planning);
   - a positive read-back pin for each of the three maps, keyed by fqn;
-  - commented must-fail cases for a mis-keyed resource member and a mis-keyed blueprint member.
+  - commented must-fail cases for a mis-keyed resource member and a mis-keyed blueprint member;
+  - three catalog bind-fill read-backs, one per contract map, each added to the `task vet` export list.
 
-  Rename the banner to "A contract key must equal its member's fqn". Grep `src/pins/` for any other contract-map entry that does not key by fqn, and re-key it.
+  Re-run each existing commented catalog must-fail case (`_failContractFilingDrift`, `_failContractStaleBuild`, `_failContractWrongKind`, `_failContractBuildKey`) in place and update any recorded text that changed. Mutation check: remove each catalog bind in turn and confirm that `task vet` fails. Rename the banner to "A contract key must equal its member's fqn". Grep `src/pins/` for any other contract-map entry that does not key by fqn, and re-key it.
 - [ ] 2.3 Update `SPEC.md` §3.6 `#Catalog`:
-  - Constraints: replace the bullet "The contract maps do NOT stamp or bind `metadata.fqn` ..." with the bind rule (key MUST equal `metadata.fqn`, a differing key fails with `conflicting values` naming both, the key stays `#ContractFQNType`, `#CatalogMemberFQNGate` still checks fqn against the identity package at publish). The `#transformers` bullets stay.
+  - Constraints: replace the bullet "The contract maps do NOT stamp or bind `metadata.fqn` ..." with the bind rule (key MUST equal `metadata.fqn`, a differing key fails with `conflicting values` naming both, an unset fqn takes the key, the key stays `#ContractFQNType`, `#CatalogMemberFQNGate` still checks fqn against the identity package at publish). Rewrite the `#transformers` bullet "The pattern does NOT stamp `metadata.fqn`" (around SPEC.md:1048): the transformer key is checked for form only, and neither core nor the publish gate compares it to the transformer's fqn (the gate is filled from member definitions and never reads a map key); binding it is a possible follow-up (SD13).
   - Shape: show `fqn: K` in the three contract-map patterns.
   - Rationale: rework "Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`" (the transformer stamp still does not; the contract maps bind it to the key, which derives nothing), and add "Why contract keys are bound and transformer keys are not" (owner decision j3 covers attachment maps; all published transformers already match; binding them is a later tightening).
+  - §2.1 Constraint bullet on `metadata.fqn` (around SPEC.md:106): the definition derives nothing, but inside the six attachment maps the key binds fqn (a disagreeing value is refused, an unset fqn takes the key).
   - §2.1 Rationale "Why `fqn` is authored rather than computed": add one sentence saying that the attachment maps now also refuse a key that disagrees with fqn.
 
   Then verify that `task spec:check` passes.
@@ -50,10 +53,12 @@ This is the wave-1 follow-up folded in by SD14. The posture gate gets its teeth 
 - [ ] 3.2 Rewrite the pin comments:
   - Replace the "THESE PINS ARE HIDDEN, WHICH COSTS RULE 1 ITS TEETH" paragraph in `platform_and_match_pins.cue` with the non-hidden rule: the gate pins are regular fields, plain `task vet` fails an unstated posture, and `-c` names it.
   - Amend the file headers of `platform_and_match_pins.cue` and `identity_package_pins.cue`, and of `identity_pins.cue` if it states the rule for every pin ("every value here is a HIDDEN top-level field"), to name the gate-pin exception.
+  - In `AGENTS.md` (the `src/pins/` paragraph, around :153, and the doc-comment exemption, around :245) and `.claude/skills/core-schema-edit/SKILL.md` (around :104), name the gate-pin exception, and rest the `*_pins.cue` doc-comment exemption on the docs-kit skip of `*_pins.cue` and on package `pins` being imported by nothing, not on every field being hidden. Do not touch `.tasks/doc-check.sh` (byte-locked with catalog_opm).
+  - The commented must-fail gate cases (`_failGatePinned` and the seven `_failGate*` cases) keep the hidden shape; say so in the headers.
   - Re-run the commented `failGateUnstated` case in place under both `cue vet ./...` and `cue vet -c ./...`, and confirm that the recorded block matches the output.
-- [ ] 3.3 In the `src/trait.cue` `#TraitOptionalGate` RULE 1 comment (around :150-155), replace "visible only under `cue vet -c` ... a catalog author's plain `task vet` does not" with what is measured: plain `cue vet` exits 1 with the generic "some instances are incomplete" message, and `cue vet -c` names the field. Keep the comment within the doc-comment limit. Check the WHY paragraph "IT MUST BE UNIFIED INTO A NON-HIDDEN VALUE" and keep it if it is still true.
+- [ ] 3.3 In the `src/trait.cue` `#TraitOptionalGate` RULE 1 comment (around :150-155), replace "visible only under `cue vet -c` ... a catalog author's plain `task vet` does not" with what is measured: plain `cue vet` exits 1 with the generic "some instances are incomplete" message, and `cue vet -c` names the field. Reword the RULE 2 comment ("Unlike rule 1 this is visible under plain `cue vet`") to say that rule 2 is named under plain vet, while rule 1 only fails it. Keep the comment within the doc-comment limit. Check the WHY paragraph "IT MUST BE UNIFIED INTO A NON-HIDDEN VALUE" and keep it if it is still true.
 - [ ] 3.4 Update `SPEC.md` §5.1:
-  - Shape: the RULE 1 comment no longer says "Visible only under `cue vet -c`".
+  - Shape: the RULE 1 comment no longer says "Visible only under `cue vet -c`", and the RULE 2 comment says rule 2 is named under plain vet while rule 1 only fails it.
   - Constraints: "Rule 2 fails under plain `cue vet`; rule 1 does not" becomes "plain `cue vet` exits non-zero on rule 1 without naming the field; `-c` names it, which is why publish runs it".
   - Rationale: "Why the two rules are stated separately" no longer says that plain vet does not report rule 1.
 
@@ -67,16 +72,17 @@ This is the wave-1 follow-up folded in by SD14. The posture gate gets its teeth 
 - [ ] 4.3 Re-vet the consumers against this branch's build, in scratch copies only (`mktemp -d` under the session scratchpad), and never commit to those repos.
   - Serve the branch's core under a throwaway version that never reaches GHCR. Use `task publish VERSION=...` to `localhost:5000`, or `cue mod registry` in scratch. Route `opmodel.dev/core` to that registry and resolve the rest from GHCR. If the module graph asks for older core versions, copy them in. Any equivalent module override is acceptable.
   - Then bump each scratch consumer's core requirement and vet it:
-    - catalog_opm `src/` (`task vet` or `cue vet ./...`);
+    - catalog_opm `src/`: `task vet` (both passes) and `task vet:fixtures` (the if fixtures build attribute files build components);
     - each module in `/var/home/emil/dev/open-platform-model/modules`;
     - each module in `/var/home/emil/dev/open-platform-model/opm-modules` (read only);
-    - every CUE module under the test data and fixture directories of library, cli and opm-operator (find each `cue.mod/`);
+    - every CUE module under the test data and fixture directories of library, cli and opm-operator (find each `cue.mod/`). Registry-layout fixtures whose dependencies resolve only through a test registry (library `testdata/render/registry/*`, `testing.opmodel.dev/...`) are vetted by serving that fixture tree, or by running the owning repo's `go test` with the core override;
+    - a grep audit of CUE embedded in Go tests (library `opm/kernel/*_test.go`, cli `check_test.go`, `members_test.go`, `instance_build_test.go`, and any other `#resources`/`#traits`/`#blueprints` literal in `*_test.go`), recording every key that is not an fqn;
     - `opm-operator/modules/opm_operator`.
 
-  For each consumer, record the path, the core version vetted against, the command and the result.
+  For each consumer, record the path, the core version vetted against, the command and the result. A consumer that does not resolve is recorded as NOT VETTED, never as a pass. At the PR stage, re-run the library fixture vet and the Go-embedded audit against library `origin/main` after `lib-i3d2` and `lib-b1g2` merge.
 - [ ] 4.4 Classify every failure by cause. For a key-to-fqn conflict, check whether the member belongs to a PUBLISHED catalog release, that is, under `opmodel.dev/catalogs/*` on GHCR.
   - **OWNER STOP (0021:D7:R5):** a published mis-keyed member does not get fixed here. Finish this section, record its exact path and release, and report it FIRST. The merge waits for the owner's sign-off.
   - An unpublished mis-key in a fixture or a module is listed for a follow-up in its own repo. It is not fixed here.
-  - A failure with another cause, such as a registry fetch or a pre-existing break, is recorded as unrelated, and the same vet is re-run against `origin/main`'s core to confirm it.
-- [ ] 4.5 Write the results into `design.md` § Re-vet against this build.
+  - A failure with another cause, such as a registry fetch or a pre-existing break, is recorded as unrelated, and the same vet is re-run against `origin/main`'s core to confirm it. A fixture that fails the same way on both builds is still recorded as NOT VETTED, with the reason.
+- [ ] 4.5 Write the results into `design.md` § Re-vet against this build. Confirm or correct the last sentence of the proposal's Migration note from that record, and make it name the published opm 4.1.0-4.6.0 audit and the re-vet build.
 - [ ] 4.6 `task check` must pass. Commit `docs: point appliesTo at core#99 and record the consumer re-vet`. This section stages no `*.cue` file, so the SPEC.md co-update hook does not fire.

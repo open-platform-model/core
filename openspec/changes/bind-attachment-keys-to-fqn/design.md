@@ -31,7 +31,7 @@ Core is the only place where short keys are authored at `origin/main`:
 - `src/pins/platform_and_match_pins.cue:118-119`: `container:` and `volumes:`. Line :330 has `#resources: container:`. The read-backs at :151-152 index `.container` and `.volumes`. The commented twins are at :463, 489, 514 and 537.
 - `src/pins/catalog_pins.cue:99-116`: `_pinContractKeyNotCompared` and its read-back assert that core does **not** compare key and fqn.
 
-Files this change touches: `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue`, `src/catalog.cue`, `src/pins/component_names_pins.cue`, `src/pins/platform_and_match_pins.cue`, `src/pins/catalog_pins.cue`, `src/pins/identity_package_pins.cue`, `SPEC.md`, `src/INDEX.md` (regenerated), and the outline comments of `docs/site/concepts/platforms-and-catalogs.md` and `docs/site/concepts/components-and-blueprints.md`. `src/component.cue` is not edited: it already types its maps with the three map definitions. Tracked constructs whose SPEC.md sections move: `#Trait` (§2.2, the `appliesTo` text only), `#Component` (§3.1), `#Blueprint` (§3.3, the `appliesTo` text only), `#Catalog` (§3.6) and `#TraitOptionalGate` (§5.1). No construct is newly tracked. `#ResourceMap`, `#TraitMap` and `#BlueprintMap` stay untracked helpers. `docs-kit.cue` already excludes them as "map shorthand", and they gain only a doc comment.
+Files this change touches: `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue`, `src/catalog.cue`, `src/pins/component_names_pins.cue`, `src/pins/platform_and_match_pins.cue`, `src/pins/catalog_pins.cue`, `src/pins/identity_package_pins.cue`, `src/pins/identity_pins.cue` (header), `Taskfile.yml` (the `vet` export list and its comment), `AGENTS.md` and `.claude/skills/core-schema-edit/SKILL.md` (the pins-are-hidden statements), `SPEC.md`, `src/INDEX.md` (regenerated), and the outline comments of `docs/site/concepts/platforms-and-catalogs.md` and `docs/site/concepts/components-and-blueprints.md`. `src/component.cue` is not edited: it already types its maps with the three map definitions. Tracked constructs whose SPEC.md sections move: `#Trait` (§2.2, the `appliesTo` text only), `#Component` (§3.1), `#Blueprint` (§3.3, the `appliesTo` text only), `#Catalog` (§3.6) and `#TraitOptionalGate` (§5.1). No construct is newly tracked. `#ResourceMap`, `#TraitMap` and `#BlueprintMap` stay untracked helpers. `docs-kit.cue` already excludes them as "map shorthand", and they gain only a doc comment.
 
 ## Goals / Non-Goals
 
@@ -90,7 +90,7 @@ The key stays `string` rather than `#ContractFQNType`. The member's own `fqn!: #
 
 ### A member that leaves fqn unset
 
-Under the bind, a member placed in one of the six maps without an authored `fqn` takes the key as its fqn, because unification fills the required field. This is accepted. The member definition still requires `fqn!`, every catalog wrapper authors it, and at publish the gate refuses an fqn that disagrees with the identity package. The positive pins key by `(X.metadata.fqn)`, so they test the authored case.
+Under the bind, a member placed in one of the six maps without an authored `fqn` takes the key as its fqn, because unification fills the required field. This is accepted, and specified: the primitive-keying requirement "A catalog member's FQN is authored, not derived" is modified to say that the definitions derive nothing, but inside the six maps the key binds fqn (a disagreeing value is refused, an unset one takes the key), and SPEC §2.1's Constraint bullet says the same. The member definition still requires `fqn!`, every catalog wrapper authors it, and at publish the gate refuses an fqn that disagrees with the identity package. The positive pins key by `(X.metadata.fqn)`, so they test the authored case; one bind-fill read-back per map tests the fill, and is exported by `task vet` so that losing any one bind fails the vet.
 
 ### Pin rewrites and new cases
 
@@ -112,6 +112,8 @@ Under the bind, a member placed in one of the six maps without an authored `fqn`
   CUE also prints follow-on `field not allowed` errors on `spec`, because the conflict empties the member. The recorded text quotes the first line and says that the follow-on lines exist.
 
 ### Non-hidden publish-gate pins
+
+The rule covers applied (uncommented) gate pins only. The commented must-fail gate cases (`_failGatePinned` and the seven `_failGate*` `#CatalogMemberFQNGate` cases) keep the hidden shape: each reports a conflict, which CUE reports in a hidden field too, and their recorded errors were measured in that shape. `failGateUnstated` is already non-hidden, because it tests incompleteness.
 
 The seven pins that apply a publish gate are renamed without the `_` prefix: `pinGateTraitPostureRequired`, `pinGateTraitPostureAdvisory`, `pinGateResource`, `pinGateResourceGA`, `pinGateTrait`, `pinGateBlueprint` and `pinGateTransformer`, and every reference is updated. Package `pins` is imported by nothing, so a regular field there ships to no consumer, and `cue vet` now checks the gates for completeness.
 
@@ -137,7 +139,7 @@ The text everywhere says what cue v0.17.1 prints for a non-hidden application of
 
 ### `#transformers`
 
-**Context**: The research counted seven key-to-member maps, but the owner's sentence names the component and catalog member maps.
+**Context**: The research counted seven key-to-member maps, but the owner's sentence names the component and catalog member maps. SPEC §3.6 says the transformer key-to-fqn agreement is asserted at publish by `#CatalogMemberFQNGate`. That is false: the cli fills the gate from the member definitions it finds by package (`cli/internal/publish/catalog_gates.go`) and never reads a `#Catalog` map key. The transformer key is checked for form only, and this change rewrites the §3.6 bullet to say so.
 **Decision**: SD13. Bind the six attachment maps, and leave `#transformers` as is.
 **Rationale**: The decision covers attachment maps. All 23 to 29 published transformers per release match their keys, so binding `#transformers` later costs one more tightening and nothing else.
 
