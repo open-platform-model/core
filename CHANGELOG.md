@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0-beta.4](https://github.com/open-platform-model/core/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2026-10-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* an attachment map key must equal the attached member's `metadata.fqn`. This covers `#Component.#resources`, `#traits` and `#blueprints` (`#ResourceMap`, `#TraitMap`, `#BlueprintMap`) and `#Catalog.#resources`, `#traits` and `#blueprints`. A key that differs fails `cue vet` with `conflicting values "<key>" and "<fqn>"` at `<map>.<key>.metadata.fqn`. A member that leaves `metadata.fqn` unset takes the key, so a short key is still refused, as an out-of-bound fqn on the component maps and as `field not allowed` on the catalog maps. Write each entry as `(X.metadata.fqn): X`, or embed the catalog's wrapper (`res.#Container`, `tr.#Expose`, `bp.#StatelessWorkload`), which already does. Replace short keys such as `container:` or `volumes:`. `#Catalog.#transformers` is unchanged. A re-vet against this build found no mis-keyed member: every published `opmodel.dev/catalogs/opm@v4` release from 4.1.0 to 4.6.0 and the published `catalogs/k8s` releases vet clean, and so do catalog_opm main, the modules fleet, opm-modules and the CUE fixtures of the library, cli and opm-operator.
+
+### Features
+
+* bind attachment map keys to the member's fqn ([#125](https://github.com/open-platform-model/core/issues/125)) ([ac82707](https://github.com/open-platform-model/core/commit/ac82707ab48406379f79131914f2146f3ec58f76))
+
 ## [2.0.0-beta.3](https://github.com/open-platform-model/core/compare/v2.0.0-beta.2...v2.0.0-beta.3) (2026-10-05)
 
 
