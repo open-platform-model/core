@@ -1,6 +1,6 @@
 ## Context
 
-The controller repo `opm-operator` becomes `opm-controller` (owner decisions recorded in the controller repo's ADR-019 and the new enhancement entry amending 0006). core carries no code that names it, only prose and comments. This design fixes which "operator" words move.
+The controller repo `opm-operator` becomes `opm-controller` (the owner's decisions are recorded in the controller repo's ADR-019 and in enhancement 0032, which amends 0006). core carries no code that names it, only prose and comments. This design fixes which "operator" words move.
 
 ## Goals / Non-Goals
 
@@ -17,13 +17,13 @@ The controller repo `opm-operator` becomes `opm-controller` (owner decisions rec
 
 ## Risks / Trade-offs
 
-- [Citation names a cli symbol before the cli renames it] The cli's `GateOperatorVersionCeiling` and `internal/cmd/operator/` are assumed to move to `GateControllerVersionCeiling` and `internal/cmd/controller/` in the cli rename change. Mitigation: this change merges after the cli change; recheck both names at the cutover.
+- [Citation names a cli symbol before the cli renames it] The cli's `GateOperatorVersionCeiling` and `internal/cmd/operator/` are assumed to move to `GateControllerVersionCeiling` and `internal/cmd/controller/` in the cli rename change. Mitigation: this change merges after the cli change; recheck both names before this change merges.
 
 ## Research & Decisions
 
 ### Which hits move
 **Context**: core has about 100 live lines with "operator", not all of them the product.
-**Explored**: the workspace rename inventory (core section) and a per-line `git grep -nIi operator` over the tree, excluding `CHANGELOG.md` and the OpenSpec archive.
+**Explored**: a per-line `git grep -nIi operator` over the tree, excluding `CHANGELOG.md` and the OpenSpec archive.
 **Decision**: per-line review with exact patterns, as listed under Decisions.
 **Rationale**: a bare word rule would rewrite the human platform operator and Kubernetes-generic operators, which keep their meaning.
 
