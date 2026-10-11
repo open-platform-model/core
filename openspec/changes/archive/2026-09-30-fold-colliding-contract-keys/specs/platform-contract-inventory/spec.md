@@ -6,7 +6,7 @@ A *definer* of a contract key MUST be an enabled registry entry whose catalog li
 
 Because a colliding key leaves `defined`, `fulfilled` and `discriminated` MAY read `true` on a colliding platform whose single-major equivalent reads them `false`. This is a known limitation: a consumer MUST treat a non-empty `collisions` as overriding both, and `routable` is `false` on every such platform.
 
-Source: enhancement 0026 OQ17 recommends this fold as an interim core fix ahead of enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog"); it delivers no 0026 decision.
+Source: enhancement 0026 recommends this fold as an interim core fix ahead of enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog"); it delivers no 0026 decision.
 
 #### Scenario: Two majors sharing keys report every shared key as a collision
 

@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md for motivation and specs/module-init-values/spec.md for the behavior contract. The design intent is `enhancements/0016` D3 and D4; `schemas/target.cue` and `schemas/spec.md` there pre-draft the shape and the SPEC.md text.
+See proposal.md for motivation and specs/module-init-values/spec.md for the behavior contract. The design intent is enhancement 0016; `schemas/target.cue` and `schemas/spec.md` there pre-draft the shape and the SPEC.md text.
 
 Current state:
 
@@ -30,7 +30,7 @@ Current state:
 	// It is unified and validated in the runtime
 	debugValues: _
 
-	// WHY optional, open and not unified with #config: 0016:D3/D4.
+	// WHY optional, open and not unified with #config: enhancement 0016.
 	// SPEC.md § 3.2 Rationale.
 
 	// Values a freshly initialized instance package starts from.

@@ -1,6 +1,6 @@
 ## Why
 
-Two schemas that enhancement `0010` relies on exist only inside a design document. `0010` D40's own alternatives record it plainly: `#IdentityPackage` is "defined in this entry's `schemas/target.cue` and nowhere in shipped code." A schema that lives only in a design document cannot validate anything.
+Two schemas that enhancement `0010` relies on exist only inside a design document. enhancement 0010's own alternatives record it plainly: `#IdentityPackage` is "defined in this entry's `schemas/target.cue` and nowhere in shipped code." A schema that lives only in a design document cannot validate anything.
 
 That would be a documentation gap if nothing depended on it. Three decisions do:
 
@@ -43,4 +43,4 @@ None. Both are new surfaces. `artifact-identity` supplies `#ArtifactRef` and `#M
 
 **What consumes it.** `cli`'s publish pipeline (`cli-publish-pipeline`), the catalog-member gate on `opm catalog publish` (`cli-catalog-member-gate`), `opm module vet`, and `opm mod init`'s repair mode — all in enhancement `0011`. Nothing in `library` reads either schema.
 
-**Design source.** `enhancements/0011` D21 and D22, resting on enhancement 0010 ("Identity lives in a committed, visible `identity.cue`, located by schema path", "The primitive-under-catalog-path constraint is a publish gate, not a schema constraint", "A primitive's `fqn` is authored from the identity package, and `version` stays required", "`apiVersion` is authored per primitive; `version` is renamed `catalogVersion`", "A declared version's major must agree with its path's major, checked in the identity package and in `core`", "Every primitive kind is flat, and `catalog_opm`'s blueprints move up one segment", "The version-major agreement is asserted in the identity package alone, for `#Catalog`" and "The version-major agreement is asserted in the identity package alone for `#Module` too"). `0010/schemas/target.cue` carries both target shapes.
+**Design source.** enhancement 0011, resting on enhancement 0010 ("Identity lives in a committed, visible `identity.cue`, located by schema path", "The primitive-under-catalog-path constraint is a publish gate, not a schema constraint", "A primitive's `fqn` is authored from the identity package, and `version` stays required", "`apiVersion` is authored per primitive; `version` is renamed `catalogVersion`", "A declared version's major must agree with its path's major, checked in the identity package and in `core`", "Every primitive kind is flat, and `catalog_opm`'s blueprints move up one segment", "The version-major agreement is asserted in the identity package alone, for `#Catalog`" and "The version-major agreement is asserted in the identity package alone for `#Module` too"). `0010/schemas/target.cue` carries both target shapes.

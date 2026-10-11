@@ -25,7 +25,7 @@ Four independent `SPEC.md` edits leave a document that is correct section by sec
 
 Not a re-review. Four questions, each targeting a way independent edits diverge:
 
-1. **Is the identity invariant stated identically where it appears twice?** `#Module` and `#ModuleInstance` both carry half of it, written by the same change but in different sections. `0010` D38's original single-sentence form was superseded by D41's two-part form precisely because one sentence was both imprecise and incomplete — if either section still carries the old wording, the document contradicts itself about what the owner label depends on.
+1. **Is the identity invariant stated identically where it appears twice?** `#Module` and `#ModuleInstance` both carry half of it, written by the same change but in different sections. enhancement 0010's original single-sentence form was superseded by D41's two-part form precisely because one sentence was both imprecise and incomplete — if either section still carries the old wording, the document contradicts itself about what the owner label depends on.
 2. **Is the primitive/adapter taxonomy consistent?** `SPEC.md:29` and `:38` move `#Blueprint` from Constructs to Primitives, and four kind sections were edited separately. A category line and a kind section disagreeing is the exact defect enhancement 0010 ("A transformer is an adapter, not a primitive; `apiVersion` is primitive-only") was filed to fix — the log asserted both readings at once for two days.
 3. **Does every cross-reference resolve?** Fields were renamed (`version` → `catalogVersion`), deleted (`nameSnakeCase`, `#definitionName`, `#SubscriptionFilter`, `#LabelWorkloadType`, `#ModuleFQNType`, `#CatalogFQNType`), and redefined (`fqn`, `#FQNType`). A section referring to any of them by the old name is wrong rather than stale.
 4. **Does any section still describe replaced behaviour?** The known instance is `SPEC.md`'s claim that matching unions `metadata.labels` — but the pass looks for the class, not just that one.
@@ -34,7 +34,7 @@ Not a re-review. Four questions, each targeting a way independent edits diverge:
 
 Every worked shape in `SPEC.md` and `docs/` goes through `cue vet`. Reading an example for plausibility is how a stale one survives: the failures this catches are exactly the ones that look right — a `modulePath` missing its new major suffix, an FQN in the pre-split form, a `version` field on a primitive.
 
-`enhancements/0010/schemas/examples.cue` is the reference for the target shapes and is already vetted; the check here is that this repo's own examples agree with what shipped, which is not the same claim.
+the example schemas of enhancement 0010 is the reference for the target shapes and is already vetted; the check here is that this repo's own examples agree with what shipped, which is not the same claim.
 
 ### The release goes through release-please
 

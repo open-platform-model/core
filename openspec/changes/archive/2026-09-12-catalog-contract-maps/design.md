@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md` § Why. The decision is `enhancements/0015` D1; the shape is pre-drafted in `enhancements/0015/schemas/target.cue` (`#CatalogContractMaps`) and `schemas/spec.md`, written standalone and before 0010 D49's version-segment filing. This document maps that delta onto `src/catalog.cue` and this repo's protocols and records the two places it deviates from the pre-draft.
+See `proposal.md` § Why. The decision is enhancement 0015; the shape is pre-drafted in the target schema of enhancement 0015 (`#CatalogContractMaps`) and `schemas/spec.md`, written standalone and before enhancement 0010's version-segment filing. This document maps that delta onto `src/catalog.cue` and this repo's protocols and records the two places it deviates from the pre-draft.
 
 Current state: `#Catalog` (`src/catalog.cue`) carries `metadata` and one member map, `#transformers: [#ImplFQNType]: #ComponentTransformer & {metadata: {modulePath: "\(M._ref.registryPath)/transformers", catalogVersion: M.version}}`. Its doc comment reserves the extension this change makes ("Adding sibling maps (#resources, #traits, #blueprints) is an additive extension if introspection demand surfaces later"). Contract members in catalog_opm author `modulePath: "\(id.kindPrefix.<kind>)/<apiVersion>"` and `catalogVersion: id.Version`, and `#CatalogMemberFQNGate` derives the same two values at publish.
 
@@ -30,7 +30,7 @@ Current state: `#Catalog` (`src/catalog.cue`) carries `metadata` and one member 
 ```cue
 	// Contract members. Each map stamps provenance the way #transformers
 	// does; the modulePath stamp carries the member's own apiVersion as its
-	// filing segment (0010 D49), read through a label alias because the
+	// filing segment (enhancement 0010), read through a label alias because the
 	// interpolation sits inside the same struct literal as the field.
 	#resources: [#ContractFQNType]: #Resource & {
 		metadata: {
@@ -70,10 +70,10 @@ Authoring shape a catalog uses, mirroring `#transformers`:
 
 ### The member value is the primitive itself, not a projection
 
-**Context**: `enhancements/0015/schemas/target.cue` states the member as `#PublishedContract`, a metadata projection (name, kind, modulePath, apiVersion, catalogVersion, fqn, fulfilment, description).
+**Context**: the target schema of enhancement 0015 states the member as `#PublishedContract`, a metadata projection (name, kind, modulePath, apiVersion, catalogVersion, fqn, fulfilment, description).
 **Explored**: the projection as a new tracked construct; the primitive value with the same stamping pattern constraint `#transformers` uses.
 **Decision**: the primitive value (`#Resource` / `#Trait` / `#Blueprint`).
-**Rationale**: it is the idiom `#transformers` already establishes (`(fqn): value`), so a catalog author lists a contract the way they list an adapter, and the listed value is the same value the transformers' required maps already carry, not a second copy that can drift from it. `fulfilment` is readable directly off a resource or trait, which is what 0015 D11's `provides` fold reads; a blueprint has no `fulfilment` field (enhancement 0010, "A transformer is an adapter, not a primitive; `apiVersion` is primitive-only"), so a projection carrying one would state something a blueprint structurally refuses. One fewer published construct (Principle V), and nothing new to track.
+**Rationale**: it is the idiom `#transformers` already establishes (`(fqn): value`), so a catalog author lists a contract the way they list an adapter, and the listed value is the same value the transformers' required maps already carry, not a second copy that can drift from it. `fulfilment` is readable directly off a resource or trait, which is what enhancement 0015's `provides` fold reads; a blueprint has no `fulfilment` field (enhancement 0010, "A transformer is an adapter, not a primitive; `apiVersion` is primitive-only"), so a projection carrying one would state something a blueprint structurally refuses. One fewer published construct (Principle V), and nothing new to track.
 
 ### The stamp carries the member's apiVersion segment
 
@@ -87,11 +87,11 @@ Authoring shape a catalog uses, mirroring `#transformers`:
 **Context**: `target.cue` writes `fqn: FQN` from the map key; the pre-drafted `spec.md` says the stamp MUST NOT cover `fqn`; enhancement 0019 ("A platform imports its catalog and embeds it whole into the registry entry, which derives everything else") binds `#registry`'s key into the embedded catalog's `modulePath`.
 **Explored**: binding the key into `metadata.fqn` (drift becomes a build conflict); leaving it to the publish gate, as `#transformers` does.
 **Decision**: no `fqn` stamp or key binding.
-**Rationale**: symmetry within `#Catalog`: four member maps with one stamping rule, stated once in SPEC.md §3.6 ("Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`"), and 0010 D21's rule that an `fqn` is authored at the definition site. The agreement between key, `fqn` and identity package is `#CatalogMemberFQNGate`'s at publish, which already covers all four kinds. If a later change wants the key bound for the contract maps, it is additive.
+**Rationale**: symmetry within `#Catalog`: four member maps with one stamping rule, stated once in SPEC.md §3.6 ("Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`"), and enhancement 0010's rule that an `fqn` is authored at the definition site. The agreement between key, `fqn` and identity package is `#CatalogMemberFQNGate`'s at publish, which already covers all four kinds. If a later change wants the key bound for the contract maps, it is additive.
 
 ### In-repo pins rather than an enhancement example
 
-**Context**: `core-registry-import` shipped no core-side fixture because `enhancements/0019/schemas/examples.cue` exercised its delta. 0015 has `target.cue` and `spec.md` but no `examples.cue`.
+**Context**: `core-registry-import` shipped no core-side fixture because the example schemas of enhancement 0019 exercised its delta. 0015 has `target.cue` and `spec.md` but no `examples.cue`.
 **Explored**: adding `examples.cue` to 0015 (a different repo, and the file would restate core rather than import it); a pins file here.
 **Decision**: `src/catalog_pins.cue`, hidden top-level fields in the convention `identity_pins.cue` and `platform_and_match_pins.cue` set: every pin forces evaluation (indexing or interpolation), must-fail cases are commented out with the exact error the tool printed at the commit that introduced them, and the filename does not start with an underscore.
 **Rationale**: the delta's whole content is the stamps' behaviour on listed members, which `task vet` can pin directly. Positive pins: a lean member's two stamped values, a provider-fulfilled trait's `fulfilment` read through `#traits` under `#transformers: {}`, and an empty catalog's three empty maps. Must-fail comments: filing drift, stale `catalogVersion`, kind mismatch, build-form key. Pin values are copied in shape from catalog_opm, not imported: `core` has no dependencies.
@@ -123,7 +123,7 @@ Authoring shape a catalog uses, mirroring `#transformers`:
 ## Risks / Trade-offs
 
 - [Partial listing: a catalog may define a contract and not list it, and `core` cannot tell] → accepted here. The inventory the second slice computes is only as complete as the listing; catalog_opm lists everything in its own change, and a publish gate in the 0011 family ("every provider-fulfilled contract is listed") is the structural close, owned by `cli`. Named in the proposal as a follow-up.
-- [The stamp refuses a member whose authored `modulePath` predates 0010 D49's version segment] → no shipped catalog on the v2 line authors the flat form (catalog_opm is at v4 with version-segment filing; the v1 branch pins core v1 and never sees this change). The old-shape values in `platform_and_match_pins.cue` are unaffected because they are never listed in a catalog.
+- [The stamp refuses a member whose authored `modulePath` predates enhancement 0010's version segment] → no shipped catalog on the v2 line authors the flat form (catalog_opm is at v4 with version-segment filing; the v1 branch pins core v1 and never sees this change). The old-shape values in `platform_and_match_pins.cue` are unaffected because they are never listed in a catalog.
 - [Two slices for one decision] → the maps are pure data and safe to publish alone; the fold is where the readiness semantics bite, and 0015 owes a decision there before it lands. Both slices declare D1 in `enhancement.yaml`; the delivery log records which half each landed.
 - [`target.cue` in 0015 is now stale on two points (flat stamp, `#PublishedContract`)] → a doc-only follow-up in enhancement 0015 (an amending decision or a schema note); not this change's scope.
 

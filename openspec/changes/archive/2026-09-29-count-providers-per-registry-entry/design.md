@@ -60,7 +60,7 @@ ONE rule, computed once in core as `#Platform.#contracts.providedBy` and read by
 `#ContractInventory` gains one field; the doc comments on `unfulfilled` and `overSubscribed` are rewritten. Every doc comment stays at six lines or fewer (`task docs:check`); references go in `// WHY` blocks.
 
 ```cue
-	// WHY unfulfilled: 0015:D18.
+	// WHY unfulfilled: enhancement 0015.
 
 	// Defined provider-fulfilled resources and traits with no providedBy
 	// key. A report the operator surfaces as a non-gating condition; never
@@ -68,7 +68,7 @@ ONE rule, computed once in core as `#Platform.#contracts.providedBy` and read by
 	// catalog defines.
 	unfulfilled: [...#ContractFQNType]
 
-	// WHY providedBy: 0010:D37, 0015:D2/D18. It is the one provider count:
+	// WHY providedBy: a provider-fulfilled contract admits exactly one provider (enhancements 0010 and 0015). It is the one provider count:
 	// the render build reads it instead of keeping its own, so the refusal
 	// and the generation gate cannot disagree. Keyed by registry key, major
 	// included, because the stamped transformer modulePath is major-free.
@@ -79,7 +79,7 @@ ONE rule, computed once in core as `#Platform.#contracts.providedBy` and read by
 	// it. See SPEC.md § 3.4.
 	providedBy: [#ContractFQNType]: [...#ModulePathType]
 
-	// WHY overSubscribed: 0010:D37.
+	// WHY overSubscribed: enhancement 0010.
 
 	// Keys of providedBy with more than one registry entry, including a
 	// contract no enabled entry defines. Two majors of one catalog are two

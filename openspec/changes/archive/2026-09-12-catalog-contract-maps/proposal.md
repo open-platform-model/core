@@ -1,8 +1,8 @@
 ## Why
 
-A `#Catalog` publishes only its `#transformers`; its resources, traits and blueprints reach a build solely by being demanded by an adapter. A contract whose declaring catalog deliberately ships no adapter, which is exactly what `fulfilment: "provider"` (enhancement 0010, "A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider") creates, is therefore invisible: measured 2026-09-11 in `enhancements/0015/experiments/01-provider-trait-across-catalogs`, a subscribed catalog publishing a provider-fulfilled `backup` trait with an empty `#transformers` produces a no-provider refusal that cannot say the contract is defined at all. Enhancement 0015 ("`#Catalog` publishes its contracts as members, beside its transformers") makes contracts catalog members so that "this catalog defines X" is a stated fact of the artifact, separate from "this catalog implements X".
+A `#Catalog` publishes only its `#transformers`; its resources, traits and blueprints reach a build solely by being demanded by an adapter. A contract whose declaring catalog deliberately ships no adapter, which is exactly what `fulfilment: "provider"` (enhancement 0010, "A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider") creates, is therefore invisible: measured 2026-09-11 in the provider trait across catalogs experiment of enhancement 0015, a subscribed catalog publishing a provider-fulfilled `backup` trait with an empty `#transformers` produces a no-provider refusal that cannot say the contract is defined at all. Enhancement 0015 ("`#Catalog` publishes its contracts as members, beside its transformers") makes contracts catalog members so that "this catalog defines X" is a stated fact of the artifact, separate from "this catalog implements X".
 
-This change is `catalog-contract-maps`, the first of two core slices of `enhancements/0015` D1. It lands the member maps on `#Catalog`. The second slice, the `#Platform` inventory fold over those maps, waits on 0015's pending readiness decision (a platform subscribing a catalog that lists a provider-fulfilled contract must not lose its generated module for lack of a provider) and is not part of this change.
+This change is `catalog-contract-maps`, the first of two core slices of enhancement 0015. It lands the member maps on `#Catalog`. The second slice, the `#Platform` inventory fold over those maps, waits on 0015's pending readiness decision (a platform subscribing a catalog that lists a provider-fulfilled contract must not lose its generated module for lack of a provider) and is not part of this change.
 
 ## What Changes
 
@@ -10,7 +10,7 @@ This change is `catalog-contract-maps`, the first of two core slices of `enhance
 - Each map stamps provenance onto its members exactly as `#transformers` does: `metadata.catalogVersion` to the catalog's `version`, and `metadata.modulePath` to `"<registryPath>/<kind>/<member apiVersion>"`, the version-segment filing enhancement 0010 ("Contract kinds file under a version segment (`<kind>/<apiVersion>/`) derived from the key") already requires of a contract member and `#CatalogMemberFQNGate` already derives. An authored value that disagrees is a `conflicting values` failure at a path naming the member. `fqn` stays unstamped, as for transformers.
 - A catalog that lists nothing stays valid: the maps are pattern constraints with no required entries, so every existing `#Catalog` value keeps its meaning.
 - `SPEC.md` §3.6 co-update (Definition, Shape, Constraints, Rationale) under `core-schema-edit`: the "catalogs don't enumerate Resources / Traits / Blueprints" constraint and its rationale bullet are replaced, not amended, since the reserved extension they described is what this change cashes in.
-- A hidden-field pins file exercises the delta in-repo (`enhancements/0015/schemas/` carries no `examples.cue`), with the must-fail cases recorded as comments in the repo's pins convention.
+- A hidden-field pins file exercises the delta in-repo (the schemas of enhancement 0015 carries no `examples.cue`), with the must-fail cases recorded as comments in the repo's pins convention.
 
 ## Classification
 
@@ -27,7 +27,7 @@ This change is `catalog-contract-maps`, the first of two core slices of `enhance
 
 ## Principle V
 
-Three maps, each with a named consumer: the enhancement 0015 ("`#Catalog` publishes its contracts as members, beside its transformers") inventory fold (second slice) reads them to compute `defined`; catalog_opm lists into them; 0015 D11's `provides` derivation folds a provider catalog's `fulfilment` values off them; and `opm platform check` reads the inventory they feed. No projection type is added: the member value is the primitive, so nothing exists that a consumer does not already unify against.
+Three maps, each with a named consumer: the enhancement 0015 ("`#Catalog` publishes its contracts as members, beside its transformers") inventory fold (second slice) reads them to compute `defined`; catalog_opm lists into them; enhancement 0015's `provides` derivation folds a provider catalog's `fulfilment` values off them; and `opm platform check` reads the inventory they feed. No projection type is added: the member value is the primitive, so nothing exists that a consumer does not already unify against.
 
 ## Capabilities
 

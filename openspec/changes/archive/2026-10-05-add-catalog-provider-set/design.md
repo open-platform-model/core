@@ -61,7 +61,7 @@ Files this change touches: `src/catalog.cue`, `src/platform.cue`, `src/pins/plat
 
 	// WHY provides: library ADR-012 moves one derived rule into core at a
 	// time; this is the rule Catalog.Provides() folds in Go and the
-	// 0015:D11 claim check compares against. SPEC.md § 3.6 Rationale,
+	// enhancement 0015 claim check compares against. SPEC.md § 3.6 Rationale,
 	// "Why a catalog derives the contracts it provides".
 
 	// provides: the provider-fulfilled contracts this catalog implements,
@@ -77,7 +77,7 @@ Files this change touches: `src/catalog.cue`, `src/platform.cue`, `src/pins/plat
 `src/catalog.cue` gains `import "list"`. The exact doc-comment wording may move during implementation, within six lines (`task docs:check`) and with the reference in the WHY block.
 
 - **Regular field, not hidden or a definition.** A hidden field is package-scoped to `core`, so the library could not read it from a catalog value; a definition would work through `cue.Def` but would not appear in `cue export`, which is how a human or the operator compares a catalog against its claim. A regular field also matches `kind` and `metadata`, the other regular fields of `#Catalog`. The plan entry asks for exactly this.
-- **Name `provides`.** It matches `Catalog.Provides()`, 0015:D11's claim field `provides`, and catalog_opm's `#PreBoundRegistration` output. It clashes with no `#ContractInventory` field (`defined`, `definedBy`, `requiredBy`, `providedBy`, `unfulfilled`, `overSubscribed`, `collisions`, `collidingEntries`, `comparable`, `fulfilled`, `routable`, `discriminated`) and with no other `#Catalog` field.
+- **Name `provides`.** It matches `Catalog.Provides()`, enhancement 0015's claim field `provides`, and catalog_opm's `#PreBoundRegistration` output. It clashes with no `#ContractInventory` field (`defined`, `definedBy`, `requiredBy`, `providedBy`, `unfulfilled`, `overSubscribed`, `collisions`, `collidingEntries`, `comparable`, `fulfilled`, `routable`, `discriminated`) and with no other `#Catalog` field.
 - **`let`, not a hidden helper field.** The intermediate set has no reader outside the field, so a `let` adds no surface. Measured during planning: it evaluates on cue v0.17.1 inside `#Catalog` and on every inventory fixture.
 - **Derived from the demand entries, not the contract maps.** A provider catalog implements contracts another catalog defines, so reading its own `#traits` would give the empty set for exactly the catalogs this field exists for. This is the plan entry's note and the Go fold's documented reason.
 - **Concreteness.** `fulfilment` defaults to `"catalog"` on `#Resource` and `#Trait`, so every demand entry's comparison is concrete and `provides` is concrete on any catalog whose transformers evaluate. On the bare definition, `#transformers` is a pattern with no entries, so `core.#Catalog.provides` is `[]`.

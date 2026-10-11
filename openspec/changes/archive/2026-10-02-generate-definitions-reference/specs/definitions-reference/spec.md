@@ -39,7 +39,7 @@ The generator SHALL drop every comment group that is not a doc comment or a same
 
 #### Scenario: A citation is stripped
 
-- **WHEN** a field's same-line comment reads `(kind prefix + this resource's own apiVersion, 0010:D49)`
+- **WHEN** a field's same-line comment reads `(kind prefix + this resource's own apiVersion, enhancement 0010)`
 - **THEN** the page shows `(kind prefix + this resource's own apiVersion)`
 
 #### Scenario: Hidden machinery stays off the page

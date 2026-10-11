@@ -118,7 +118,7 @@ This is the one place where the enhancement's own documents were internally inco
 
 **The `#SnakeNameType` retype is breaking in principle and inert in fact.** Measured 2026-08-05: zero hyphenated module names on either `modules/` branch. A rename surfacing during implementation means something was added under the old convention after that measurement — treat it as a signal, not as expected churn.
 
-**`core` cannot enforce the identity-package wiring.** `#Module` has no way to reference an arbitrary module's identity package, so `metadata: {modulePath: id.ModulePath, version: id.Version}` is established by the template `opm module init` generates. CUE enforces it for free *while it is written* — editing the literal yields `conflicting values`. An author who **replaces** `id.Version` with a literal leaves nothing to conflict with, and that case is `0011` D12's publish check, not this change's.
+**`core` cannot enforce the identity-package wiring.** `#Module` has no way to reference an arbitrary module's identity package, so `metadata: {modulePath: id.ModulePath, version: id.Version}` is established by the template `opm module init` generates. CUE enforces it for free *while it is written* — editing the literal yields `conflicting values`. An author who **replaces** `id.Version` with a literal leaves nothing to conflict with, and that case is enhancement 0011's publish check, not this change's.
 
 **Every consumer breaks at once.** ~~Accepted on the alpha argument: `@v1` has published only prereleases, so the compatibility promise has not started. Every consumer is a repo in this workspace pinning an explicit prerelease, so the retarget is a `task update-deps` sweep over an enumerable set, and rollback is a re-pin to `alpha.3`.~~
 

@@ -19,7 +19,7 @@ Enhancement `0010` leaned on a schema for this file four separate times without 
 **Non-Goals:**
 
 - **The publish pipeline.** Loading a tree, unifying it, formatting refusals — `cli`, enhancement `0011`.
-- **The compatibility comparator.** `0011` D9's field-wise walk is `library`.
+- **The compatibility comparator.** enhancement 0011's field-wise walk is `library`.
 - **Making `identity.cue` import the schema.** Explicitly excluded; see below.
 - **Migrating the existing identity files.** `catalogs-identity-authoring` and `modules-identity-authoring`, in `0010`'s plan.
 
@@ -116,7 +116,7 @@ The gate is **not** part of the primitive identity shape. Expressing it there wo
 
 The attractive alternative — have `identity/identity.cue` import `core` and embed `#IdentityPackage`, so plain `cue vet` catches non-conformance with no tooling at all — is **excluded**, and it is recorded rather than omitted because it is the first thing a reader will propose.
 
-It would put the schema module at the bottom of every catalog's import graph to buy a check that works fine from outside. If the import-free invariant is ever revisited, this becomes the better design and `0010` D43's recommended follow-on (identity files embedding the shipped definition, so `VersionMajor` comes from the definition rather than from an author remembering to write it) becomes available with it. Until then, `core` **exports** the shape and the CLI does the unifying.
+It would put the schema module at the bottom of every catalog's import graph to buy a check that works fine from outside. If the import-free invariant is ever revisited, this becomes the better design and enhancement 0010's recommended follow-on (identity files embedding the shipped definition, so `VersionMajor` comes from the definition rather than from an author remembering to write it) becomes available with it. Until then, `core` **exports** the shape and the CLI does the unifying.
 
 ## Risks / Trade-offs
 

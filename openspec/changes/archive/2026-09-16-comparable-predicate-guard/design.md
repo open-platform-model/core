@@ -8,13 +8,13 @@ See `proposal.md` § Why. Three existing facts shape the approach:
 
 ## Goals / Non-Goals
 
-**Goals**: derive the report; define "comparable" operationally (0015 OQ9); keep the platform value evaluable when it reports a pair.
+**Goals**: derive the report; define "comparable" operationally (enhancement 0015); keep the platform value evaluable when it reports a pair.
 
 **Non-Goals**: the refusal (a `library` change); arbitration or most-specific-wins (enhancement 0015 ("Comparable predicates within one catalog-fulfilled bucket are refused, not arbitrated") excludes it, and a successor entry may add it additively on top of this report); any check against the shipped `catalog_opm` catalog, which `core` cannot import.
 
 ## Research & Decisions
 
-### What "comparable" means operationally (0015 OQ9)
+### What "comparable" means operationally (enhancement 0015)
 
 **Context**: D5 says "one's required set a subset of the other's" without fixing which demands form the set. A differing required *label value* is the discriminator that first comes to mind, and it is what keeps the shipped 8-transformer `#ContainerResource` bucket legal in the five-workload half of that bucket. (Corrected during implementation: `src/platform.cue` carried no WHY block on this at all — it names labels nowhere — so the file gains one rather than having one rewritten.)
 

@@ -121,10 +121,10 @@ The two new fields sit directly after `overSubscribed`. `#ContractInventory` sta
 ```cue
 	// WHY a key two enabled entries list is a collision, not a conflict:
 	// folding it made two majors of one catalog sharing keys a bottom on
-	// metadata.catalogVersion, so no report could name them (0026:OQ17,
-	// measured in enhancements/0026/experiments/01-one-major-per-build and
+	// metadata.catalogVersion, so no report could name them (enhancement 0026,
+	// measured in the one major per build experiment of enhancement 0026 and
 	// 06-collision-tolerant-fold). Only single-definer keys fold; the rest
-	// report with routable false, an interim net until 0026:D9.
+	// report with routable false, an interim net until enhancement 0026.
 ```
 
   and its closing SPEC pointer adds "Why a shared key is a collision and not a conflict".

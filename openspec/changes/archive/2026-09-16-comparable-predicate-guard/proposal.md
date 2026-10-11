@@ -2,7 +2,7 @@
 
 Two enabled catalogs can each ship a transformer over the same catalog-fulfilled contract with predicates that are not discriminated from one another — the accidental case being two catalogs that both carry a daemonset adapter. Today nothing notices: the component matches both, renders twice, and no report names either transformer. Enhancement 0015 ("Comparable predicates within one catalog-fulfilled bucket are refused, not arbitrated") decided this is refused, not arbitrated, and that the refusal names the bucket and both transformer FQNs. `core` owns the derivation half of that: the inventory reports, the generation step refuses (enhancement 0015 ("An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"), already the shape of `overSubscribed`/`routable`).
 
-Implements `enhancements/0015` D5, and resolves OQ9 ("what *comparable* means operationally"), which D5 deferred to this slice.
+Implements enhancement 0015, and resolves OQ9 ("what *comparable* means operationally"), which D5 deferred to this slice.
 
 ## What Changes
 

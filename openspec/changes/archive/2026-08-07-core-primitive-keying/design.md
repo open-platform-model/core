@@ -21,7 +21,7 @@ Enhancement 0010 ("A contract is keyed by its own API version; an implementation
 
 **Non-Goals:**
 
-- **The compatibility gate.** D27's additive-only rule and `0011` D9's publish-side enforcement are `library` and `cli` work.
+- **The compatibility gate.** D27's additive-only rule and enhancement 0011's publish-side enforcement are `library` and `cli` work.
 - **Ordering of API versions.** Match is exact-key; nothing compares two levels. The one reader that sorts them is a diagnostic in `library`, and its kube-aware comparator is `library-match-labels`.
 - **`#CatalogMemberFQNGate`.** Ships in `core-identity-package` (enhancement 0011, "A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`").
 - **Matching labels and fulfilment.** `core-platform-and-match`.

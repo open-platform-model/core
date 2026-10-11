@@ -4,7 +4,7 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 
 ## 1. src/transformer.cue
 
-- [x] 1.1 Add the `#transform.#context` projection block per design.md (the two computed metadata blocks with `!= _|_` guards on the optional sources; `version` from `#moduleInstance.#moduleMetadata.version`); rewrite the `#transform` doc comment (runtime supplies `#moduleInstance`, `#component`, `#runtimeName`; the context computes itself) within the 6-line rule with a `SPEC.md § 4.1` pointer. Pair: rewrite `SPEC.md` §4.1's `#TransformerContext`/`#transform` material per the pre-draft (`enhancements/0019/schemas/spec.md`), including the transitional fill rule.
+- [x] 1.1 Add the `#transform.#context` projection block per design.md (the two computed metadata blocks with `!= _|_` guards on the optional sources; `version` from `#moduleInstance.#moduleMetadata.version`); rewrite the `#transform` doc comment (runtime supplies `#moduleInstance`, `#component`, `#runtimeName`; the context computes itself) within the 6-line rule with a `SPEC.md § 4.1` pointer. Pair: rewrite `SPEC.md` §4.1's `#TransformerContext`/`#transform` material per the pre-draft (the pre-drafted spec of enhancement 0019), including the transitional fill rule.
 - [x] 1.2 Cross-check the projection's field sources against `library/opm/schema/context.go` field by field (name, namespace, fqn, uuid, version, labels, annotations on both blocks); record the result in this file. Any mismatch is a stop-and-ask, not a silent adaptation (the staged migration's "identical values" claim rests on it).
 
   **Cross-check record (2026-09-01, context.go at the current library main).** Nine of ten fields match source-for-source; one mismatch was found, raised as a stop-and-ask, and resolved by the owner (land as designed):
@@ -21,7 +21,7 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 
 ## 3. Sanity check against the enhancement delta
 
-- [x] 3.1 Compare the landed projection against `enhancements/0019/schemas/target.cue` § D12 (shape-identical) and `examples.cue`'s D12 assertions (same pinned values); deviations get a note in design.md. (Shape-identical, same field order and guards; pins carry examples.cue's values — shop/apps/`opmodel.dev/modules/shop:shop:apps`/`0f8fad5b-…`/1.2.0, component `web`, controller fold `opm-cli`/`web`/`web`. No deviations; the pins additionally cover the rendered-labels count and the two absent-optional cases, which examples.cue does not assert.)
+- [x] 3.1 Compare the landed projection against the target schema of enhancement 0019 § D12 (shape-identical) and `examples.cue`'s D12 assertions (same pinned values); deviations get a note in design.md. (Shape-identical, same field order and guards; pins carry examples.cue's values — shop/apps/`opmodel.dev/modules/shop:shop:apps`/`0f8fad5b-…`/1.2.0, component `web`, controller fold `opm-cli`/`web`/`web`. No deviations; the pins additionally cover the rendered-labels count and the two absent-optional cases, which examples.cue does not assert.)
 
 ## 4. Validation
 

@@ -2,16 +2,16 @@
 
 A `#Platform` names its catalogs with a `version!` string, and a version string is inert: nothing in a CUE build resolves it, so the kernel resolves it out of band (one OCI pull per subscription), indexes the transformers in Go, and hands the result back on a `MaterializedPlatform` twin. Enhancement 0019 collapses the render to one CUE build per render (D9), and that build can only have an answer if the platform participates in dependency resolution the way every other module does: by import. D5 reshapes the registry entry to carry the imported catalog whole and derive everything else from it; D17 removes `#matchers`, whose only reason to exist was the Go step that filled it.
 
-This change is `core-registry-import`, implementing `enhancements/0019` D5 and D17 (with the D13 tripwire clauses that live in the schema). The core-schema delta is pre-drafted in `enhancements/0019/schemas/{target.cue,spec.md}` and exercised by `examples.cue` there; this change lands it in `src/platform.cue` and `SPEC.md` §3.4.
+This change is `core-registry-import`, implementing enhancement 0019 (with the D13 tripwire clauses that live in the schema). The core-schema delta is pre-drafted in the target schema and pre-drafted spec of enhancement 0019 and exercised by `examples.cue` there; this change lands it in `src/platform.cue` and `SPEC.md` §3.4.
 
 ## What Changes
 
-- **BREAKING** `#Subscription` is removed. It is closed around `enable` + `version!`, so the new entry shape is inexpressible as a unification onto it (measured, `enhancements/0019/experiments/02-platform-authority-mvs`); removal, not extension.
+- **BREAKING** `#Subscription` is removed. It is closed around `enable` + `version!`, so the new entry shape is inexpressible as a unification onto it (measured, the platform authority mvs experiment of enhancement 0019); removal, not extension.
 - `#CatalogEntry` is added: `{enable: bool | *true, #catalog: #Catalog}` with two derived, never-authored readouts: `version: #catalog.metadata.version` and `#transformers: #TransformerMap & #catalog.#transformers`. An expected `version` MAY be stamped at platform-generation time; it unifies with the readout, so wrong bytes become a build conflict naming the entry (D13's tripwire).
 - `#Platform.#registry`'s value type becomes `#CatalogEntry`, and the pattern constraint binds the map key into the embedded catalog: `[Path=#ModulePathType]: #CatalogEntry & {#catalog: metadata: modulePath: Path}`. Key-versus-import drift becomes inexpressible rather than detectable.
 - **BREAKING** `#Platform.#composedTransformers` stops being an optional kernel-filled slot and becomes a derived, non-optional fold over enabled entries (comprehension copy per entry, never a unification of one entry's map into another's: the D25 provenance stamp refuses foreign members).
 - **BREAKING** `#Platform.#matchers` is removed outright (D17). Nothing replaces it in core; the render build's matching glue builds its own buckets from `#composedTransformers`, in a shape core's list-valued buckets never matched.
-- `SPEC.md` §3.4 co-update (Definition, Shape, Constraints, Rationale) under `core-schema-edit`, following the pre-draft in `enhancements/0019/schemas/spec.md`.
+- `SPEC.md` §3.4 co-update (Definition, Shape, Constraints, Rationale) under `core-schema-edit`, following the pre-draft in the pre-drafted spec of enhancement 0019.
 
 ## Classification
 

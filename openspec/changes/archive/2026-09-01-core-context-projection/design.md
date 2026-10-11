@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md` § Why. The design was settled in enhancement 0019 (D12, resolving its OQ5); the CUE delta is pre-drafted and exercised in `enhancements/0019/schemas/` (`target.cue` § D12, `examples.cue`'s D12 assertions, `spec.md`'s §4.1 pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decision.
+See `proposal.md` § Why. The design was settled in enhancement 0019 (D12, resolving its OQ5); the CUE delta is pre-drafted and exercised in the schemas of enhancement 0019 (`target.cue` § D12, `examples.cue`'s D12 assertions, `spec.md`'s §4.1 pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decision.
 
 Current state: `src/transformer.cue` declares `#transform.#context: #TransformerContext` as a bare slot; `#TransformerContext`'s two metadata blocks carry required fields the runtime fills (`library/opm/schema/context.go`), and its label/annotation folds already compute from those blocks. `src/platform_and_match_pins.cue` pins a standalone, hand-filled `#TransformerContext` (`_pinRenderContext`) for the enhancement 0010 ("Matching labels live in their own field, unified upward from primitives") matchLabels-not-rendered assertions.
 
@@ -26,7 +26,7 @@ Current state: `src/transformer.cue` declares `#transform.#context: #Transformer
 **Context**: The computed fields need `#moduleInstance` and `#component` in scope.
 **Explored**: projecting inside `#TransformerContext` itself (it has no access to the two inputs; it would need its own copies of them, a second fill surface); the `#transform` site (both inputs are lexically in scope).
 **Decision**: the projection is written on `#transform.#context`, unifying `#TransformerContext` with the computed blocks. `#TransformerContext` is untouched.
-**Rationale**: `enhancements/0019/schemas/target.cue` states exactly this shape, and it preserves standalone constructibility (the existing `_pinRenderContext` pin and any tooling that builds a context directly keep working). The delta, verbatim from the pre-draft:
+**Rationale**: the target schema of enhancement 0019 states exactly this shape, and it preserves standalone constructibility (the existing `_pinRenderContext` pin and any tooling that builds a context directly keep working). The delta, verbatim from the pre-draft:
 
 ```cue
 #transform: {
@@ -76,7 +76,7 @@ Current state: `src/transformer.cue` declares `#transform.#context: #Transformer
 
 **Context**: `#TransformerContext.#moduleInstanceMetadata.version` exists today and the runtime fills it with the module's version; `#ModuleInstance.metadata` itself carries no version (enhancement 0010 ("Instance identity derives from the module's registry path, not from its FQN") keeps the module's version out of instance identity).
 **Decision**: `version: #moduleInstance.#moduleMetadata.version`, per the pre-draft.
-**Rationale**: the only version in scope with the meaning the field always had; verified against `src/module_instance.cue` (`#moduleMetadata: #module.metadata`) and pinned by `enhancements/0019/schemas/examples.cue` (`_assertCtxInstanceVersion`).
+**Rationale**: the only version in scope with the meaning the field always had; verified against `src/module_instance.cue` (`#moduleMetadata: #module.metadata`) and pinned by the example schemas of enhancement 0019 (`_assertCtxInstanceVersion`).
 
 ### Pins ride `platform_and_match_pins.cue`, in a filled-`#transform` shape
 
@@ -95,7 +95,7 @@ Current state: `src/transformer.cue` declares `#transform.#context: #Transformer
 
 - `src/transformer.cue`: the `#transform.#context` projection block; the `#transform` doc comment rewritten ("the runtime supplies `#moduleInstance` and `#component` concretely and `#runtimeName`; the context computes itself from them, D12"); a WHY note pointing at `SPEC.md` §4.1. Within the 6-line doc-comment rule.
 - `src/platform_and_match_pins.cue`: the projection pins per the decision above.
-- `SPEC.md` §4.1: Definition, Shape, Constraints (including the transitional rule), Rationale rewritten per the pre-draft (`enhancements/0019/schemas/spec.md` § `#ComponentTransformer.#transform` and `#TransformerContext`). Same commit as the CUE (pre-commit hook enforces).
+- `SPEC.md` §4.1: Definition, Shape, Constraints (including the transitional rule), Rationale rewritten per the pre-draft (the pre-drafted spec of enhancement 0019 § `#ComponentTransformer.#transform` and `#TransformerContext`). Same commit as the CUE (pre-commit hook enforces).
 - `.tasks/spec-tracked.txt`: no change; `#ComponentTransformer` and `#TransformerContext` are already tracked, nothing is added or removed.
 - `src/INDEX.md`: regenerate; doc-comment changes only.
 

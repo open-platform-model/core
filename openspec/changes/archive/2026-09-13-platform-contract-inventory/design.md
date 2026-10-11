@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md` § Why. The decisions are `enhancements/0015` D1, D2 and D18; the pre-drafted shape is `enhancements/0015/schemas/target.cue` (`#ContractInventory`, `#ContractRouting`, as amended by D18 into `fulfilled`/`routable`). This document maps that delta onto `src/platform.cue` and records where it deviates.
+See `proposal.md` § Why. The decisions are enhancement 0015; the pre-drafted shape is the target schema of enhancement 0015 (`#ContractInventory`, `#ContractRouting`, as amended by D18 into `fulfilled`/`routable`). This document maps that delta onto `src/platform.cue` and records where it deviates.
 
 Current state: `#Platform` (`src/platform.cue`) derives `#composedTransformers` by comprehension over enabled entries; `#CatalogEntry.#catalog` embeds the catalog whole, and since `alpha.8` that catalog carries `#resources`, `#traits`, `#blueprints` with stamped provenance. `#ComponentTransformer.requiredResources?` and `requiredTraits?` are optional maps.
 
@@ -28,7 +28,7 @@ Current state: `#Platform` (`src/platform.cue`) derives `#composedTransformers` 
 
 ```cue
 // #ContractInventory: the defined-versus-required cross a #Platform derives
-// from its enabled entries (enhancement 0015 D1, D2, D18).
+// from its enabled entries (enhancement 0015).
 #ContractInventory: {
 	defined:   [#ContractFQNType]: #Resource | #Trait | #Blueprint
 	definedBy: [#ContractFQNType]: #ModulePathType

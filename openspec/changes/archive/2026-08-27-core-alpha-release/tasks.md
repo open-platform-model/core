@@ -6,7 +6,7 @@
 
 ## 1. Preconditions
 
-- [x] 1.1 Confirm all four slices are `done` in `enhancements/0010/plan.yaml` and `enhancements/0011/plan.yaml`, each with an `openspec_ref`, and that each has a matching `history` event. A slice marked done with no event means one of the two is stale.
+- [x] 1.1 Confirm all four slices are `done` in the plan of enhancement 0010 and the plan of enhancement 0011, each with an `openspec_ref`, and that each has a matching `history` event. A slice marked done with no event means one of the two is stale.
 - [x] 1.2 `task check` on a clean tree.
 - [x] 1.3 Read the accumulated release-please PR. Confirm it is targeting `v2.0.0-alpha.2` and that its changelog lists the schema breaks. A misclassified commit shows up here as a missing or unexpected entry.
 
@@ -46,7 +46,7 @@ Read the whole document start to finish. Four questions, in order.
 - [x] 3.1 Extract every worked shape from `SPEC.md` and run it through `cue vet` against the actual schema. Do not read them for plausibility — the failures that matter look correct.
 - [x] 3.2 Same for `docs/`.
 - [x] 3.3 Same for the authoring-shape doc comments inside `src/*.cue`, particularly `#Catalog`'s header block, which described publish-time stamping into `identity/version_override.cue`.
-- [x] 3.4 Cross-check against `enhancements/0010/schemas/examples.cue`. Divergence between what shipped and what the design documented is a finding in one of them — determine which before editing either.
+- [x] 3.4 Cross-check against the example schemas of enhancement 0010. Divergence between what shipped and what the design documented is a finding in one of them — determine which before editing either.
 
 **Method.** A scratch tree holding a copy of `src/` plus the extracted examples as files in the same package, so every shape is evaluated against the real definitions rather than read.
 
@@ -91,7 +91,7 @@ Read the whole document start to finish. Four questions, in order.
 
 ## 6. Close the loop
 
-- [x] 6.1 `enhancements/0010/plan.yaml`: slice `core-alpha-release` → `status: done`, `openspec_ref: core/core-alpha-release`.
+- [x] 6.1 the plan of enhancement 0010: slice `core-alpha-release` → `status: done`, `openspec_ref: core/core-alpha-release`.
 - [x] 6.2 Same commit: `history` event citing that ref and the published version.
 - [x] 6.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index`.
 - [x] 6.4 Confirm `task enhancements:plan:ready ID=0010` now surfaces `library-core-retarget` and `docs-catalog-contract`.

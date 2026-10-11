@@ -2,7 +2,7 @@
 
 `#Component.metadata.resourceName` is typed `#NameType` (a DNS-1123 label), which is both too strict and too loose for what the API server enforces. Too strict: the kinds most components render (Deployment, DaemonSet, ConfigMap, Secret, StorageClass, CSIDriver, CRD, APIService) admit a DNS subdomain, dots included, at 253 runes, so an author cannot name a CSIDriver `zfs.csi.openebs.io` through the override that exists for exactly that case. Too loose: `#NameType` admits a leading digit, so an instance named `1prod` vets clean and its Service `1prod-web` is refused at apply as not DNS-1035; and a dotted or 64-rune name is refused at apply on StatefulSet and Namespace. Every one of these is a fact the server knows and `cue vet` does not. Enhancement 0019 resolves this with D20, D21 and D23: three name types transcribing the server's three validators, and a per-primitive `#nameConstraint` slot the component asserts, so the primitive that introduces a dot-hostile kind is the one that declares the rule and core carries no per-kind knowledge.
 
-This is `core-name-types-and-constraint`, implementing `enhancements/0019` D20, D21 (as revised 2026-08-26) and D23's core allowance. It is Phase A work and gates the catalog names sweep (0019 06-operational step 6), which cannot declare `#ExposeTrait: #nameConstraint: #ServiceNameType` until the slot exists. Now, because that sweep is the next slice in the entry's order and everything else it needs has landed.
+This is `core-name-types-and-constraint`, implementing enhancement 0019 (as revised 2026-08-26) and D23's core allowance. It is Phase A work and gates the catalog names sweep (0019 06-operational step 6), which cannot declare `#ExposeTrait: #nameConstraint: #ServiceNameType` until the slot exists. Now, because that sweep is the next slice in the entry's order and everything else it needs has landed.
 
 ## What Changes
 
@@ -44,4 +44,4 @@ Two new types and one hidden slot, each with a consumer in the next slice: `#Ser
 
 - `src/types.cue`, `src/resource.cue`, `src/trait.cue`, `src/blueprint.cue`, `src/component.cue`, new `src/component_names_pins.cue`; `SPEC.md` §1, §2.1, §2.2, §3.1, §3.3.
 - `src/INDEX.md` regenerated (two new top-level definitions). `.tasks/spec-tracked.txt` unchanged: the types are `*Type` helpers by the skill's own rule, and the slot lives on already-tracked constructs.
-- Source of truth for the shapes: `enhancements/0019/schemas/target.cue` and `examples.cue` (vetted), validated by `enhancements/0019/experiments/09-name-constraint-propagation/` and `11-name-constraint-on-landed-d16/`.
+- Source of truth for the shapes: the target schema of enhancement 0019 and `examples.cue` (vetted), validated by the name constraint propagation experiment of enhancement 0019 and `11-name-constraint-on-landed-d16/`.

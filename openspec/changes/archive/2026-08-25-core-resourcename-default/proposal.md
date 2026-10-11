@@ -2,7 +2,7 @@
 
 `#Component.#names` is documented as the single source of truth for a component's rendered name, but the value it computes is not the name anything renders. Every hand-rolled formula in `catalogs/opm` names the primary object `<instance>-<component>`, while `#names.resourceName` defaults to the bare component name (open-platform-model/core#49). Enhancement 0019 resolves this with D16: the default flips to the instance-qualified form so the computed name agrees with rendered reality, and it lands **before** the D15 catalog sweep so that sweep becomes a byte-identical refactor instead of a double rename (0019 06-operational, Phase A step 5). The bare default also collides outright when two instances of one module share a namespace; the qualified form is the `<release>-<chart>` convention every Helm operator already knows.
 
-This change is `core-resourcename-default`, implementing `enhancements/0019` D16. It has no dependency on the library slices and no other slice depends on it except the sweep (`catalog-names-readonly`) and the fleet revalidation (`modules-fleet-rename`).
+This change is `core-resourcename-default`, implementing enhancement 0019. It has no dependency on the library slices and no other slice depends on it except the sweep (`catalog-names-readonly`) and the fleet revalidation (`modules-fleet-rename`).
 
 ## What Changes
 

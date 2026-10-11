@@ -48,4 +48,4 @@ None. `artifact-identity` supplies `#PackagePathType` for these keys' path porti
 
 **What this change does not deliver, and must not be read as delivering.** `core` loses its ability to refuse a wrong `fqn`, and the gate that replaces it (`#CatalogMemberFQNGate`) ships in `core-identity-package` under enhancement 0011 ("A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`"). Until both have landed there is a window in which an authored `fqn` is unchecked. The two are cut in the same alpha, so the window does not reach a published artifact — but it is real inside the repo and is why the two changes are sequenced together rather than independently.
 
-**Design source.** `enhancements/0010` — D4, D21, D25, D33, D34, D44. `schemas/target.cue` carries `#PrimitiveIdentity`, `#TransformerIdentity`, `#APIVersionType` and `#APIVersionGated` as the target shapes.
+**Design source.** enhancement 0010. `schemas/target.cue` carries `#PrimitiveIdentity`, `#TransformerIdentity`, `#APIVersionType` and `#APIVersionGated` as the target shapes.

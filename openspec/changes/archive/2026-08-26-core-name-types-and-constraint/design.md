@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md for motivation. Current state in `src/`: `#NameType` is the only name type; `#Component.metadata.resourceName` is `*"\(#instance.name)-\(name)" | #NameType | error(...)` with a guarded hidden `_resourceNameDefaultFits` length assertion, landed by `core-resourcename-default` (enhancement 0019, "`metadata.resourceName` defaults to the instance-qualified name, and the flip lands before the sweep"). `#Resource`, `#Trait` and `#Blueprint` are closed definitions with no naming slot. The shapes below are copied from `enhancements/0019/schemas/target.cue` (vetted, with `examples.cue` pinning every case) and were validated by 0019 experiments 09 and 11; this document records only what is specific to landing them in `src/`.
+See proposal.md for motivation. Current state in `src/`: `#NameType` is the only name type; `#Component.metadata.resourceName` is `*"\(#instance.name)-\(name)" | #NameType | error(...)` with a guarded hidden `_resourceNameDefaultFits` length assertion, landed by `core-resourcename-default` (enhancement 0019, "`metadata.resourceName` defaults to the instance-qualified name, and the flip lands before the sweep"). `#Resource`, `#Trait` and `#Blueprint` are closed definitions with no naming slot. The shapes below are copied from the target schema of enhancement 0019 (vetted, with `examples.cue` pinning every case) and were validated by 0019 experiments 09 and 11; this document records only what is specific to landing them in `src/`.
 
 ## Goals / Non-Goals
 
@@ -38,7 +38,7 @@ Helpers by the `core-schema-edit` rule (`*Type`), so untracked; they appear in `
 // DEFINITION field, deliberately not optional and never guarded: measured on
 // cue v0.17.1, `x.#nameConstraint != _|_` is false for a non-concrete value,
 // so an optional slot behind a guard silently never propagates. May be
-// computed from this primitive's own fields (0019 D23).
+// computed from this primitive's own fields (enhancement 0019).
 #nameConstraint: _
 ```
 
@@ -77,7 +77,7 @@ Written to the rules of `platform_and_match_pins.cue` (hidden fields, `_pin: <ex
 ### Where the constraint is applied
 
 **Context**: enhancement 0019 ("Dot-hostile primitives declare a `#nameConstraint`; the component asserts the resolved name against their conjunction, the matchLabels pattern applied to naming") as ratified on 2026-08-24 unified the conjunction into `metadata.resourceName`; that was validated against a validated-default field, and core landed an unvalidated-default field.
-**Explored**: `enhancements/0019/experiments/11-name-constraint-on-landed-d16/` ran the full must-fail/must-pass matrix against six spellings on the landed field.
+**Explored**: the name constraint on landed d16 experiment of enhancement 0019 ran the full must-fail/must-pass matrix against six spellings on the landed field.
 **Decision**: hidden assertion on the interpolated field (`_nameFits`), never unification into the field. D21 was revised in place on 2026-08-26 to say so.
 **Rationale**: unified into the field, a constraint distributes into the default arm; a failing default drops out of the disjunction, the field becomes a bare constraint, and the refusal surfaces as `non-concrete value … in operand to ==` at the D16 guard with the string nowhere, while an override refusal is caught by the `error()` arm whose text mis-describes it. The hidden assertion refuses every case naming the string, the bound and the type site.
 
