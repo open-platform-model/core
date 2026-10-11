@@ -18,5 +18,5 @@
 
 ## 4. Verify and archive
 
-- [ ] 4.1 `openspec validate align-enhancement-store --strict`; review; fix findings.
-- [ ] 4.2 Archive the change on this branch and commit `docs(openspec): archive align-enhancement-store`.
+- [x] 4.1 `openspec validate align-enhancement-store --strict`; review; fix findings.
+- [x] 4.2 Archive the change on this branch and commit `docs(openspec): archive align-enhancement-store`.
