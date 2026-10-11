@@ -87,7 +87,7 @@ import (
 	unfulfilled: [...#ContractFQNType]
 
 	// WHY providedBy: a provider-fulfilled contract admits exactly one provider (enhancements 0010 and 0015). It is
-	// the render build reads it instead of keeping its own, so the refusal
+	// the one provider count: the render build reads it instead of keeping its own, so the refusal
 	// and the generation gate cannot disagree. Keyed by registry key, major
 	// included, because the stamped transformer modulePath is major-free.
 

@@ -84,7 +84,7 @@ package core
 	// module author must answer. Embedded wholesale, the marker survives and
 	// an unanswered key is reported as a missing required field.
 	//
-	// Measured in enhancement 0010 experiment 04 (enhancement 0010).
+	// Measured in experiment 04 of enhancement 0010.
 	//
 	// The union itself is hidden, because it is the PROVENANCE of the public
 	// field rather than a second value a consumer reads: matchLabels IS this,
@@ -185,7 +185,7 @@ package core
 	// constraint type's definition site. The interpolation is load-bearing.
 	_nameFits: "\(metadata.resourceName)" & _nameConstraints
 
-	// WHY: introduced by enhancement 0001 (enhancement 0001). #Module.#ctx.components
+	// WHY: introduced by enhancement 0001. #Module.#ctx.components
 	// projects this block automatically; authors writing self-references
 	// inside a component's `spec` body MUST go through
 	// `#ctx.components.<self-id>.dns.fqdn` because `#names` is not in lexical

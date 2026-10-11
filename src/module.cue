@@ -113,7 +113,7 @@ import (
 	// It is unified and validated in the runtime
 	debugValues: _
 
-	// WHY optional, open and not unified with #config (enhancement 0016).
+	// WHY optional, open and not unified with #config: only instance init reads it, so a stale or non-concrete template must not fail every module load (enhancement 0016).
 	// SPEC.md § 3.2 Rationale.
 
 	// Values a freshly initialized instance package starts from.

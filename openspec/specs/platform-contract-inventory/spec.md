@@ -20,7 +20,7 @@ Defines what a `#Platform` derives about the contracts its enabled catalogs defi
 
 ### Requirement: Required demands are counted per contract across enabled transformers
 
-`#contracts.requiredBy` MUST map every defined contract FQN to the list of implementation FQNs, drawn from `#composedTransformers`, whose `requiredResources` or `requiredTraits` name that contract. Optional demands MUST NOT count (enhancement 0010 ("Two providers supplying one contract is a materialize-time error"): tolerance, not fulfilment). A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind. A defined contract nothing requires MUST map to an empty list.
+`#contracts.requiredBy` MUST map every defined contract FQN to the list of implementation FQNs, drawn from `#composedTransformers`, whose `requiredResources` or `requiredTraits` name that contract. Optional demands MUST NOT count (enhancement 0010: tolerance, not fulfilment). A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind. A defined contract nothing requires MUST map to an empty list.
 
 #### Scenario: A contract required by transformers from two catalogs lists both
 
@@ -213,7 +213,7 @@ A *definer* of a contract key MUST be an enabled registry entry whose catalog li
 
 Because a colliding key leaves `defined`, `fulfilled` and `discriminated` MAY read `true` on a colliding platform whose single-major equivalent reads them `false`. This is a known limitation: a consumer MUST treat a non-empty `collisions` as overriding both, and `routable` is `false` on every such platform.
 
-Source: enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog") recommends this fold as an interim core fix ahead of its own design; it delivers no part of that design.
+Source: enhancement 0026 recommends this fold as an interim core fix ahead of enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog"); it delivers no decision of that entry.
 
 #### Scenario: Two majors sharing keys report every shared key as a collision
 

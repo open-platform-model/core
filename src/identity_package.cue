@@ -67,7 +67,7 @@ import (
 	//
 	// So this is NOT a redundant check duplicating one on #Module or #Catalog.
 	// There is nothing left to duplicate, and there is no downstream backstop
-	// either. the removals in enhancement 0010 were written against a platform-side
+	// either. The removals in enhancement 0010 were written against a platform-side
 	// subscription-selection major check — and that check HAS NEVER EXISTED IN
 	// `core`. It was NOT removed by the scalar-subscription collapse; an
 	// earlier revision of this comment said so and was wrong. Measured

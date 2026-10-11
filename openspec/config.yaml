@@ -176,7 +176,7 @@ context: |
   
   ### Enhancements
   - Enhancements live in the OpenSpec store `opm-enhancements` (see `references:`). Read an entry with `openspec show <id>-<slug> --store opm-enhancements`; its `tasks.md` says which repo still has work.
-  - A change here delivers a line of an entry's `tasks.md` and says so in its proposal (`## Enhancement`, `Delivers NNNN, task X.Y.`).
+  - A change here that delivers a line of an entry's `tasks.md` says so in its proposal (`## Enhancement`, `Delivers NNNN, task X.Y.`); otherwise the section says `None.`.
 
   ## Validation Gates (before merge)
   1. `task fmt:check` — CUE files are formatted.
@@ -308,3 +308,6 @@ operations:
         release class. In per-section mode each section commit is the PR title and therefore a
         release trigger; the change stays active on main between PRs, and spec sync waits for
         archive after the last PR."
+  archive:
+    guidance:
+      - "If the change delivers a line of an enhancement's `tasks.md`, a PR on `enhancements` ticks that line."
