@@ -92,14 +92,14 @@ Measured on a scratch copy of `src/` (cue v0.17.1, 2026-09-13) with three stand-
 **Context**: `target.cue` and `spec.md` in 0015 name a per-contract arity relation.
 **Explored**: landing it beside the inventory (a definition a caller unifies per contract with `implementations`); folding its content into the inventory's lists and booleans.
 **Decision**: fold. The inventory's `overSubscribed`/`routable` state the arity rule for every contract at once; `requiredBy` is the per-contract implementation list the relation took as input.
-**Rationale**: Principle V; the relation would be a second statement of the same two facts, and no consumer would unify it rather than read the lists. Recorded as a deviation from 0015's pre-draft; 0015 D1/D2 are unchanged by it.
+**Rationale**: Principle V; the relation would be a second statement of the same two facts, and no consumer would unify it rather than read the lists. Recorded as a deviation from 0015's pre-draft; enhancement 0015 ("`#Catalog` publishes its contracts as members, beside its transformers" and "One provider per contract stands; provider classes are rejected in this entry") are unchanged by it.
 
 ### Over-subscription counts catalogs
 
-**Context**: 0010 D37 says "exactly one transformer requiring the contract"; experiment 02's earlier cut found the CLI's rule counts catalogs ("supplied by transformers from 2 catalogs"), so one provider catalog may carry two adapters over one contract (k8up's Schedule and PreBackupPod).
+**Context**: enhancement 0010 ("A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider") says "exactly one transformer requiring the contract"; experiment 02's earlier cut found the CLI's rule counts catalogs ("supplied by transformers from 2 catalogs"), so one provider catalog may carry two adapters over one contract (k8up's Schedule and PreBackupPod).
 **Explored**: counting transformers (refuses k8up's own shape); counting the stamped `metadata.modulePath` of each requiring transformer, distinct per catalog.
 **Decision**: catalogs, via the stamp; `_providers` keys a struct by `modulePath`, which deduplicates.
-**Rationale**: matches the shipped refusal's rule and the provider design; the stamp is unforgeable (0010 D25), so a catalog cannot pose as two.
+**Rationale**: matches the shipped refusal's rule and the provider design; the stamp is unforgeable (enhancement 0010, "`apiVersion` is authored per primitive; `version` is renamed `catalogVersion`"), so a catalog cannot pose as two.
 
 ### Presence guards on optional demand maps
 
@@ -113,7 +113,7 @@ Measured on a scratch copy of `src/` (cue v0.17.1, 2026-09-13) with three stand-
 ### `definedBy` added to the pre-draft's shape
 
 **Context**: D18's diagnostic names the defining catalog; the pre-draft's `defined` carried only the member (its stamped `modulePath` is a package path, not the registry key).
-**Explored**: parsing the catalog back out of the stamped `modulePath` (the prefix derivation 0010 D17 records as unreliable); recording the registry key in the same fold.
+**Explored**: parsing the catalog back out of the stamped `modulePath` (the prefix derivation enhancement 0010 ("The primitive-under-catalog-path constraint is a publish gate, not a schema constraint") records as unreliable); recording the registry key in the same fold.
 **Decision**: `definedBy: [#ContractFQNType]: #ModulePathType`, the entry's key.
 **Rationale**: free in the fold, and it is the value every diagnostic wants to print.
 
@@ -150,8 +150,8 @@ Measured on a scratch copy of `src/` (cue v0.17.1, 2026-09-13) with three stand-
 
 - [Evaluation cost in every platform build] -> `defined × transformers × demands` string comparisons, about ten thousand for catalog_opm's 72 members and 45 transformers; two comprehensions per contract, no nested unification. If a fleet measures it, `requiredBy` can be inverted (one pass over transformers) without changing the shape.
 - [A catalog that lists nothing yields `fulfilled: true` vacuously] -> named in 0015 `06-operational.md`; closed by `catalog-contract-listing` and its listing gate, not here.
-- [Optional demands are invisible to the inventory] -> by design (0010 D32); a contract only optionally consumed is "unfulfilled" and reported as such, which is the correct reading of tolerance.
-- [Two builds of one catalog cannot be told apart by `modulePath`] -> one entry per path (0019 D5) already makes that state inexpressible.
+- [Optional demands are invisible to the inventory] -> by design (enhancement 0010, "Two providers supplying one contract is a materialize-time error"); a contract only optionally consumed is "unfulfilled" and reported as such, which is the correct reading of tolerance.
+- [Two builds of one catalog cannot be told apart by `modulePath`] -> one entry per path (enhancement 0019, "A platform imports its catalog and embeds it whole into the registry entry, which derives everything else") already makes that state inexpressible.
 
 ## Migration Plan
 

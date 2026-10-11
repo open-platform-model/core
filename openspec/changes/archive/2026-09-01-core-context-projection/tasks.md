@@ -17,7 +17,7 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 
 - [x] 2.1 Add projection pins per design.md: a minimal filled `#transform` (small instance fixture with labels, component fixture, `#runtimeName`), pinning the projected instance and component fields by interpolation, the `controllerLabels` fold, and a rendered-labels count pin (the file's masked-pin rule for open structs).
 - [x] 2.2 Add the absent-optional pin (instance without annotations, `== _|_` disunification shape) and run the divergent-fill must-fail case once in place; record it commented out with the observed cue v0.17.x error text, per the file's rules. (Both the component-name and instance-name variants were run once in place on cue v0.17.1; the component-name case is the recorded one, being the k8up drift class.)
-- [x] 2.3 Confirm the existing `_pinRenderContext` standalone-construction pin and the 0010 D36 matchLabels pins pass untouched. (Same `task vet` run as the new pins; no existing pin edited.)
+- [x] 2.3 Confirm the existing `_pinRenderContext` standalone-construction pin and the enhancement 0010 ("Matching labels live in their own field, unified upward from primitives") matchLabels pins pass untouched. (Same `task vet` run as the new pins; no existing pin edited.)
 
 ## 3. Sanity check against the enhancement delta
 

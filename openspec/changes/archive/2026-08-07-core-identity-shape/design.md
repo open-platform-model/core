@@ -4,7 +4,7 @@
 
 Three consequences follow, and they are what this change removes:
 
-1. **The registry address is not recoverable from the artifact.** `modulePath` is a prefix, so every consumer that needs an OCI repository recomposes one. That composition is duplicated across `cli` and `library` and is why `0010` D1 exists.
+1. **The registry address is not recoverable from the artifact.** `modulePath` is a prefix, so every consumer that needs an OCI repository recomposes one. That composition is duplicated across `cli` and `library` and is why enhancement 0010 ("An artifact's `modulePath` is its complete CUE module path; a primitive's is a package path") exists.
 2. **The version is in the key.** `fqn` interpolates `version`, so `module.uuid` moves on every release, and `instance.uuid` moves with it. `prune.go:107` skips deleting any object whose owner label disagrees with `Status.InstanceUUID`, which `reconcile/moduleinstance.go:308` repopulates from each new render — so every upgrade orphans what it removed, reporting success.
 3. **Two spellings of one name.** `name` is kebab, `nameSnakeCase` is its snake projection, and the module path's leaf is a third independently-authored value that is supposed to equal one of them.
 
@@ -25,7 +25,7 @@ Enhancement `0010` is `accepted` with every open question resolved. This change 
 
 - **Primitive keying.** `#Resource`, `#Trait`, `#Blueprint` and `#ComponentTransformer` keep the `modulePath` values they carry today. Retyping them to `#PackagePathType` is mechanical and belongs to this change only because the type is defined here; `apiVersion`, `catalogVersion` and authored `fqn` are `core-primitive-keying`.
 - **Platform and match surface.** `#SubscriptionFilter`, `matchLabels`, `fulfilment` — `core-platform-and-match`.
-- **`#IdentityPackage`.** It ships in `core` under `0011` D21, as `0011:core-identity-package`. This change defines the types it is built from and nothing more.
+- **`#IdentityPackage`.** It ships in `core` under enhancement 0011 ("Identity is validated by unifying against a shipped `#IdentityPackage`, and CUE produces the diagnostic"), as `0011:core-identity-package`. This change defines the types it is built from and nothing more.
 - **Publishing the alpha.** `core-alpha-release`.
 - **Any migration of a live instance or a published artifact.** D18 subsumes the live-instance relabel into the `v0 → v1` fleet migration; the catalogs and the fleet are `0010`'s migration-phase slices.
 
@@ -114,7 +114,7 @@ This is the one place where the enhancement's own documents were internally inco
 
 **Every module UUID and every instance UUID moves once.** Unavoidable — it is the point. Bounded by landing in one window: D41 was taken now rather than later specifically so this is the *last* time an instance UUID moves. Landed separately it would be a second fleet-wide relabelling carrying the same silent-orphaning exposure through a second cutover.
 
-**A non-conformant identity package now carries no consumer-runnable major check.** Accepted, twice, by D43 and D45. `identity/identity.cue` is never evaluated as a package by a consumer — it reaches them only through the values it produced — and D11 keeps `cue mod publish` working, so that artifact class is not hypothetical. The skew then surfaces at `#SubscriptionSelection._majorAgrees` in a *platform author's* file about a *publisher's* mistake. Bounded by `0011` D8/D21 refusing a non-conformant identity file and `0011` D12 comparing `metadata.version` against `id.Version` for anything published through the tool. Removed outright by D43's recommended follow-on, which `0011:core-identity-package` implements.
+**A non-conformant identity package now carries no consumer-runnable major check.** Accepted, twice, by D43 and D45. `identity/identity.cue` is never evaluated as a package by a consumer — it reaches them only through the values it produced — and D11 keeps `cue mod publish` working, so that artifact class is not hypothetical. The skew then surfaces at `#SubscriptionSelection._majorAgrees` in a *platform author's* file about a *publisher's* mistake. Bounded by enhancement 0011 ("The version writer locates its field by the schema-fixed path, not by a marker" and "Identity is validated by unifying against a shipped `#IdentityPackage`, and CUE produces the diagnostic") refusing a non-conformant identity file and enhancement 0011 ("Modules carry an identity subpackage and a version; `version set` and `--version` behave identically on both artifact types") comparing `metadata.version` against `id.Version` for anything published through the tool. Removed outright by D43's recommended follow-on, which `0011:core-identity-package` implements.
 
 **The `#SnakeNameType` retype is breaking in principle and inert in fact.** Measured 2026-08-05: zero hyphenated module names on either `modules/` branch. A rename surfacing during implementation means something was added under the old convention after that measurement — treat it as a signal, not as expected churn.
 

@@ -1,6 +1,6 @@
 ## Why
 
-`#transform` declares three inputs and the runtime hand-assembles one of them: `#context`'s two metadata blocks are decoded out of the instance and the component by `library/opm/schema/context.go` and re-encoded into a fresh value, a hand-maintained mirror of a derivation the schema could compute itself. Enhancement 0019 D12 ends that: `#TransformerContext` becomes a projection of `#transform`'s other two inputs, computed at the `#transform` site where both are already in scope, and the runtime's obligation narrows to `#runtimeName`, the one field nothing in the artifacts can know. Landing it now, beside `core-registry-import`, is itself a 0019 decision: under D9 the render is one CUE build, and a deferred projection would have the generated render glue hand-roll in CUE exactly what core can compute, then move it here later (churn D12's rationale explicitly rejects). The 0019 Phase B wave (`library-render-build`) consumes this release.
+`#transform` declares three inputs and the runtime hand-assembles one of them: `#context`'s two metadata blocks are decoded out of the instance and the component by `library/opm/schema/context.go` and re-encoded into a fresh value, a hand-maintained mirror of a derivation the schema could compute itself. Enhancement 0019 ("`#TransformerContext` becomes a projection of the other two inputs; the kernel fills `#runtimeName` alone") ends that: `#TransformerContext` becomes a projection of `#transform`'s other two inputs, computed at the `#transform` site where both are already in scope, and the runtime's obligation narrows to `#runtimeName`, the one field nothing in the artifacts can know. Landing it now, beside `core-registry-import`, is itself a 0019 decision: under D9 the render is one CUE build, and a deferred projection would have the generated render glue hand-roll in CUE exactly what core can compute, then move it here later (churn D12's rationale explicitly rejects). The 0019 Phase B wave (`library-render-build`) consumes this release.
 
 This change is `core-context-projection`, implementing `enhancements/0019` D12. The delta is pre-drafted and exercised in `enhancements/0019/schemas/` (`target.cue`, `examples.cue`, `spec.md`); this change lands it in `src/transformer.cue` and `SPEC.md` §4.1.
 
@@ -36,7 +36,7 @@ No new definition and no new field: the change moves an existing obligation from
 
 ### Modified Capabilities
 
-None. `component-matching`'s one context requirement (matchLabels never reaches `componentLabels`, 0010 D36) is untouched: the folds do not change.
+None. `component-matching`'s one context requirement (matchLabels never reaches `componentLabels`, enhancement 0010 ("Matching labels live in their own field, unified upward from primitives")) is untouched: the folds do not change.
 
 ## Impact
 

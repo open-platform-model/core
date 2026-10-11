@@ -2,9 +2,9 @@
 
 ## Context
 
-See `proposal.md` § Why. The design was settled in `enhancements/0019` (D12, resolving its OQ5); the CUE delta is pre-drafted and exercised in `enhancements/0019/schemas/` (`target.cue` § D12, `examples.cue`'s D12 assertions, `spec.md`'s §4.1 pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decision.
+See `proposal.md` § Why. The design was settled in enhancement 0019 (D12, resolving its OQ5); the CUE delta is pre-drafted and exercised in `enhancements/0019/schemas/` (`target.cue` § D12, `examples.cue`'s D12 assertions, `spec.md`'s §4.1 pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decision.
 
-Current state: `src/transformer.cue` declares `#transform.#context: #TransformerContext` as a bare slot; `#TransformerContext`'s two metadata blocks carry required fields the runtime fills (`library/opm/schema/context.go`), and its label/annotation folds already compute from those blocks. `src/platform_and_match_pins.cue` pins a standalone, hand-filled `#TransformerContext` (`_pinRenderContext`) for the 0010 D36 matchLabels-not-rendered assertions.
+Current state: `src/transformer.cue` declares `#transform.#context: #TransformerContext` as a bare slot; `#TransformerContext`'s two metadata blocks carry required fields the runtime fills (`library/opm/schema/context.go`), and its label/annotation folds already compute from those blocks. `src/platform_and_match_pins.cue` pins a standalone, hand-filled `#TransformerContext` (`_pinRenderContext`) for the enhancement 0010 ("Matching labels live in their own field, unified upward from primitives") matchLabels-not-rendered assertions.
 
 ## Goals / Non-Goals
 
@@ -74,7 +74,7 @@ Current state: `src/transformer.cue` declares `#transform.#context: #Transformer
 
 ### `version` reads the module's metadata through the instance
 
-**Context**: `#TransformerContext.#moduleInstanceMetadata.version` exists today and the runtime fills it with the module's version; `#ModuleInstance.metadata` itself carries no version (0010 D41 keeps the module's version out of instance identity).
+**Context**: `#TransformerContext.#moduleInstanceMetadata.version` exists today and the runtime fills it with the module's version; `#ModuleInstance.metadata` itself carries no version (enhancement 0010 ("Instance identity derives from the module's registry path, not from its FQN") keeps the module's version out of instance identity).
 **Decision**: `version: #moduleInstance.#moduleMetadata.version`, per the pre-draft.
 **Rationale**: the only version in scope with the meaning the field always had; verified against `src/module_instance.cue` (`#moduleMetadata: #module.metadata`) and pinned by `enhancements/0019/schemas/examples.cue` (`_assertCtxInstanceVersion`).
 
@@ -109,7 +109,7 @@ Current state: `src/transformer.cue` declares `#transform.#context: #Transformer
 - [A divergence between `context.go`'s fills and the projection surfaces as a render-time conflict when `library` re-pins] → the projection's field sources are cross-checked against `context.go` field by field before this releases (a verification task), and the library re-pin happens behind 0019's parity harness on the coordinated release train, so a divergence is caught in CI, not on a cluster. Experiment 01 already derived every field against the real published catalog.
   - **Cross-check outcome (2026-09-01): one divergence found and accepted.** `context.go` fills `#componentMetadata.name` with the `#components`-map key; the projection reads `#component.metadata.name`. The two diverge whenever a component authors a name different from its key — deliberate schema surface (the key is the stable embedding handle, the name the component's identity) — and `modules/k8up` does exactly that on two RBAC components. Owner decision: the projection's source is correct and lands as designed; the key-fill is the mirror drift this change ends. Consequence for the staged migration: before re-pinning, `library` must source its transitional component-name fill from evaluated `metadata.name` (not `pair.ComponentName`), or the k8up cases conflict in the parity harness; post-cutover the context name (and the `app.kubernetes.io/name`/`instance` labels) for such components follows `metadata.name`, aligning the context with what `resourceName` and `component.opmodel.dev/name` already derive. Full field table in tasks.md § 1.2.
 - [Floating schema hazard: the kernel's default loader floats on the v2 line, so a cold cache picks this release up before any re-pin] → this change is agreement-additive for the old path (the kernel fills identical values, the projection unifies), so unlike `core-registry-import`'s D5 reshape it is cold-cache-safe on its own; it still rides the same coordinated train, and the cross-check task above is what backs the "identical" claim.
-- [The projection reads `#moduleInstance` structurally (`.metadata.name` etc.) while `#transform.#moduleInstance` stays `_`] → deliberate: constraining the slot's type is out of scope (0019 D3 fixed the slot as `_`), and an unfilled or mis-shaped instance surfaces as an incomplete context at render, which is the pre-change failure mode too (the runtime simply had nothing to fill from).
+- [The projection reads `#moduleInstance` structurally (`.metadata.name` etc.) while `#transform.#moduleInstance` stays `_`] → deliberate: constraining the slot's type is out of scope (enhancement 0019 ("`#moduleInstance` is filled by the kernel; it is not removed from the schema") fixed the slot as `_`), and an unfilled or mis-shaped instance surfaces as an incomplete context at render, which is the pre-change failure mode too (the runtime simply had nothing to fill from).
 
 ## Migration Plan
 

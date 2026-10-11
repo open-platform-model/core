@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md` § Why. The design itself was settled in `enhancements/0019` (D5, D17, with D13's in-schema tripwire clauses); the CUE delta is pre-drafted and exercised in `enhancements/0019/schemas/` (`target.cue`, `examples.cue`, `spec.md` — the SPEC.md pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decisions.
+See `proposal.md` § Why. The design itself was settled in enhancement 0019 (D5, D17, with D13's in-schema tripwire clauses); the CUE delta is pre-drafted and exercised in `enhancements/0019/schemas/` (`target.cue`, `examples.cue`, `spec.md` — the SPEC.md pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decisions.
 
 Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`), `#Platform.#registry: [Path=#ModulePathType]: #Subscription`, and two optional kernel-filled slots `#composedTransformers?` / `#matchers?`. The library's `Materialize` step resolves subscriptions over OCI and fills the slots on a Go-side twin.
 
@@ -15,7 +15,7 @@ Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`)
 
 **Non-Goals**
 
-- No home for the single-provider guard (enhancement 0010 D32/D37, today `providerGuard` in `library/opm/materialize`). Adding a schema-side guard would be new published surface with an unmeasured shape; 0019 owns the residue (the guard either moves into the render build's matching glue or becomes an 0011 publish gate). This change deletes nothing in `library`; the guard's fate is decided before the library deletes materialize, not here.
+- No home for the single-provider guard (enhancement 0010 ("Two providers supplying one contract is a materialize-time error" and "A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider"), today `providerGuard` in `library/opm/materialize`). Adding a schema-side guard would be new published surface with an unmeasured shape; 0019 owns the residue (the guard either moves into the render build's matching glue or becomes an 0011 publish gate). This change deletes nothing in `library`; the guard's fate is decided before the library deletes materialize, not here.
 - No `#TransformerContext` change (D12 is the separate `core-context-projection` slice).
 - No per-transformer selection surface (enhancement 0015).
 
@@ -78,7 +78,7 @@ Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`)
 ### `version` as a derived regular field, `version!` gone
 
 **Context**: The entry needs the build's identity readable (skew diagnostics, Platform CR status) without a second answer to "which build".
-**Explored**: authored `version!` beside the import (0019 D5 alternatives, rejected); no version field at all (discards the identity data D7 needs).
+**Explored**: authored `version!` beside the import (enhancement 0019 ("A platform imports its catalog and embeds it whole into the registry entry, which derives everything else") alternatives, rejected); no version field at all (discards the identity data D7 needs).
 **Decision**: `version: #catalog.metadata.version` — a readout. An expected stamp unifies with it.
 **Rationale**: computed off the imported bytes it cannot disagree with them; `#Catalog.metadata.version!` is required with no dev default, so an unstamped catalog refuses as incomplete rather than rendering wrong. The stamp's only reachable outcomes are agreement (no-op) and a conflict naming the entry.
 
@@ -87,14 +87,14 @@ Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`)
 **Context**: `#composedTransformers` must compose several catalogs' maps.
 **Explored**: unifying entry maps pairwise (`entryA.#transformers & entryB.#transformers`), measured in `enhancements/0019/experiments/05-match-in-one-build`.
 **Decision**: comprehension copy per enabled entry, as shown above.
-**Rationale**: the catalog's D25 provenance stamp (`metadata.modulePath: "<catalogPath>/transformers"`, `catalogVersion`) refuses a foreign transformer unified into another catalog's member map, so map-level unification fails on healthy multi-catalog input. Under the comprehension, two entries writing the same composed FQN key still unify at that key: agreement collapses, and genuinely divergent bodies conflict loudly through the same provenance stamps — the same verdicts `library`'s `indexCatalogs` produces today, now with CUE's error surface. Diagnostic quality for that conflict is the render glue's concern (0019 D10), not the schema's.
+**Rationale**: the catalog's D25 provenance stamp (`metadata.modulePath: "<catalogPath>/transformers"`, `catalogVersion`) refuses a foreign transformer unified into another catalog's member map, so map-level unification fails on healthy multi-catalog input. Under the comprehension, two entries writing the same composed FQN key still unify at that key: agreement collapses, and genuinely divergent bodies conflict loudly through the same provenance stamps — the same verdicts `library`'s `indexCatalogs` produces today, now with CUE's error surface. Diagnostic quality for that conflict is the render glue's concern (enhancement 0019, "Matching moves into the render build; verdicts are data; the D30 carve-out is deleted"), not the schema's.
 
 ### `#matchers` removed rather than derived
 
 **Context**: With the maps in the registry, core could derive the reverse index in four lines.
-**Explored**: deriving it (`experiments/02`'s schema anticipated this); reshaping it to the set-of-FQNs form the render glue consumes (0019 D17 alternatives).
+**Explored**: deriving it (`experiments/02`'s schema anticipated this); reshaping it to the set-of-FQNs form the render glue consumes (enhancement 0019 ("`#Platform.#matchers` is removed, and the render build's glue owns the reverse index") alternatives).
 **Decision**: remove the field outright.
-**Rationale**: 0019 D17 — measured 2026-08-20, its only reader is `library/opm/compile/match.go` through the materialized twin, and the in-build matcher builds its own buckets in a different shape (contract FQN → set of transformer FQNs, not lists of values). A derived `#matchers` would be a second index in a shape nothing reads. Consumers fold their own over `#composedTransformers`.
+**Rationale**: enhancement 0019 ("`#Platform.#matchers` is removed, and the render build's glue owns the reverse index") — measured 2026-08-20, its only reader is `library/opm/compile/match.go` through the materialized twin, and the in-build matcher builds its own buckets in a different shape (contract FQN → set of transformer FQNs, not lists of values). A derived `#matchers` would be a second index in a shape nothing reads. Consumers fold their own over `#composedTransformers`.
 
 ### The `platform-subscription` capability is retired, not reworded
 

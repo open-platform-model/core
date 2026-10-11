@@ -38,4 +38,4 @@ None. The four preceding changes carry every schema requirement; this one verifi
 
 **Consumers and their current pins**, each an explicit prerelease on the retired `@v1` line: `catalog_opm` and `catalog_kubernetes` on `v1.0.0-alpha.1`, `catalog_opm_experimental` on `v1.0.0-alpha.3`, plus `library`, `cli`, `opm-operator` and `modules/`. The set is enumerable, but the retarget is **an import rewrite, not a `task update-deps` sweep** — every `import "opmodel.dev/core@v1"` becomes `@v2` alongside the `cue.mod` edit, and `update-deps` cannot do it, because resolving a new major is not the same operation as raising a version within one.
 
-**Design source.** `enhancements/0010` `06-operational.md` §Semver Impact and §Cross-Repo Coordination step 1; `plan.yaml`'s `core-alpha-release` slice.
+**Design source.** enhancement 0010 `06-operational.md` §Semver Impact and §Cross-Repo Coordination step 1; `plan.yaml`'s `core-alpha-release` slice.

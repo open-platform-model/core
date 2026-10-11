@@ -2,7 +2,7 @@
 
 See `proposal.md` § Why. Three existing facts shape the approach:
 
-- `#ContractInventory` already carries the split this change extends: `core` derives a report (`unfulfilled`, `overSubscribed`) and a boolean (`fulfilled`, `routable`); the generation step outside `core` decides what to refuse (0015 D18). The new report follows that shape exactly rather than inventing one.
+- `#ContractInventory` already carries the split this change extends: `core` derives a report (`unfulfilled`, `overSubscribed`) and a boolean (`fulfilled`, `routable`); the generation step outside `core` decides what to refuse (enhancement 0015, "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"). The new report follows that shape exactly rather than inventing one.
 - The demand maps `requiredResources`, `requiredTraits` and `requiredLabels` are all **optional** on `#ComponentTransformer` (`src/transformer.cue:78,86,93`), so every fold over them needs a presence guard. `requiredBy` already does this.
 - `src/platform.cue` currently imports nothing. It gains `list` and `strings`, both already used by other schema files (`src/schemas.cue`).
 
@@ -10,7 +10,7 @@ See `proposal.md` § Why. Three existing facts shape the approach:
 
 **Goals**: derive the report; define "comparable" operationally (0015 OQ9); keep the platform value evaluable when it reports a pair.
 
-**Non-Goals**: the refusal (a `library` change); arbitration or most-specific-wins (0015 D5 excludes it, and a successor entry may add it additively on top of this report); any check against the shipped `catalog_opm` catalog, which `core` cannot import.
+**Non-Goals**: the refusal (a `library` change); arbitration or most-specific-wins (enhancement 0015 ("Comparable predicates within one catalog-fulfilled bucket are refused, not arbitrated") excludes it, and a successor entry may add it additively on top of this report); any check against the shipped `catalog_opm` catalog, which `core` cannot import.
 
 ## Research & Decisions
 

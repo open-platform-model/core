@@ -6,7 +6,7 @@ A *definer* of a contract key MUST be an enabled registry entry whose catalog li
 
 Because a colliding key leaves `defined`, `fulfilled` and `discriminated` MAY read `true` on a colliding platform whose single-major equivalent reads them `false`. This is a known limitation: a consumer MUST treat a non-empty `collisions` as overriding both, and `routable` is `false` on every such platform.
 
-Source: enhancement 0026 OQ17 recommends this fold as an interim core fix ahead of 0026 D9; it delivers no 0026 decision.
+Source: enhancement 0026 OQ17 recommends this fold as an interim core fix ahead of enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog"); it delivers no 0026 decision.
 
 #### Scenario: Two majors sharing keys report every shared key as a collision
 
@@ -58,7 +58,7 @@ Source: enhancement 0026 OQ17 recommends this fold as an interim core fix ahead 
 
 `#contracts.overSubscribed` MUST list every key of `providedBy` whose list holds more than one registry key, including a contract no enabled entry defines. The counting key is the registry key, so two majors of one catalog MUST count as two providers, and two transformers of one entry requiring one contract MUST count as one provider. `#contracts.routable` MUST be true exactly when `overSubscribed` is empty and `collisions` is empty.
 
-Source: corrects the delivery of 0015:D2 and 0015:D18; 0010:D37 is the rule counted.
+Source: corrects the delivery of enhancement 0015 ("One provider per contract stands; provider classes are rejected in this entry" and "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation") and enhancement 0010 ("A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider") is the rule counted.
 
 #### Scenario: Two catalogs providing one contract is over-subscription
 
@@ -82,7 +82,7 @@ Source: corrects the delivery of 0015:D2 and 0015:D18; 0010:D37 is the rule coun
 
 ### Requirement: The inventory reports and never refuses
 
-Neither report MUST make the platform value fail to evaluate: an over-subscribed, unfulfilled, undiscriminated or colliding platform MUST still evaluate, with the offending contracts, transformer pairs and registry entries named in the lists (enhancement 0015 D18). In particular, a platform whose enabled entries list the same contract key MUST evaluate, with that key in `collisions` rather than a conflict in `defined` or `definedBy`. Whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
+Neither report MUST make the platform value fail to evaluate: an over-subscribed, unfulfilled, undiscriminated or colliding platform MUST still evaluate, with the offending contracts, transformer pairs and registry entries named in the lists (enhancement 0015, "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"). In particular, a platform whose enabled entries list the same contract key MUST evaluate, with that key in `collisions` rather than a conflict in `defined` or `definedBy`. Whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
 
 #### Scenario: An over-subscribed platform still evaluates
 

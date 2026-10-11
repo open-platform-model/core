@@ -11,7 +11,7 @@
 - [x] 1.1 Add `#IdentityPackage` with `ModulePath!: #ModulePathType` and `Version!: #VersionType`.
 - [x] 1.2 Derive `RegistryPath` and `Major` through `_ref: #ArtifactRef & {modulePath: ModulePath}` — not by a second `SplitN`. One decomposition site is the point of `#ArtifactRef`.
 - [x] 1.3 Add the version-major assertion as two lines: `VersionMajor: "v" + strings.SplitN(Version, ".", 2)[0]` and `VersionMajor: Major`.
-- [x] 1.4 Doc-comment that this is the **only** assertion of that relation in the system, naming `0010` D43 and D45 as what removed the `core`-side copies. Without that note the next reader sees a redundant check and deletes it.
+- [x] 1.4 Doc-comment that this is the **only** assertion of that relation in the system, naming enhancement 0010 ("The version-major agreement is asserted in the identity package alone, for `#Catalog`" and "The version-major agreement is asserted in the identity package alone for `#Module` too") as what removed the `core`-side copies. Without that note the next reader sees a redundant check and deletes it.
 - [x] 1.5 Add `kindPrefix` as an enumerated struct with exactly four keys, each `RegistryPath` plus one segment, **no major re-appended**. Doc-comment why it is enumerated rather than a pattern constraint — `id.kindPrefix.resources` yields `undefined field` under a pattern, measured in `0011/experiments/01`.
 - [x] 1.6 Use only CUE builtins. `strings` is a builtin and adds no module-graph edge; the import-free invariant this preserves is about **intra-module** imports.
 - [x] 1.7 `task vet`.
@@ -24,7 +24,7 @@
 - [x] 2.4 Add the implied values as second declarations: `declaredModulePath: identity.kindPrefix[kind]`, `declaredCatalogVersion: identity.Version`.
 - [x] 2.5 Add `_keyVersion` as the two-element list comprehension selecting `identity.Version` for transformers and `declaredAPIVersion` otherwise, then `declaredFQN: identity.kindPrefix[kind] + "/" + name + "@" + _keyVersion`. Order matters — the transformer branch must be selected before `declaredAPIVersion` is reached, which is what spares the absent optional.
 - [x] 2.6 Do **not** check `apiVersion` against identity. Doc-comment why: nothing implies it, which is the point of the field.
-- [x] 2.7 Do **not** embed the gate in any primitive definition. Doc-comment that doing so would re-derive `fqn` and undo `0010` D21.
+- [x] 2.7 Do **not** embed the gate in any primitive definition. Doc-comment that doing so would re-derive `fqn` and undo enhancement 0010 ("A primitive's `fqn` is authored from the identity package, and `version` stays required").
 - [x] 2.8 `task vet`.
 
 ## 3. Test cases
@@ -40,7 +40,7 @@
 ## 4. Documentation and gates
 
 - [x] 4.1 Add `#IdentityPackage` and `#CatalogMemberFQNGate` to `.tasks/spec-tracked.txt`. Both are top-level, consumer-facing, non-helper constructs — a catalog author meets the gate directly and needs its normative statement.
-- [x] 4.2 Write both `SPEC.md` sections in the four-part format. The gate's Rationale MUST record that it is the enforcement point `0010` D17, D21, D25 and D42 all delegate to, and that `0010` D21 traded `core`'s `fqn` derivation for it.
+- [x] 4.2 Write both `SPEC.md` sections in the four-part format. The gate's Rationale MUST record that it is the enforcement point enhancement 0010 ("The primitive-under-catalog-path constraint is a publish gate, not a schema constraint", "A primitive's `fqn` is authored from the identity package, and `version` stays required", "`apiVersion` is authored per primitive; `version` is renamed `catalogVersion`" and "Every primitive kind is flat, and `catalog_opm`'s blueprints move up one segment") all delegate to, and that enhancement 0010 ("A primitive's `fqn` is authored from the identity package, and `version` stays required") traded `core`'s `fqn` derivation for it.
 - [x] 4.3 `task generate:index`.
 - [x] 4.4 `task check` — `spec:check` will fail until 4.1 and 4.2 are both done, which is the intended coupling.
 

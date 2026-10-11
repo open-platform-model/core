@@ -24,7 +24,7 @@ It is the root of the whole enhancement. `core-primitive-keying` and `core-platf
 
 Two things this change deliberately does **not** do, both on decisions taken after the ones above:
 
-- **No version-major agreement is asserted in `core`** (D45, transposing D43). `identity/identity.cue` asserts `VersionMajor: Major` at the point both values are written; `core` re-deriving it one hop downstream tests the same relation over the same two values. The exposure this accepts — an artifact whose identity package is absent or non-conformant carries no consumer-runnable check — is stated in `05-risks.md` and bounded by `0011` D8/D12/D21 at publish.
+- **No version-major agreement is asserted in `core`** (D45, transposing D43). `identity/identity.cue` asserts `VersionMajor: Major` at the point both values are written; `core` re-deriving it one hop downstream tests the same relation over the same two values. The exposure this accepts — an artifact whose identity package is absent or non-conformant carries no consumer-runnable check — is stated in `05-risks.md` and bounded by enhancement 0011 ("The version writer locates its field by the schema-fixed path, not by a marker", "Modules carry an identity subpackage and a version; `version set` and `--version` behave identically on both artifact types" and "Identity is validated by unifying against a shipped `#IdentityPackage`, and CUE produces the diagnostic") at publish.
 - **No module rename migration is included.** Measured 2026-08-05: zero hyphenated module names remain on either `modules/` branch, so the `#SnakeNameType` retype breaks nothing that exists.
 
 ## Capabilities

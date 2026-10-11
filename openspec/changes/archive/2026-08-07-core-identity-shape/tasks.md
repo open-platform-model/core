@@ -1,6 +1,6 @@
 # Tasks
 
-**On size.** `openspec/config.yaml` asks that a change reshaping several top-level definitions be split. This one is not, and the reason is stated rather than assumed: the identity model is one unification. Retyping `#ModulePathType` without redefining `#Module.metadata.fqn` in the same step leaves a tree that does not vet, and `#ModuleInstance`'s `fqn` cannot exist before `#Module.registryPath` does. The boundary was set by `enhancements/0010`'s `plan.yaml`, which separates the three core slices along *what they key* — identity here, contract keying in `core-primitive-keying`, platform and match in `core-platform-and-match`.
+**On size.** `openspec/config.yaml` asks that a change reshaping several top-level definitions be split. This one is not, and the reason is stated rather than assumed: the identity model is one unification. Retyping `#ModulePathType` without redefining `#Module.metadata.fqn` in the same step leaves a tree that does not vet, and `#ModuleInstance`'s `fqn` cannot exist before `#Module.registryPath` does. The boundary was set by enhancement 0010's `plan.yaml`, which separates the three core slices along *what they key* — identity here, contract keying in `core-primitive-keying`, platform and match in `core-platform-and-match`.
 
 What the groups below do guarantee is that **every group ends at a tree that vets**, so the work is still resumable between them. `task vet` is the checkpoint, not the commit.
 

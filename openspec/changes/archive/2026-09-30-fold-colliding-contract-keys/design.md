@@ -32,7 +32,7 @@ Files touched: `src/platform.cue`, `src/platform_contracts_pins.cue`, `src/INDEX
 
 **Non-Goals:**
 
-- Side-by-side majors. 0026 D9 (per-resolution builds) makes two majors legitimate later; this is the interim net.
+- Side-by-side majors. Enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog") (per-resolution builds) makes two majors legitimate later; this is the interim net.
 - Keying `requiredBy`, `unfulfilled` or `comparable` over colliding keys (the limitation; see § Research & Decisions).
 - The render refusal, the operator reason and the cli report. They are changes B, C and D in `orchestration.md`.
 - The operator's build-compatibility index. That is change E, independent.
@@ -139,7 +139,7 @@ The two new fields sit directly after `overSubscribed`. `#ContractInventory` sta
 5. §3.4 Constraints, the `defined`/`definedBy` bullet: both cover only keys exactly one enabled entry lists.
 6. §3.4 Constraints, new bullet: a platform whose enabled entries list the same contract key MUST still evaluate, the key reported in `collisions` with its definers in `collidingEntries`; a disabled entry never counts.
 7. §3.4 Constraints, the empty-registry bullet: add empty `collisions` and `collidingEntries`.
-8. §3.4 Rationale, new bullet "Why a shared key is a collision and not a conflict": cites experiments 01 and 06, the interim status until 0026:D9, and the limitation.
+8. §3.4 Rationale, new bullet "Why a shared key is a collision and not a conflict": cites experiments 01 and 06, the interim status until enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog"), and the limitation.
 9. §3.4 Rationale, amend "Why the inventory reports and does not refuse": a colliding key is one more report, and before this fold it was the one case the rule did not hold.
 10. §3.4 Rationale, amend "Why one entry names one build": the registry admits one build per major, and two majors sharing keys are reported as collisions, not refused by map semantics.
 11. §3.4 `#ContractInventory` Definition, Shape and Constraints: Definition adds which keys more than one entry lists; Shape adds the two fields and the new `routable` expression; Constraints scope `defined`/`definedBy` to single-definer keys, add MUSTs for `collisions` (sorted, exactly the keys with two or more enabled definers) and `collidingEntries` (exactly those keys, sorted registry keys), and redefine `routable` as no over-subscription AND no collision.
@@ -199,7 +199,7 @@ The fixture comment above `_pinInventoryK8upV2BareCatalog` (lines ~182-186) says
 **Context**: A colliding key leaves `defined`, so it also leaves `requiredBy`, `unfulfilled` and `comparable`, and `fulfilled`/`discriminated` can read true on a platform that is not routable.
 **Explored**: Keying `requiredBy` and `comparable` over `_definers` instead of `defined`.
 **Decision**: Deferred. State the limitation in SPEC and pin it.
-**Rationale**: The colliding members can disagree across majors (fulfilment, `appliesTo`, schema), so folding them would need a divergence rule, which is design work 0026 D9 owns. `routable: false` already withholds generation, and change B refuses the render on the collision itself, so no consumer acts on the blind fields while `collisions` is non-empty.
+**Rationale**: The colliding members can disagree across majors (fulfilment, `appliesTo`, schema), so folding them would need a divergence rule, which is design work enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog") owns. `routable: false` already withholds generation, and change B refuses the render on the collision itself, so no consumer acts on the blind fields while `collisions` is non-empty.
 
 ### Release class: feat, not feat!
 

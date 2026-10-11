@@ -147,7 +147,7 @@ Inside `#Platform.#contracts`, replacing `_providers` and the two list comprehen
 
 ### Count per registry key, not per stamped transformer path
 
-**Context**: Two keys were available: the transformer's stamped `metadata.modulePath` (unforgeable per 0010:D25 but major-free) and the registry key (major included).
+**Context**: Two keys were available: the transformer's stamped `metadata.modulePath` (unforgeable per enhancement 0010 ("`apiVersion` is authored per primitive; `version` is renamed `catalogVersion`") but major-free) and the registry key (major included).
 **Explored**: Scratch prototype `design/core/src/platform.cue` with `zz_parity_pins.cue`, cue v0.17.1, under the session scratchpad `parity/`. A verbatim replica of the library guard (`render.cue.tmpl:445-466`) was evaluated against the prototype inventory and against today's core (`design/core-orig`).
 **Decision**: The registry key.
 **Rationale**: It is what the render build already refuses on, so parity holds by construction once the render reads core's value. The prototype's key sets equal the guard's on 7 platforms (two-majors, definer-disabled, definer-absent, TwoProviders, OneProvider, BaseOnly, DisabledProvider). Today's core diverges on exactly the three bad platforms (inventory `routable=true`, guard refuses); the controls agree. Every existing core pin passes unchanged on the prototype (`cue vet ./...` OK).

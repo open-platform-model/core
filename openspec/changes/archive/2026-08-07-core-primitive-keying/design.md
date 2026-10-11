@@ -2,9 +2,9 @@
 
 `core` types every primitive's key with one `#FQNType` (`src/types.cue:52`) — `path/name@semver` — and derives the value: `src/resource.cue:18` computes `fqn: #FQNType & "\(modulePath)/\(name)@\(version)"`. All four kinds share that shape.
 
-Enhancement `0001` D5 lifted these keys from major-only to SemVer deliberately, so two builds of one primitive at adjacent versions occupy distinct keys and divergent definitions surface as structured errors rather than colliding on a major bucket. That goal is accepted throughout `0010` and is not reversed here; only the mechanism moves, and it moves because the same key is being asked to serve two parties with opposite requirements.
+Enhancement 0001 ("`#FQNType` regex accepts SemVer 2.0; MAJOR-only retired from primitive metadata") lifted these keys from major-only to SemVer deliberately, so two builds of one primitive at adjacent versions occupy distinct keys and divergent definitions surface as structured errors rather than colliding on a major bucket. That goal is accepted throughout `0010` and is not reversed here; only the mechanism moves, and it moves because the same key is being asked to serve two parties with opposite requirements.
 
-`0010` D4 has flipped twice — catalog-major keys, then full-SemVer keys with subscription breadth, then the role split adopted here. The two rejected shapes are worth carrying because their defects bound what this one must not reintroduce:
+Enhancement 0010 ("A contract is keyed by its own API version; an implementation is keyed by its build") has flipped twice — catalog-major keys, then full-SemVer keys with subscription breadth, then the role split adopted here. The two rejected shapes are worth carrying because their defects bound what this one must not reintroduce:
 
 - **Catalog-major keys** made every installed module key to `@v1`, so publishing `1.3.0` changed the transformer bodies every already-installed module renders against. Nobody edited a module and the output moved.
 - **Full-SemVer contract keys** made a module's demand name the exact build it was authored against, which is the cross-catalog `backup` failure in the proposal.
@@ -23,7 +23,7 @@ Enhancement `0001` D5 lifted these keys from major-only to SemVer deliberately, 
 
 - **The compatibility gate.** D27's additive-only rule and `0011` D9's publish-side enforcement are `library` and `cli` work.
 - **Ordering of API versions.** Match is exact-key; nothing compares two levels. The one reader that sorts them is a diagnostic in `library`, and its kube-aware comparator is `library-match-labels`.
-- **`#CatalogMemberFQNGate`.** Ships in `core-identity-package` (`0011` D22).
+- **`#CatalogMemberFQNGate`.** Ships in `core-identity-package` (enhancement 0011, "A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`").
 - **Matching labels and fulfilment.** `core-platform-and-match`.
 - **Re-keying the catalogs.** `catalogs-identity-authoring`, in `0010`'s plan.
 
@@ -109,7 +109,7 @@ Nothing else follows from the reclassification. D37's exclusion of `#Blueprint` 
 
 **`core` loses the ability to refuse a wrong key, before the gate that replaces it exists.** The measured failure is exact: a catalog on `1.2.0` shipping a stale `fqn` vets clean at exit 0. This is why `core-identity-package` is not optional and why the two land in one alpha. Inside the repo the window is real; it does not reach a published artifact because nothing publishes until `core-alpha-release`.
 
-**A wrong key is permanent once published.** Under D4 modules match against it forever. That raises the stakes on the gate rather than on this change, but it is the reason the trade was made with a named owner (`0011` D22) rather than on the promise of one.
+**A wrong key is permanent once published.** Under D4 modules match against it forever. That raises the stakes on the gate rather than on this change, but it is the reason the trade was made with a named owner (enhancement 0011, "A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`") rather than on the promise of one.
 
 **Two version spellings now live in one system.** `@v1beta1` on a contract and `@1.2.0` on an implementation, plus `@v1` on a module path. Accepted: the alternative — normalising to major at match time — creates two notions of FQN, the string the schema declares and the key the matcher uses, which is exactly the declared-versus-effective split `0010` exists to remove.
 

@@ -1,6 +1,6 @@
 ## Context
 
-Three surfaces in `core` are reshaped together because all three are consequences of enhancement `0010` D4 moving the contract key off the build.
+Three surfaces in `core` are reshaped together because all three are consequences of enhancement 0010 ("A contract is keyed by its own API version; an implementation is keyed by its build") moving the contract key off the build.
 
 **Selection.** `src/platform.cue:16-20` defines `#SubscriptionFilter` with `range`, `allow` and `deny`; `:31-33` puts it on `#Subscription` as optional, and the doc comment records that "when every field is absent the kernel selects the highest SemVer published for the path". Under the *old* build-keyed contracts, breadth was load-bearing: a platform had to cover the authorship history of its installed fleet, because each module's demand key named the exact build it compiled against. D4 removed that requirement, and with it the default's reason to exist.
 
@@ -87,7 +87,7 @@ Every resource a component declares is required. Traits carry an explicit opt-ou
 
 The asymmetry is real rather than convenient: a component does not attach a resource it can do without, while a trait can be advisory — `optionalTraits` already exists on the *supply* side, and this is its demand-side counterpart. Giving resources an optionality marker too was rejected on that ground.
 
-`0010` D28 leaves only the **spelling** to the implementing slice; what it fixes is that there is exactly one opt-out, that it lives on the demand side, and that its absence means required. This change picks the spelling and is where it becomes reviewable.
+Enhancement 0010 ("An unresolved primitive demand is an error; a trait's optionality is stated by its catalog and overridden by the attachment") leaves only the **spelling** to the implementing slice; what it fixes is that there is exactly one opt-out, that it lives on the demand side, and that its absence means required. This change picks the spelling and is where it becomes reviewable.
 
 ## Risks / Trade-offs
 

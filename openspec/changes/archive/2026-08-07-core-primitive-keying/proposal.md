@@ -6,7 +6,7 @@ A primitive's FQN currently interpolates the catalog build it shipped in — `op
 
 So every `catalog_opm` release breaks backup for modules that adopt it, until the provider re-releases and the module is rebuilt to match: an N×M lockstep between two independently-released catalogs.
 
-Enhancement `0010` D4 resolves this by splitting the key by **role**. What a module *demands* is a contract, keyed by that primitive's own API version, which a catalog release does not move. What a platform *executes* is an implementation, keyed by its build, because an operator upgrading a catalog is choosing new rendering logic and wants to know which bytes are running.
+Enhancement 0010 ("A contract is keyed by its own API version; an implementation is keyed by its build") resolves this by splitting the key by **role**. What a module *demands* is a contract, keyed by that primitive's own API version, which a catalog release does not move. What a platform *executes* is an implementation, keyed by its build, because an operator upgrading a catalog is choosing new rendering logic and wants to know which bytes are running.
 
 This change is that split, in the schema.
 
@@ -46,6 +46,6 @@ None. `artifact-identity` supplies `#PackagePathType` for these keys' path porti
 
 **The largest downstream surface in the enhancement.** Every leaf in every catalog is touched: `catalog_opm` (38 contracts — 7 resources, 26 traits, 5 blueprints — plus ~21 transformers), `catalog_kubernetes` (27 resources), `catalog_opm_experimental` (3 resources). Each leaf renames `version` to `catalogVersion`, adds an `apiVersion` where it is a primitive, and adds an authored `fqn` line. Day-one levels are `v1beta1` for the two mainline catalogs and `v1alpha1` for experimental — assigned on measured history, not caution: `catalog_opm`'s contract history is 715 field additions against 30 removals, and inspection shows most of the 30 are a single blueprint guard hoist.
 
-**What this change does not deliver, and must not be read as delivering.** `core` loses its ability to refuse a wrong `fqn`, and the gate that replaces it (`#CatalogMemberFQNGate`) ships in `core-identity-package` under enhancement `0011` D22. Until both have landed there is a window in which an authored `fqn` is unchecked. The two are cut in the same alpha, so the window does not reach a published artifact — but it is real inside the repo and is why the two changes are sequenced together rather than independently.
+**What this change does not deliver, and must not be read as delivering.** `core` loses its ability to refuse a wrong `fqn`, and the gate that replaces it (`#CatalogMemberFQNGate`) ships in `core-identity-package` under enhancement 0011 ("A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`"). Until both have landed there is a window in which an authored `fqn` is unchecked. The two are cut in the same alpha, so the window does not reach a published artifact — but it is real inside the repo and is why the two changes are sequenced together rather than independently.
 
 **Design source.** `enhancements/0010` — D4, D21, D25, D33, D34, D44. `schemas/target.cue` carries `#PrimitiveIdentity`, `#TransformerIdentity`, `#APIVersionType` and `#APIVersionGated` as the target shapes.
