@@ -188,7 +188,7 @@ _pinContractFillBlueprintFQN: "opmodel.dev/catalogs/opm/blueprints/fill-blueprin
 // A catalog whose #transformers is EMPTY and whose one member is
 // provider-fulfilled: before the contract maps this catalog published
 // nothing at all. The trait is readable by key and its fulfilment is what
-// 0015:D11's `provides` fold reads.
+// the claim check of enhancement 0015 compares against in its `provides` fold.
 _pinContractProviderOnlyCatalog: core.#Catalog & {
 	metadata: {
 		modulePath: "opmodel.dev/catalogs/backup@v1"

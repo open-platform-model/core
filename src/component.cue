@@ -130,8 +130,8 @@ package core
 	_matchLabelsAreDerived: len(matchLabels) == len(_matchLabelsFromPrimitives)
 	_matchLabelsAreDerived: true
 
-	// WHY: introduced by 0001:D3; was #release: #ReleaseIdentity, renamed by
-	// 0002:D8. SPEC.md § 3.1
+	// WHY: introduced by enhancement 0001; was #release: #ReleaseIdentity, renamed by
+	// enhancement 0002. SPEC.md § 3.1
 	// Rationale, "Why `#instance` is hidden and module-injected, not
 	// author-supplied".
 

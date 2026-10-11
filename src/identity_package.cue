@@ -35,7 +35,7 @@ import (
 // or a catalog. A publish gate, not a field of any artifact: a publishing
 // tool unifies the loaded package against it. See SPEC.md § 5.2.
 #IdentityPackage: {
-	// WHY ModulePath: 0010:D1.
+	// WHY ModulePath: an artifact's modulePath is its complete CUE module path (enhancement 0010).
 
 	// Written by publish. Byte-identical to cue.mod's `module:` field, major
 	// suffix included.
@@ -47,7 +47,7 @@ import (
 
 	_ref: #ArtifactRef & {modulePath: ModulePath}
 
-	// WHY RegistryPath: 0010:D1.
+	// WHY RegistryPath: the registry path is the module path without its major (enhancement 0010).
 
 	// RegistryPath: the OCI repository, major-free. Projected through
 	// #ArtifactRef rather than split again here — one decomposition site is the
@@ -57,9 +57,9 @@ import (
 	// Major: the major the path declares.
 	Major: _ref.major // "v1"
 
-	// WHY this is the only assertion of that relation in the system: 0010:D40
+	// WHY this is the only assertion of that relation in the system: enhancement 0010
 	// originally had `core` assert it independently on both artifact types;
-	// 0010:D43 removed that for #Catalog and 0010:D45 removed it for
+	// the same enhancement removed that for #Catalog and for
 	// #Module, both citing publish-side validation against THIS definition as
 	// what replaces it. `identity_pins.cue`'s _pinModuleMajorSkewAccepted and
 	// _pinCatalogMajorSkewAccepted are the deliberately-clean cases recording
@@ -67,7 +67,7 @@ import (
 	//
 	// So this is NOT a redundant check duplicating one on #Module or #Catalog.
 	// There is nothing left to duplicate, and there is no downstream backstop
-	// either. 0010:D43/D45 were written against a platform-side
+	// either. the removals in enhancement 0010 were written against a platform-side
 	// subscription-selection major check — and that check HAS NEVER EXISTED IN
 	// `core`. It was NOT removed by the scalar-subscription collapse; an
 	// earlier revision of this comment said so and was wrong. Measured
@@ -94,7 +94,7 @@ import (
 	// relation is asserted here and nowhere else" and "Why it is asserted at
 	// the point the values are written".
 
-	// WHY VersionMajor: 0010:D40.
+	// WHY VersionMajor: a declared version's major must agree with its path's major, checked here (enhancement 0010).
 
 	// VersionMajor: derived from Version, never authored, and asserted equal to
 	// the major the path declares. The assertion is the second declaration below
@@ -107,7 +107,7 @@ import (
 	// subdirectory beneath any of them (enhancement 0010). A CONTRACT
 	// kind's members file exactly one segment beneath the prefix, under the
 	// member's own apiVersion — a segment DERIVED from the member's key, so
-	// filing and key cannot drift (0010:D49, amending 0010:D42); a
+	// filing and key cannot drift (enhancement 0010); a
 	// transformer files at the prefix itself, having no apiVersion (enhancement 0010). This
 	// map plus that derivation is a COMPLETE statement of the catalog's key
 	// space, not a convenience for the common case: #CatalogMemberFQNGate
@@ -119,12 +119,12 @@ import (
 	// stylistic. `[Kind=string]: RegistryPath + "/" + Kind` is unusable at the
 	// call site: `id.kindPrefix.resources` yields `undefined field`, because a
 	// pattern constrains keys that already exist rather than generating them.
-	// Measured in enhancements/0011/experiments/01, finding (b). SPEC.md § 5.2
+	// Measured in the first experiment of enhancement 0011, finding (b). SPEC.md § 5.2
 	// Rationale, "Why `kindPrefix` is enumerated rather than a pattern
 	// constraint" and "Why no arbitrary grouping segment is admitted beneath a
 	// kind prefix, and why the apiVersion segment is".
 
-	// WHY kindPrefix: 0010:D1.
+	// WHY kindPrefix: the module path is the complete path, so the prefix needs no major (enhancement 0010).
 
 	// kindPrefix: the path prefix every catalog member of a given kind hangs off.
 	// The major is not re-appended — a catalog member declares a
@@ -142,10 +142,10 @@ import (
 // WHY #CatalogMemberFQNGate exists and is shaped this way. It is the
 // enforcement point five decisions delegate to (enhancement 0010):
 // each states the catalog-member path and FQN rule and implements it
-// nowhere; 0010:D21 in particular REMOVED `core`'s fqn derivation for every
+// nowhere; enhancement 0010 in particular REMOVED `core`'s fqn derivation for every
 // catalog member, accepting a measured loss — a catalog on 1.2.0 shipping
 // `fqn: ".../secrets@1.1.0"` passes `cue vet -c` at exit 0 — explicitly in
-// exchange for this gate. Under 0010:D4 a wrong key is permanent: modules match
+// exchange for this gate. Under enhancement 0010 a wrong key is permanent: modules match
 // against it forever.
 //
 // A string comparison in Go would discard information this form keeps. A member
@@ -155,7 +155,7 @@ import (
 //
 // IT IS DELIBERATELY NOT EMBEDDED IN #Resource, #Trait, #Blueprint OR
 // #ComponentTransformer. Expressing it inside a member's own definition would
-// re-derive that member's `fqn` inside `core` and undo 0010:D21 —
+// re-derive that member's `fqn` inside `core` and undo the authored-fqn rule of enhancement 0010 —
 // the derivation removal is what lets a contract declared in one catalog be
 // fulfilled by a transformer in another on an independent release cadence.
 // Unifying the gate is the check; the derivation stays out. SPEC.md § 5.3
@@ -179,7 +179,7 @@ import (
 	declaredModulePath!:     #PackagePathType
 	declaredCatalogVersion!: #VersionType
 
-	// WHY declaredAPIVersion: 0010:D44.
+	// WHY declaredAPIVersion: a transformer is an adapter, not a primitive, so only primitives carry an apiVersion (enhancement 0010).
 
 	// Optional at the top level and required for the three primitive kinds. A
 	// transformer declares none — it carries no apiVersion at all — so requiring
@@ -196,7 +196,7 @@ import (
 	// § 5.3 Rationale, "Why the filing segment is derived rather than
 	// authored, and why transformers don't carry one".
 
-	// WHY declaredModulePath: 0010:D17; 0010:D49; 0010:D44.
+	// WHY declaredModulePath: the path rule is a publish gate; contract kinds file under a derived version segment and a transformer files at the prefix (enhancement 0010).
 
 	// What identity/identity.cue implies. The path must sit under this catalog; a
 	// contract kind files one segment beneath its kind prefix, under the member's
@@ -215,7 +215,7 @@ import (
 	// it yields the apiVersion; kind "resources" omitting it fails
 	// `declaredAPIVersion: field is required but not present`.
 
-	// WHY _keyVersion: 0010:D4.
+	// WHY _keyVersion: a contract is keyed by its own API version and an implementation by its build (enhancement 0010).
 
 	// The key is interpolated from the CONTRACT for the three primitive kinds and
 	// from the BUILD for a transformer. List-index form: the transformer arm is
@@ -225,7 +225,7 @@ import (
 		declaredAPIVersion,
 	][0]
 
-	// WHY declaredFQN: 0010:D49.
+	// WHY declaredFQN: the filing segment is derived from the key and never enters it (enhancement 0010).
 
 	// The key does not carry the filing segment: the apiVersion reaches a
 	// contract key once, as its "@vN" suffix, never as a path component. Filing

@@ -135,7 +135,7 @@ _pinNameDottedOverrideFqdn: "\(_pinNameDottedOverride.#names.dns.fqdn)"
 _pinNameDottedOverrideFqdn: "metrics.internal.example.media.svc.cluster.local"
 
 // A 65-rune default with no constraint: admitted (the 63-rune guard that
-// refused this before 0019:D20 is retired; both operands are labels, so the
+// refused this before enhancement 0019 is retired; both operands are labels, so the
 // default cannot exceed 127 runes and the 253 ceiling is unreachable).
 _pinNameLongDefault: core.#Component & {
 	metadata: name:                               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -154,7 +154,7 @@ _pinNameMaxDefault: core.#Component & {
 _pinNameMaxDefaultLen: len(_pinNameMaxDefault.#names.resourceName)
 _pinNameMaxDefaultLen: 127
 
-// Exact override that satisfies Expose: the 0019:D22 spelling for a workload,
+// Exact override that satisfies Expose: the enhancement 0019 spelling for a workload,
 // Service and projection that share one name.
 _pinNameExposedExact: core.#Component & {
 	metadata: {

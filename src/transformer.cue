@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// WHY #ComponentTransformer: 0010:D36.
+// WHY #ComponentTransformer: matching labels live in their own field, unified upward from primitives (enhancement 0010).
 
 // #ComponentTransformer: Declares how to convert OPM components into
 // platform-specific resources. A transformer matches a component when every
@@ -33,7 +33,7 @@ import (
 	// nothing reads. That is what makes the exclusion structural instead of
 	// remembered — see the pinned case in identity_pins.cue.
 
-	// WHY metadata: 0010:D44.
+	// WHY metadata: a transformer is an adapter, not a primitive, so it carries no apiVersion (enhancement 0010).
 
 	// A transformer's identity shape is its own — it deliberately shares no
 	// parent definition with the three primitives'. It carries no apiVersion, and
@@ -43,7 +43,7 @@ import (
 		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/transformers"
 		name!:       #NameType        // Example: "deployment-transformer"
 
-		// WHY catalogVersion: 0010:D4.
+		// WHY catalogVersion: an implementation is keyed by its build (enhancement 0010).
 
 		// catalogVersion: the catalog build this transformer shipped in. Unlike a
 		// primitive's, it is this key's own source component — an operator upgrading
@@ -51,7 +51,7 @@ import (
 		// are running.
 		catalogVersion!: #VersionType // Example: "1.0.0"
 
-		// WHY fqn: 0010:D21.
+		// WHY fqn: the fqn is authored from the identity package, never derived here (enhancement 0010).
 
 		// fqn: authored by the catalog at the definition site, not derived here.
 		// #ImplFQNType, not #ContractFQNType: what a platform executes is keyed by
@@ -76,7 +76,7 @@ import (
 	// `core` release. SPEC.md § 2.1 Rationale, "Why `core` names no matching
 	// key".
 
-	// WHY requiredLabels: 0010:D36.
+	// WHY requiredLabels: matching labels live in their own field, unified upward from primitives (enhancement 0010).
 
 	// Labels a component must carry in its matchLabels to match this transformer.
 	// Selection reads #Component.matchLabels — the wholesale unification of the
@@ -123,9 +123,9 @@ import (
 	// computed blocks need #moduleInstance and #component, which are in scope
 	// only at this site, and the definition stays standalone-constructible.
 	// The `!= _|_` guards project an absent optional source as absent rather
-	// than as an error or an empty struct (0019:D12; SPEC.md § 4.1 Rationale).
+	// than as an error or an empty struct (enhancement 0019; SPEC.md § 4.1 Rationale).
 
-	// WHY #transform: 0019:D3; 0019:D12.
+	// WHY #transform: the kernel fills #moduleInstance, and the context is a projection of the two inputs (enhancement 0019).
 
 	// Transform function. The runtime supplies #moduleInstance and #component
 	// concretely plus #context.#runtimeName; the context's two metadata blocks
@@ -133,7 +133,7 @@ import (
 	// or a list of resources; the renderer dispatches on cue.Kind and never
 	// inspects fields inside the value. See SPEC.md § 4.1.
 	#transform: {
-		// WHY #moduleInstance: was #moduleRelease, renamed by 0002:D8.
+		// WHY #moduleInstance: was #moduleRelease, renamed by enhancement 0002.
 
 		#moduleInstance: _ // Fully concrete #ModuleInstance (enhancement 0019)
 
@@ -177,7 +177,7 @@ import (
 // Provider context passed to transformers
 #TransformerContext: {
 	// WHY #moduleInstanceMetadata: was #moduleReleaseMetadata, renamed by
-	// 0002:D8.
+	// enhancement 0002.
 
 	#moduleInstanceMetadata: {
 		name!:        #NameType

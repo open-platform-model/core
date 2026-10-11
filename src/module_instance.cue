@@ -4,7 +4,7 @@ import (
 	cue_uuid "uuid"
 )
 
-// WHY #ModuleInstance: was #ModuleRelease, renamed by 0002:D8.
+// WHY #ModuleInstance: was #ModuleRelease, renamed by enhancement 0002.
 
 // #ModuleInstance is one deployment of a #Module: the module to deploy, the
 // values that satisfy its #config, and the name and namespace it deploys
@@ -41,7 +41,7 @@ import (
 		// module's `registryPath` and not from its `fqn` or `uuid`" and "Why not
 		// derive instance identity from the module's `name`".
 
-		// WHY fqn: 0010:D41.
+		// WHY fqn: instance identity derives from the module's registry path, not from its fqn (enhancement 0010).
 
 		// fqn: this instance's own identity — the deployed module's major-free
 		// registry path, this instance's name, and its namespace. Neither the
@@ -69,7 +69,7 @@ import (
 
 	}
 
-	// WHY #module: introduced by 0001:D1/D4.
+	// WHY #module: introduced when the context collapsed to an inline channel (enhancement 0001).
 
 	// Reference to the Module to deploy. The #ctx.instance wiring sets the
 	// module's runtime context from this instance's metadata — every #Component
@@ -110,6 +110,6 @@ import (
 	values: _
 }
 
-// WHY #ModuleInstanceMap: was #ModuleReleaseMap, renamed by 0002:D8.
+// WHY #ModuleInstanceMap: was #ModuleReleaseMap, renamed by enhancement 0002.
 
 #ModuleInstanceMap: [string]: #ModuleInstance
