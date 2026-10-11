@@ -1,6 +1,6 @@
 ## Context
 
-Design of the store and the citation rule: the enhancements swarm design (part two, sections 6 and 9). This change is core's side of it.
+Enhancements are cited by the rule in `openspec/config.yaml` (an id beside a reason in words, never alone, never a decision number) and read from the store `opm-enhancements`. This change is core's side of that move.
 
 ## Decisions
 

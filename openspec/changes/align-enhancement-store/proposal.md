@@ -8,8 +8,14 @@ The enhancements now live in an OpenSpec store (`opm-enhancements`) with their o
 - Every citation in tracked files (code comments, `SPEC.md`, `docs/`, live specs, archived changes) becomes an id beside a reason in words. The `enh cite-rewrite` tool does the mechanical part. The sites it only lists (lone `// WHY name:` labels, ids inside a sentence, question ids, paths into an entry) are rewritten by hand.
 - The nine archived `enhancement.yaml` files are deleted. Their proposals already name the entry.
 - `src/INDEX.md` is regenerated after the comment edits.
-- `.tasks/spec-check.sh` stays unchanged. The `SPEC.md` breadcrumbs keep the phrase "Renamed from" and lose only the decision number.
-- `CHANGELOG.md` and `.claude/**` are not edited.
+- `.tasks/spec-check.sh` keeps its logic and its "Renamed from" filter. Only its comment at line 70 loses a decision number. The `SPEC.md` breadcrumbs keep the phrase "Renamed from" and lose only the decision number.
+- Excluded, and why:
+  - `CHANGELOG.md`: release-please history; the GitHub releases are immutable.
+  - `.claude/**`: the owner's. It still holds two `REPO-LOCAL PATCH` blocks that ask for `enhancement.yaml`, and example citations in `core-schema-edit`.
+  - `vendor/`: core has none.
+  - Two site links `/enhancements/0026/` and `/enhancements/0027/` in `docs/site/concepts/application-and-platform-models.md`: the sentences carry the reason in words, and the redirect map owns the URLs.
+  - `docs/adapters.md`: a path into the legacy `library/enhancements/` folder, not an id of the store.
+  - A bare `Dn` inside a quoted decision title, and in archived text a bare `Dn` that names a decision of the archived change itself.
 
 No schema, constraint or behaviour changes. Only comments, rule text, archived text and generated descriptions change. The published CUE is the same except for comment text. Under Principle I this is neither MAJOR, MINOR nor PATCH. It does not rely on the `@v2` beta break licence. Every commit is a hidden type (`docs`, `chore`, `test`), so the change cuts no release.
 
