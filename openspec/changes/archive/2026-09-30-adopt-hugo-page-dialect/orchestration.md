@@ -166,7 +166,7 @@ Workspace root: `/var/home/emil/dev/open-platform-model` (called WS below). Ever
 0018 is `draft`, so its decisions are revised in place, with no `Amends:` line. Follow the enhancements repo's `AGENTS.md` and its `enhancements` skill.
 
 1. **Decision body of the figure decision** (the decisions file of enhancement 0018): "A figure on the site is an Astro component in the site engine ... and a page in any repository uses it through the site's import alias for components" becomes "A figure on the site is a figure component in the site engine that draws inline SVG by hand, and a page in any repository uses it through the engine's figure shortcode". Everything else in that decision stays.
-2. **D14 alternatives.** "the site build copies only Markdown and MDX files" becomes "copies only Markdown files". Keep the astro-d2 rejection evidence as it is.
+2. **Alternatives of the figure decision.** "the site build copies only Markdown and MDX files" becomes "copies only Markdown files". Keep the astro-d2 rejection evidence as it is.
 3. **The bullet on site presentation in the overview of enhancement 0018.** Replace the whole bullet body. "**Site presentation.** The site generator, theme, search and styling. The site is built with Astro and Starlight; how it looks is not this entry's to decide." becomes "**Site presentation.** The site generator, theme, search and styling are not this entry's to decide."
 4. **Section.** One. Commit `docs(0018): make the figure decision engine-neutral`.
 5. **Touches.** The decisions and the overview of enhancement 0018.
