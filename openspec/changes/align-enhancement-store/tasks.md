@@ -6,15 +6,15 @@
 
 ## 2. Mechanical rewrite
 
-- [ ] 2.1 Run `enh cite-rewrite --root <worktree> --write --worklist <file>` once over the clean tree.
-- [ ] 2.2 Read at least 40 of the tool's edits across the places; fix a wrong edit by hand and record it in the report.
-- [ ] 2.3 Commit by place: code comments (`SPEC_IMPACT=none`, comment text only), live specs, `SPEC.md` and `docs/`, archived changes (`docs(openspec)`); delete the nine `enhancement.yaml` files in the archived commit.
+- [x] 2.1 Run `enh cite-rewrite --root <worktree> --write --worklist <file>` once over the clean tree.
+- [x] 2.2 Read at least 40 of the tool's edits across the places; fix a wrong edit by hand and record it in the report.
+- [x] 2.3 Commit by place: code comments (`SPEC_IMPACT=none`, comment text only), live specs, `SPEC.md` and `docs/`, archived changes (`docs(openspec)`); delete the nine `enhancement.yaml` files in the archived commit.
 
 ## 3. The worklist
 
-- [ ] 3.1 Rewrite the code rows by hand (lone WHY labels, ids inside sentences, question ids, entry paths, strings), each by the comment rule.
-- [ ] 3.2 Rewrite the rows in `SPEC.md`, `docs/`, live specs and archived text; keep "Renamed from" in the `SPEC.md` breadcrumbs.
-- [ ] 3.3 Run `task generate:index`. `task check` is green. `enh cite-lint` reports 0 findings and `enh cite-rewrite --dry-run` reports 0 edits. Commit by place.
+- [x] 3.1 Rewrite the code rows by hand (lone WHY labels, ids inside sentences, question ids, entry paths, strings), each by the comment rule.
+- [x] 3.2 Rewrite the rows in `SPEC.md`, `docs/`, live specs and archived text; keep "Renamed from" in the `SPEC.md` breadcrumbs.
+- [x] 3.3 Run `task generate:index`. `task check` is green. `enh cite-lint` reports 0 findings and `enh cite-rewrite --dry-run` reports 0 edits. Commit by place.
 
 ## 4. Verify and archive
 
