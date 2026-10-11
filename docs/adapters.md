@@ -57,7 +57,7 @@ ComponentTransformers use a multi-dimensional matching system: required labels, 
     optionalTraits?:    [#ContractFQNType]: #Trait
 
     // The transform function — the context projects itself from the two
-    // inputs; the runtime fills only #context.#runtimeName (0019:D12).
+    // inputs; the runtime fills only #context.#runtimeName (enhancement 0019).
     #transform: {
         #moduleInstance: _                    // fully concrete #ModuleInstance
         #component:      _                    // matched Component
