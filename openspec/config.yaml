@@ -1,9 +1,9 @@
 schema: spec-driven
 
 # The enhancement store: the design record of OPM. `openspec instructions` lists its specs; read
-# one entry with `openspec show <id>-<slug> --store opm-enhancements`. Register a checkout once per
-# machine with `openspec store register <path> --id opm-enhancements`; without it the commands
-# print a warning and go on.
+# one entry with `openspec show <id>-<slug> --store opm-enhancements`. If OpenSpec warns that the
+# store `opm-enhancements` is not registered, report the warning and go on; the human runs
+# `task enhancements:register`.
 references:
   - id: opm-enhancements
     remote: https://github.com/open-platform-model/enhancements.git
@@ -168,7 +168,7 @@ context: |
 
   ### Comments
   - Default to no enhancement reference: say what the code does and why, in the comment's own words.
-  - When the rationale genuinely lives in an enhancement, write the reason in words and put the id beside it: `(enhancement 0011)`, or `(enhancements 0010 and 0011)` for two. An enhancement id appears only beside a reason in words, never alone, and never with a decision number (no `NNNN:Dn`, no `NNNN Dn`, no `NNNN:OQn`): decision numbers restart per enhancement and the store can renumber them. A comment whose only content is an id, such as `// WHY name: enhancement 0011`, is a lone id: write the reason.
+  - When the rationale genuinely lives in an enhancement, write the reason in words and put the id beside it: `(enhancement 0011)`, or `(enhancements 0010 and 0011)` for two. In all text (proposal, design, specs, docs and comments), an enhancement id appears only beside a reason in words, never alone, and never with a decision number (no `NNNN:Dn`, no `NNNN Dn`, no `NNNN:OQn`, no bare `Dn`): the store has no decision numbers. A comment whose only content is an id, such as `// WHY name: enhancement 0011`, is a lone id: write the reason.
   - Never cite a section, slice, phase, task or design-doc-local id (`§8.1`, `slice C2`, `task 4.2`, `design LD3`). They are not stable identifiers.
   - Never put a reference in a scaffold template, a generated file, a fixture a user copies, or a CLI output string. Those reach people with no access to the enhancements repo.
   - No `Was:` rename history in comments; `git log` owns it.
@@ -177,6 +177,7 @@ context: |
   ### Enhancements
   - Enhancements live in the OpenSpec store `opm-enhancements` (see `references:`). Read an entry with `openspec show <id>-<slug> --store opm-enhancements`; its `tasks.md` says which repo still has work.
   - A change here that delivers a line of an entry's `tasks.md` says so in its proposal (`## Enhancement`, `Delivers NNNN, task X.Y.`); otherwise the section says `None.`.
+  - If OpenSpec warns that the store `opm-enhancements` is not registered, report the warning and go on; the human runs `task enhancements:register`. No agent runs `openspec store register`.
 
   ## Validation Gates (before merge)
   1. `task fmt:check` — CUE files are formatted.
@@ -200,6 +201,8 @@ rules:
     - Breaking changes MUST be called out explicitly with downstream migration cost — a tightened
       constraint counts as breaking even when nothing is removed.
     - Additions to the published surface MUST justify themselves against Principle V.
+    - Cite an enhancement only as its id beside a reason in words (`enhancement 0011`), never alone
+      and never with a decision number.
     - Scope MUST cut into at most about five tasks.md sections, each ending green and leaving
       `main` releasable on its own (Principle VI).
     - "Delivery mode: one PR per change is the default and needs no statement. When a downstream
@@ -230,6 +233,8 @@ rules:
       **Explored**: [What was investigated - link to exploration notes]
       **Decision**: [Chosen option]
       **Rationale**: [Why this option was selected]
+    - Cite an enhancement only as its id beside a reason in words (`enhancement 0011`), never alone
+      and never with a decision number.
     - Show the CUE, not a description of the CUE — the definition's shape is the design.
     - Name every `src/*.cue` file the change touches, and every construct in
       `.tasks/spec-tracked.txt` whose SPEC.md section moves with it.
@@ -310,4 +315,4 @@ operations:
         archive after the last PR."
   archive:
     guidance:
-      - "If the change delivers a line of an enhancement's `tasks.md`, a PR on `enhancements` ticks that line."
+      - "If the change delivers a line of an enhancement's `tasks.md`, name it in the PR body; after the repo PR merges, a PR on `enhancements` ticks that line."
