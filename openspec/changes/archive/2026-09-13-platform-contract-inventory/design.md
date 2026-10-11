@@ -149,7 +149,7 @@ Measured on a scratch copy of `src/` (cue v0.17.1, 2026-09-13) with three stand-
 ## Risks / Trade-offs
 
 - [Evaluation cost in every platform build] -> `defined × transformers × demands` string comparisons, about ten thousand for catalog_opm's 72 members and 45 transformers; two comprehensions per contract, no nested unification. If a fleet measures it, `requiredBy` can be inverted (one pass over transformers) without changing the shape.
-- [A catalog that lists nothing yields `fulfilled: true` vacuously] -> named in 0015 `06-operational.md`; closed by `catalog-contract-listing` and its listing gate, not here.
+- [A catalog that lists nothing yields `fulfilled: true` vacuously] -> named in the operational plan of enhancement 0015; closed by `catalog-contract-listing` and its listing gate, not here.
 - [Optional demands are invisible to the inventory] -> by design (enhancement 0010, "Two providers supplying one contract is a materialize-time error"); a contract only optionally consumed is "unfulfilled" and reported as such, which is the correct reading of tolerance.
 - [Two builds of one catalog cannot be told apart by `modulePath`] -> one entry per path (enhancement 0019, "A platform imports its catalog and embeds it whole into the registry entry, which derives everything else") already makes that state inexpressible.
 

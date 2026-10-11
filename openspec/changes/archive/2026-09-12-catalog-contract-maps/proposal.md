@@ -14,7 +14,7 @@ This change is `catalog-contract-maps`, the first of two core slices of enhancem
 
 ## Classification
 
-**MINOR, additive** (Principle I): no existing field changes shape, default, closedness or required-set; a catalog publishing no contracts validates unchanged. This slice does not rely on the v2 line still being pre-release. The pair of slices does: the inventory fold in the second slice reads these maps, and a kernel expecting them against a catalog published without them computes a vacuous readiness answer (0015 `06-operational.md`, "Semver Impact"), so both slices land before a stable `2.0.0` cut, and catalog_opm republishes with its maps populated before any consumer reads the inventory.
+**MINOR, additive** (Principle I): no existing field changes shape, default, closedness or required-set; a catalog publishing no contracts validates unchanged. This slice does not rely on the v2 line still being pre-release. The pair of slices does: the inventory fold in the second slice reads these maps, and a kernel expecting them against a catalog published without them computes a vacuous readiness answer (the "Semver Impact" section of the operational plan of enhancement 0015), so both slices land before a stable `2.0.0` cut, and catalog_opm republishes with its maps populated before any consumer reads the inventory.
 
 ## Downstream consumers
 

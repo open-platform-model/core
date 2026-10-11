@@ -21,7 +21,7 @@ This change is `platform-contract-inventory`, the second and last core slice of 
 - **`library`**: nothing to do now. The fold evaluates inside every platform build the kernel already runs; its cost is one pass over `defined × transformers × demands` (about ten thousand string comparisons for catalog_opm's shape), measured on the scratch probe as unnoticeable at that size. The kernel reads nothing new until a caller asks.
 - **`cli`**: the next change reads `#contracts` for `opm platform check` (unfulfilled, over-subscribed, defining catalogs) and can replace its own over-subscription count in render validation (which already counts catalogs, the same rule) with `#contracts.overSubscribed`. The "defined but unimplemented" arm of the unresolved-demand verdict (enhancement 0010) reads `definedBy`.
 - **`opm-operator`**: the 0015 operator slice surfaces `fulfilled` as the non-gating `ContractsFulfilled` condition and refuses generation on `routable: false`, naming `overSubscribed` and `definedBy`. Nothing until that slice.
-- **`catalog_opm`**: its listing change (`catalog-contract-listing`) is what makes `defined` non-empty; without it the inventory is vacuously fulfilled, which 0015 `06-operational.md` names as the failure to guard against.
+- **`catalog_opm`**: its listing change (`catalog-contract-listing`) is what makes `defined` non-empty; without it the inventory is vacuously fulfilled, which the operational plan of enhancement 0015 names as the failure to guard against.
 - **`modules`**: nothing to do.
 - **`opmodel.dev`**: the generated schema reference picks the construct up on its next `task generate`.
 
