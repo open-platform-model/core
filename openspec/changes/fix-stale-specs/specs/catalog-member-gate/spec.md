@@ -2,7 +2,7 @@
 
 ### Requirement: `core` ships the catalog-member gate shape
 
-`core` MUST export `#CatalogMemberFQNGate`. It takes an `identity!` (`#IdentityPackage`), a `kind!` (one of the four catalog member kinds), a `name!`, and the authored values `declaredFQN!`, `declaredModulePath!`, `declaredCatalogVersion!` and, for the three primitive kinds, `declaredAPIVersion`. It declares each `declared*` field twice, once as authored and once as implied by identity. Refusal MUST come from unification, not from a comparison outside CUE.
+`core` MUST export `#CatalogMemberFQNGate`. It takes an `identity!`, a `kind!` (one of the four catalog member kinds), a `name!`, and the authored values `declaredFQN!`, `declaredModulePath!`, `declaredCatalogVersion!` and, for the three primitive kinds, `declaredAPIVersion`. It declares the first three twice, once as authored and once as implied by identity; nothing implies `declaredAPIVersion`. Refusal MUST come from unification, not from a comparison outside CUE.
 
 #### Scenario: A conformant resource passes
 

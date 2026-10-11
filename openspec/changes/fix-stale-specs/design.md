@@ -1,6 +1,6 @@
 ## Context
 
-The specs were written before enhancement 0010 amended the filing rule, and before the component's derivation check settled on a size comparison. The code, `SPEC.md` section 5.3 and the pins already hold the new rules. Only these two specs lag.
+The gate spec was written before enhancement 0010 amended the filing rule. The component-matching spec said "declaring one MUST fail" from the start, while the code only compares key counts. The code, `SPEC.md` section 5.3 and the pins hold the real rules. These two specs lag, and `SPEC.md` line 346 carries the same too-broad sentence as the matching spec.
 
 ## Research & Decisions
 
@@ -16,7 +16,7 @@ The specs were written before enhancement 0010 amended the filing rule, and befo
 **Rationale**: The old scenario "A conformant resource passes" used the flat path and would now fail the gate. The body changes; the name stays.
 
 ### Component matching test
-**Context**: `_matchLabelsAreDerived` is `len(matchLabels) == len(_matchLabelsFromPrimitives)` (`src/component.cue:130-131`). `len` counts concrete keys only.
+**Context**: `_matchLabelsAreDerived` is `len(matchLabels) == len(_matchLabelsFromPrimitives)` (`src/component.cue:130-131`). `len` counts regular fields only; an unanswered required key (`k!`) is not counted.
 **Decision**: State the test as a count of keys. Three observed cases: an invented key adds one and fails; a restated key with the same value adds none and passes; a required key answered on the component adds one (the union counts it only when a primitive answers it) and fails. A restated key with another value fails earlier, as a conflict of values.
 **Rationale**: This is exactly what the code does. The old words ("declaring one MUST fail") also forbade the restated key, which the code allows.
 

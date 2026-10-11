@@ -30,4 +30,4 @@ None.
 ## Impact
 
 - **library**, **cli**, **opm-operator**, **catalog_opm**, **modules**: no action. The published schema is the same.
-- **Left for the owner**: `SPEC.md` line 346 says "declaring one MUST fail" in the same words as the old spec. It is outside this change (scope is `openspec/`). The owner decides whether to reword it in a `docs:` commit with `SPEC_IMPACT=none`.
+- **Left for the owner**: `SPEC.md` line 346 says "declaring one MUST fail" in the same words as the old spec. It is outside this change (scope is `openspec/`). The owner decides whether to reword it in a `docs:` commit; a commit that stages only `SPEC.md` needs no `SPEC_IMPACT` bypass.
