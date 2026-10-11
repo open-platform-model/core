@@ -1,8 +1,8 @@
 ## 1. Rules
 
-- [ ] 1.1 `openspec/config.yaml`: add `references:` for `opm-enhancements` with its remote; replace the comment bullets for the `NNNN:Dn` form with the comment rule; set the proposal rule to the `Delivers` line (`## Enhancement`, `Delivers NNNN, task X.Y.` per task, otherwise `None.`); add a `context` line to read an entry with `openspec show <id>-<slug> --store opm-enhancements`; remove the `enhancement.yaml` and `task enhancements:delivery:*` rules; change the specs rule so a citation is an id beside a reason.
-- [ ] 1.2 `AGENTS.md`: the same rule text (comment rule, `Delivers` line); remove the `enhancement.yaml` and `delivery:log` text; reword the two history lines that name decision numbers.
-- [ ] 1.3 `openspec validate align-enhancement-store --strict` passes, then commit `docs(openspec): move the enhancement rules into config.yaml`
+- [x] 1.1 `openspec/config.yaml`: add `references:` for `opm-enhancements` with its remote; replace the comment bullets for the `NNNN:Dn` form with the comment rule; set the proposal rule to the `Delivers` line (`## Enhancement`, `Delivers NNNN, task X.Y.` per task, otherwise `None.`); add a `context` line to read an entry with `openspec show <id>-<slug> --store opm-enhancements`; remove the `enhancement.yaml` and `task enhancements:delivery:*` rules; change the specs rule so a citation is an id beside a reason.
+- [x] 1.2 `AGENTS.md`: the same rule text (comment rule, `Delivers` line); remove the `enhancement.yaml` and `delivery:log` text; reword the two history lines that name decision numbers.
+- [x] 1.3 `openspec validate align-enhancement-store --strict` passes, then commit `docs(openspec): move the enhancement rules into config.yaml`
 
 ## 2. Mechanical rewrite
 
