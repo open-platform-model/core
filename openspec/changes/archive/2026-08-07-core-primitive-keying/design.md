@@ -21,7 +21,7 @@ Enhancement 0010 ("A contract is keyed by its own API version; an implementation
 
 **Non-Goals:**
 
-- **The compatibility gate.** D27's additive-only rule and enhancement 0011's publish-side enforcement are `library` and `cli` work.
+- **The compatibility gate.** The additive-only rule of enhancement 0010 and the publish-side enforcement are `library` and `cli` work.
 - **Ordering of API versions.** Match is exact-key; nothing compares two levels. The one reader that sorts them is a diagnostic in `library`, and its kube-aware comparator is `library-match-labels`.
 - **`#CatalogMemberFQNGate`.** Ships in `core-identity-package` (enhancement 0011, "A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`").
 - **Matching labels and fulfilment.** `core-platform-and-match`.
@@ -109,7 +109,7 @@ Nothing else follows from the reclassification. D37's exclusion of `#Blueprint` 
 
 **`core` loses the ability to refuse a wrong key, before the gate that replaces it exists.** The measured failure is exact: a catalog on `1.2.0` shipping a stale `fqn` vets clean at exit 0. This is why `core-identity-package` is not optional and why the two land in one alpha. Inside the repo the window is real; it does not reach a published artifact because nothing publishes until `core-alpha-release`.
 
-**A wrong key is permanent once published.** Under D4 modules match against it forever. That raises the stakes on the gate rather than on this change, but it is the reason the trade was made with a named owner (enhancement 0011, "A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`") rather than on the promise of one.
+**A wrong key is permanent once published.** Under enhancement 0010 modules match against it forever. That raises the stakes on the gate rather than on this change, but it is the reason the trade was made with a named owner (enhancement 0011, "A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`") rather than on the promise of one.
 
 **Two version spellings now live in one system.** `@v1beta1` on a contract and `@1.2.0` on an implementation, plus `@v1` on a module path. Accepted: the alternative — normalising to major at match time — creates two notions of FQN, the string the schema declares and the key the matcher uses, which is exactly the declared-versus-effective split `0010` exists to remove.
 

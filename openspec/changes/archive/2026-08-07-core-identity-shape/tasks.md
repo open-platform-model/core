@@ -48,7 +48,7 @@ What the groups below do guarantee is that **every group ends at a tree that vet
 
 ## 5. Schema-level test cases
 
-Mirror the target schema of enhancement 0010's cases so the properties are pinned where the schema lives, not only in the design document.
+Mirror the cases in the target schema of enhancement 0010 so the properties are pinned where the schema lives, not only in the design document.
 
 - [x] 5.1 Positive: a module at `@v2` whose `fqn` equals its path and whose `registryPath` drops the major; a catalog likewise.
 - [x] 5.2 Invariant, both directions: `uuid` unchanged across a `version` change; `uuid` **changed** across a major bump. Assert `uuid` explicitly — a case checking `fqn` alone will not catch a `uuid` regression.

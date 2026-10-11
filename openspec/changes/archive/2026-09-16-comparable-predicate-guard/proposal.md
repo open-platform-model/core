@@ -2,7 +2,7 @@
 
 Two enabled catalogs can each ship a transformer over the same catalog-fulfilled contract with predicates that are not discriminated from one another — the accidental case being two catalogs that both carry a daemonset adapter. Today nothing notices: the component matches both, renders twice, and no report names either transformer. Enhancement 0015 ("Comparable predicates within one catalog-fulfilled bucket are refused, not arbitrated") decided this is refused, not arbitrated, and that the refusal names the bucket and both transformer FQNs. `core` owns the derivation half of that: the inventory reports, the generation step refuses (enhancement 0015 ("An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"), already the shape of `overSubscribed`/`routable`).
 
-Implements enhancement 0015, and resolves OQ9 ("what *comparable* means operationally"), which D5 deferred to this slice.
+Implements enhancement 0015, and resolves its open question ("what *comparable* means operationally"), which that enhancement deferred to this slice.
 
 ## What Changes
 
@@ -38,7 +38,7 @@ Downstream:
 | --- | --- |
 | `library` | Pick up the core pin, then a follow-up change decodes `comparable` and `discriminated` onto `platform.ContractInventory`. Its parity harness gains a pin that the shipped catalog stays discriminated. |
 | `cli` | After the `library` bump, `opm platform check` reports the pairs and refuses on `discriminated`, beside its existing `routable` refusal. |
-| `opm-operator` | Nothing in this change, but it is where D5's stated guard site is (platform-package generation) and it consults the contract inventory **nowhere** today — it does not refuse on `routable` either. Closing that is a pre-existing gap against enhancement 0015 ("An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation") and enhancement 0010 ("A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider"), not one this change opens. |
+| `opm-operator` | Nothing in this change, but it is where the guard site stated by enhancement 0015 is (platform-package generation) and it consults the contract inventory **nowhere** today — it does not refuse on `routable` either. Closing that is a pre-existing gap against enhancement 0015 ("An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation") and enhancement 0010 ("A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider"), not one this change opens. |
 | `catalog_opm` | Nothing to change — measured clean today. It acquires an obligation: a new transformer must be discriminated from every existing transformer sharing one of its contracts, by a differing required label value or a distinct required trait or resource. |
 | `modules`, `opm-modules` | Nothing. Modules author no transformers. |
 

@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md` § Why. The design itself was settled in enhancement 0019 (D5, D17, with D13's in-schema tripwire clauses); the CUE delta is pre-drafted and exercised in the schemas of enhancement 0019 (`target.cue`, `examples.cue`, `spec.md` — the SPEC.md pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decisions.
+See `proposal.md` § Why. The design itself was settled in enhancement 0019 (its registry import and matcher removal decisions, with the in-schema tripwire clauses); the CUE delta is pre-drafted and exercised in the schemas of enhancement 0019 (`target.cue`, `examples.cue`, `spec.md` — the SPEC.md pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decisions.
 
 Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`), `#Platform.#registry: [Path=#ModulePathType]: #Subscription`, and two optional kernel-filled slots `#composedTransformers?` / `#matchers?`. The library's `Materialize` step resolves subscriptions over OCI and fills the slots on a Go-side twin.
 
@@ -78,7 +78,7 @@ Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`)
 ### `version` as a derived regular field, `version!` gone
 
 **Context**: The entry needs the build's identity readable (skew diagnostics, Platform CR status) without a second answer to "which build".
-**Explored**: authored `version!` beside the import (enhancement 0019 ("A platform imports its catalog and embeds it whole into the registry entry, which derives everything else") alternatives, rejected); no version field at all (discards the identity data D7 needs).
+**Explored**: authored `version!` beside the import (enhancement 0019 ("A platform imports its catalog and embeds it whole into the registry entry, which derives everything else") alternatives, rejected); no version field at all (discards the identity data that skew detection needs).
 **Decision**: `version: #catalog.metadata.version` — a readout. An expected stamp unifies with it.
 **Rationale**: computed off the imported bytes it cannot disagree with them; `#Catalog.metadata.version!` is required with no dev default, so an unstamped catalog refuses as incomplete rather than rendering wrong. The stamp's only reachable outcomes are agreement (no-op) and a conflict naming the entry.
 
@@ -87,7 +87,7 @@ Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`)
 **Context**: `#composedTransformers` must compose several catalogs' maps.
 **Explored**: unifying entry maps pairwise (`entryA.#transformers & entryB.#transformers`), measured in the match in one build experiment of enhancement 0019.
 **Decision**: comprehension copy per enabled entry, as shown above.
-**Rationale**: the catalog's D25 provenance stamp (`metadata.modulePath: "<catalogPath>/transformers"`, `catalogVersion`) refuses a foreign transformer unified into another catalog's member map, so map-level unification fails on healthy multi-catalog input. Under the comprehension, two entries writing the same composed FQN key still unify at that key: agreement collapses, and genuinely divergent bodies conflict loudly through the same provenance stamps — the same verdicts `library`'s `indexCatalogs` produces today, now with CUE's error surface. Diagnostic quality for that conflict is the render glue's concern (enhancement 0019, "Matching moves into the render build; verdicts are data; the D30 carve-out is deleted"), not the schema's.
+**Rationale**: the catalog's provenance stamp (`metadata.modulePath: "<catalogPath>/transformers"`, `catalogVersion`) refuses a foreign transformer unified into another catalog's member map, so map-level unification fails on healthy multi-catalog input. Under the comprehension, two entries writing the same composed FQN key still unify at that key: agreement collapses, and genuinely divergent bodies conflict loudly through the same provenance stamps — the same verdicts `library`'s `indexCatalogs` produces today, now with CUE's error surface. Diagnostic quality for that conflict is the render glue's concern (enhancement 0019, "Matching moves into the render build; verdicts are data; the D30 carve-out is deleted"), not the schema's.
 
 ### `#matchers` removed rather than derived
 
@@ -133,7 +133,7 @@ Current state: `src/platform.cue` defines `#Subscription` (`{enable, version!}`)
 - [The release is unconsumable by the current `library` kernel: `Materialize` reads `version!` and fills `#matchers`] → sequencing, not code: `library` stays pinned to the prior alpha until its 0019 Phase B wave (platform-as-module input, single-build render, materialize deletion) lands; the workspace `task deps:update` run that would bump it is deferred for `library` alone. Stated in the proposal's consumer table and worth repeating in the release notes.
 - [The single-provider guard loses its enforcement point when `library` later deletes materialize] → out of scope here (see Non-Goals). This change does not remove the guard and removes nothing outside `src/platform.cue`, so nothing regresses at this release. The residue is real but **thinly tracked**: 0019 records it only as an open consequence in `02-design.md` § What matching costs ("D32/D37's single-provider guard and `indexCatalogs`' cross-build collapse are multi-build machinery. Whether they survive, or become vacuous, follows from the same question"), with no decision and no Open Question carrying it — verified against 0019's `03-decisions.md` and `07-questions.md` on 2026-09-01. `SPEC.md` §2.1 and §3.3 still name materialize as the enforcement point, and stay true until `library` deletes that step. Whoever schedules the library wave should raise the guard's home as an 0019 Open Question first, rather than discovering it when the enforcement point disappears.
 - [Alpha-line dependence: three breaking edits absorbed as one `feat(platform)!:` alpha increment] → `@v2` is at `2.0.0-alpha.N`; this must land before a stable `2.0.0` cut or it becomes a v3 event (Principle IV, stated in the proposal's Classification).
-- [Error-surface change for composition conflicts: `indexCatalogs`' "transformer %q diverges across selected builds" becomes a raw CUE conflict] → accepted; enhancement 0019's verdicts-as-data glue owns match-time diagnostics, and the D13 tripwires (key binding, version stamp) were designed to fail at paths naming the offending entry.
+- [Error-surface change for composition conflicts: `indexCatalogs`' "transformer %q diverges across selected builds" becomes a raw CUE conflict] → accepted; enhancement 0019's verdicts-as-data glue owns match-time diagnostics, and the tripwires of enhancement 0019 (key binding, version stamp) were designed to fail at paths naming the offending entry.
 
 ## Migration Plan
 

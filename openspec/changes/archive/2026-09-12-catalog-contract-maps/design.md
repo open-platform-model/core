@@ -124,7 +124,7 @@ Authoring shape a catalog uses, mirroring `#transformers`:
 
 - [Partial listing: a catalog may define a contract and not list it, and `core` cannot tell] → accepted here. The inventory the second slice computes is only as complete as the listing; catalog_opm lists everything in its own change, and a publish gate in the 0011 family ("every provider-fulfilled contract is listed") is the structural close, owned by `cli`. Named in the proposal as a follow-up.
 - [The stamp refuses a member whose authored `modulePath` predates enhancement 0010's version segment] → no shipped catalog on the v2 line authors the flat form (catalog_opm is at v4 with version-segment filing; the v1 branch pins core v1 and never sees this change). The old-shape values in `platform_and_match_pins.cue` are unaffected because they are never listed in a catalog.
-- [Two slices for one decision] → the maps are pure data and safe to publish alone; the fold is where the readiness semantics bite, and 0015 owes a decision there before it lands. Both slices declare D1 in `enhancement.yaml`; the delivery log records which half each landed.
+- [Two slices for one decision] → the maps are pure data and safe to publish alone; the fold is where the readiness semantics bite, and 0015 owes a decision there before it lands. Both slices declare the same decision in `enhancement.yaml`; the delivery log records which half each landed.
 - [`target.cue` in 0015 is now stale on two points (flat stamp, `#PublishedContract`)] → a doc-only follow-up in enhancement 0015 (an amending decision or a schema note); not this change's scope.
 
 ## Migration Plan

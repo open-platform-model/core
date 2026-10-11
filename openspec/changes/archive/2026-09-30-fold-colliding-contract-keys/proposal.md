@@ -1,6 +1,6 @@
 ## Why
 
-A platform that enables two majors of one catalog whose catalogs list the same contract keys fails to evaluate today. `#Platform.#contracts` folds `defined` and `definedBy` keyed by contract FQN, so two enabled definers of one key conflict (`metadata.catalogVersion` "1.0.0" against "2.0.0" in `defined`, `opm@v1` against `opm@v2` in `definedBy`) and the whole platform value is bottom. That violates `SPEC.md` §3.4's own rule that no inventory report makes the platform fail to evaluate, and it leaves every consumer reading a failed value instead of a named reason. Measured in enhancement 0026 (`experiments/01-one-major-per-build` case A; `experiments/06-collision-tolerant-fold`), and recommended as its own core fix by enhancement 0026. The user approved the fix on 2026-09-30.
+A platform that enables two majors of one catalog whose catalogs list the same contract keys fails to evaluate today. `#Platform.#contracts` folds `defined` and `definedBy` keyed by contract FQN, so two enabled definers of one key conflict (`metadata.catalogVersion` "1.0.0" against "2.0.0" in `defined`, `opm@v1` against `opm@v2` in `definedBy`) and the whole platform value is bottom. That violates `SPEC.md` §3.4's own rule that no inventory report makes the platform fail to evaluate, and it leaves every consumer reading a failed value instead of a named reason. Measured in enhancement 0026 (`experiments/01-one-major-per-build` case A; `experiments/06-collision-tolerant-fold`), and recommended as its own core fix by an open question of enhancement 0026. The user approved the fix on 2026-09-30.
 
 It is the interim safety net, not side-by-side majors: enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog") later makes two majors legitimate through per-resolution builds. Until then a colliding platform must evaluate, name its collisions, and read `routable: false`.
 
@@ -45,4 +45,4 @@ None.
 
 Principle V: both fields have named consumers before they ship (B's render rows and decode, C's finding, D's report). Without them a consumer could only say "not routable" and would have to recount definers itself, which is the drift the previous change set removed.
 
-No enhancement decision is fully delivered (enhancement 0026 recommends the fix; D9 is not delivered by it), so the change carries no `enhancement.yaml`. The five-change set, its ordering and the core release it waits on are in `orchestration.md`.
+No enhancement decision is fully delivered (enhancement 0026 recommends the fix; its several-majors design is not delivered by it), so the change carries no `enhancement.yaml`. The five-change set, its ordering and the core release it waits on are in `orchestration.md`.

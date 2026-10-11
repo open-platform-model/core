@@ -144,4 +144,4 @@ Every PR follows its repo's `AGENTS.md`: a body of at most 250 words, no bare `@
 **Follow-ups outside this repo (supervisor):**
 
 1. After A is released: launch B. Hold `task deps:update` until B is released (step 4).
-2. In enhancements: walk enhancement 0026 to a resolution citing A to E once they land (`enhancement-open-questions`), and decide whether to log the landings with `task delivery:log` in explicit mode without decisions.
+2. In enhancements: walk the open question of enhancement 0026 about this fold to a resolution citing A to E once they land (`enhancement-open-questions`), and decide whether to log the landings with `task delivery:log` in explicit mode without decisions.

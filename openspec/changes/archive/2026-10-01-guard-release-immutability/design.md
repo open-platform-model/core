@@ -165,5 +165,5 @@ Inputs for the Phase 2 release-branch change. Nothing here is implemented in Pha
 ## Open Questions
 
 - `task publish:branch` still follows the ambient `CUE_REGISTRY`, while workspace Registry Policy rule 2 says publish tasks force a local mapping. CI uses it for `-0.dev.*` builds, so forcing it local would break `branch-publish.yml`. Follow-up: refuse to run outside CI with a GHCR mapping, as a separate `chore(publish)` change.
-- The canon calls `-0.dev.*` builds "mutable by design"; enhancements PR 74's D10 "Registry tags" paragraph (head c52aaf2) records them as create-only, "a fact of 0011, not a requirement of this decision". R3 itself covers only tags a release pushes. This change says only that branch builds are outside its requirement. The owner settles the wording in 0021.
+- The canon calls `-0.dev.*` builds "mutable by design"; the "Registry tags" paragraph of the immutability decision of enhancement 0021 in enhancements PR 74 (head c52aaf2) records them as create-only, "a fact of 0011, not a requirement of this decision". R3 itself covers only tags a release pushes. This change says only that branch builds are outside its requirement. The owner settles the wording in 0021.
 - The `v1` follow-up is Migration Plan precondition 1; it is an owner or follow-up-PR action, not an apply step.

@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md` § Why. The design was settled in enhancement 0019 (D12, resolving its OQ5); the CUE delta is pre-drafted and exercised in the schemas of enhancement 0019 (`target.cue` § D12, `examples.cue`'s D12 assertions, `spec.md`'s §4.1 pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decision.
+See `proposal.md` § Why. The design was settled in enhancement 0019 (its context projection decision, resolving an open question); the CUE delta is pre-drafted and exercised in the schemas of enhancement 0019 (`target.cue` § context projection, the context projection assertions of `examples.cue`, `spec.md`'s §4.1 pre-draft). This document maps that delta onto this repo's files and protocols; it does not re-litigate the enhancement's decision.
 
 Current state: `src/transformer.cue` declares `#transform.#context: #TransformerContext` as a bare slot; `#TransformerContext`'s two metadata blocks carry required fields the runtime fills (`library/opm/schema/context.go`), and its label/annotation folds already compute from those blocks. `src/platform_and_match_pins.cue` pins a standalone, hand-filled `#TransformerContext` (`_pinRenderContext`) for the enhancement 0010 ("Matching labels live in their own field, unified upward from primitives") matchLabels-not-rendered assertions.
 
@@ -17,7 +17,7 @@ Current state: `src/transformer.cue` declares `#transform.#context: #Transformer
 
 - No `#TransformerContext` shape change: same fields, same folds, standalone construction preserved.
 - No registry/platform surface (that is `core-registry-import`, the sibling slice on the same release train).
-- No library-side changes: `context.go`'s staged fill-identical behavior and its eventual deletion are `library-render-cutover`'s (0019's staging plan inside D12).
+- No library-side changes: `context.go`'s staged fill-identical behavior and its eventual deletion are `library-render-cutover`'s (the staging plan of enhancement 0019 for the context projection).
 
 ## Research & Decisions
 

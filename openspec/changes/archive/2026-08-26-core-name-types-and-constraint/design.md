@@ -77,7 +77,7 @@ Written to the rules of `platform_and_match_pins.cue` (hidden fields, `_pin: <ex
 ### Where the constraint is applied
 
 **Context**: enhancement 0019 ("Dot-hostile primitives declare a `#nameConstraint`; the component asserts the resolved name against their conjunction, the matchLabels pattern applied to naming") as ratified on 2026-08-24 unified the conjunction into `metadata.resourceName`; that was validated against a validated-default field, and core landed an unvalidated-default field.
-**Explored**: the name constraint on landed d16 experiment of enhancement 0019 ran the full must-fail/must-pass matrix against six spellings on the landed field.
+**Explored**: the experiment of enhancement 0019 that put the name constraint on the landed resourceName default ran the full must-fail/must-pass matrix against six spellings on the landed field.
 **Decision**: hidden assertion on the interpolated field (`_nameFits`), never unification into the field. D21 was revised in place on 2026-08-26 to say so.
 **Rationale**: unified into the field, a constraint distributes into the default arm; a failing default drops out of the disjunction, the field becomes a bare constraint, and the refusal surfaces as `non-concrete value … in operand to ==` at the D16 guard with the string nowhere, while an override refusal is caught by the `error()` arm whose text mis-describes it. The hidden assertion refuses every case naming the string, the bound and the type site.
 

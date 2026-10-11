@@ -2,7 +2,7 @@
 
 ## Context
 
-See `proposal.md` § Why. The decisions are enhancement 0015; the pre-drafted shape is the target schema of enhancement 0015 (`#ContractInventory`, `#ContractRouting`, as amended by D18 into `fulfilled`/`routable`). This document maps that delta onto `src/platform.cue` and records where it deviates.
+See `proposal.md` § Why. The decisions are enhancement 0015; the pre-drafted shape is the target schema of enhancement 0015 (`#ContractInventory`, `#ContractRouting`, as amended later into `fulfilled`/`routable`). This document maps that delta onto `src/platform.cue` and records where it deviates.
 
 Current state: `#Platform` (`src/platform.cue`) derives `#composedTransformers` by comprehension over enabled entries; `#CatalogEntry.#catalog` embeds the catalog whole, and since `alpha.8` that catalog carries `#resources`, `#traits`, `#blueprints` with stamped provenance. `#ComponentTransformer.requiredResources?` and `requiredTraits?` are optional maps.
 
@@ -82,7 +82,7 @@ Measured on a scratch copy of `src/` (cue v0.17.1, 2026-09-13) with three stand-
 
 ### Reports, not assertions
 
-**Context**: 0015's pre-draft asserted `#ContractRouting` on the platform value; D18 split the answer into a report (`fulfilled`) and a gate (`routable`).
+**Context**: 0015's pre-draft asserted `#ContractRouting` on the platform value; a later decision split the answer into a report (`fulfilled`) and a gate (`routable`).
 **Explored**: asserting `routable: true` inside `#Platform` (a bottom on over-subscription, so the value cannot say which contract; every diagnostic reads a failed value); deriving the lists and leaving refusal to the generation step, which already exists in the CLI's render validation (it counts providing catalogs and refuses naming them) and will exist in the operator's generation.
 **Decision**: derive only. `routable: false` is a value the generation step refuses on; `fulfilled: false` is a value the operator surfaces as a condition.
 **Rationale**: a refusal that names its parties needs the value to evaluate; and D18's whole point is that one of the two reports must not gate anything, which an in-schema assertion cannot express.

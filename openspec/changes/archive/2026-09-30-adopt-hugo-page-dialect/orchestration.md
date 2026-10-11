@@ -34,7 +34,7 @@ Where this file and your change's artifacts disagree, stop and ask the superviso
 - **Scope.**
   - Stay inside your change's scope and "Touches" list.
   - Never add `enhancement.yaml`, even where a repo's propose skill or `openspec/config.yaml` says to write one (O7). Name related 0018 decisions in proposal prose only.
-  - Cite enhancement decisions as enhancement 0018 ("Figures are hand-built inline SVG with one visual language" and "Every page declares one type, a title and a one-line description"), never as a bare `D14`.
+  - Cite enhancement decisions in the colon form of that time (enhancement id, decision number, requirement number), never as a bare decision number.
 
 ## 2. The change set
 
@@ -102,7 +102,7 @@ Workspace root: `/var/home/emil/dev/open-platform-model` (called WS below). Ever
 1. **Config.** Add `openspec/config.yaml` in the house style of cli and catalog_opm: a `context` constitution, `rules` for proposal, design and tasks, and `operations` for apply and archive. Every `rules:` entry must be a plain string; a mapping entry silently disables that artifact's rules. The text says:
    - the theme is Hextra, vendored as files;
    - the gates are `task check`, `task build`, `task test:site` and `task qa`;
-   - enhancement 0021 is an open question;
+   - an open question of enhancement 0021 was still open;
    - no npm on the host.
 2. **Schema.** Add `openspec/schemas/docs-site-change/`, copied from `catalog_opm/openspec/schemas/catalog-change/` (read it from catalog_opm's `origin/main`, for example with `git -C WS/catalog_opm show origin/main:<path>`, because the main checkout is stale). Remove the CUE wording and rename `name: catalog-change` to `name: docs-site-change`. It holds proposal, design and tasks, and no specs.
 3. **Skills.** Add `.claude/skills/openspec-*`, copied from catalog_opm's `origin/main`.
@@ -165,7 +165,7 @@ Workspace root: `/var/home/emil/dev/open-platform-model` (called WS below). Ever
 
 0018 is `draft`, so its decisions are revised in place, with no `Amends:` line. Follow the enhancements repo's `AGENTS.md` and its `enhancements` skill.
 
-1. **D14 decision body** (`0018/03-decisions.md`): "A figure on the site is an Astro component in the site engine ... and a page in any repository uses it through the site's import alias for components" becomes "A figure on the site is a figure component in the site engine that draws inline SVG by hand, and a page in any repository uses it through the engine's figure shortcode". Everything else in D14 stays.
+1. **Decision body of the figure decision** (the decisions file of enhancement 0018): "A figure on the site is an Astro component in the site engine ... and a page in any repository uses it through the site's import alias for components" becomes "A figure on the site is a figure component in the site engine that draws inline SVG by hand, and a page in any repository uses it through the engine's figure shortcode". Everything else in that decision stays.
 2. **D14 alternatives.** "the site build copies only Markdown and MDX files" becomes "copies only Markdown files". Keep the astro-d2 rejection evidence as it is.
 3. **`0018/README.md:103`.** Replace the whole bullet body. "**Site presentation.** The site generator, theme, search and styling. The site is built with Astro and Starlight; how it looks is not this entry's to decide." becomes "**Site presentation.** The site generator, theme, search and styling are not this entry's to decide."
 4. **Section.** One. Commit `docs(0018): make the figure decision engine-neutral`.

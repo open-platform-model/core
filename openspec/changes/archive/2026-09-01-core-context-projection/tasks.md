@@ -21,7 +21,7 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 
 ## 3. Sanity check against the enhancement delta
 
-- [x] 3.1 Compare the landed projection against the target schema of enhancement 0019 § D12 (shape-identical) and `examples.cue`'s D12 assertions (same pinned values); deviations get a note in design.md. (Shape-identical, same field order and guards; pins carry examples.cue's values — shop/apps/`opmodel.dev/modules/shop:shop:apps`/`0f8fad5b-…`/1.2.0, component `web`, controller fold `opm-cli`/`web`/`web`. No deviations; the pins additionally cover the rendered-labels count and the two absent-optional cases, which examples.cue does not assert.)
+- [x] 3.1 Compare the landed projection against the target schema of enhancement 0019 (context projection section, shape-identical) and the context projection assertions of `examples.cue` (same pinned values); deviations get a note in design.md. (Shape-identical, same field order and guards; pins carry examples.cue's values — shop/apps/`opmodel.dev/modules/shop:shop:apps`/`0f8fad5b-…`/1.2.0, component `web`, controller fold `opm-cli`/`web`/`web`. No deviations; the pins additionally cover the rendered-labels count and the two absent-optional cases, which examples.cue does not assert.)
 
 ## 4. Validation
 

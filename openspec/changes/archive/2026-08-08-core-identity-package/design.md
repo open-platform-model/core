@@ -67,7 +67,7 @@ Tooling writes exactly `ModulePath` and `Version`; everything else follows, so a
 
 `strings` is a CUE **builtin**, not a module import, so it adds no edge to the module graph and the import-free invariant is preserved. The invariant's accurate wording is "free of **intra-module** imports."
 
-**`VersionMajor` is the only assertion of the version/path major relation in the entire system.** enhancement 0010 ("A declared version's major must agree with its path's major, checked in the identity package and in `core`") originally had `core` assert it independently on both artifact types; D43 removed that for `#Catalog` and D45 for `#Module`, both citing this validation as what replaces it. That is the dependency this change discharges — and it is why the assertion belongs *here* rather than being another thing a consumer could omit.
+**`VersionMajor` is the only assertion of the version/path major relation in the entire system.** enhancement 0010 ("A declared version's major must agree with its path's major, checked in the identity package and in `core`") originally had `core` assert it independently on both artifact types; enhancement 0010 removed that for `#Catalog` and for `#Module`, both citing this validation as what replaces it. That is the dependency this change discharges — and it is why the assertion belongs *here* rather than being another thing a consumer could omit.
 
 **`kindPrefix` is enumerated, not a pattern constraint.** Measured in `0011/experiments/01`, finding (b): `[Kind=string]: …` is unusable at the call site — `id.kindPrefix.resources` yields `undefined field`, because a pattern constrains keys that exist rather than generating them.
 
@@ -110,7 +110,7 @@ Each `declared*` field is stated twice — once as what the catalog authored, on
 
 The gate is **not** part of the primitive identity shape. Expressing it there would re-derive `fqn` and undo enhancement 0010 ("A primitive's `fqn` is authored from the identity package, and `version` stays required"). Unifying it is the check; the derivation stays out of `core`'s primitive definitions.
 
-**Checking only primitives and skipping transformers** was rejected: enhancement 0010 ("A transformer is an adapter, not a primitive; `apiVersion` is primitive-only") records that the gate's four-kind scope is correct and survives the primitive/adapter split — D17's rule binds a transformer's package path, and a transformer's build-keyed FQN is exactly what D21's stale-literal failure applies to. Only the shape's name changed (`#PrimitiveFQNGate` → `#CatalogMemberFQNGate`).
+**Checking only primitives and skipping transformers** was rejected: enhancement 0010 ("A transformer is an adapter, not a primitive; `apiVersion` is primitive-only") records that the gate's four-kind scope is correct and survives the primitive/adapter split — the path rule of enhancement 0010 binds a transformer's package path, and a transformer's build-keyed FQN is exactly what the stale-literal failure applies to. Only the shape's name changed (`#PrimitiveFQNGate` → `#CatalogMemberFQNGate`).
 
 ### `identity.cue` does not import `core`
 
@@ -124,7 +124,7 @@ It would put the schema module at the bottom of every catalog's import graph to 
 
 **Shipping the schema does not ship the enforcement.** `core` gains two definitions; nothing in `core` or `library` unifies against them. Until `cli-publish-pipeline` and `cli-catalog-member-gate` land, an authored `fqn` is unchecked and a non-conformant identity file is unrefused. That window is inside the workspace rather than in published artifacts, but it is longer than the alpha cut — the CLI slices come after `core-alpha-release`.
 
-**An artifact published outside `opm publish` is never checked.** enhancement 0010 ("Identity is verified where artifacts are read") keeps `cue mod publish` working and records that it is what every artifact published to date used. `identity/identity.cue` is never evaluated as a package by a consumer — it reaches them only through the values it produced — so for that artifact class both schemas are inert. Accepted by D43 and D45 explicitly; the residual exposure is stated in `0010/05-risks.md`.
+**An artifact published outside `opm publish` is never checked.** enhancement 0010 ("Identity is verified where artifacts are read") keeps `cue mod publish` working and records that it is what every artifact published to date used. `identity/identity.cue` is never evaluated as a package by a consumer — it reaches them only through the values it produced — so for that artifact class both schemas are inert. Accepted by enhancement 0010 explicitly; the residual exposure is stated in `0010/05-risks.md`.
 
 **`kindPrefix` freezes the layout.** Exactly one prefix per kind, no grouping subdirectory. `catalog_opm`'s five blueprints sit at `…/blueprints/workload` today and must move up one segment. That is `catalogs-identity-authoring`'s work, but this change is what makes it mandatory rather than tidy.
 
