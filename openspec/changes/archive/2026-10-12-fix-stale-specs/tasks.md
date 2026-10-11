@@ -6,5 +6,5 @@
 
 ## 2. Verify and archive
 
-- [ ] 2.1 `openspec validate --all --strict`; review; fix findings.
-- [ ] 2.2 Archive the change on this branch and commit `docs(openspec): archive fix-stale-specs`
+- [x] 2.1 `openspec validate --all --strict` (14 untouched specs warn under OpenSpec 1.14.1; the two synced specs pass); review; fix findings.
+- [x] 2.2 Archive the change on this branch and commit `docs(openspec): archive fix-stale-specs`

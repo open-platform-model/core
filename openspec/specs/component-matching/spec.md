@@ -68,9 +68,7 @@ Because `matchLabels` unifies wholesale rather than by iteration, a primitive MU
 
 ### Requirement: A component's matching identity is exactly what it attaches
 
-A `#Component` MUST NOT contribute a `matchLabels` key of its own, and declaring one MUST fail. This binds every `#Component` — both the wrapper *fragments* a catalog ships and a module author's own components. The schema cannot distinguish the two, and does not try: a fragment and a component are the same type.
-
-A required matching key MUST be answered by attaching a primitive or blueprint that supplies it, not by declaring it on the component.
+A `#Component` MUST NOT add a `matchLabels` key that its attached resources, traits and blueprints do not already give. The check compares the number of keys in `matchLabels` with the number in the union of the attached ones. A required key that no primitive has answered is not counted. The rule binds every `#Component`, a catalog fragment or a module author's own, because the schema cannot tell them apart. A required key MUST be answered by attaching a primitive or blueprint that supplies it.
 
 #### Scenario: A fragment's matching identity comes only from what it attaches
 
@@ -86,3 +84,13 @@ A required matching key MUST be answered by attaching a primitive or blueprint t
 
 - **WHEN** a component attaches a primitive declaring a required matching key and answers that key on the component itself
 - **THEN** evaluation fails; the key is answered by attaching a blueprint that supplies it
+
+#### Scenario: Restating a derived key with its value passes
+
+- **WHEN** a component attaches a primitive whose `matchLabels` holds `"x.example/k": "a"` and the component declares the same pair
+- **THEN** evaluation succeeds and the component's `matchLabels` is `{"x.example/k": "a"}`
+
+#### Scenario: Restating a derived key with another value is refused
+
+- **WHEN** a component attaches a primitive whose `matchLabels` holds `"x.example/k": "a"` and the component declares `"x.example/k": "b"`
+- **THEN** evaluation fails with a conflicting-values error naming that key
