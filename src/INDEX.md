@@ -1,4 +1,4 @@
-# core-align-enhancement-store — Definition Index
+# core — Definition Index
 
 CUE module: `opmodel.dev/core@v2`
 
