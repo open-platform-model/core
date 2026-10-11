@@ -5,9 +5,9 @@ import (
 )
 
 // Schema-level pins for component matching and contract fulfilment
-// (0010:D36, D32, D28). The catalog-selection pins that lived
+// (enhancement 0010). The catalog-selection pins that lived
 // here (0010:D37, subscription-shaped) went with #Subscription's removal
-// (0019:D5); the import-model delta is exercised by
+// (enhancement 0019); the import-model delta is exercised by
 // enhancements/0019/schemas/examples.cue and re-exercised by the library's
 // fixtures when its 0019 wave re-pins.
 //
@@ -369,7 +369,7 @@ _pinRenderedLabelsCount: 5
 // landed projection and the enhancement's assertions stay comparable.
 
 // A small instance-shaped value. The projection reads its sources
-// structurally (the #moduleInstance slot stays `_`, 0019:D3), so the fixture
+// structurally (the #moduleInstance slot stays `_`, enhancement 0019), so the fixture
 // supplies exactly the fields the projection reads. Labels present,
 // annotations deliberately ABSENT — the absent-optional pin below rests on
 // that, as does the component fixture carrying no labels.

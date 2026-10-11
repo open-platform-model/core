@@ -27,7 +27,7 @@ import (
 // strings.Join over a sorted copy, so the pin states the exact members and
 // does not ride on registry iteration order.
 //
-// MUST-FAIL cases: none. The inventory reports and never refuses (0015:D18), so
+// MUST-FAIL cases: none. The inventory reports and never refuses (enhancement 0015), so
 // there is no platform value this file could show being rejected; the
 // over-subscribed and colliding platforms below are pinned EVALUATING, which
 // is the property.
@@ -1058,7 +1058,7 @@ _pinCmpEpsilonCatalog: (_pinCmpOne & {#name: "epsilon", #demands: {
 }}).out
 
 // The same trait, declared OPTIONAL: predicate is the resource alone, so
-// zeta reads exactly as alpha does (0010:D32).
+// zeta reads exactly as alpha does (enhancement 0010).
 _pinCmpZetaCatalog: (_pinCmpOne & {#name: "zeta", #demands: {
 	requiredResources: (_pinCmpWidget.metadata.fqn): _pinCmpWidget
 	optionalTraits: (_pinCmpTuning.metadata.fqn):    _pinCmpTuning

@@ -53,7 +53,7 @@ import (
 // WHY the complete path: it is the same string cue.mod/module.cue's `module:` field, the registry
 // coordinate and an `import` statement already agree on, so the registry
 // address is recoverable by reading one field rather than recomposed from a
-// prefix and a name (0010:D1).
+// prefix and a name (enhancement 0010).
 //
 // Underscores are permitted in path segments because a CUE module's package
 // name is inferred from its path leaf, and only #SnakeNameType leaves are

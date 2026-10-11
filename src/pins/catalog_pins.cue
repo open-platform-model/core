@@ -4,7 +4,7 @@ import (
 	"opmodel.dev/core@v2"
 )
 
-// Schema-level pins for the catalog contract maps (0015:D1):
+// Schema-level pins for the catalog contract maps (enhancement 0015):
 // #Catalog.#resources, #traits and #blueprints, the members a catalog
 // DEFINES as distinct from the #transformers it IMPLEMENTS. The enhancement
 // ships no examples.cue, so the delta is exercised here.
@@ -60,7 +60,7 @@ _pinContractBlueprint: core.#Blueprint & {
 	spec: statelessWorkload: replicas: int
 }
 
-// The case the maps exist for (0015:D1, 0010:D37): a provider-fulfilled
+// The case the maps exist for (enhancements 0015 and 0010): a provider-fulfilled
 // trait, which its declaring catalog lists and ships no adapter for.
 _pinContractProviderTrait: core.#Trait & {
 	metadata: {
@@ -90,7 +90,7 @@ _pinContractCatalog: core.#Catalog & {
 }
 
 // Read back by key. The stamped modulePath is the MAJOR-FREE registry path,
-// the map's kind segment, and the member's own apiVersion (0010:D49) — the
+// the map's kind segment, and the member's own apiVersion (enhancement 0010) — the
 // value #CatalogMemberFQNGate derives at publish; catalogVersion is the
 // catalog's build. One interpolation over all six values forces evaluation.
 _pinContractStamps: "\(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#resources["opmodel.dev/catalogs/opm/resources/container@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.modulePath) \(_pinContractCatalog.#traits["opmodel.dev/catalogs/opm/traits/scaling@v1beta1"].metadata.catalogVersion) | \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.modulePath) \(_pinContractCatalog.#blueprints["opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1alpha1"].metadata.catalogVersion)"
@@ -242,7 +242,7 @@ _pinContractEmptyMaps: "000"
 //  _failContractFilingDriftRead: _failContractFilingDrift.#traits["opmodel.dev/catalogs/opm/traits/backup@v1alpha1"].metadata.modulePath
 
 // A stale build: a member naming a catalogVersion other than the catalog's
-// own. Provenance is stamped, not authored per leaf (0010:D25):
+// own. Provenance is stamped, not authored per leaf (enhancement 0010):
 //   _failContractStaleBuild.#traits."opmodel.dev/catalogs/opm/traits/scaling@v1beta1".metadata.catalogVersion: conflicting values
 //     "4.1.0" and "3.9.0"
 //   _failContractStaleBuild.#traits."opmodel.dev/catalogs/opm/traits/scaling@v1beta1".spec.scaling: field not allowed

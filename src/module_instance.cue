@@ -24,7 +24,7 @@ import (
 
 		// WHY registryPath: it derives from the module's registryPath rather than from its fqn or
 		// uuid, so NEITHER the module's version NOR its major reaches instance
-		// identity (0010:D41). The two values answer different
+		// identity (enhancement 0010). The two values answer different
 		// questions and were forced to agree by deriving one from the other:
 		// module.uuid answers "which module is this" and MUST move across a
 		// major; instance.uuid answers "which resources does this manage" and

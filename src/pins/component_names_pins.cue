@@ -5,7 +5,7 @@ import (
 )
 
 // Schema-level pins for the name types and the per-primitive name
-// constraint (0019:D20, D21, D23).
+// constraint (enhancement 0019).
 //
 // Companion to platform_and_match_pins.cue and written to the same rules:
 // every value here is a HIDDEN top-level field of package `pins`, which
@@ -50,7 +50,7 @@ _pinNameIndifferent: core.#Resource & {
 }
 
 // The container, shaped like the catalog's: the workload-type key is
-// REQUIRED, and the constraint is computed from it (0019:D23) — #NameType
+// REQUIRED, and the constraint is computed from it (enhancement 0019) — #NameType
 // when stateful (pod DNS <sts>-<n>.<svc>… puts the name in a label
 // position, and the server enforces the label rule on both axes there),
 // top otherwise. List-index form: a default arm would win over the concrete
@@ -220,7 +220,7 @@ _pinNameComposedValue: "prod-db"
 //   _failNameLeadingDigit._nameFits: invalid value "1prod-web"
 //     (out of bound =~"^[a-z]([a-z0-9-]*[a-z0-9])?$")
 //
-// Raw stateful container, dotted override (0019:D23):
+// Raw stateful container, dotted override (enhancement 0019):
 //
 //   _failNameStatefulDots: core.#Component & {
 //   	metadata: {name: "cache", resourceName: "cache.internal"}

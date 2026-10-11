@@ -32,7 +32,7 @@ import "list"
 //
 // Catalog identity lives in a sibling `identity/` subpackage so transformer
 // subpackages can source it without a circular import. That subpackage is a
-// COMMITTED `identity/identity.cue` (0010:D5): it holds the real
+// COMMITTED `identity/identity.cue` (enhancement 0010): it holds the real
 // ModulePath and Version, so a checkout and a published artifact compute the
 // same values. It replaces the earlier arrangement, in which the committed
 // tree carried a placeholder version and publish stamped the real one into a
@@ -50,7 +50,7 @@ import "list"
 // gate never reads it. 0001:D18 lockstep on the build stays structural,
 // since the stamp is what supplies the key's version component.
 //
-// `M=metadata` is a field-label alias (0001:D25). It binds the
+// `M=metadata` is a field-label alias (enhancement 0001). It binds the
 // label `M` to the metadata field path so the pattern constraint can reach
 // `M.modulePath` and `M.version` across the nested struct boundary. The
 // value-alias form `metadata: M={...}` does NOT carry across this boundary
@@ -65,16 +65,16 @@ import "list"
 //
 // The contract maps (#resources, #traits, #blueprints) list what the catalog
 // DEFINES, separately from what its #transformers implement (enhancement
-// 0015:D1): a `fulfilment: "provider"` contract ships no adapter and was
+// 0015): a `fulfilment: "provider"` contract ships no adapter and was
 // otherwise invisible to a subscribing platform. Each map stamps the same
 // two fields the transformer map does, but its modulePath stamp carries the
-// member's own apiVersion as the filing segment (0010:D49) — the value
+// member's own apiVersion as the filing segment (enhancement 0010) — the value
 // #CatalogMemberFQNGate derives at publish — read through an `A=apiVersion`
 // label alias: a bare `apiVersion` inside the stamp literal is "reference
 // apiVersion not found", because lexical resolution sees only the fields the
 // literal itself declares, not those the primitive supplies by unification
 // (measured on cue v0.17.1). The transformer stamp stays flat: a transformer
-// carries no apiVersion (0010:D44). SPEC.md § 3.6 Rationale, "Why a single
+// carries no apiVersion (enhancement 0010). SPEC.md § 3.6 Rationale, "Why a single
 // `#Catalog` construct instead of a `#Module.#defines` block", "Why the
 // `M=metadata` field-label alias", "Why the transformer pattern stamps
 // `modulePath` + `catalogVersion` but not `fqn`", "Why contract keys are bound

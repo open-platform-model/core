@@ -10,8 +10,8 @@ import (
 // and handed the result back on a materialized twin. The entry carries the
 // catalog itself, resolved through the platform module's cue.mod like every
 // other dependency, which is what lets one render build evaluate the
-// instance, the platform and the catalog together (0019:D5, D9).
-// Catalog selection stays a pure function of committed source (0010:D14):
+// instance, the platform and the catalog together (enhancement 0019).
+// Catalog selection stays a pure function of committed source (enhancement 0010):
 // cue.mod is committed source, and a prerelease is still selected by naming
 // it there. SPEC.md § 3.4 Rationale, "Why an import instead of a version
 // string", "Why the version is derived and not authored" and "Why the whole
@@ -140,12 +140,12 @@ import (
 }
 
 // WHY the fold copies per entry rather than unifying entry maps: the
-// catalog's provenance stamp (0010:D25) refuses a foreign transformer
+// catalog's provenance stamp (enhancement 0010) refuses a foreign transformer
 // unified into another catalog's member map, so map-level unification fails
 // on healthy multi-catalog input (measured,
 // enhancements/0019/experiments/05-match-in-one-build). Two entries writing
 // one composed FQN still unify at that key: agreement collapses, divergent
-// bodies conflict loudly. #matchers is removed (0019:D17): its only reader
+// bodies conflict loudly. #matchers is removed (enhancement 0019): its only reader
 // was the Go matcher the render-path collapse deletes, and the in-build
 // matching glue folds its own buckets from #composedTransformers in a shape
 // core's list-valued buckets never matched. SPEC.md § 3.4 Rationale, "Why
@@ -188,7 +188,7 @@ import (
 		}
 	}
 
-	// WHY the inventory reports rather than asserts (0015:D18): an
+	// WHY the inventory reports rather than asserts (enhancement 0015): an
 	// assertion inside #Platform is a bottom on the first over-subscribed
 	// contract, so the value cannot name it and every diagnostic reads a
 	// failed value. `routable: false` is the value the generation step

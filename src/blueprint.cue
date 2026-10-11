@@ -105,7 +105,7 @@ import (
 	// `fulfilment` here is a `field not allowed` error rather than a field
 	// nothing reads — see the pinned case in platform_and_match_pins.cue.
 	// This is the same reasoning that keeps apiVersion off a transformer
-	// (0010:D44): a shape that admits a field nobody reads hands
+	// (enhancement 0010): a shape that admits a field nobody reads hands
 	// every future field to the wrong kind for free.
 
 	// Resources that compose this blueprint (full references)

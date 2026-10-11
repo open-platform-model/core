@@ -13,7 +13,7 @@ import (
 		name!: #NameType // Example: "container"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/resources/v1beta1" (kind prefix + this resource's own apiVersion, 0010:D49)
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/resources/v1beta1" (kind prefix + this resource's own apiVersion, enhancement 0010)
 
 		// WHY a field rather than an interpolation: it is the one identity
 		// value on a primitive that is NOT derivable from its catalog's
@@ -86,7 +86,7 @@ import (
 	// not to look at some keys.
 	//
 	// NOT rendered: matchLabels does not reach #TransformerContext, so it
-	// appears on no rendered object (0010:D36). SPEC.md § 2.1 Rationale, "Why
+	// appears on no rendered object (enhancement 0010). SPEC.md § 2.1 Rationale, "Why
 	// matching has its own field instead of riding on `metadata.labels`",
 	// "Why `core` names no matching key" and "Why `matchLabels` is not
 	// rendered".
@@ -110,7 +110,7 @@ import (
 	// so an optional slot behind an existence guard silently never propagates
 	// while the code reads correctly.
 	//
-	// WHY it may be computed (0019:D23): the catalog's container resource
+	// WHY it may be computed (enhancement 0019): the catalog's container resource
 	// declares #NameType when its own workload-type key reads "stateful" and
 	// top otherwise, in list-index form so a default arm cannot win over the
 	// concrete one. SPEC.md § 2.1 Rationale, "Why the primitive declares the

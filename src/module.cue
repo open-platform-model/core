@@ -124,7 +124,7 @@ import (
 	// WHY open and projected: open so future enhancements can add `platform`
 	// / `environment` siblings without breaking module bodies. Components are
 	// the single source of truth for their own identity; #ctx.components only
-	// mirrors them (0010:D2). SPEC.md § 3.2 Rationale, "Why `#ctx` is inline on
+	// mirrors them (enhancement 0010). SPEC.md § 3.2 Rationale, "Why `#ctx` is inline on
 	// `#Module` and not a wrapper type" and "Why `#ctx.components` is a
 	// projection, not an authored map".
 

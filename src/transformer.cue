@@ -135,7 +135,7 @@ import (
 	#transform: {
 		// WHY #moduleInstance: was #moduleRelease, renamed by 0002:D8.
 
-		#moduleInstance: _ // Fully concrete #ModuleInstance (0019:D3)
+		#moduleInstance: _ // Fully concrete #ModuleInstance (enhancement 0019)
 
 		#component: _ // Unconstrained; validated by matching, not by the transform signature
 
@@ -206,7 +206,7 @@ import (
 	// component's matching identity selects a transformer, it does not
 	// describe the objects that transformer emits, and folding it in would
 	// publish a catalog's private matching vocabulary onto every live object.
-	// The omission is a decision (0010:D36), not an oversight —
+	// The omission is a decision (enhancement 0010), not an oversight —
 	// it is also visible, because rendered objects carried
 	// `core.opmodel.dev/workload-type` before this change and stop here. An
 	// opt-in render flag was demonstrated working in experiment 04 and

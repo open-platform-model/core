@@ -12,7 +12,7 @@ import (
 		name!: #NameType // Example: "scaling"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/traits/v1beta1" (kind prefix + this trait's own apiVersion, 0010:D49)
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/traits/v1beta1" (kind prefix + this trait's own apiVersion, enhancement 0010)
 
 		// WHY apiVersion: 0010:D4.
 
@@ -129,7 +129,7 @@ import (
 
 // WHY it ships in `core` beside the identity gates and is checked the same
 // way — the schema is the contract, CUE is the engine that checks contracts,
-// and what the author reads is CUE's own error (0011:D21/D22).
+// and what the author reads is CUE's own error (enhancement 0011).
 //
 // WHY it TAKES THE FIELD, NOT THE TRAIT. `#TraitOptionalGate & {trait:
 // SomeTrait}` would drag the trait's `spec` into concreteness checking under

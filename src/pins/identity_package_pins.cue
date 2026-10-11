@@ -58,7 +58,7 @@ _pinIdentityCatalog: core.#IdentityPackage & {
 }
 
 // A MODULE's identity package, at a different major. The same definition serves
-// both artifact kinds (0010:D2, 0011:D12) — which is why it ships
+// both artifact kinds (enhancements 0010 and 0011) — which is why it ships
 // in `core` rather than in a catalog: a module need not depend on any catalog.
 _pinIdentityModule: core.#IdentityPackage & {
 	ModulePath:   "opmodel.dev/modules/postgres@v2"
@@ -86,7 +86,7 @@ _pinIdentityDoubleDigitMajor: core.#IdentityPackage & {
 	VersionMajor: "v10"
 }
 
-// kindPrefix carries NO major (0010:D1) — a catalog member declares
+// kindPrefix carries NO major (enhancement 0010) — a catalog member declares
 // a #PackagePathType. Stated as a property rather than left implicit in the
 // literals above, so it survives someone editing the example: an "@" in any of
 // the four is what a re-appended major would look like.
@@ -100,9 +100,9 @@ _pinKindPrefixCarriesNoMajor: [false, false, false, false]
 
 // ─── #CatalogMemberFQNGate: one conformant member per kind ──────────────────
 
-// A resource, filed under its own apiVersion (0010:D49). The key
+// A resource, filed under its own apiVersion (enhancement 0010). The key
 // is built from the member's OWN apiVersion, not from the catalog's build
-// (0010:D4) — and note the KEY carries no filing segment.
+// (enhancement 0010) — and note the KEY carries no filing segment.
 pinGateResource: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
@@ -115,7 +115,7 @@ pinGateResource: core.#CatalogMemberFQNGate & {
 
 // A GA raw-family member of the same kind, filing under a DIFFERENT segment of
 // the same prefix — per-member apiVersion is what made the filing segment
-// derived content rather than grouping (0010:D48, D49).
+// derived content rather than grouping (enhancement 0010).
 pinGateResourceGA: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
@@ -127,7 +127,7 @@ pinGateResourceGA: core.#CatalogMemberFQNGate & {
 }
 
 // A trait. Same catalog, same build, a different kind segment — which is what
-// keeps two members sharing a name apart (0010:D21).
+// keeps two members sharing a name apart (enhancement 0010).
 pinGateTrait: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "traits"
@@ -152,7 +152,7 @@ pinGateBlueprint: core.#CatalogMemberFQNGate & {
 	declaredFQN:            "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
 }
 
-// The filing segment never enters the key (0010:D49): filing is
+// The filing segment never enters the key (enhancement 0010): filing is
 // versioned, the key space stays flat.
 _pinKeyOmitsFilingSegment: [
 	strings.Contains(pinGateResource.declaredFQN, "/v1beta1/"),
@@ -162,7 +162,7 @@ _pinKeyOmitsFilingSegment: [false, false]
 
 // The ADAPTER, and DIRECTION ONE of the conditional optional: declaredAPIVersion
 // is ABSENT and the case vets clean. Its key is interpolated from the BUILD
-// (0010:D4), which _keyVersion selects before the absent optional is
+// (enhancement 0010), which _keyVersion selects before the absent optional is
 // ever reached — so the field costs a transformer nothing.
 pinGateTransformer: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
@@ -210,7 +210,7 @@ _pinContractAndImplKeysDiffer: true
 // subscription filter carried only range/allow/deny. Nothing in #Platform
 // ever related an entry's `version` to the "@vN" its #registry key carries:
 // not the removed Subscription definition, and not #CatalogEntry, whose key
-// binding constrains modulePath but not the version major (0019:D5); the
+// binding constrains modulePath but not the version major (enhancement 0019); the
 // platform-side check is unbuilt and tracked as library#160. The residue is a
 // registry resolution failure on the platform module's catalog import, naming a
 // tag that does not resolve, which is a symptom rather than a diagnosis.

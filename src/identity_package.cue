@@ -8,14 +8,14 @@ import (
 // `core` unifies against it; a publishing tool loads the artifact's identity
 // package and unifies the loaded value, so the author reads CUE's own error at
 // the field rather than a hand-written expected-versus-found message that can
-// drift from this definition (0011:D21/D22).
+// drift from this definition (enhancement 0011).
 //
 // Tooling writes exactly ModulePath and Version, located by THIS schema's field
-// names rather than by a marker attribute (0010:D5). Everything
+// names rather than by a marker attribute (enhancement 0010). Everything
 // else derives, so a publisher gains nothing new to keep in step.
 //
 // It applies to BOTH artifact kinds — a module carries an identity package too
-// (0010:D2, 0011:D12) — which is why it ships here rather than in a catalog: a
+// (enhancements 0010 and 0011) — which is why it ships here rather than in a catalog: a
 // module need not depend on any particular catalog.
 //
 // `strings` is a CUE BUILTIN, so this definition adds no edge to the module
@@ -76,7 +76,7 @@ import (
 	// in #Platform ever related an entry's `version` to the "@vN" its
 	// #registry key carries: not the removed Subscription definition, and
 	// not #CatalogEntry, whose key binding constrains the embedded catalog's
-	// modulePath but not the version major (0019:D5). The distinction is
+	// modulePath but not the version major (enhancement 0019). The distinction is
 	// about ownership rather than exposure: an unbuilt check has an owner
 	// (the platform-side major-agreement check is tracked as library#160),
 	// where a deleted one would be a regression nobody holds.
@@ -104,11 +104,11 @@ import (
 	VersionMajor: Major
 
 	// WHY EXACTLY ONE BASE PREFIX PER KIND, with no ARBITRARY grouping
-	// subdirectory beneath any of them (0010:D42). A CONTRACT
+	// subdirectory beneath any of them (enhancement 0010). A CONTRACT
 	// kind's members file exactly one segment beneath the prefix, under the
 	// member's own apiVersion — a segment DERIVED from the member's key, so
 	// filing and key cannot drift (0010:D49, amending 0010:D42); a
-	// transformer files at the prefix itself, having no apiVersion (0010:D44). This
+	// transformer files at the prefix itself, having no apiVersion (enhancement 0010). This
 	// map plus that derivation is a COMPLETE statement of the catalog's key
 	// space, not a convenience for the common case: #CatalogMemberFQNGate
 	// unifies a member's declared path with the derived filing path and builds
@@ -140,7 +140,7 @@ import (
 }
 
 // WHY #CatalogMemberFQNGate exists and is shaped this way. It is the
-// enforcement point five decisions delegate to (0010:D17/D21/D25/D42/D49):
+// enforcement point five decisions delegate to (enhancement 0010):
 // each states the catalog-member path and FQN rule and implements it
 // nowhere; 0010:D21 in particular REMOVED `core`'s fqn derivation for every
 // catalog member, accepting a measured loss — a catalog on 1.2.0 shipping
@@ -151,7 +151,7 @@ import (
 // A string comparison in Go would discard information this form keeps. A member
 // one segment too deep fails on BOTH declaredModulePath and declaredFQN, and
 // the second arrives wrapped as `2 errors in empty disjunction` because
-// #FQNType is a disjunction (measured, 0010:D42).
+// #FQNType is a disjunction (measured, enhancement 0010).
 //
 // IT IS DELIBERATELY NOT EMBEDDED IN #Resource, #Trait, #Blueprint OR
 // #ComponentTransformer. Expressing it inside a member's own definition would
@@ -191,7 +191,7 @@ import (
 	}
 
 	// WHY derived from the key: so filing and key cannot drift (enhancement
-	// 0010:D49). The transformer arm is selected before declaredAPIVersion is
+	// 0010). The transformer arm is selected before declaredAPIVersion is
 	// reached, the same measured ordering _keyVersion relies on. SPEC.md
 	// § 5.3 Rationale, "Why the filing segment is derived rather than
 	// authored, and why transformers don't carry one".
@@ -234,7 +234,7 @@ import (
 
 	// WHY apiVersion is not checked against identity: nothing implies it. A primitive's contract level is a judgement its author makes
 	// about that primitive's own shape, independent of the catalog's module
-	// major and of the catalog's release SemVer (0010:D4, D25) —
+	// major and of the catalog's release SemVer (enhancement 0010) —
 	// which is the entire point of the field. A gate that derived it would be
 	// asserting a relation that does not exist.
 }

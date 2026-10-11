@@ -15,8 +15,8 @@ package core
 		// value` that never names the offending string. The error() arm is
 		// reported only when every other arm fails, replacing the nested
 		// empty-disjunction output an explicit invalid name would otherwise
-		// produce. The default (0019:D16), its 127-rune bound and the
-		// #ObjectNameType ceiling (0019:D20): SPEC.md § 3.1 Rationale, "Why the
+		// produce. The default (enhancement 0019), its 127-rune bound and the
+		// #ObjectNameType ceiling (enhancement 0019): SPEC.md § 3.1 Rationale, "Why the
 		// default branch is not unified with a type", "Why there is no length
 		// guard on the default any more" and "Why the override ceiling is a
 		// subdomain and not a label".
@@ -32,7 +32,7 @@ package core
 		// were false: no CUE in this definition performed the union, and the
 		// kernel reads this field off the component rather than folding it up
 		// from below. Matching now has its own field — see matchLabels
-		// (0010:D36).
+		// (enhancement 0010).
 
 		// Component labels — descriptive metadata for this component, and the
 		// labels that reach rendered output via #TransformerContext. Not
@@ -59,7 +59,7 @@ package core
 	#blueprints?: #BlueprintMap
 
 	// NO demand-side optionality marker for RESOURCES, and the absence is a
-	// decision (0010:D28): a component does not attach a resource it can do
+	// decision (enhancement 0010): a component does not attach a resource it can do
 	// without. Every declared resource is a demand the platform must satisfy,
 	// and an unsupplied one fails the render. Traits differ because a trait
 	// can be advisory — it modifies something that renders regardless.
@@ -84,7 +84,7 @@ package core
 	// module author must answer. Embedded wholesale, the marker survives and
 	// an unanswered key is reported as a missing required field.
 	//
-	// Measured in enhancement 0010 experiment 04 (0010:D36).
+	// Measured in enhancement 0010 experiment 04 (enhancement 0010).
 	//
 	// The union itself is hidden, because it is the PROVENANCE of the public
 	// field rather than a second value a consumer reads: matchLabels IS this,
@@ -140,7 +140,7 @@ package core
 	// this directly.
 	#instance: #InstanceIdentity
 
-	// WHY unconditional (0019:D21): comprehensions over the three
+	// WHY unconditional (enhancement 0019): comprehensions over the three
 	// attachment maps, no existence guard — because on cue v0.17.1
 	// `x.#nameConstraint != _|_` is false for a non-concrete value and a
 	// guarded spelling silently never propagates (0019 experiment 09).
@@ -185,7 +185,7 @@ package core
 	// constraint type's definition site. The interpolation is load-bearing.
 	_nameFits: "\(metadata.resourceName)" & _nameConstraints
 
-	// WHY: introduced by enhancement 0001 (0001:D2). #Module.#ctx.components
+	// WHY: introduced by enhancement 0001 (enhancement 0001). #Module.#ctx.components
 	// projects this block automatically; authors writing self-references
 	// inside a component's `spec` body MUST go through
 	// `#ctx.components.<self-id>.dns.fqdn` because `#names` is not in lexical

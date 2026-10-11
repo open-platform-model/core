@@ -45,7 +45,7 @@ _pinModuleV2: core.#Module & {
 }
 
 // Underscores are legal in a module path leaf, because a module path ends in
-// the module's own snake_case name (0010:D8).
+// the module's own snake_case name (enhancement 0010).
 _pinModuleSnakeLeaf: core.#Module & {
 	metadata: {
 		name:         "cert_manager"
@@ -121,7 +121,7 @@ _pinCatalogStamp: core.#Catalog & {
 			description: "renders a Deployment"
 			modulePath:  "opmodel.dev/catalogs/opm/transformers"
 
-			// Authored, not derived (0010:D21) — the stamp above supplies
+			// Authored, not derived (enhancement 0010) — the stamp above supplies
 			// catalogVersion, and this value must agree with it. `core` no
 			// longer checks that; #CatalogMemberFQNGate does, at publish.
 			fqn: "opmodel.dev/catalogs/opm/transformers/deployment@1.2.0"
@@ -130,7 +130,7 @@ _pinCatalogStamp: core.#Catalog & {
 	}
 }
 
-// ─── Instance identity (0010:D41) ────────────────────────────────────────────────
+// ─── Instance identity (enhancement 0010) ────────────────────────────────────────────────
 //
 // THE INVARIANT, HALF TWO, and the half the owner label depends on. The SAME
 // instance under four perturbations of the module it deploys: only the last
@@ -283,11 +283,11 @@ _pinResourcePath: core.#Resource & {
 	spec: configMaps: _
 }
 
-// ─── Primitive keying: a contract key and an implementation key (0010:D4) ────────
+// ─── Primitive keying: a contract key and an implementation key (enhancement 0010) ────────
 //
 // The three primitives carry a CONTRACT key, terminated by their own
 // apiVersion, and the adapter carries an IMPLEMENTATION key, terminated by the
-// build it shipped in. Every fqn below is AUTHORED (0010:D21) — `core` computes
+// build it shipped in. Every fqn below is AUTHORED (enhancement 0010) — `core` computes
 // none of them.
 
 _pinContractKeyedResource: core.#Resource & {
@@ -320,7 +320,7 @@ _pinContractKeyedTrait: core.#Trait & {
 _pinKindSegmentSeparatesKeys: _pinContractKeyedResource.metadata.fqn != _pinContractKeyedTrait.metadata.fqn
 _pinKindSegmentSeparatesKeys: true
 
-// A blueprint is a PRIMITIVE (0010:D44) and carries a contract key on that basis.
+// A blueprint is a PRIMITIVE (enhancement 0010) and carries a contract key on that basis.
 _pinContractKeyedBlueprint: core.#Blueprint & {
 	metadata: {
 		name:           "stateless-workload"
@@ -346,7 +346,7 @@ _pinImplKeyedTransformer: core.#ComponentTransformer & {
 	#transform: {}
 }
 
-// ─── The additive-only promise is readable off the level (0010:D34) ──────────────
+// ─── The additive-only promise is readable off the level (enhancement 0010) ──────────────
 //
 // Alpha promises nothing, so its publish gate is off; beta and GA are gated in
 // full. Asserted at all three rungs rather than at one, because a helper that
@@ -391,7 +391,7 @@ _pinCatalogMajorSkewAccepted: core.#Catalog & {
 }
 
 // An authored fqn that disagrees with the primitive's OWN name — `restore`
-// against a resource named `backup` — is NOT refused by `core` (0010:D21). This is
+// against a resource named `backup` — is NOT refused by `core` (enhancement 0010). This is
 // the trade the derivation removal made, not a gap: the check moves to
 // #CatalogMemberFQNGate at publish, which ships in the paired
 // `core-identity-package` change. Until it lands, nothing in this repo catches
@@ -495,7 +495,7 @@ _pinTransformerBuildSkewAccepted: core.#ComponentTransformer & {
 
 // A primitive path carrying a major. Reported against the FIELD rather than
 // through an interpolation, unlike the module cases above: with the fqn
-// derivation removed (0010:D21), nothing in #Resource interpolates modulePath any
+// derivation removed (enhancement 0010), nothing in #Resource interpolates modulePath any
 // more, so the type is the only thing that fires:
 //   _failPrimitiveMajor.metadata.modulePath: invalid value
 //     "opmodel.dev/catalogs/opm/resources@v1"
