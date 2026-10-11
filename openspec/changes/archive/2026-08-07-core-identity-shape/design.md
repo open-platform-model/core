@@ -104,7 +104,7 @@ Stating `fqn` as a field rather than inlining the interpolation inside `uuid` is
 
 D40 had `core` assert `versionMajor == _ref.major` on both artifact types. **D43 removed it for `#Catalog` and D45 for `#Module`.** `identity/identity.cue` asserts the relation at the point both values are written, so a failure names the file the author has open; `core` re-deriving it tests the same relation over the same two values one hop downstream.
 
-This is the one place where the enhancement's own documents were internally inconsistent when this change was opened — `schemas/target.cue` still carried the `core`-side assertion and `04-graduation.md` still required a test that both artifact types *refuse* the skew. Propagated 2026-08-05; recorded in `0010`'s history. **The behaviour specified here is the one enhancement 0010 decided for `#Module`**, and the spec deltas pin the accepting direction explicitly so it is not later "fixed" back.
+This is the one place where the enhancement's own documents were internally inconsistent when this change was opened — `schemas/target.cue` still carried the `core`-side assertion and the graduation plan of enhancement 0010 still required a test that both artifact types *refuse* the skew. Propagated 2026-08-05; recorded in `0010`'s history. **The behaviour specified here is the one enhancement 0010 decided for `#Module`**, and the spec deltas pin the accepting direction explicitly so it is not later "fixed" back.
 
 ### Retained deliberately
 

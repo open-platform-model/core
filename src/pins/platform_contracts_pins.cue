@@ -37,7 +37,7 @@ import (
 
 // ─── Fixtures: nine stand-in catalogs ───────────────────────────────────────
 //
-// Shapes copied from catalog_opm and the provider design (0015 02-design.md);
+// Shapes copied from catalog_opm and the provider design of enhancement 0015;
 // `core` has no dependencies, so nothing is imported. Each member authors
 // only what the catalog stamp cannot supply. The base catalog lists one
 // member per map plus the provider-fulfilled `backup` trait and ships one

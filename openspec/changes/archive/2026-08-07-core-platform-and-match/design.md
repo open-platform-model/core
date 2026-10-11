@@ -91,7 +91,7 @@ Enhancement 0010 ("An unresolved primitive demand is an error; a trait's optiona
 
 ## Risks / Trade-offs
 
-**A label disappears from every live workload.** Rendered objects carry `core.opmodel.dev/workload-type` today via the `componentLabels` fold at `src/transformer.cue:147-157`, and `matchLabels` is not rendered. This is the author's call and recorded as provisional — the opt-in render flag is a four-line struct-level guard, demonstrated in `experiments/04`, addable later without disturbing anything here. It was not shipped now because deciding where the flag lives is a separate question, and a runtime-only flag is ruled out by the byte-identical-render gate in `04-graduation.md`. It lands in the same window as the identity migration rather than adding a second one.
+**A label disappears from every live workload.** Rendered objects carry `core.opmodel.dev/workload-type` today via the `componentLabels` fold at `src/transformer.cue:147-157`, and `matchLabels` is not rendered. This is the author's call and recorded as provisional — the opt-in render flag is a four-line struct-level guard, demonstrated in `experiments/04`, addable later without disturbing anything here. It was not shipped now because deciding where the flag lives is a separate question, and a runtime-only flag is ruled out by the byte-identical-render gate in the graduation plan of enhancement 0010. It lands in the same window as the identity migration rather than adding a second one.
 
 **Every live Platform with a range breaks.** Unavoidable and out of scope here. It is a small, enumerable edit per platform, and it is visible: the schema refuses the old shape rather than silently reinterpreting it.
 
