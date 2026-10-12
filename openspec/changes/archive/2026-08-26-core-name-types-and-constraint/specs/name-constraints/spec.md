@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines the three name types that transcribe the Kubernetes API server's name validators, and how a primitive declares the name rule a kind it renders enforces so that `#Component` refuses a violating `resourceName` at authoring time instead of the server refusing it at apply (enhancement 0019 D20, D21, D23).
+Defines the three name types that transcribe the Kubernetes API server's name validators, and how a primitive declares the name rule a kind it renders enforces so that `#Component` refuses a violating `resourceName` at authoring time instead of the server refusing it at apply (enhancement 0019, "Three name types, the label stays the safety floor, the subdomain becomes the override ceiling, DNS-1035 closes the Service gap", "Dot-hostile primitives declare a `#nameConstraint`; the component asserts the resolved name against their conjunction, the matchLabels pattern applied to naming" and "A primitive computes its `#nameConstraint` from its own state; the stateful constraint lives on the container resource").
 
 ## ADDED Requirements
 

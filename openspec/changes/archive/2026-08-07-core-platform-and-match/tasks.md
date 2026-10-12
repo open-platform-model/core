@@ -35,9 +35,9 @@
 
 ## 4. Demand-side optionality (`src/component.cue` + `SPEC.md` §`#Component`)
 
-- [x] 4.1 Choose and implement the trait opt-out spelling. `0010` D28 fixes that there is exactly one, that it lives on the demand side, and that its absence means required — the spelling is this change's to pick, so record the choice in `SPEC.md` Rationale rather than only in the schema.
-  - **Revised after review.** The first spelling was a marker set on `#Component` keyed by contract FQN. It wrote the FQN twice and gave the trait's own author no way to say whether a trait is advisory. Replaced by `optional: bool` on `#Trait`, stated by the catalog as a default and overridden at the attachment site — which keeps the demand side's last word through the default rather than through the field's location. Recorded as `0010` D46, amending D28's trait half.
-- [x] 4.4 Ship `#TraitOptionalGate` and track it in `.tasks/spec-tracked.txt` with its own `SPEC.md` section (§5.1). `core` cannot express "a catalog may supply a default but not a value"; the gate is where that becomes checkable, following `0011` D21/D22.
+- [x] 4.1 Choose and implement the trait opt-out spelling. Enhancement 0010 ("An unresolved primitive demand is an error; a trait's optionality is stated by its catalog and overridden by the attachment") fixes that there is exactly one, that it lives on the demand side, and that its absence means required — the spelling is this change's to pick, so record the choice in `SPEC.md` Rationale rather than only in the schema.
+  - **Revised after review.** The first spelling was a marker set on `#Component` keyed by contract FQN. It wrote the FQN twice and gave the trait's own author no way to say whether a trait is advisory. Replaced by `optional: bool` on `#Trait`, stated by the catalog as a default and overridden at the attachment site — which keeps the demand side's last word through the default rather than through the field's location. Recorded as enhancement 0010 ("An unresolved primitive demand is an error; a trait's optionality is stated by its catalog and overridden by the attachment"), amending the trait half of an earlier decision of enhancement 0010.
+- [x] 4.4 Ship `#TraitOptionalGate` and track it in `.tasks/spec-tracked.txt` with its own `SPEC.md` section (§5.1). `core` cannot express "a catalog may supply a default but not a value"; the gate is where that becomes checkable, following enhancement 0011 ("Identity is validated by unifying against a shipped `#IdentityPackage`, and CUE produces the diagnostic" and "A catalog member's declared path and FQN are validated by unifying against a shipped `#CatalogMemberFQNGate`").
 - [x] 4.2 Add **no** optionality marker for resources. A component does not attach a resource it can do without.
 - [x] 4.3 `task vet`.
 
@@ -59,6 +59,6 @@
 
 ## 7. Close the loop
 
-- [x] 7.1 `enhancements/0010/plan.yaml`: slice `core-platform-and-match` → `status: done`, `openspec_ref: core/core-platform-and-match`.
+- [x] 7.1 the plan of enhancement 0010: slice `core-platform-and-match` → `status: done`, `openspec_ref: core/core-platform-and-match`.
 - [x] 7.2 Same commit: `history` event citing that ref. Record the trait opt-out spelling chosen in 4.1 — D28 explicitly left it to the implementing slice, so the entry has no record of it until this event.
 - [x] 7.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index`.

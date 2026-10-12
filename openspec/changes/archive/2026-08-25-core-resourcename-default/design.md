@@ -71,7 +71,7 @@ Constraints that shape the design:
 	// The default resource name, and the assertion that it fits a DNS label
 	// when it is the name in use. Both operands are #NameType, so the only
 	// way the concatenation can fail is the 63-rune bound; naming the
-	// string, its length and the remedy is the point (0019 D16). Guarded so
+	// string, its length and the remedy is the point (enhancement 0019). Guarded so
 	// an explicit override, which #NameType already validates, is never
 	// measured against the default. The error MUST live on this hidden
 	// field: written onto metadata.resourceName it cycles through the guard

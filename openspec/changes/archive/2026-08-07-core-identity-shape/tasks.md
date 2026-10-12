@@ -1,6 +1,6 @@
 # Tasks
 
-**On size.** `openspec/config.yaml` asks that a change reshaping several top-level definitions be split. This one is not, and the reason is stated rather than assumed: the identity model is one unification. Retyping `#ModulePathType` without redefining `#Module.metadata.fqn` in the same step leaves a tree that does not vet, and `#ModuleInstance`'s `fqn` cannot exist before `#Module.registryPath` does. The boundary was set by `enhancements/0010`'s `plan.yaml`, which separates the three core slices along *what they key* — identity here, contract keying in `core-primitive-keying`, platform and match in `core-platform-and-match`.
+**On size.** `openspec/config.yaml` asks that a change reshaping several top-level definitions be split. This one is not, and the reason is stated rather than assumed: the identity model is one unification. Retyping `#ModulePathType` without redefining `#Module.metadata.fqn` in the same step leaves a tree that does not vet, and `#ModuleInstance`'s `fqn` cannot exist before `#Module.registryPath` does. The boundary was set by enhancement 0010's `plan.yaml`, which separates the three core slices along *what they key* — identity here, contract keying in `core-primitive-keying`, platform and match in `core-platform-and-match`.
 
 What the groups below do guarantee is that **every group ends at a tree that vets**, so the work is still resumable between them. `task vet` is the checkpoint, not the commit.
 
@@ -48,7 +48,7 @@ What the groups below do guarantee is that **every group ends at a tree that vet
 
 ## 5. Schema-level test cases
 
-Mirror `enhancements/0010/schemas/target.cue`'s cases so the properties are pinned where the schema lives, not only in the design document.
+Mirror the cases in the target schema of enhancement 0010 so the properties are pinned where the schema lives, not only in the design document.
 
 - [x] 5.1 Positive: a module at `@v2` whose `fqn` equals its path and whose `registryPath` drops the major; a catalog likewise.
 - [x] 5.2 Invariant, both directions: `uuid` unchanged across a `version` change; `uuid` **changed** across a major bump. Assert `uuid` explicitly — a case checking `fqn` alone will not catch a `uuid` regression.
@@ -65,7 +65,7 @@ Mirror `enhancements/0010/schemas/target.cue`'s cases so the properties are pinn
 
 ## 7. Close the loop
 
-- [x] 7.1 Set `enhancements/0010/plan.yaml` slice `core-identity-shape` to `status: done` with `openspec_ref: core/core-identity-shape`.
-- [x] 7.2 In the **same commit**, append a `history` event to `enhancements/0010/config.yaml` citing the same `openspec_ref` in its `slice` field.
+- [x] 7.1 Set the plan of enhancement 0010 slice `core-identity-shape` to `status: done` with `openspec_ref: core/core-identity-shape`.
+- [x] 7.2 In the **same commit**, append a `history` event to the config of enhancement 0010 citing the same `openspec_ref` in its `slice` field.
 - [x] 7.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index` from the workspace root.
 - [x] 7.4 Confirm `task enhancements:plan:ready ID=0010` now surfaces `core-primitive-keying` and `core-platform-and-match`, and that `0011:core-identity-package` is unblocked.

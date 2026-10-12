@@ -4,7 +4,7 @@ module: "opmodel.dev/core@v2"
 // snake_case, and instance identity is severed from artifact identity; ships on
 // the v2.0.0-alpha.N prerelease line).
 // Was: opmodel.dev/core@v0 (major bump for the #ModuleRelease→#ModuleInstance
-// rename; 0002:D13).
+// rename; enhancement 0002).
 language: {
 	version: "v0.17.0"
 }

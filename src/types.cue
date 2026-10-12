@@ -19,7 +19,7 @@ import (
 // is why #NameType keeps guarding #instance.name, namespace and
 // #Component.metadata.name.
 
-// WHY #ObjectNameType: 0019:D20.
+// WHY #ObjectNameType: the subdomain type is the override ceiling for an explicit name (enhancement 0019).
 
 // ObjectNameType: RFC 1123 DNS subdomain — dot-separated DNS labels, max 253
 // runes. What the API server admits for most metadata.name, and the ceiling of
@@ -27,7 +27,7 @@ import (
 // that composes into DNS. See SPEC.md § 1.
 #ObjectNameType: string & =~"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$" & strings.MinRunes(1) & strings.MaxRunes(253)
 
-// WHY #ServiceNameType: 0019:D20/D22.
+// WHY #ServiceNameType: DNS-1035 closes the gap for Service names (enhancement 0019).
 
 // ServiceNameType: RFC 1035 DNS label — #NameType with an alphabetic first
 // rune. Service metadata.name refuses a leading digit at apply, which
@@ -42,7 +42,7 @@ import (
 // and their spec! keys are built from it. SPEC.md § 3.2 Rationale, "Why
 // `name` is snake_case and the path's leaf must equal it".
 
-// WHY #SnakeNameType: 0010:D8.
+// WHY #SnakeNameType: a module name is snake_case and equals the leaf of its module path (enhancement 0010).
 
 // SnakeNameType: a snake_case name — lowercase alphanumeric with underscores.
 // Same character budget as #NameType; differs only in the separator (`_`
@@ -53,17 +53,17 @@ import (
 // WHY the complete path: it is the same string cue.mod/module.cue's `module:` field, the registry
 // coordinate and an `import` statement already agree on, so the registry
 // address is recoverable by reading one field rather than recomposed from a
-// prefix and a name (0010:D1).
+// prefix and a name (enhancement 0010).
 //
 // Underscores are permitted in path segments because a CUE module's package
 // name is inferred from its path leaf, and only #SnakeNameType leaves are
-// valid CUE identifiers (see above) — and under 0010:D8 a module path *ends in*
+// valid CUE identifiers (see above) — and under enhancement 0010 a module path *ends in*
 // the module's own snake_case name, so every multi-word name carries one.
 // Hyphens stay legal in non-leaf segments so an organisation such as
 // github.com/open-platform-model remains expressible; only the leaf is
 // constrained, and #Module.metadata constrains it rather than this regex.
 //
-// The suffix-free form this type carried before 0010:D1 is #PackagePathType.
+// The suffix-free form this type carried before enhancement 0010 made the module path complete is #PackagePathType.
 // SPEC.md § 3.2 Rationale, "Why `modulePath` is the complete module path and
 // not a bare prefix".
 
@@ -74,7 +74,7 @@ import (
 // Example: "opmodel.dev/modules/postgres@v2", "opmodel.dev/catalogs/opm@v1"
 #ModulePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*@v[0-9]+$" & strings.MinRunes(1) & strings.MaxRunes(254)
 
-// WHY no major: this is #ModulePathType's regex from before 0010:D1, verbatim,
+// WHY no major: this is #ModulePathType's regex from before enhancement 0010 made the module path complete, verbatim,
 // so no primitive value shipped by any catalog changes. The major is inert on
 // a primitive: a @vN module publishes vN.* tags, so a primitive carrying its
 // catalog's build version already states its catalog's major. It is also not a
@@ -91,7 +91,7 @@ import (
 // Example: "opmodel.dev/catalogs/opm/resources/v1beta1" (a resource), "opmodel.dev/catalogs/opm/transformers" (a transformer)
 #PackagePathType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*$" & strings.MinRunes(1) & strings.MaxRunes(254)
 
-// WHY two types: left deliberately untouched by 0010:D4. #APIVersionType below is
+// WHY two types: left deliberately untouched by enhancement 0010. #APIVersionType below is
 // its widened sibling, and the two are separate types because they type
 // different things: this one names a MODULE major, which the registry assigns
 // and an import statement carries; that one names a CONTRACT level, which a
@@ -104,7 +104,7 @@ import (
 // Example: "v1", "v0"
 #MajorVersionType: string & =~"^v[0-9]+$"
 
-// WHY the ladder: 0010:D34 keys the
+// WHY the ladder: enhancement 0010 keys the
 // additive-only promise to the level, so the string states whether the
 // contract behind it promises anything. Read that with #APIVersionGated below.
 //
@@ -112,7 +112,7 @@ import (
 // are not one type. SPEC.md § 2.1 Rationale, "Why the level follows the
 // Kubernetes ladder rather than a bare major".
 
-// WHY #APIVersionType: 0010:D4/D25.
+// WHY #APIVersionType: a contract is keyed by its own API version, authored per primitive (enhancement 0010).
 
 // APIVersionType: a primitive's contract level — the value its author moves
 // when the primitive's shape breaks, independent of the catalog's module major
@@ -131,7 +131,7 @@ import (
 // catalogs publish 1.0.0-alpha.* while carrying v1beta1 contracts, so the two
 // spellings disagree on every primitive currently shipping.
 
-// WHY #APIVersionGated: 0010:D34.
+// WHY #APIVersionGated: contract API versions follow the Kubernetes ladder, and the promise is keyed to the level (enhancement 0010).
 
 // APIVersionGated reports whether the additive-only promise binds at a given
 // apiVersion: false at alpha, which promises nothing and whose publish gate is
@@ -147,7 +147,7 @@ import (
 // form is unavailable. SPEC.md § 3.2 Rationale, "Why `registryPath` is
 // exposed rather than recomputed at each use".
 
-// WHY #ArtifactRef: 0010:D1.
+// WHY #ArtifactRef: an artifact's modulePath is its complete CUE module path (enhancement 0010).
 
 // ArtifactRef splits a complete module path into the OCI repository its tags
 // live under and the major it declares. This is the one place in the schema a
@@ -184,7 +184,7 @@ import (
 // WHY the key is the contract level: a catalog release does not move this key; only a breaking change to the
 // primitive's own shape does. That is what lets a contract declared in one
 // catalog be fulfilled by a transformer in another on an independent release
-// cadence — the failure 0010:D4 exists to fix, where a transformerless contract
+// cadence — the failure enhancement 0010 exists to fix, where a transformerless contract
 // (the hypothetical `backup`) could only be matched by a provider that
 // happened to have compiled against the identical `catalog_opm` BUILD.
 //
@@ -195,7 +195,7 @@ import (
 // the key carries `apiVersion` and not `catalogVersion`"; § 5.3, "Why the
 // kind segment is retained in the FQN rather than flattened".
 
-// WHY #ContractFQNType: 0010:D4.
+// WHY #ContractFQNType: a contract is keyed by its own API version (enhancement 0010).
 
 // ContractFQNType: what a module demands — path/name@vN, where vN is the
 // primitive's own #APIVersionType. The key a #Resource, #Trait and #Blueprint
@@ -205,14 +205,14 @@ import (
 #ContractFQNType: string & =~"^[a-z0-9._-]+(/[a-z0-9._-]+)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?@v[0-9]+((alpha|beta)[0-9]+)?$"
 
 // WHY the build stays in the key: unchanged from the form this type had
-// under the name #FQNType before 0010:D4 split it, so no transformer value moves.
-// The build stays in this key for the reason 0001:D5 first lifted
+// under the name #FQNType before enhancement 0010 split it, so no transformer value moves.
+// The build stays in this key for the reason enhancement 0001 first lifted
 // it here: two builds of the same transformer at adjacent versions must occupy
 // distinct keys so divergent definitions surface as structured errors at match
 // time rather than silently colliding on a MAJOR bucket. It is also the
 // provenance an operator upgrading a catalog needs — which bytes are running.
 
-// WHY #ImplFQNType: 0010:D4.
+// WHY #ImplFQNType: an implementation is keyed by its build (enhancement 0010).
 
 // ImplFQNType: what a platform executes — path/name@semver, the full SemVer of
 // the build the definition shipped in. The key a #ComponentTransformer
@@ -229,7 +229,7 @@ import (
 //	#TransformerMap, #Catalog.#transformers  map keys   #ImplFQNType
 //	#Catalog.#resources/#traits/#blueprints  map keys   #ContractFQNType  (it defines contracts)
 //
-// Before 0010:D4 split the type, all of those were one regex and the narrowing was
+// Before enhancement 0010 split the type, all of those were one regex and the narrowing was
 // free. It is stated here because the disjunction is the only thing in the
 // file that would silently re-admit the other form.
 //

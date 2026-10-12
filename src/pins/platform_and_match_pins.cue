@@ -5,11 +5,11 @@ import (
 )
 
 // Schema-level pins for component matching and contract fulfilment
-// (0010:D36, D32, D28). The catalog-selection pins that lived
-// here (0010:D37, subscription-shaped) went with #Subscription's removal
-// (0019:D5); the import-model delta is exercised by
-// enhancements/0019/schemas/examples.cue and re-exercised by the library's
-// fixtures when its 0019 wave re-pins.
+// (enhancement 0010). The catalog-selection pins that lived
+// here (enhancement 0010, subscription-shaped) went with #Subscription's removal
+// (enhancement 0019); the import-model delta is exercised by
+// the example schemas of enhancement 0019 and re-exercised by the library's
+// fixtures when its wave for that enhancement re-pins.
 //
 // Companion to identity_pins.cue and written to the same rules: every value
 // here is a top-level field of package `pins`, which nothing imports, so
@@ -363,13 +363,13 @@ _pinRenderedLabelsCount: 5
 
 // ─── The context is a projection of the other two #transform inputs ─────────
 //
-// 0019:D12: at the #transform site the context's two metadata blocks compute
+// Enhancement 0019: at the #transform site the context's two metadata blocks compute
 // from #moduleInstance and #component; the runtime fills #runtimeName alone.
-// Fixture values mirror the 0019:D12 examples in that entry's schemas, so the
+// Fixture values mirror the examples of enhancement 0019 in that entry's schemas, so the
 // landed projection and the enhancement's assertions stay comparable.
 
 // A small instance-shaped value. The projection reads its sources
-// structurally (the #moduleInstance slot stays `_`, 0019:D3), so the fixture
+// structurally (the #moduleInstance slot stays `_`, enhancement 0019), so the fixture
 // supplies exactly the fields the projection reads. Labels present,
 // annotations deliberately ABSENT — the absent-optional pin below rests on
 // that, as does the component fixture carrying no labels.

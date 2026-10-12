@@ -21,7 +21,7 @@ State on `origin/main` 7d91a66 (2026-09-30):
 
 - Building or rendering the site. S workers never build it; A section 1 proves the dialect renders on fixtures, and A renders these pages from its section 2 on.
 - Prose, title, description or `type` changes, and new pages.
-- A `docs/site` lint in core's CI. That is a 0018:D13 follow-up, not part of this set.
+- A `docs/site` lint in core's CI. That is a enhancement 0018 ("Every writing rule names what checks it, and machine checks run in the owning repository's pull requests") follow-up, not part of this set.
 - Editing `orchestration.md`, the lint, or any other repo.
 
 ## Decisions
@@ -63,7 +63,7 @@ become:
 > The platform model is meant to describe a whole platform: its global settings, the controllers and APIs it is built from, and the services it offers to teams. No design exists yet.
 ```
 
-The blank line before (22) and after (26) stays. The planning comment on line 27 ("Direction note rules (0018:D3) ...") is unchanged: it names no Starlight syntax.
+The blank line before (22) and after (26) stays. The planning comment on line 27 ("Direction note rules (enhancement 0018, "The documentation states what OPM does not do, and future work appears only as direction") ...") is unchanged: it names no Starlight syntax.
 
 **Stale path.** In `authoring/define-module-configuration.md` line 69, inside the planning comment, `opmodel.dev/site/content/docs/reference/definitions/index.md` becomes `opmodel.dev/site/content/docs/reference/definitions/_index.md`. Every other repo path in core's planning comments (about 150, across core, opm, catalog_opm, cli, library, opm-operator and enhancements) resolves on its repo's `origin/main`, checked with `git cat-file -e` on 2026-09-30. So this is the only stale path.
 
@@ -87,13 +87,13 @@ This change adds no interface name. It relies on these, all owned by A:
 ### Keep each order number as the weight
 
 **Context**: Hugo orders a section by `weight`, then title. Sections mix pages from several repos.
-**Explored**: The Authoring section interleaves three repos on `origin/main`: opm `your-first-module` 10, catalog_opm `choose-a-blueprint` 20 and `attach-a-trait` 21, core `define-module-configuration` 22, catalog_opm `use-a-raw-kubernetes-resource` 23, cli `publish-a-module` 24. Concepts is core-only (0018:D8), numbered 29 to 38.
+**Explored**: The Authoring section interleaves three repos on `origin/main`: opm `your-first-module` 10, catalog_opm `choose-a-blueprint` 20 and `attach-a-trait` 21, core `define-module-configuration` 22, catalog_opm `use-a-raw-kubernetes-resource` 23, cli `publish-a-module` 24. Concepts is core-only (enhancement 0018, "A page lives in the repository whose change would make it wrong; the site is assembled by section"), numbered 29 to 38.
 **Decision**: `weight` MUST equal the old `order`. The weights MUST NOT be renumbered.
 **Rationale**: Renumbering one repo would reorder a shared section. The unchanged page-order diff is the proof that nothing moved, and it only works if the numbers are copied.
 
 ### The direction note becomes a NOTE alert with a bold title
 
-**Context**: The aside is the page's direction note, "a marked block" under 0018:D3. The adjacent planning comment says "Direction note rules (0018:D3)".
+**Context**: The aside is the page's direction note, "a marked block" under enhancement 0018 ("The documentation states what OPM does not do, and future work appears only as direction"). The adjacent planning comment says "Direction note rules (enhancement 0018, "The documentation states what OPM does not do, and future work appears only as direction")".
 **Explored**: Section 4 of the contract allows NOTE, TIP, IMPORTANT, WARNING or CAUTION, alone on the marker line, with a title as a bold first line. The titled marker `> [!NOTE] Direction` and the foldable `> [!NOTE]-` are forbidden because github.com and Hextra render them differently. A plain blockquote would not be a marked block.
 **Decision**: `> [!NOTE]`, then `> **Direction**`, then `>`, then the body, prefixed `> `.
 **Rationale**: NOTE keeps Starlight's `note` type. The bold line keeps the "Direction" title in the only form both renderers agree on.

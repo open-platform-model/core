@@ -4,7 +4,7 @@ import (
 	"opmodel.dev/core@v2"
 )
 
-// Schema-level pins for #Module.initValues (enhancement 0016 D3/D4).
+// Schema-level pins for #Module.initValues (enhancement 0016).
 //
 // Hidden top-level fields of package `pins`, as in identity_pins.cue: `task
 // vet` evaluates them and fails on a conflict, no consumer ever loads them,

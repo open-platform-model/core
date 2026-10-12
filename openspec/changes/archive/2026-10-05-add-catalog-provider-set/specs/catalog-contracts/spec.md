@@ -4,7 +4,7 @@
 
 `#Catalog` MUST derive a regular field `provides: [...#ContractFQNType]` holding, sorted ascending and without duplicates, the FQN of every contract that at least one of the catalog's own `#transformers` names in `requiredResources` or `requiredTraits` with a requirement whose `fulfilment` is `"provider"`. Fulfilment MUST be read from the transformer's own requirement value, never from the catalog's `#resources` or `#traits` maps, so a contract another catalog defines still counts. Optional demands (`optionalResources`, `optionalTraits`), required labels and requirements whose `fulfilment` is `"catalog"` MUST NOT contribute. A catalog with no transformers, or none requiring a provider-fulfilled contract, MUST derive `[]`. The field is derived and never authored: an authored value that disagrees MUST fail validation on `provides` (CUE reports `incompatible list lengths` when the lengths differ and `conflicting values` on the differing element otherwise). A catalog that does not author `provides`, as every catalog published before this field does not, MUST validate unchanged.
 
-Source: library ADR-012 (the per-catalog provider set is the next derived rule to move into core). The set is what 0015:D11's claim check compares against.
+Source: library ADR-012 (the per-catalog provider set is the next derived rule to move into core). The set is what enhancement 0015's claim check compares against.
 
 #### Scenario: Two adapters requiring one provider contract derive it once
 

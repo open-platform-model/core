@@ -32,7 +32,7 @@ import "list"
 //
 // Catalog identity lives in a sibling `identity/` subpackage so transformer
 // subpackages can source it without a circular import. That subpackage is a
-// COMMITTED `identity/identity.cue` (0010:D5): it holds the real
+// COMMITTED `identity/identity.cue` (enhancement 0010): it holds the real
 // ModulePath and Version, so a checkout and a published artifact compute the
 // same values. It replaces the earlier arrangement, in which the committed
 // tree carried a placeholder version and publish stamped the real one into a
@@ -44,13 +44,13 @@ import "list"
 // `metadata.modulePath` to "\(_ref.registryPath)/transformers" — the MAJOR-FREE
 // path, because a transformer declares a #PackagePathType — and
 // `metadata.catalogVersion` to the catalog's version. It does NOT stamp
-// `metadata.fqn`: under 0010:D21 an fqn is AUTHORED at the definition site
+// `metadata.fqn`: under enhancement 0010 an fqn is AUTHORED at the definition site
 // rather than derived, and the map key carries the transformer's own fqn by
 // authoring convention: core checks the key's form only, and the publish
-// gate never reads it. 0001:D18 lockstep on the build stays structural,
+// gate never reads it. The build lockstep of enhancement 0001 stays structural,
 // since the stamp is what supplies the key's version component.
 //
-// `M=metadata` is a field-label alias (0001:D25). It binds the
+// `M=metadata` is a field-label alias (enhancement 0001). It binds the
 // label `M` to the metadata field path so the pattern constraint can reach
 // `M.modulePath` and `M.version` across the nested struct boundary. The
 // value-alias form `metadata: M={...}` does NOT carry across this boundary
@@ -65,16 +65,16 @@ import "list"
 //
 // The contract maps (#resources, #traits, #blueprints) list what the catalog
 // DEFINES, separately from what its #transformers implement (enhancement
-// 0015:D1): a `fulfilment: "provider"` contract ships no adapter and was
+// 0015): a `fulfilment: "provider"` contract ships no adapter and was
 // otherwise invisible to a subscribing platform. Each map stamps the same
 // two fields the transformer map does, but its modulePath stamp carries the
-// member's own apiVersion as the filing segment (0010:D49) — the value
+// member's own apiVersion as the filing segment (enhancement 0010) — the value
 // #CatalogMemberFQNGate derives at publish — read through an `A=apiVersion`
 // label alias: a bare `apiVersion` inside the stamp literal is "reference
 // apiVersion not found", because lexical resolution sees only the fields the
 // literal itself declares, not those the primitive supplies by unification
 // (measured on cue v0.17.1). The transformer stamp stays flat: a transformer
-// carries no apiVersion (0010:D44). SPEC.md § 3.6 Rationale, "Why a single
+// carries no apiVersion (enhancement 0010). SPEC.md § 3.6 Rationale, "Why a single
 // `#Catalog` construct instead of a `#Module.#defines` block", "Why the
 // `M=metadata` field-label alias", "Why the transformer pattern stamps
 // `modulePath` + `catalogVersion` but not `fqn`", "Why contract keys are bound
@@ -100,7 +100,7 @@ import "list"
 		// being wrong.
 		version!: #VersionType
 
-		// WHY fqn: 0010:D1.
+		// WHY fqn: the fqn is the complete module path, and the version does not join it (enhancement 0010).
 
 		// fqn is the module path; the version does not join it.
 		fqn: #ModulePathType & modulePath
@@ -109,8 +109,8 @@ import "list"
 		// member stamps below are built on.
 		_ref: #ArtifactRef & {"modulePath": modulePath}
 
-		// NO version/path major assertion here, deliberately — 0010:D43, the same
-		// holding #Module carries under 0010:D45. `identity/identity.cue` asserts
+		// NO version/path major assertion here, deliberately, the same
+		// holding #Module carries (enhancement 0010). `identity/identity.cue` asserts
 		// VersionMajor == Major at the point both values are WRITTEN; `core`
 		// re-deriving it one hop downstream tests the same relation over the
 		// same two values. The exposure — a catalog whose identity package is
@@ -130,7 +130,7 @@ import "list"
 	// #traits and #blueprints below carry the same stamp under their own
 	// kind segment and point here.
 
-	// WHY #resources: 0015:D1.
+	// WHY #resources: a catalog publishes its contracts as members, beside its transformers (enhancement 0015).
 
 	// resources: the #Resource contracts this catalog defines, keyed by contract
 	// fqn; listing one requires no adapter. Binds metadata.fqn to the key and
@@ -187,7 +187,7 @@ import "list"
 
 	// WHY provides: library ADR-012 moves one derived rule into core at a
 	// time; this is the rule Catalog.Provides() folds in Go and the
-	// 0015:D11 claim check compares against. SPEC.md § 3.6 Rationale,
+	// enhancement 0015 claim check compares against. SPEC.md § 3.6 Rationale,
 	// "Why a catalog derives the contracts it provides".
 
 	// provides: the provider-fulfilled contracts this catalog implements,
@@ -202,7 +202,7 @@ import "list"
 			// declares a #PackagePathType, which admits no "@vN".
 			modulePath: "\(M._ref.registryPath)/transformers"
 
-			// WHY catalogVersion: 0010:D25.
+			// WHY catalogVersion: apiVersion is authored per primitive, so the catalog build is named catalogVersion (enhancement 0010).
 
 			// The catalog's own version is the build every member of it shipped
 			// in, stamped rather than authored per leaf.

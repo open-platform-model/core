@@ -10,7 +10,7 @@ Five OpenSpec changes, planned together on 2026-09-30, in four repos. Four of th
 - The library turns a collision into a typed render refusal and decodes it in `Contracts()`.
 - The operator and cli name the collision.
 
-The fifth (E) is independent: it makes the operator's build-compatibility verdict deterministic on a platform carrying two majors of one catalog. The fix is an interim safety net and does not add side-by-side majors; enhancement 0026 D9 later makes two majors legitimate through per-resolution builds (0026 OQ17 and 05-risks recommend both fixes independent of 0026). No change claims a 0026 decision, so none carries an `enhancement.yaml`.
+The fifth (E) is independent: it makes the operator's build-compatibility verdict deterministic on a platform carrying two majors of one catalog. The fix is an interim safety net and does not add side-by-side majors; enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog") later makes two majors legitimate through per-resolution builds (enhancement 0026 and its risks recommend both fixes independent of 0026). No change claims a 0026 decision, so none carries an `enhancement.yaml`.
 
 | ID | Repo | Change | Branch | Wave | Starts when | Merges when |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -144,4 +144,4 @@ Every PR follows its repo's `AGENTS.md`: a body of at most 250 words, no bare `@
 **Follow-ups outside this repo (supervisor):**
 
 1. After A is released: launch B. Hold `task deps:update` until B is released (step 4).
-2. In enhancements: walk 0026 OQ17 to a resolution citing A to E once they land (`enhancement-open-questions`), and decide whether to log the landings with `task delivery:log` in explicit mode without decisions.
+2. In enhancements: walk the open question of enhancement 0026 about this fold to a resolution citing A to E once they land (`enhancement-open-questions`), and decide whether to log the landings with `task delivery:log` in explicit mode without decisions.

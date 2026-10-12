@@ -1,6 +1,6 @@
 ## Context
 
-Four changes reshape the `core` schema and none of them publishes. That is deliberate: enhancement `0010`'s `plan.yaml` records that the three `0010` core slices "land into the same unpublished alpha line; `core-alpha-release` is the single cut point 06-operational.md's *nothing else can move until this tag exists* describes, and it is what every downstream slice depends on." `0011`'s `core-identity-package` joins them for the same reason — `#IdentityPackage` belongs in the alpha the catalogs and the fleet retarget to.
+Four changes reshape the `core` schema and none of them publishes. That is deliberate: the plan of enhancement `0010` records that the three `0010` core slices "land into the same unpublished alpha line; `core-alpha-release` is the single cut point that the operational plan's *nothing else can move until this tag exists* describes, and it is what every downstream slice depends on." `0011`'s `core-identity-package` joins them for the same reason — `#IdentityPackage` belongs in the alpha the catalogs and the fleet retarget to.
 
 Four independent `SPEC.md` edits leave a document that is correct section by section and unverified as a whole. `task spec:check` catches a construct with no section and a section naming a construct that no longer exists. It does not catch two sections describing the same invariant differently, a cross-reference to a renamed field, or a worked example that no longer evaluates.
 
@@ -25,8 +25,8 @@ Four independent `SPEC.md` edits leave a document that is correct section by sec
 
 Not a re-review. Four questions, each targeting a way independent edits diverge:
 
-1. **Is the identity invariant stated identically where it appears twice?** `#Module` and `#ModuleInstance` both carry half of it, written by the same change but in different sections. `0010` D38's original single-sentence form was superseded by D41's two-part form precisely because one sentence was both imprecise and incomplete — if either section still carries the old wording, the document contradicts itself about what the owner label depends on.
-2. **Is the primitive/adapter taxonomy consistent?** `SPEC.md:29` and `:38` move `#Blueprint` from Constructs to Primitives, and four kind sections were edited separately. A category line and a kind section disagreeing is the exact defect `0010` D44 was filed to fix — the log asserted both readings at once for two days.
+1. **Is the identity invariant stated identically where it appears twice?** `#Module` and `#ModuleInstance` both carry half of it, written by the same change but in different sections. enhancement 0010's original single-sentence form was superseded by its two-part form precisely because one sentence was both imprecise and incomplete — if either section still carries the old wording, the document contradicts itself about what the owner label depends on.
+2. **Is the primitive/adapter taxonomy consistent?** `SPEC.md:29` and `:38` move `#Blueprint` from Constructs to Primitives, and four kind sections were edited separately. A category line and a kind section disagreeing is the exact defect enhancement 0010 ("A transformer is an adapter, not a primitive; `apiVersion` is primitive-only") was filed to fix — the log asserted both readings at once for two days.
 3. **Does every cross-reference resolve?** Fields were renamed (`version` → `catalogVersion`), deleted (`nameSnakeCase`, `#definitionName`, `#SubscriptionFilter`, `#LabelWorkloadType`, `#ModuleFQNType`, `#CatalogFQNType`), and redefined (`fqn`, `#FQNType`). A section referring to any of them by the old name is wrong rather than stale.
 4. **Does any section still describe replaced behaviour?** The known instance is `SPEC.md`'s claim that matching unions `metadata.labels` — but the pass looks for the class, not just that one.
 
@@ -34,7 +34,7 @@ Not a re-review. Four questions, each targeting a way independent edits diverge:
 
 Every worked shape in `SPEC.md` and `docs/` goes through `cue vet`. Reading an example for plausibility is how a stale one survives: the failures this catches are exactly the ones that look right — a `modulePath` missing its new major suffix, an FQN in the pre-split form, a `version` field on a primitive.
 
-`enhancements/0010/schemas/examples.cue` is the reference for the target shapes and is already vetted; the check here is that this repo's own examples agree with what shipped, which is not the same claim.
+The example schemas of enhancement 0010 is the reference for the target shapes and is already vetted; the check here is that this repo's own examples agree with what shipped, which is not the same claim.
 
 ### The release goes through release-please
 
