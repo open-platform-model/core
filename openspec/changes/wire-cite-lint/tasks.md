@@ -9,5 +9,5 @@
 
 ## 3. Verify and archive
 
-- [ ] 3.1 `openspec validate wire-cite-lint --strict`, `task check`, `task cite-lint`, actionlint and zizmor on the changed workflows.
-- [ ] 3.2 Review, fix, archive on the branch.
+- [x] 3.1 `openspec validate wire-cite-lint --strict`, `task check`, `task cite-lint`, actionlint and zizmor on the changed workflows.
+- [x] 3.2 Review, fix, archive on the branch.

@@ -12,7 +12,7 @@ Core MUST have a task `cite-lint` that runs `enh cite-lint --root .` from `githu
 #### Scenario: A decision number is refused
 
 - **WHEN** a CUE comment cites an enhancement by a decision number
-- **THEN** `task cite-lint` exits 1 and prints `path:line: rule: message`
+- **THEN** `task cite-lint` fails and prints `path:line: rule: message`
 
 ### Requirement: CI calls the shared cite-lint workflow as a plain call
 
