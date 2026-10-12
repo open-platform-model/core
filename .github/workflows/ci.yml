@@ -164,4 +164,3 @@ jobs:
     uses: open-platform-model/.github/.github/workflows/cite-lint.yml@2b66da51fede4332969c324b069012632d8edea9 # .github main
     with:
       paths: .
-    secrets: inherit
