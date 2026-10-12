@@ -1,6 +1,6 @@
 ## 1. Pin
 
-- [ ] 1.1 Move the `cascade-notify` reference in `release.yml` from `0f9c6ac2` to `2b66da51fede4332969c324b069012632d8edea9`; replace `.tasks/cascade/wiring-check.sh` with the copy at that SHA; `task cascade:wiring:check` passes. Commit `ci(deps): pin the cascade to .github 2b66da5`.
+- [x] 1.1 Move the `cascade-notify` reference in `release.yml` from `0f9c6ac2` to `2b66da51fede4332969c324b069012632d8edea9`; replace `.tasks/cascade/wiring-check.sh` with the copy at that SHA; `task cascade:wiring:check` passes. Commit `ci(deps): pin the cascade to .github 2b66da5`.
 
 ## 2. Wire
 
