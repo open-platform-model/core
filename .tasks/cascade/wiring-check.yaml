@@ -12,3 +12,5 @@ notify:
   needs: [release-please, publish-cue]
   if: needs.release-please.outputs.release_created == 'true' && vars.CASCADE_NOTIFY != 'off'
   tag: ${{ needs.release-please.outputs.tag_name }}
+extra-references:
+  - {file: ci.yml, kind: cite-lint}
