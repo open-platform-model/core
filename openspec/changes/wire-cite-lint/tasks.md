@@ -5,7 +5,7 @@
 ## 2. Wire
 
 - [x] 2.1 Add the `cite-lint` job to `ci.yml`; declare `{file: ci.yml, kind: cite-lint}` in `wiring-check.yaml`; `task cascade:wiring:check` passes. Commit `ci: call the shared cite-lint workflow`.
-- [ ] 2.2 Add `task cite-lint` to `Taskfile.yml` and list it in `AGENTS.md`; it reports 0 findings. Commit `build: add task cite-lint`.
+- [x] 2.2 Add `task cite-lint` to `Taskfile.yml` and list it in `AGENTS.md`; it reports 0 findings. Commit `build: add task cite-lint`.
 
 ## 3. Verify and archive
 

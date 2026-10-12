@@ -180,6 +180,7 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 | `task docs:bundle:check`      | Check the docs-kit pins agree, then build and lint the docs bundle without writing `out/` |
 | `task docs:pins:check`        | Refuse a docs-kit `publish.yml` ref that names another release than `.opm-docs-version` (offline) |
 | `task cascade:wiring:check`   | Run the canonical release-cascade wiring check offline (notify shape, `.github` SHA pin, release key, caches) |
+| `task cite-lint`              | Fail on a decision number or a lone enhancement id in a CUE comment (`enh cite-lint` at the commit CI uses; needs Go; not part of `task check`) |
 | `task tools:opm-docs`         | Install or reuse `.bin/opm-docs`, the checksum-verified docs-kit release `.opm-docs-version` names |
 | `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + docs bundle check + cascade wiring check |
 
