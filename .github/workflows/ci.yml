@@ -152,3 +152,15 @@ jobs:
           echo "Either: update SPEC.md and include it in this PR."
           echo "Or:     add 'Spec-Impact: none' to the PR body with justification."
           exit 1
+
+  # The org comment rule (an enhancement id only beside a reason in words),
+  # run by the shared workflow of .github. Reads the repo, runs none of its
+  # files, so it holds only a read token. The local twin is `task cite-lint`;
+  # both run without excludes, so add an exclude to both or to neither.
+  cite-lint:
+    name: Cite lint
+    permissions:
+      contents: read
+    uses: open-platform-model/.github/.github/workflows/cite-lint.yml@2b66da51fede4332969c324b069012632d8edea9 # .github main
+    with:
+      paths: .

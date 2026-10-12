@@ -213,6 +213,18 @@ tasks:
         echo "Publishing opmodel.dev/core@${tag}"
         (cd src && cue mod publish "${tag}")
 
+  ## Comment rule
+
+  # The tool commit equals the enh-ref default of cite-lint.yml in the pinned
+  # .github; move both together. No excludes: the tool skips .git, vendor,
+  # agent-swarm/, .claude/, CHANGELOG.md and the CUE caches itself. Add an
+  # exclude here and to the cite-lint job of .github/workflows/ci.yml, with
+  # the reason beside each.
+  cite-lint:
+    desc: Fail on a decision number or a lone enhancement id in a CUE comment (needs Go; same tool commit as CI)
+    cmds:
+      - go run github.com/open-platform-model/enhancements/tools/enh@e0335b2ec44e659c0191bc3523d79d17f26f8e7d cite-lint --root .
+
   ## Aggregate
 
   check:
