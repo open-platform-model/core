@@ -4,7 +4,7 @@ Router only. Facts and rules are in `AGENTS.md`.
 
 | Task | Read first | Then |
 | --- | --- | --- |
-| Edit a schema definition (`src/*.cue`) | `.claude/skills/core-schema-edit/SKILL.md` (required) | `SPEC.md` for the definition, `src/INDEX.md` to find it |
+| Edit a schema definition (`src/*.cue`) or add an exported one | `.claude/skills/core-schema-edit/SKILL.md` (required) | `SPEC.md`, `src/INDEX.md`, and `docs-kit.cue` to place a new definition on a docs page |
 | Add or change a schema pin or publish gate | `src/pins/` | `SPEC.md`, section 5.1 |
 | Write or fix a `//` comment in CUE | `references/doc-comments.md` | `.tasks/doc-check.sh` |
 | Choose a commit type, or write a breaking change | `references/commit-types.md` | `references/versioning-beta.md` |

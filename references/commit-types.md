@@ -11,7 +11,7 @@ Releases are driven entirely by commit message types (Conventional Commits). Use
 | `fix:`                            | patch                           | yes          | wrong constraint, broken default, definition behaving wrong   |
 | `perf:`                           | patch                           | yes          | schema compile-time / evaluation cost improvements            |
 | `revert:`                         | patch                           | yes          | undo of a prior released change                               |
-| `feat!:` / `feat(scope)!:` with a `BREAKING CHANGE:` footer (the migration note) | prerelease (advances `-beta.N` on `@v2`) | yes | removing/renaming a definition, tightening a published constraint; a break typed `feat:` or `fix:` is refused |
+| `feat!:` / `feat(scope)!:` with a `BREAKING CHANGE:` footer (the migration note) | prerelease (advances `-beta.N` on `@v2`) | yes | removing or renaming a definition or a field, tightening a published constraint; a break typed `feat:` or `fix:` is refused |
 | `refactor:`                       | none                            | hidden       | moving files, renaming internal-only identifiers, restructuring |
 | `docs:`                           | none                            | hidden       | README, design notes, comments — anything consumers don't see  |
 | `style:`                          | none                            | hidden       | formatting-only changes (run `task fmt`)                       |
