@@ -20,8 +20,8 @@ reshape must not leak into the v1 contract. The `v1` branch carries its own copy
 
 - This file, `openspec/config.yaml` and `Taskfile.yml` are the authority. There is no
   `CONSTITUTION.md`. If they disagree, `Taskfile.yml` wins on how commands run.
-- Cut work into mergeable sections: each ends green under `task check` and closes with its own commit
-  (`openspec/config.yaml` Principle VI). A request that does not cut that way is split first.
+- Cut work into mergeable steps: each ends green under `task check` and closes with its own commit
+  (`openspec/config.yaml`). A request that does not cut that way is split first.
 - Prefer additive schema changes. The schema is a published contract, so a break in the `core` package
   breaks every consumer.
 - A break is allowed in beta only as `feat!` with a `BREAKING CHANGE:` footer, and it advances
@@ -75,7 +75,7 @@ fixture harness lives in `library`, not here.
 | `task generate:index`         | Regenerate `src/INDEX.md`                                     |
 | `task generate:index:check`   | Verify `src/INDEX.md` is up to date                           |
 | `task spec:check`             | Verify `SPEC.md` inventory matches CUE construct definitions  |
-| `task docs:check`             | Fail on doc comments over 6 lines in `src/*.cue`               |
+| `task docs:check`             | Fail on doc comments over 6 lines in `src/`                    |
 | `task hooks:install`          | Install the pre-commit hook (SPEC.md co-update gate)          |
 | `task docs:bundle`            | Build the core docs bundle of the work tree into `out/core/` (a local preview of edge) |
 | `task docs:bundle:check`      | Check the docs-kit pins agree, then build and lint the docs bundle without writing `out/` |
