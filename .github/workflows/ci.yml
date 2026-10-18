@@ -119,7 +119,7 @@ jobs:
             echo
             echo "Fix: glue the @ to its path (opmodel.dev/core@v2), or drop it"
             echo "     entirely (\"the v2 line\", \"major v2\"). Quoting does NOT work."
-            echo "Rule: AGENTS.md § \"Never Write a Bare \`@name\` Into GitHub Text\""
+            echo "Rule: references/git-text.md at the workspace root, section \"Bare \`@name\`\""
             exit 1
           fi
           echo "OK: no bare @mentions."
