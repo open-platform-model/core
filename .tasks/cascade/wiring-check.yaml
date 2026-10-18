@@ -1,6 +1,6 @@
 # core's values for the release-cascade wiring check (.tasks/cascade/wiring-check.sh,
 # a byte-identical copy from open-platform-model/.github at the pinned SHA).
-# Data only, read with yq. The .github README, "The wiring check", documents each key.
+# Data only, read with yq. The .github references/cascade-wiring-check.md documents each key.
 pin-comment: .github main
 receiver: false
 env-allow: [CUE_VERSION, CUE_REGISTRY]
