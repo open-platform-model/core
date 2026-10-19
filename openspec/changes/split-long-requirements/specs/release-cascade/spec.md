@@ -10,7 +10,7 @@
 
 ### Requirement: The cascade reference is pinned to one `.github` `main` SHA and checked on every PR
 **Reason**: Split into requirements that each state one behavior.
-**Migration**: See "The cascade reference names one full SHA on .github main", "The cascade reference moves only through a pin PR", "wiring-check.sh is a byte-identical copy that changes only with the pin", "The values of core's wiring check live in wiring-check.yaml", "The required CI job and an offline task run the wiring check", "No earlier step or setting of the CI job can reach the wiring step", "The wiring check fails when the notify job differs from the contract shape", "The wiring check fails when a key is read outside its Environment", "The wiring check fails on a publish workflow cache or a secrets pass into .github", "The wiring check fails on a loose .github reference or a startup-code variable", "The wiring check fails when a checkout of .github is not pinned", "The wiring check fails in CI when the pinned SHA is off main or the copy differs".
+**Migration**: See "The cascade reference names one full SHA on .github main", "The cascade reference moves only through a pin PR", "wiring-check.sh is a byte-identical copy that changes only with the pin", "The values of core's wiring check live in wiring-check.yaml", "The required CI job and an offline task run the wiring check", "No earlier step or setting of the CI job can reach the wiring step", "The wiring check fails when the notify job differs from the contract shape", "The wiring check fails when a key is read outside its job or Environment", "The wiring check fails on a publish workflow cache or a secrets pass into .github", "The wiring check fails on a loose .github reference or a startup-code variable", "The wiring check fails when a checkout of .github is not pinned", "The wiring check fails in CI when the pinned SHA is off main or the copy differs".
 
 ## ADDED Requirements
 
@@ -43,7 +43,7 @@ Source: workspace `RELEASING.md`, "Notify after publish" and "repository_dispatc
 
 ### Requirement: The notification starts only after the module publish succeeds
 
-The notification MUST start only after the module publish for that tag has succeeded, so a downstream is never told about a version GHCR does not serve. A failed or skipped module publish MUST NOT notify.
+The tag is the release tag release-please created, for example `v2.0.0-beta.3`. The notification MUST start only after the module publish for that tag has succeeded, so a downstream is never told about a version GHCR does not serve. A failed or skipped module publish MUST NOT notify.
 
 Source: workspace `RELEASING.md`, "Notify after publish" and "repository_dispatch"; Phase 3 wiring contract (version 3.1) §4.5 and §4.6.
 
@@ -197,7 +197,7 @@ Source: `.github` README at `0f9c6ac`, "The wiring check"; Phase 3 wiring contra
 
 ### Requirement: No earlier step or setting of the CI job can reach the wiring step
 
-The CI workflow's and job's `env` MUST hold only `CUE_*`, `OPM_*`, `REGISTRY` or `IMAGE_NAME` names, the job MUST have no `container` or `services`, and every step before the wiring step MUST be an action from another repo at a full SHA with only `id`, `name`, `uses` and `with`.
+The CI workflow's and job's `env` MUST hold only `CUE_*`, `OPM_*`, `REGISTRY` or `IMAGE_NAME` names, the required CI job ("Validate schema") MUST have no `container` or `services`, and every step before the wiring step MUST be an action from another repo at a full SHA with only `id`, `name`, `uses` and `with`.
 
 Source: `.github` README at `0f9c6ac`, "Pinning and bumps" and "The wiring check"; workspace `RELEASING.md`, "Pinning the cascade code" and "Moving the cascade pin".
 
@@ -217,11 +217,11 @@ Source: `.github` README at `0f9c6ac`, "The wiring check"; Phase 3 wiring contra
 - **WHEN** a PR adds an `env:`, a second step, a step-level `env:` or `if:`, or a `container:` to `notify-downstream`, or changes its `runs-on`
 - **THEN** the required CI job fails at "Verify the cascade wiring"
 
-### Requirement: The wiring check fails when a key is read outside its Environment
+### Requirement: The wiring check fails when a key is read outside its job or Environment
 
-The wiring check MUST fail when the cascade key is read or `environment: cascade` is declared anywhere else under `.github/workflows/`. The wiring check MUST fail when a job reads `RELEASE_APP_PRIVATE_KEY` without declaring exactly `environment: release`, or a job declares `release` without reading it.
+The wiring check MUST fail when the cascade key is read or `environment: cascade` is declared anywhere else than in the `notify-downstream` job under `.github/workflows/`. The wiring check MUST fail when a job reads `RELEASE_APP_PRIVATE_KEY` without declaring exactly `environment: release`, or a job declares `release` without reading it.
 
-Source: `.github` README at `0f9c6ac`, "Pinning and bumps" and "The wiring check"; workspace `RELEASING.md`, "Pinning the cascade code" and "Moving the cascade pin".
+Source: `.github` README at `0f9c6ac`, "The wiring check"; Phase 3 wiring contract (version 3.1) §2.4.
 
 #### Scenario: A release-key reader outside the release Environment is refused
 

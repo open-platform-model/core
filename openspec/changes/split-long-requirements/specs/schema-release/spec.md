@@ -93,7 +93,7 @@ From its first beta, a prerelease line is on the path to GA. A breaking schema c
 
 ### Requirement: A breaking schema change advances the prerelease counter and not the module path
 
-A breaking schema change of any kind advances the prerelease counter, from `vX.0.0-<type>.N` to `vX.0.0-<type>.N+1`, and it MUST NOT move the module path to a new major. While the line is a prerelease, every releasable commit (`fix:`, `feat:`, `feat!:`) advances the counter; minor and patch bumps apply only once the line is stable.
+On a prerelease line, a breaking schema change of any kind advances the prerelease counter, from `vX.0.0-<type>.N` to `vX.0.0-<type>.N+1`, and it MUST NOT move the module path to a new major. While the line is a prerelease, every releasable commit (`fix:`, `feat:`, `feat!:`) advances the counter; minor and patch bumps apply only once the line is stable. The rules below write the type as `<type>` because they hold for whichever type the line carries.
 
 #### Scenario: An absorbable break advances the prerelease counter
 
@@ -148,7 +148,7 @@ Crossing a major MUST require two edits in the **same** commit on `main`: `src/c
 
 ### Requirement: A consumer retargets a crossing by an import rewrite, and the tag cannot disagree with the declared major
 
-Crossing changes every consumer's retarget from a dependency bump into an import rewrite. `cue mod publish` MUST refuse a tag whose major disagrees with the declared module path, so the two cannot land apart.
+Crossing changes every consumer's retarget from a dependency bump into an import rewrite. `cue mod publish` MUST refuse a tag whose major disagrees with the declared module path, so the two edits cannot land apart.
 
 #### Scenario: The declared major and the tag cannot disagree
 
@@ -176,7 +176,7 @@ Changing `prerelease-type` in `release-please-config.json` MUST land together wi
 
 ### Requirement: The forced version comes from the squash commit footer alone and its release PR is read
 
-A footer on an inner commit of a squashed PR does not count; only the squash commit's own message is read.
+A `Release-As:` footer on an inner commit of a squashed PR does not count; only the squash commit's own message is read.
 
 The forced version MUST NOT be written as a `release-as` key in `release-please-config.json`, which stays in force for every later release, and `.release-please-manifest.json` MUST NOT be edited by hand. The release PR the footer opens MUST be read before it is merged, and merged only when its title names the forced version.
 
@@ -215,6 +215,8 @@ Before `cue mod publish` runs for a release, CI MUST ask GHCR whether it holds a
 
 Branch builds (`-0.dev.*`) are outside this requirement.
 
+Source: enhancement 0021.
+
 #### Scenario: A version GHCR already holds is refused
 
 - **WHEN** the `publish-cue` job runs for a version whose manifest GHCR already serves (for example a re-run after `v2.0.0-beta.1` was published)
@@ -225,6 +227,8 @@ Branch builds (`-0.dev.*`) are outside this requirement.
 Before `cue mod publish` runs for a release, CI MUST ask GHCR whether it holds a manifest for `opmodel.dev/core` at the release version, and MUST publish only when the answer is "absent".
 
 Any answer other than "present" or "absent" (an auth error, a rate limit, a 5xx, an unreachable registry): the job MUST fail before `cue mod publish` and say the registry state could not be determined. Nothing was pushed, so recovery is re-running the job in CI.
+
+Source: enhancement 0021.
 
 #### Scenario: An inconclusive probe is refused and re-run
 
