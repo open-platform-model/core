@@ -87,7 +87,7 @@ Zero providers of a provider-fulfilled contract MUST be an unresolved demand, wh
 
 ### Requirement: The contract inventory computes the provider count once
 
-`core` MUST declare the intent and compute the provider count once, as the platform's contract inventory (`#Platform.#contracts.providedBy`, `overSubscribed` and `routable`), which MUST report it without refusing on it. The requirement is stated here because it is what `fulfilment: "provider"` means.
+`core` MUST declare the one-provider rule and compute the provider count once, as the platform's contract inventory (`#Platform.#contracts.providedBy`, `overSubscribed` and `routable`), which MUST report it without refusing on it. The requirement is stated here because it is what `fulfilment: "provider"` means.
 
 #### Scenario: The inventory reports the count without refusing
 
