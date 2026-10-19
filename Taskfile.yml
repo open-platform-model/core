@@ -211,7 +211,7 @@ tasks:
   publish:branch:
     desc: Publish HEAD as a -dev pre-release derived from the commit
     cmds:
-      - task: check
+      - task: check:base
       - |
         set -euo pipefail
         tag=$(bash .tasks/branch-tag.sh "$(pwd)")
@@ -251,8 +251,12 @@ tasks:
 
   ## Aggregate
 
-  check:
-    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, the cascade wiring check, and the openspec check
+  # check:base is every gate of check except openspec:check. publish:branch
+  # calls it: that job holds a token that can write packages, and the openspec
+  # CLI is npm code that no lockfile pins, so it must not run there. The
+  # required ci.yml job runs the full check, openspec included.
+  check:base:
+    desc: Every gate of check except the openspec check (the branch-publish job runs this one)
     cmds:
       - task: fmt:check
       - task: vet
@@ -261,4 +265,9 @@ tasks:
       - task: docs:check
       - task: docs:bundle:check
       - task: cascade:wiring:check
+
+  check:
+    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, the cascade wiring check, and the openspec check
+    cmds:
+      - task: check:base
       - task: openspec:check
