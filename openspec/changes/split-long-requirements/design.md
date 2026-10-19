@@ -223,3 +223,146 @@ Each table lists every live scenario of a rewritten requirement on `main`. Lengt
 | `#moduleInstanceMetadata` and `#componentMetadata` computed from the inputs; runtime not required to supply either | body, unchanged |
 | field names and value shapes unchanged from the pre-projection context | body, unchanged |
 | so a transformer reading any context field observes the same value as before | scenario "Transformer-visible values are unchanged" (its THEN says the values are identical to the runtime-assembled context) |
+
+### schema-pins: Schema pins live in a package no consumer loads (771 to 487, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Building core as the main instance does not evaluate the pins | same requirement, same name | no |
+| A broken pin is invisible to a consumer's build of core | same requirement, same name | no |
+| Package core declares no top-level hidden field | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| every pin declared in package `pins` in `src/pins/`, in `*_pins.cue` | parent body, unchanged |
+| package `core` declares no pin and does not import `pins` | parent body, one sentence |
+| a build of core does not load, parse or evaluate a pin | parent body, unchanged |
+| Source: owner decision, 2026-10-03 | parent body |
+| a pin is a hidden field, except an applied publish-gate pin | ADDED "A pin is a hidden field", new scenario "A pin outside the publish gates is hidden" |
+| package `pins` imports core and references core only through that import | ADDED "Package pins reaches core only through its import", new scenario "Package pins reaches core through its import" |
+
+### schema-pins: Publish-gate pins are applied non-hidden (878 to 478, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A posture-gate pin with an unstated posture fails plain vet | same requirement, same name | no |
+| The conformant gate pins pass both vets | same requirement, same name | no |
+| A hidden gate application checks nothing | same requirement, same name | no |
+| spec:check refuses a hidden applied gate pin | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| an applied gate pin is a regular field (SPEC §5.1) | parent body, unchanged |
+| the commented incompleteness case `failGateUnstated` is non-hidden, a hidden field is never checked for completeness | parent body, unchanged |
+| Source: follow-up (2026-10-03) | parent body |
+| a commented MUST-FAIL gate case MAY keep the hidden shape (conflict reported in hidden field; error measured in that shape) | ADDED "A commented MUST-FAIL gate case may keep the hidden shape", new scenario "A hidden commented gate case reports its conflict" |
+| `cue vet` checks a regular field for completeness, so plain `task vet` MUST fail on an incomplete pin | ADDED "Plain vet fails an incomplete regular gate pin", new scenario "Plain task vet fails an incomplete regular gate pin" |
+| a regular gate field MUST NOT reach a consumer nor add a `src/INDEX.md` row | ADDED "A regular gate pin reaches no consumer", new scenario "A regular gate pin adds no index row and no consumer value" |
+
+The header of this requirement stays: `.tasks/spec-check.sh` prints it.
+
+### primitive-keying: A catalog member's FQN is authored, not derived (905 to 481 and 472, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| An authored FQN is accepted as written | A catalog member's FQN is authored by the catalog, same name | no |
+| An FQN disagreeing with the primitive's own fields is not refused by `core` | A catalog member's FQN is authored by the catalog, same name | no |
+| An unset FQN takes its attachment key | An unset FQN in an attachment map takes its key, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `core` does not derive `metadata.fqn`; the catalog authors it from its identity package; nothing computed from `name`, `modulePath`, `apiVersion` | A catalog member's FQN is authored by the catalog, body |
+| outside the attachment maps, agreement is not checked by `core`; `#CatalogMemberFQNGate` checks at publish | same, body |
+| inside the six attachment maps the key binds `metadata.fqn`; a disagreeing authored value is refused with `conflicting values`; an unset `fqn` takes the key | An unset FQN in an attachment map takes its key, body; the refusal also gets the new scenario "A disagreeing authored FQN in an attachment map is refused" |
+| the binding derives nothing from the member's fields; key and fqn both authored | same, body ("MUST NOT derive") |
+
+### primitive-keying: FQN map keys are typed by the role they hold (1473 to 454, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A build-shaped key is refused in a demand map | same requirement, same name | no |
+| A contract-shaped key is refused in a transformer map | same requirement, same name | no |
+| A build-shaped key is refused in a catalog contract map | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| no map takes `#FQNType`; contract maps keyed `#ContractFQNType`; implementation maps keyed `#ImplFQNType` (with the map lists) | parent body, unchanged |
+| a wrong-form key MUST be refused rather than merely failing to match | parent body; the reason (an unmatched key surfaces as a transformer that renders nothing) moves to new scenario "A wrong-form key is an error, not a silent non-match" |
+| `core` binds key to `metadata.fqn` in exactly the six attachment maps (with the two cited requirements) | ADDED "The six attachment maps bind a key to its member's fqn", new scenario "A component attachment map refuses a key that is not the member fqn"; the citation of the catalog requirement uses the new name "A contract map binds each member's fqn to its key" (see catalog-contracts below) |
+| demand and implementation maps enforce form only; demand-map key equals fqn is a runtime invariant | ADDED "Demand maps and implementation maps enforce the key form only", new scenario "A demand map key is checked for form only" |
+| a transformer map key is checked for form only (gate never reads a `#Catalog` map key); binding `#Catalog.#transformers` is a possible later tightening | ADDED "A transformer map key is checked for form only", new scenario "A transformer map key is not compared with the transformer fqn" |
+
+The ADDED bodies of the last three rows use MUST where the old text stated a fact in the present tense, because an ADDED body needs SHALL or MUST.
+
+### primitive-keying: An attachment map key equals its member's fqn (870 to 484, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A resource keyed by its fqn is accepted | same requirement, same name | no |
+| A short resource key is refused | same requirement, same name | no |
+| A trait under another trait's key is refused | same requirement, same name | no |
+| A blueprint under another blueprint's key is refused | same requirement, same name | no |
+| Entries contributed by an embedded blueprint fragment are accepted | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| the three maps bind every entry's fqn to its key | body, unchanged |
+| a differing entry fails `cue vet` with `conflicting values` at `<map>.<key>.metadata.fqn`, naming both | body, unchanged |
+| an entry keyed by its own fqn MUST validate as before, by hand or from a catalog wrapper or embedded blueprint | body keeps the rule; the two ways are in scenarios "A resource keyed by its fqn is accepted" and "Entries contributed by an embedded blueprint fragment are accepted" |
+| a short key such as `container` MUST be refused | scenario "A short resource key is refused" |
+| the binding MUST NOT derive `fqn` from `name`, `modulePath` or `apiVersion` | "An unset FQN in an attachment map takes its key", body (it covers these maps) |
+| `#Trait.appliesTo` stays unchecked against the component's resources; core#99 | ADDED "`#Trait.appliesTo` is not checked against the component's resources", new scenario "appliesTo is not checked against the attached resources" |
+| Source: owner decision, beta.1 kernel plan walkthrough | body |
+
+### catalog-contracts: The catalog stamps provenance onto every listed member (767 to 492, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A member authored without provenance receives both stamps | same requirement, same name | no |
+| A member filed under a different version segment is refused | same requirement, same name | no |
+| A member naming another build is refused | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| stamp `catalogVersion` and `modulePath` (major-free registry path, kind segment, `apiVersion`); omit or agree; divergence fails with `conflicting values` | parent body |
+| the kind segments `resources`, `traits`, `blueprints`; the version-segment filing; enhancement 0010 citation | ADDED "A stamped module path files a contract member under its version segment", body keeps the citation, new scenarios "The kind segment names the map" and "The stamped path ends in the member apiVersion" |
+
+### catalog-contracts: A catalog derives the provider-fulfilled contracts it implements (1259 to 434, 80, 178, 258 and 358, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Defining a provider contract is not providing it | A catalog derives the provider-fulfilled contracts its transformers require, same name | no |
+| Two adapters requiring one provider contract derive it once | The provides field is sorted ascending and holds no duplicates, same name | no |
+| A transformer requiring a provider-fulfilled resource contributes it | The provides field is sorted ascending and holds no duplicates, same name | no |
+| A catalog-fulfilled required trait does not provide | Optional demands and catalog-fulfilled contracts do not provide, same name | no |
+| An optional resource demand does not provide | Optional demands and catalog-fulfilled contracts do not provide, same name | no |
+| An optional demand does not provide | Optional demands and catalog-fulfilled contracts do not provide, same name | no |
+| A catalog with no transformers provides nothing | Optional demands and catalog-fulfilled contracts do not provide, same name | no |
+| An authored value that disagrees is refused | The provides field is derived and never authored, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| derive regular field `provides: [...#ContractFQNType]` of every contract named by an own transformer in `requiredResources` or `requiredTraits` with `fulfilment` `"provider"` | A catalog derives the provider-fulfilled contracts its transformers require, body |
+| Source: library ADR-012; claim check of enhancement 0015 | same, body |
+| sorted ascending, without duplicates | The provides field is sorted ascending and holds no duplicates, body |
+| fulfilment read from the transformer's own requirement value, never from the catalog maps; a contract another catalog defines still counts | Fulfilment is read from the transformer's own requirement, body; new scenario "A contract another catalog defines still counts" |
+| optional demands, required labels and `"catalog"` requirements MUST NOT contribute; none gives `[]` | Optional demands and catalog-fulfilled contracts do not provide, body |
+| derived, never authored; disagreement fails on `provides` with the two CUE errors | The provides field is derived and never authored, body |
+| a catalog that authors no `provides` MUST validate unchanged | same, body; new scenario "A catalog that authors no provides validates unchanged" |
+
+### catalog-contracts: A contract member's key equals its fqn (820 to 400, 239 and 252, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A member listed under its own fqn is accepted | A contract map binds each member's fqn to its key, same name | no |
+| A member listed under another contract's key is refused | A contract map binds each member's fqn to its key, same name | no |
+| A mis-keyed resource or blueprint member is refused the same way | A contract map binds each member's fqn to its key, same name | no |
+| The transformer map is not bound | The transformer map is not bound to the transformer fqn, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| the three contract maps bind every member's fqn to its key; a differing authored fqn fails with `conflicting values` naming both; the key stays `#ContractFQNType` | A contract map binds each member's fqn to its key, body |
+| the binding derives no `fqn`; key and fqn both authored; `#CatalogMemberFQNGate` checks at publish | The contract map binding derives no fqn, body; new scenario "The binding derives nothing from the member fields" |
+| `#Catalog.#transformers` is not bound by this requirement; Source: owner decision | The transformer map is not bound to the transformer fqn, body |
+
+No other file in this repo cites the three old catalog-contracts headers or the old primitive-keying FQN header (`grep -rn --exclude-dir=archive`); the one citation inside `primitive-keying` is rewritten above.

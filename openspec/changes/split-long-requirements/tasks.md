@@ -4,7 +4,7 @@ Per spec: read the requirement and its scenarios on `main`; pick the form (desig
 
 - [x] 1.1 `artifact-identity` (1), `definitions-reference` (1), `docs-bundle` (1), `instance-identity` (1)
 - [x] 1.2 `name-constraints` (1), `platform-registry` (1), `transformer-context` (1); gate run, `N` = 7
-- [ ] 1.3 `schema-pins` (2), `primitive-keying` (3), `catalog-contracts` (3); gate run, `N` = 15
+- [x] 1.3 `schema-pins` (2), `primitive-keying` (3), `catalog-contracts` (3); gate run, `N` = 15
 - [ ] 1.4 `contract-fulfilment` (4), `platform-contract-inventory` (7); gate run, `N` = 26
 - [ ] 1.5 `release-cascade` (3), `schema-release` (5); gate run, `N` = 34
 - [ ] 1.6 Review the clause tables and the ledger: every old scenario is in a new place; no `**Key**:` line, level 5 heading or fenced block in a changed body; no stale reference; each new body has SHALL or MUST and scenarios in both directions where the behavior has a rejection
