@@ -256,7 +256,7 @@ Each table lists every live scenario of a rewritten requirement on `main`. Lengt
 | the commented incompleteness case `failGateUnstated` is non-hidden, a hidden field is never checked for completeness | parent body, unchanged |
 | Source: follow-up (2026-10-03) | parent body |
 | a commented MUST-FAIL gate case MAY keep the hidden shape (conflict reported in hidden field; error measured in that shape) | ADDED "A commented MUST-FAIL gate case may keep the hidden shape", new scenario "A hidden commented gate case reports its conflict" |
-| `cue vet` checks a regular field for completeness, so plain `task vet` MUST fail on an incomplete pin | ADDED "Plain vet fails an incomplete regular gate pin", new scenario "Plain task vet fails an incomplete regular gate pin" |
+| `cue vet` checks a regular field for completeness, so plain `task vet` MUST fail when such a pin is incomplete ("such a pin" names the pin of "Publish-gate pins are applied non-hidden", as the body says) | ADDED "Plain vet fails an incomplete regular gate pin", new scenario "Plain task vet fails an incomplete regular gate pin" |
 | a regular gate field MUST NOT reach a consumer nor add a `src/INDEX.md` row | ADDED "A regular gate pin reaches no consumer", new scenario "A regular gate pin adds no index row and no consumer value" |
 
 The header of this requirement stays: `.tasks/spec-check.sh` prints it.
@@ -274,7 +274,7 @@ The header of this requirement stays: `.tasks/spec-check.sh` prints it.
 | `core` does not derive `metadata.fqn`; the catalog authors it from its identity package; nothing computed from `name`, `modulePath`, `apiVersion` | A catalog member's FQN is authored by the catalog, body |
 | outside the attachment maps, agreement is not checked by `core`; `#CatalogMemberFQNGate` checks at publish | same, body |
 | inside the six attachment maps the key binds `metadata.fqn`; a disagreeing authored value is refused with `conflicting values`; an unset `fqn` takes the key | An unset FQN in an attachment map takes its key, body; the refusal also gets the new scenario "A disagreeing authored FQN in an attachment map is refused" |
-| the binding derives nothing from the member's fields; key and fqn both authored | same, body ("MUST NOT derive") |
+| the binding derives nothing from the member's own fields; the key and the fqn are both authored | same, body, sentence copied unchanged (fix of the audit: the three-field "MUST NOT derive" sentence is not a substitute) |
 
 ### primitive-keying: FQN map keys are typed by the role they hold (1473 to 454, form b)
 
@@ -310,7 +310,7 @@ The ADDED bodies of the last three rows use MUST where the old text stated a fac
 | a differing entry fails `cue vet` with `conflicting values` at `<map>.<key>.metadata.fqn`, naming both | body, unchanged |
 | an entry keyed by its own fqn MUST validate as before, by hand or from a catalog wrapper or embedded blueprint | body keeps the rule; the two ways are in scenarios "A resource keyed by its fqn is accepted" and "Entries contributed by an embedded blueprint fragment are accepted" |
 | a short key such as `container` MUST be refused | scenario "A short resource key is refused" |
-| the binding MUST NOT derive `fqn` from `name`, `modulePath` or `apiVersion` | "An unset FQN in an attachment map takes its key", body (it covers these maps) |
+| the binding MUST NOT derive `fqn` from `name`, `modulePath` or `apiVersion` | ADDED "An attachment map binding derives no fqn", body, sentence copied unchanged; new scenario "The attachment map binding derives no fqn" (a restatement); its Source line is the old one, repeated |
 | `#Trait.appliesTo` stays unchecked against the component's resources; core#99 | ADDED "`#Trait.appliesTo` is not checked against the component's resources", new scenario "appliesTo is not checked against the attached resources" |
 | Source: owner decision, beta.1 kernel plan walkthrough | body |
 
@@ -381,7 +381,7 @@ No other file in this repo cites the three old catalog-contracts headers or the 
 | --- | --- |
 | exactly one provider; a provider is an enabled registry entry whose transformers require the contract | parent body, unchanged |
 | two providers MUST be refused naming both registry keys and the contract key; two remain refused under the skip request; the rule is enforced outside the schema | parent body ("This rule is enforced outside the schema") |
-| the count is of registry entries keyed by registry key; two transformers of one entry are one provider; two enabled majors are two; a provider counts whether or not an entry defines the contract | ADDED "The provider count is of registry entries", new scenario "Two transformers of one entry are one provider" (the live scenarios "Two majors ..." and "Providers count ..." stay in the parent) |
+| the count is of registry entries keyed by registry key; two transformers of one entry requiring the contract are one provider; two enabled majors are two; a provider counts whether or not an entry defines the contract | ADDED "The provider count is of registry entries" (body opens with "For a contract declaring `fulfilment: "provider"`", copied from the old requirement), new scenario "Two transformers of one entry are one provider" (the live scenarios "Two majors ..." and "Providers count ..." stay in the parent) |
 | zero providers is an unresolved demand that fails the render unless the caller asked to skip | ADDED "Zero providers are an unresolved demand", new scenario "A contract with no provider fails the render" |
 | `core` declares the intent (written as the header "A provider-fulfilled contract admits exactly one provider" in the block, since "the intent" lost its referent) and computes the count once as the inventory, which reports without refusing; stated here because it is what `fulfilment: "provider"` means | ADDED "The contract inventory computes the provider count once", new scenario "The inventory reports the count without refusing" |
 | the render build and the generation step refuse on that one count (the inventory's provider count); none keeps its own | ADDED "The render build and the generation step refuse on the one count", new scenario "Consumers refuse on the inventory count" |
@@ -560,6 +560,7 @@ An ADDED body needs SHALL or MUST, so these present-tense statements of the old 
 | contract-fulfilment, The provider count is of registry entries | "The count is of registry entries"; "A provider counts" | "MUST be of registry entries"; "MUST count" |
 | contract-fulfilment, Zero providers are an unresolved demand | "Zero is an unresolved demand, which fails the render" | "MUST be an unresolved demand, which fails the render" |
 | contract-fulfilment, The contract inventory computes the provider count once | "`core` declares the intent and computes the count once" | "MUST declare ... and compute ... once" |
+| contract-fulfilment, The contract inventory computes the provider count once (second MUST) | "which reports it without refusing on it" | "which MUST report it without refusing on it" |
 | contract-fulfilment, The render build and the generation step refuse on the one count | "The kernel's render build and the generation step ... refuse" | "MUST refuse" |
 | contract-fulfilment, A render's caller may ask to skip unprovided demands | "The request is per render"; "every render behaves" | "MUST be per render"; "MUST behave" |
 | contract-fulfilment, The kernel enforces the skip rule and the inventory is unchanged | "Enforcement is the kernel's"; "the inventory is unchanged by it" | "MUST be the kernel's"; "MUST be unchanged by it" |

@@ -69,7 +69,7 @@ An unhandled trait whose resolved `optional` is `false` fails the render, except
 
 ### Requirement: The provider count is of registry entries
 
-The provider count MUST be of registry entries, keyed by registry key (the catalog module path with its major): two transformers of one entry are one provider, and two enabled majors of one catalog are two. A provider MUST count whether or not any enabled entry defines the contract.
+For a contract declaring `fulfilment: "provider"`, the count MUST be of registry entries, keyed by registry key (the catalog module path with its major): two transformers of one entry requiring the contract are one provider, and two enabled majors of one catalog are two. A provider MUST count whether or not any enabled entry defines the contract.
 
 #### Scenario: Two transformers of one entry are one provider
 

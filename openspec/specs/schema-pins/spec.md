@@ -105,7 +105,7 @@ Because nothing imports package `pins`, a regular (non-hidden) gate pin MUST NOT
 
 ### Requirement: Plain vet fails an incomplete regular gate pin
 
-`cue vet` checks a regular field for completeness, so plain `task vet` MUST fail when such a pin is incomplete.
+`cue vet` checks a regular field for completeness, so plain `task vet` MUST fail when such a pin (see "Publish-gate pins are applied non-hidden") is incomplete.
 
 #### Scenario: Plain task vet fails an incomplete regular gate pin
 

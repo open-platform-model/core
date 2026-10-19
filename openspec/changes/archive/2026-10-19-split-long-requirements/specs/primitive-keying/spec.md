@@ -57,6 +57,17 @@ Source: owner decision, beta.1 kernel plan walkthrough (2026-10-03).
 
 ## ADDED Requirements
 
+### Requirement: An attachment map binding derives no fqn
+
+The binding MUST NOT derive `fqn` from the member's `name`, `modulePath` or `apiVersion`.
+
+Source: owner decision, beta.1 kernel plan walkthrough (2026-10-03).
+
+#### Scenario: The attachment map binding derives no fqn
+
+- **WHEN** an entry of `#ResourceMap`, `#TraitMap` or `#BlueprintMap` is bound to the key it sits under
+- **THEN** the binding does not derive `fqn` from the member's `name`, `modulePath` or `apiVersion`
+
 ### Requirement: A catalog member's FQN is authored by the catalog
 
 `core` MUST NOT derive `metadata.fqn` for any of the four kinds. The field MUST be declared with its type and left for the catalog to author from its identity package. The definitions compute nothing from `name`, `modulePath` or `apiVersion`. Outside the six attachment maps, the agreement between an authored value and the member's own `modulePath`, `name` and `apiVersion` is **not** checked by `core`. It is checked by `#CatalogMemberFQNGate` at publish, which ships separately.
@@ -73,7 +84,7 @@ Source: owner decision, beta.1 kernel plan walkthrough (2026-10-03).
 
 ### Requirement: An unset FQN in an attachment map takes its key
 
-Inside the six attachment maps (`#Component.#resources`, `#traits` and `#blueprints`, and `#Catalog.#resources`, `#traits` and `#blueprints`) the map key MUST bind `metadata.fqn`: an authored value that disagrees with its key MUST be refused with `conflicting values`, and a member that leaves `fqn` unset there MUST take the key as its `fqn`. The binding MUST NOT derive `fqn` from the member's `name`, `modulePath` or `apiVersion`; the key and the fqn are both authored.
+Inside the six attachment maps (`#Component.#resources`, `#traits` and `#blueprints`, and `#Catalog.#resources`, `#traits` and `#blueprints`) the map key MUST bind `metadata.fqn`: an authored value that disagrees with its key MUST be refused with `conflicting values`, and a member that leaves `fqn` unset there MUST take the key as its `fqn`. The binding derives nothing from the member's own fields; the key and the fqn are both authored.
 
 #### Scenario: An unset FQN takes its attachment key
 
