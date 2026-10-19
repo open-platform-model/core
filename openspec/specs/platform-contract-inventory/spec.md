@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines what a `#Platform` derives about the contracts its enabled catalogs define and its enabled transformers require: which contracts exist, which catalog lists each, which contract keys more than one enabled entry defines, which implementations require each, which provider-fulfilled contracts nothing implements, which have more than one provider, and which pairs of transformers are not discriminated from one another over a contract their own catalogs fulfil. The inventory is a report a platform carries with no module in hand (enhancement 0015 D1, D2, D5, D18).
+Defines what a `#Platform` derives about the contracts its enabled catalogs define and its enabled transformers require: which contracts exist, which catalog lists each, which contract keys more than one enabled entry defines, which implementations require each, which provider-fulfilled contracts nothing implements, which have more than one provider, and which pairs of transformers are not discriminated from one another over a contract their own catalogs fulfil. The inventory is a report a platform carries with no module in hand (enhancement 0015, "`#Catalog` publishes its contracts as members, beside its transformers", "One provider per contract stands; provider classes are rejected in this entry", "Comparable predicates within one catalog-fulfilled bucket are refused, not arbitrated" and "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation").
 
 ## Requirements
 
@@ -20,7 +20,7 @@ Defines what a `#Platform` derives about the contracts its enabled catalogs defi
 
 ### Requirement: Required demands are counted per contract across enabled transformers
 
-`#contracts.requiredBy` MUST map every defined contract FQN to the list of implementation FQNs, drawn from `#composedTransformers`, whose `requiredResources` or `requiredTraits` name that contract. Optional demands MUST NOT count (0010 D32: tolerance, not fulfilment). A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind. A defined contract nothing requires MUST map to an empty list.
+`#contracts.requiredBy` MUST map every defined contract FQN to the list of implementation FQNs, drawn from `#composedTransformers`, whose `requiredResources` or `requiredTraits` name that contract. Optional demands MUST NOT count (enhancement 0010: tolerance, not fulfilment). A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind. A defined contract nothing requires MUST map to an empty list.
 
 #### Scenario: A contract required by transformers from two catalogs lists both
 
@@ -53,7 +53,7 @@ Defines what a `#Platform` derives about the contracts its enabled catalogs defi
 
 ### Requirement: A transformer's match predicate is every required demand it declares
 
-An enabled transformer's match predicate MUST be the union of three demand kinds: every FQN in `requiredResources`, every FQN in `requiredTraits`, and every key-and-value pair in `requiredLabels`. A required label MUST contribute its key and its value together, so two transformers requiring the same label key with different values declare different demands. Optional demands MUST NOT contribute (0010 D32: tolerance is not fulfilment). A transformer declaring no map of a kind MUST be treated as declaring no demand of that kind.
+An enabled transformer's match predicate MUST be the union of three demand kinds: every FQN in `requiredResources`, every FQN in `requiredTraits`, and every key-and-value pair in `requiredLabels`. A required label MUST contribute its key and its value together, so two transformers requiring the same label key with different values declare different demands. Optional demands MUST NOT contribute (enhancement 0010 ("Two providers supplying one contract is a materialize-time error"): tolerance is not fulfilment). A transformer declaring no map of a kind MUST be treated as declaring no demand of that kind.
 
 #### Scenario: A required trait is part of the predicate, not only labels
 
@@ -119,7 +119,7 @@ A pair whose only shared required contracts are provider-fulfilled MUST NOT appe
 
 ### Requirement: The inventory reports and never refuses
 
-Neither report MUST make the platform value fail to evaluate: an over-subscribed, unfulfilled, undiscriminated or colliding platform MUST still evaluate, with the offending contracts, transformer pairs and registry entries named in the lists (enhancement 0015 D18). In particular, a platform whose enabled entries list the same contract key MUST evaluate, with that key in `collisions` rather than a conflict in `defined` or `definedBy`. Whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
+Neither report MUST make the platform value fail to evaluate: an over-subscribed, unfulfilled, undiscriminated or colliding platform MUST still evaluate, with the offending contracts, transformer pairs and registry entries named in the lists (enhancement 0015, "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"). In particular, a platform whose enabled entries list the same contract key MUST evaluate, with that key in `collisions` rather than a conflict in `defined` or `definedBy`. Whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
 
 #### Scenario: An over-subscribed platform still evaluates
 
@@ -149,7 +149,7 @@ A `#Platform` with no enabled entries MUST derive empty `defined`, `definedBy`, 
 
 `#contracts.providedBy` MUST map every contract FQN that some transformer of an enabled entry's `#catalog` names in its `requiredResources` or `requiredTraits` with a requirement whose `fulfilment` is `"provider"` to the ascending-sorted list of registry keys (the catalog module path with its major, `path@vN`) of the enabled entries whose transformers do so. It is derived per registry entry, over the transformers of every enabled entry's `#catalog.#transformers`, and it MUST NOT depend on whether any enabled entry defines the contract. It MUST equal the fold, by registry key, of every enabled entry's `#catalog.provides` (catalog-contracts), so the platform and the catalog state one rule. A transformer written on the entry's own `#transformers` readout rather than in the catalog is outside that fold: the readout is not authored (core#119 tracks whether to refuse it). Fulfilment MUST be read from the transformer's own requirement value, never from the defining catalog's member. A key MUST be present exactly when at least one enabled entry provides the contract. Optional demands, required labels, catalog-fulfilled requirements, blueprints and disabled entries MUST NOT contribute. Each registry key MUST appear at most once per contract, however many of that entry's transformers require it.
 
-Source: corrects the delivery of 0015:D2 (a refusal names both catalog paths) by exposing the paths it names. The fold over `#catalog.provides` follows library ADR-012.
+Source: corrects the delivery of enhancement 0015 ("One provider per contract stands; provider classes are rejected in this entry") (a refusal names both catalog paths) by exposing the paths it names. The fold over `#catalog.provides` follows library ADR-012.
 
 #### Scenario: One provider entry through two adapters is one key
 
@@ -185,7 +185,7 @@ Source: corrects the delivery of 0015:D2 (a refusal names both catalog paths) by
 
 `#contracts.overSubscribed` MUST list every key of `providedBy` whose list holds more than one registry key, including a contract no enabled entry defines. The counting key is the registry key, so two majors of one catalog MUST count as two providers, and two transformers of one entry requiring one contract MUST count as one provider. `#contracts.routable` MUST be true exactly when `overSubscribed` is empty and `collisions` is empty.
 
-Source: corrects the delivery of 0015:D2 and 0015:D18; 0010:D37 is the rule counted.
+Source: corrects the delivery of enhancement 0015 ("One provider per contract stands; provider classes are rejected in this entry" and "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation") and enhancement 0010 ("A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider") is the rule counted.
 
 #### Scenario: Two catalogs providing one contract is over-subscription
 
@@ -213,7 +213,7 @@ A *definer* of a contract key MUST be an enabled registry entry whose catalog li
 
 Because a colliding key leaves `defined`, `fulfilled` and `discriminated` MAY read `true` on a colliding platform whose single-major equivalent reads them `false`. This is a known limitation: a consumer MUST treat a non-empty `collisions` as overriding both, and `routable` is `false` on every such platform.
 
-Source: enhancement 0026 OQ17 recommends this fold as an interim core fix ahead of 0026 D9; it delivers no 0026 decision.
+Source: enhancement 0026 recommends this fold as an interim core fix ahead of enhancement 0026 ("A platform may admit several majors of one catalog; each resolution holds exactly one major per catalog"); it delivers no decision of that entry.
 
 #### Scenario: Two majors sharing keys report every shared key as a collision
 

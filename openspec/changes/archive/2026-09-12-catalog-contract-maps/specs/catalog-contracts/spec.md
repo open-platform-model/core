@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines what a `#Catalog` publishes about the contracts it defines: three member maps beside `#transformers`, keyed by contract FQN and stamping provenance, so that "this catalog defines contract X" is a stated fact of the artifact, separate from "this catalog implements contract X". The two facts diverge exactly for a provider-fulfilled contract, which its declaring catalog deliberately ships no adapter for (enhancement 0015 D1).
+Defines what a `#Catalog` publishes about the contracts it defines: three member maps beside `#transformers`, keyed by contract FQN and stamping provenance, so that "this catalog defines contract X" is a stated fact of the artifact, separate from "this catalog implements contract X". The two facts diverge exactly for a provider-fulfilled contract, which its declaring catalog deliberately ships no adapter for (enhancement 0015, "`#Catalog` publishes its contracts as members, beside its transformers").
 
 ## ADDED Requirements
 
@@ -39,7 +39,7 @@ Each of the three maps MUST be keyed `#ContractFQNType`. A key in implementation
 
 ### Requirement: The catalog stamps provenance onto every listed member
 
-Each map's pattern constraint MUST stamp every member's `metadata.catalogVersion` to the catalog's own `metadata.version`, and every member's `metadata.modulePath` to the catalog's registry path, followed by the map's kind segment (`resources`, `traits` or `blueprints`), followed by the member's own `metadata.apiVersion`: the version-segment filing a contract member already declares (enhancement 0010 D49). The stamp MUST use the major-free registry path. A member MAY omit both fields and receive them from the stamp; a member that authors either field MUST agree with the stamp, and a divergent value MUST fail with a `conflicting values` error at a path naming the member.
+Each map's pattern constraint MUST stamp every member's `metadata.catalogVersion` to the catalog's own `metadata.version`, and every member's `metadata.modulePath` to the catalog's registry path, followed by the map's kind segment (`resources`, `traits` or `blueprints`), followed by the member's own `metadata.apiVersion`: the version-segment filing a contract member already declares (enhancement 0010, "Contract kinds file under a version segment (`<kind>/<apiVersion>/`) derived from the key"). The stamp MUST use the major-free registry path. A member MAY omit both fields and receive them from the stamp; a member that authors either field MUST agree with the stamp, and a divergent value MUST fail with a `conflicting values` error at a path naming the member.
 
 #### Scenario: A member authored without provenance receives both stamps
 
@@ -58,7 +58,7 @@ Each map's pattern constraint MUST stamp every member's `metadata.catalogVersion
 
 ### Requirement: The contract stamp does not cover fqn
 
-The pattern constraints MUST NOT stamp or bind `metadata.fqn`. An `fqn` is authored at the definition site (enhancement 0010 D21); the map key carries the member's own `fqn`, and the agreement between key, `fqn` and the identity package is asserted at publish by `#CatalogMemberFQNGate`, not by `#Catalog`.
+The pattern constraints MUST NOT stamp or bind `metadata.fqn`. An `fqn` is authored at the definition site (enhancement 0010, "A primitive's `fqn` is authored from the identity package, and `version` stays required"); the map key carries the member's own `fqn`, and the agreement between key, `fqn` and the identity package is asserted at publish by `#CatalogMemberFQNGate`, not by `#Catalog`.
 
 #### Scenario: Key and fqn are not compared by core
 

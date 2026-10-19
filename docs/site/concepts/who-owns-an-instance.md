@@ -30,7 +30,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ## Why it is built this way
 
-<!-- Rationale source: the archived CLI and controller integration design. Rewrite without decision numbers and drop every mention of handing an instance over, which was removed. Check against: enhancements/archive/0006/03-decisions.md -->
+<!-- Rationale source: the archived CLI and controller integration design. Rewrite without decision numbers and drop every mention of handing an instance over, which was removed. Check against: enhancement 0006 (the decisions on how the CLI and the controller share an instance) -->
 
 ### Why both actors share one ModuleInstance
 
@@ -38,7 +38,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why ownership is an explicit field in the spec
 
-<!-- Without a marker, a controller running in the cluster would reconcile a ModuleInstance the CLI created and fight the CLI over the same objects. `spec.suspend` was not reused because pausing and belonging to the CLI are different intents, and status was not used because spec holds what a user asked for while status can be lost in a backup and restore. Check against: opm-controller/api/v1alpha1/moduleinstance_types.go, enhancements/archive/0006/03-decisions.md (the spec.owner decision) -->
+<!-- Without a marker, a controller running in the cluster would reconcile a ModuleInstance the CLI created and fight the CLI over the same objects. `spec.suspend` was not reused because pausing and belonging to the CLI are different intents, and status was not used because spec holds what a user asked for while status can be lost in a backup and restore. Check against: opm-controller/api/v1alpha1/moduleinstance_types.go, enhancement 0006 (the `spec.owner` decision) -->
 
 ### Why the controller adds no finalizer to a CLI-managed instance
 
@@ -50,7 +50,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why the CLI can render without the cluster's platform
 
-<!-- The CLI reads the cluster Platform when it can, so it renders the way the controller would, and falls back to a platform generated from the render's own dependency pins so that someone who cannot read the cluster-scoped Platform can still apply into their own namespace. A cluster without the controller is supported for basic modules; a module whose provider-fulfilled traits have no provider there renders the rest with `--skip-unprovided`. Check against: cli/internal/platform/resolve.go, enhancements/archive/0006/03-decisions.md (the platform-source decisions) -->
+<!-- The CLI reads the cluster Platform when it can, so it renders the way the controller would, and falls back to a platform generated from the render's own dependency pins so that someone who cannot read the cluster-scoped Platform can still apply into their own namespace. A cluster without the controller is supported for basic modules; a module whose provider-fulfilled traits have no provider there renders the rest with `--skip-unprovided`. Check against: cli/internal/platform/resolve.go, enhancement 0006 (the decisions on where the CLI reads the platform) -->
 
 ## Common mistakes
 

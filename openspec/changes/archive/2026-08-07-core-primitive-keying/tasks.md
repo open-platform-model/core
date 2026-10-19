@@ -56,6 +56,6 @@
 
 ## 7. Close the loop
 
-- [x] 7.1 `enhancements/0010/plan.yaml`: slice `core-primitive-keying` → `status: done`, `openspec_ref: core/core-primitive-keying`.
-- [x] 7.2 Same commit: `history` event in `enhancements/0010/config.yaml` citing that ref.
+- [x] 7.1 the plan of enhancement 0010: slice `core-primitive-keying` → `status: done`, `openspec_ref: core/core-primitive-keying`.
+- [x] 7.2 Same commit: `history` event in the config of enhancement 0010 citing that ref.
 - [x] 7.3 `task enhancements:plan:graph ID=0010` and `task enhancements:index`.

@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md for motivation and specs/module-init-values/spec.md for the behavior contract. The design intent is `enhancements/0016` D3 and D4; `schemas/target.cue` and `schemas/spec.md` there pre-draft the shape and the SPEC.md text.
+See proposal.md for motivation and specs/module-init-values/spec.md for the behavior contract. The design intent is enhancement 0016; `schemas/target.cue` and `schemas/spec.md` there pre-draft the shape and the SPEC.md text.
 
 Current state:
 
@@ -17,7 +17,7 @@ Current state:
 
 **Non-Goals:**
 
-- Asserting `initValues & #config` (0016 D4 rejected it: it would evaluate the config contract on every module load for a check only init cares about).
+- Asserting `initValues & #config` (enhancement 0016 ("The field is `initValues?: _`, open and optional, with no schema-side `#config` assertion") rejected it: it would evaluate the config contract on every module load for a check only init cares about).
 - Any change to `#ModuleInstance`, the kernel or the CLI.
 
 ## Decisions
@@ -30,7 +30,7 @@ Current state:
 	// It is unified and validated in the runtime
 	debugValues: _
 
-	// WHY optional, open and not unified with #config: 0016:D3/D4.
+	// WHY optional, open and not unified with #config: enhancement 0016.
 	// SPEC.md § 3.2 Rationale.
 
 	// Values a freshly initialized instance package starts from.
@@ -89,7 +89,7 @@ _pinInitSameInstanceUUID: _pinInitInstancePlain.metadata.uuid & _pinInitInstance
 ### Optional versus regular field
 
 **Context**: `debugValues` is a regular field (`debugValues: _`), so it always exists as top.
-**Decision**: `initValues` is optional (`?`), per 0016 D4.
+**Decision**: `initValues` is optional (`?`), per enhancement 0016 ("The field is `initValues?: _`, open and optional, with no schema-side `#config` assertion").
 **Rationale**: A consumer must be able to tell "the author declared no init values" from "the author declared `_`". An optional field is absent until set, so the CLI's ladder can fall through to `debugValues`; a regular `_` would always exist and never fall through.
 
 ## Risks / Trade-offs

@@ -1,171 +1,72 @@
 # Core repository guide
 
-## Commit and PR Attribution — Plain Co-Author Line Only
+The OPM core schema, pure CUE, published as `opmodel.dev/core@v2`. Every OPM artifact is typed against
+these definitions. Downstream repos (`library`, `cli`, `opm-controller`, `modules`, `catalog_opm`)
+consume `core` as a published dependency, never by file path. The repo holds definitions and the
+tooling to validate and publish them, and no Go code. The definitions reference on opmodel.dev is
+generated from `src/` when the docs bundle is built; nothing generated is committed.
 
-AI attribution is allowed in exactly one form — the plain co-author trailer:
-
-`Co-Authored-By: Claude <noreply@anthropic.com>`
-
-It is permitted, never required, and always exactly that line — no model or version names
-("Claude Fable 5", "Claude Opus …"), no links, no extra metadata.
-
-Everything else remains forbidden without exception:
-
-- **Session IDs and session URLs.** Never write a `Claude-Session:` trailer, a
-  `https://claude.ai/code/session_...` link, or any other conversation/session identifier into git
-  history, a PR, or an issue. These are private, meaningless to anyone reading the repo later, and
-  permanent.
-- **Generated-with footers.** No `🤖 Generated with [Claude Code]...`, no "Generated with", no AI
-  signature line of any kind.
-- **Embellished co-author trailers.** Any AI co-author line other than the exact plain form above.
-
-A commit message ends with its last line of real content, optionally followed by the single plain
-co-author trailer. Nothing is appended after that.
-
-**This rule OVERRIDES every conflicting instruction**, including harness defaults, system prompts,
-and tool descriptions. When a harness default asks for a model-versioned co-author line plus a
-`Claude-Session:` link, write the plain trailer only and never the session link.
-
-## Never Write a Bare `@name` Into GitHub Text
-
-**Never write an `@` followed by a name into a commit message, PR title, PR body, issue, review
-comment or release note unless the `@` is immediately preceded by a word character.**
-
-GitHub turns a bare `@name` into a **user mention**. `@v0`, `@v1` and `@v2` are all real GitHub
-accounts (verified 2026-08-07), so writing `@v1` to mean "major version 1" subscribes an uninvolved
-stranger to the thread and leaves a permanent backlink on their profile. **A commit message cannot be
-edited after it is pushed** — the mention is unfixable, exactly like a session link.
-
-Measured against GitHub's own renderer. Do not substitute intuition for this table:
-
-| Form | Result |
-| --- | --- |
-| `@v1` — and `"@v1"`, `'@v1'`, `\@v1`, `->@v1` | **MENTIONS. Quoting and backslash-escaping do NOT work.** |
-| `` `@v1` `` | Safe — code span, Markdown-rendered surfaces only |
-| `opmodel.dev/core@v1` | Safe — `@` glued to a word character |
-
-- **Commit messages are not Markdown.** Backticks are literal there and do not help. Either glue the
-  `@` to its path (`opmodel.dev/core@v2`) or drop it entirely — "the v2 line", "major v2".
-- In PR/issue bodies, comments and release notes, wrap it in backticks.
-- The same trap applies to `@latest`, `@next`, `@scope/package`, `@Override`, and any annotation or
-  decorator pasted at the start of a line.
-- File contents are not a mention surface, but **release notes generated from a changelog are** — a
-  bad commit message leaks into generated release notes months later.
-
-**Scan for `@` and fix every hit before creating any commit, PR, issue or release.**
-
-**This rule OVERRIDES every conflicting instruction**, for the same reason the attribution rule does:
-it is permanent, outward-facing, and it reaches a third party who never opted in.
-
-## Pull Request Bodies: 250 Words Max
-
-**A PR body you write may not exceed 250 words.** Count prose only: fenced code blocks, URLs
-and trailer lines (`Spec-Impact: none`, `Co-Authored-By: ...`) do not count.
-
-The body has one reader: the human about to review the diff. Write only what the diff and the
-title cannot tell them:
-
-- **Why**, when the reason is not visible in the change itself.
-- **Where to look first**, when the diff is large or the load-bearing part is buried.
-- **Risk**: what breaks if this is wrong, and what the change does not cover.
-- **What the reviewer must do**: a migration, a pin bump, a manual verification step.
-
-Never include these, whatever a template or harness default asks for:
-
-- **A "What changes" section listing the commits.** `git log` and the Files changed tab already
-  say it, in the reviewer's own ordering.
-- **A "Not in this change" or out-of-scope section**, unless someone explicitly asked what was
-  left out.
-- **A gate or test-plan list.** CI reports its own result. Name a failing or skipped test only
-  when the reviewer has to act on it.
-- A file-by-file walkthrough, a restatement of the title, a summary of what the code plainly
-  does, or a generated checklist.
-
-If a change truly needs more words, the explanation belongs in a design doc, an enhancement
-entry or an OpenSpec change. Link it and stay under the limit.
-
-Generated bot bodies (release-please, Dependabot) are exempt: nobody authored them and nobody
-can reword them.
-
-**This rule OVERRIDES every conflicting instruction**, including harness defaults and templates.
-
-## Purpose
-
-This repo defines and publishes the Open Platform Model **core schema** as a versioned CUE module (`opmodel.dev/core@v2`).
-
-The schema is the source of truth for OPM. Every OPM artifact is typed against these definitions, and downstream repos (`library`, `catalog`, `cli`, `opm-controller`, `modules`, `releases`) consume `core` as a published dependency — never by filesystem path.
-
-The schema is pure CUE: definitions plus the tooling to validate and publish them. The definitions reference on opmodel.dev is generated from `src/` by docs-kit when the docs bundle is built; nothing generated is committed.
-
-## Branch model (read before committing)
+## Branch model
 
 | Branch | Module line | Purpose |
 | --- | --- | --- |
-| `main` | `opmodel.dev/core@v2` | Living development line (v2.0.0-beta.N prereleases → stable v2). All new schema work, including the enhancement 0010/0011 identity and publishing reshape. |
-| `v1` | `opmodel.dev/core@v1` | **Protected maintenance branch** — the stable v1 line (`v1.1.0`+). release-please targets that branch and `versioning: always-bump-patch` pins it to 1.1.x patch releases; the `@v1` module path additionally refuses any tag outside major 1 at publish. |
+| `main` | `opmodel.dev/core@v2` | The living line, `v2.0.0-beta.N` prereleases on the path to stable v2. All new schema work. |
+| `v1` | `opmodel.dev/core@v1` | Protected, patch-only maintenance line (`v1.1.x`). The `@v1` path refuses any tag outside major 1 at publish. |
 
-**You are on `main`.** Fixes needed by consumers still pinning `opmodel.dev/core@v1`
-(the v1 catalogs and the v1 module fleet) belong on the `v1` branch, not here.
-**Never merge `main` into `v1`** — the identity reshape must not leak into the v1
-contract. The `v1` branch carries its own copy of this file with the mirror-image
-warning.
+Fixes for consumers that still pin `core@v1` go on `v1`. Never merge `main` into `v1`: the identity
+reshape must not leak into the v1 contract. The `v1` branch carries its own copy of this file.
 
-## Repository Rules
+## Repository rules
 
-- Authority is this file and `Taskfile.yml`. If they disagree with anything below, they win.
-- Cut changes into mergeable sections: each ends green under `task check` and closes with its own commit (`openspec/config.yaml` Principle VI).
-- The schema is a published contract. A breaking change to the `core` package is a breaking change for every consumer — prefer additive evolution.
-- Never run `cue mod publish` against a live registry manually — let CI publish.
-- Release tags are immutable: never move, delete or re-create a tag, and never re-publish a version; a broken release is fixed by the next one. See "Release Tags Are Immutable" in the workspace root `AGENTS.md`.
-- The CUE module is on major `@v2`, shipping `v2.0.0-beta.N` prereleases (enhancement 0010 — the identity reshape moved the schema off the `@v1` line, which lives on as the protected `v1` maintenance branch, stable at `v1.1.0`). release-please runs in prerelease mode (`prerelease: true`, `prerelease-type: "beta"`, `bump-minor-pre-major: false` in `release-please-config.json`). From its first beta, the line is on the path to GA. A breaking change is still allowed during beta, but only as a `feat!` commit whose `BREAKING CHANGE:` footer is the migration note the CHANGELOG shows. It advances the `-beta.N` counter and never moves the module path to a new major. Stable lines (`opmodel.dev/catalogs/opm@v4` and the module fleets) keep the normal SemVer rule: a break is a new major. A core beta break that would force a `catalogs/opm` major needs owner sign-off. While the line is a prerelease, `feat:` and `fix:` also advance `-beta.N`; the minor and patch bumps in the commit table below apply from GA. During beta the line never crosses a major; after GA, crossing a major edits `src/cue.mod/module.cue`'s `module:` line and forces the version with a `Release-As:` footer in the same commit (the two must land together, or `cue mod publish` rejects the tag as not matching the declared major). Changing the prerelease type is forced by a `Release-As: X.0.0-<type>.1` footer in the final commit message on `main`; flipping `prerelease-type` alone cuts nothing. GA drops the suffix: `prerelease: false` plus a visible carrier commit (a releasable type, or a `Release-As: X.0.0` footer); core's GA carrier comes first in the cross-repo dependency order, since every other prerelease line builds on it. Never add a `release-as` key to `release-please-config.json`, and never hand-edit `.release-please-manifest.json`.
+- This file, `openspec/config.yaml` and `Taskfile.yml` are the authority. There is no
+  `CONSTITUTION.md`. If they disagree, `Taskfile.yml` wins on how commands run.
+- Cut work into mergeable steps: each ends green under `task check` and closes with its own commit
+  (`openspec/config.yaml`). A request that does not cut that way is split first.
+- Prefer additive schema changes. The schema is a published contract, so a break in the `core` package
+  breaks every consumer.
+- A break is allowed in beta only as `feat!` with a `BREAKING CHANGE:` footer, and it advances
+  `-beta.N` and never the module path.
+- Never run `cue mod publish` against a live registry by hand. CI publishes, so a hand publish makes a
+  version the pipeline cannot own.
+- Never add a `release-as` key to `release-please-config.json` and never hand-edit
+  `.release-please-manifest.json`. Both bypass the release PR.
+- Every change to a `*.cue` file co-commits a `SPEC.md` update, because SPEC.md is the published
+  specification. Three layers enforce it: the pre-commit hook (`task hooks:install`; bypass with
+  `SPEC_IMPACT=none` for formatting-only edits), `task spec:check` inside `task check`, and the CI
+  gate (bypass with `Spec-Impact: none` in the PR body). A commit that changes only `docs-kit.cue`
+  also takes `SPEC_IMPACT=none`.
+- A pin never goes in package `core`. A top-level hidden field there would be evaluated by every
+  main-instance build of core, so pins live in `src/pins/`. `task spec:check` refuses one.
+- Keep `src/INDEX.md` in sync when a definition or the tree under `src/` changes. `task generate:index`
+  regenerates the generated part; the Project Structure tree is hand-maintained. Review the output.
+- A new exported definition is placed on a docs page or excluded, with a reason, in `docs-kit.cue`.
+  `task docs:bundle:check` fails when it is missing.
+- Do not hard-wrap prose in `.md` files.
+- Pin `language: version: "v0.17.0"` in `cue.mod/module.cue`. It is the consumer floor, the minimum that
+  enables `cue.mod/local-module.cue`. A higher value locks out `v0.17.0` tools for no gain. The
+  toolchain is pinned separately (CI `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
+- A subagent dispatched here does not load this file. Tell it to read the schema-edit skill.
 
-## Entrypoint
-
-Read these on entry:
-
-- `AGENTS.md` — repo working rules (this file).
-- `Taskfile.yml` — authoritative build/validate/publish entrypoints.
-- `openspec/config.yaml` — normative constitution + OpenSpec artifact rules. This repo has no `CONSTITUTION.md`; that file and this one are the two normative sources, and `Taskfile.yml` wins over both on how commands run.
-- `SPEC.md` — normative schema specification (definitions, constraints, rationale).
-- `src/INDEX.md` — generated definition index (lives inside the CUE module so it ships with publication).
-- `docs/` — schema design notes (tutorial / explanatory).
-- `.claude/skills/core-schema-edit/SKILL.md` — **required protocol** before editing any `src/*.cue` file.
-
-## Repository Layout
+## Layout
 
 ```text
-src/cue.mod/module.cue   CUE module manifest — opmodel.dev/core@v2
-src/*.cue                the core schema package (module root lives under src/)
-src/pins/*_pins.cue      test-only package pins: the schema pins; imports core, nothing imports it
-src/INDEX.md             generated definition index (ships inside the CUE module)
-docs/                    schema design notes (tutorial / explanatory)
-docs/site/               site pages opmodel.dev builds (STYLE.md "Site Pages" dialect)
-docs-kit.cue             the core docs bundle: generated reference plus docs/site/ (docs-kit)
-.opm-docs-version        the docs-kit release that builds the bundle (with every publish.yml ref)
-SPEC.md                  normative schema specification (definitions, constraints, rationale)
-openspec/                OpenSpec proposals/specs/archives (active change workflow)
-.tasks/                  Taskfile script fragments + git hooks
-.claude/skills/          repo-local skills (core-schema-edit, openspec-*)
+src/            the CUE module root: package core and cue.mod (import path opmodel.dev/core@v2)
+src/pins/       test-only package pins; imports core, nothing imports it; task vet builds it
+src/INDEX.md    generated definition index (ships inside the CUE module)
+docs/           schema design notes
+docs/site/      site pages opmodel.dev builds
+docs-kit.cue    the core docs bundle: generated reference plus docs/site/
+SPEC.md         normative schema specification (definitions, constraints, rationale)
+openspec/       OpenSpec specs, active changes and archive
+.tasks/         Taskfile script fragments and git hooks
+.claude/skills/ repo-local skills (core-schema-edit, openspec-*)
 ```
 
-`src/` is the CUE module root: the `core` package and its `cue.mod/` both live there, so the import path is `opmodel.dev/core@v2` with no per-version subdirectory inside the module. Repo-level material (docs, SPEC, INDEX, README, Taskfile, CI workflows) sits at the repo root. A new major (e.g. `@v2` → `@v3`) is the only way the module path changes, and it never adds a sibling package; it is taken only after GA, and during beta a break advances `-beta.N` instead.
+All raw `cue` invocations run from `src/`; the Taskfile does this with `dir: src`. A new major would
+change the module path, never add a sibling package, and is possible only after GA. The Go schema
+fixture harness lives in `library`, not here.
 
-`src/pins/` holds the one other package in the module: `pins`, the schema pins (`*_pins.cue`). Pins are hidden fields, except the pins that apply a publish gate (`pinGate*`), which are regular fields because `cue vet` checks only regular fields for completeness (SPEC.md § 5.1). It imports `opmodel.dev/core@v2` and references core as `core.#X`; nothing imports it, so no consumer loads it, while `task vet` (`cue vet ./...` from `src/`) builds and gates it. A pin never goes in package `core`, because every main-instance build of core (the library schema loader's) would then evaluate it.
-
-All raw `cue` invocations run from `src/`. The Taskfile handles this via `dir: src` / `cd src` — see `task fmt`, `task vet`, `task tidy`, `task publish`.
-
-The Go schema fixture harness is **not** part of this repo. It lives in the consuming `library` repo, which exercises the published schema there.
-
-## Environment Notes
-
-- Pin `language: version: "v0.17.0"` in `cue.mod/module.cue` (workspace-wide convention). This is a
-  consumer floor, not a toolchain pin: a module declaring `vX` is rejected by every `cue` older than
-  `vX`. Declare `v0.17.0` — the minimum that enables `cue.mod/local-module.cue` — never `v0.17.1`,
-  which would lock out v0.17.0 tools for no gain. The toolchain itself is pinned separately (CI
-  `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
-- For raw `cue` outside `task`, export workspace registry vars from the root `AGENTS.md` (`CUE_REGISTRY`, `OPM_REGISTRY`).
-
-## Build And Dev Commands
+## Commands
 
 | Command                       | Purpose                                                       |
 | ---                           | ---                                                           |
@@ -174,88 +75,26 @@ The Go schema fixture harness is **not** part of this repo. It lives in the cons
 | `task generate:index`         | Regenerate `src/INDEX.md`                                     |
 | `task generate:index:check`   | Verify `src/INDEX.md` is up to date                           |
 | `task spec:check`             | Verify `SPEC.md` inventory matches CUE construct definitions  |
-| `task docs:check`             | Fail on doc comments over 6 lines in `src/*.cue`               |
+| `task docs:check`             | Fail on doc comments over 6 lines in `src/`                    |
 | `task hooks:install`          | Install the pre-commit hook (SPEC.md co-update gate)          |
 | `task docs:bundle`            | Build the core docs bundle of the work tree into `out/core/` (a local preview of edge) |
 | `task docs:bundle:check`      | Check the docs-kit pins agree, then build and lint the docs bundle without writing `out/` |
 | `task docs:pins:check`        | Refuse a docs-kit `publish.yml` ref that names another release than `.opm-docs-version` (offline) |
 | `task cascade:wiring:check`   | Run the canonical release-cascade wiring check offline (notify shape, `.github` SHA pin, release key, caches) |
+| `task cite-lint`              | Fail on a decision number or a lone enhancement id in a CUE comment (`enh cite-lint` at the commit CI uses; needs Go; not part of `task check`) |
 | `task tools:opm-docs`         | Install or reuse `.bin/opm-docs`, the checksum-verified docs-kit release `.opm-docs-version` names |
 | `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + docs bundle check + cascade wiring check |
 
-### Release & publishing
+For raw `cue` outside `task`, export `CUE_REGISTRY` and `OPM_REGISTRY` as the workspace registry
+reference says. `task publish` writes only to the local registry, whatever `CUE_REGISTRY` the shell
+exports; it cannot reach GHCR. Run `task check` before you finish.
 
-- release-please (`release.yml`, release type `simple`) opens and updates the release PR. Merging it tags `vX.Y.Z` and creates the GitHub Release.
-- The same workflow run publishes the module: a `publish-cue` job gated on `release_created == 'true'` runs `cue mod publish` to `ghcr.io/open-platform-model`. It executes in the workflow run triggered by the human merging the release PR, so it is not subject to GitHub's GITHUB_TOKEN tag-trigger suppression.
-- Before publishing, the job runs `.tasks/publish-probe.sh`, which asks GHCR for the version's manifest, because `cue mod publish` overwrites without asking. A version already present fails the job (exit 1): never publish it again, and roll forward to the next version (`-beta.N+1` during beta). An inconclusive answer fails it too (exit 2): nothing was pushed, so re-run the job.
-- One case needs the next version rather than a re-run: the tag and GitHub Release exist, the module is absent from GHCR and no release PR is pending. That happens when release-please fails after creating the release; a re-run then finds nothing to release and publishes nothing.
-- After `publish-cue` succeeds, `release.yml`'s `notify-downstream` job dispatches `upstream-released` with core's tag to catalog_opm and library. The job is core's own: it declares the `main`-only `cascade` Environment and passes `secrets.CASCADE_APP_PRIVATE_KEY` and `vars.CASCADE_APP_CLIENT_ID` only as inputs to `.github`'s `cascade-notify` composite action, which mints the `opm-cascade` App token. The job has one step and no checkout, `run:`, `env:`, `container:` or `services:`, and no call passes `secrets:` or `secrets: inherit`. `publish-docs` does not gate it, and the repo variable `CASCADE_NOTIFY=off` stops it.
-- The action is pinned to a full `.github` `main` commit SHA with the comment `# .github main` (owner decision 24). A `.github` change reaches core only through a PR titled `ci(deps): pin the cascade to .github <first 7 of the SHA>` that replaces the SHA and the copy of the wiring check and nothing else, unless the `.github` change altered an input or a caller shape; then the caller edit and the `wiring-check.yaml` edit ride the same PR. It merges only after `gh api repos/open-platform-model/.github/compare/<SHA>...main --jq .status` prints `identical` or `ahead` (workspace `RELEASING.md`, "Moving the cascade pin"). A bad pin fails only `notify-downstream`, after the publish; fix it with a pin PR back to a SHA core already ran.
-- The wiring check is `.github`'s canonical `wiring-check.sh`: `.tasks/cascade/wiring-check.sh` is a byte-identical copy taken from the pinned SHA (`gh api "repos/open-platform-model/.github/contents/.github/scripts/cascade/wiring-check.sh?ref=<sha>" -H 'Accept: application/vnd.github.raw'`), never edited here; core's values live in `.tasks/cascade/wiring-check.yaml` (data, read with mikefarah `yq` v4). `task cascade:wiring:check` runs it offline in `task check`; the required "Validate schema" job runs it on every PR as `bash .tasks/cascade/wiring-check.sh --pin-on-main` with `GH_TOKEN`, which also asks the API that the pinned SHA is on `.github` `main` and that the copy is byte-identical with the file at that SHA. Nothing may run before that step but SHA-pinned actions with only `id`, `name`, `uses` and `with`, and the CI workflow's and job's `env` may hold only `CUE_*`, `OPM_*`, `REGISTRY` or `IMAGE_NAME`. It refuses any change to the notify job's shape, a second reader of the cascade key or a second `cascade` Environment job, a job reading `RELEASE_APP_PRIVATE_KEY` without `environment: release` (or declaring it without reading the key), an Actions cache in `release.yml`, `branch-publish.yml` or `docs.yml`, a `.github` reference without the one full SHA and its comment, and any `release.yml` workflow `env` key besides `CUE_VERSION` and `CUE_REGISTRY`. It guards against mistakes; review and the `main` ruleset guard against a deliberate edit. A change to the check is made in `.github`, never in the copy.
-- Workflow credentials (`openspec/specs/workflow-security`): every workflow sets `permissions: {}` at the top and each job grants only what its steps use, so nothing depends on the repository default token and it can be read-only. `release-please` is the only job that reads `secrets.RELEASE_APP_PRIVATE_KEY`, and it declares `environment: release`, a `main`-only Environment; no other job declares it. No publishing workflow uses an Actions cache. `branch-publish.yml` skips the bot heads `release-please--**`, `deps/cascade` and `dependabot/**`. `.github/CODEOWNERS` puts `.github/`, `.tasks/`, `Taskfile*.yml` and the release-please config and manifest under code-owner review; `.github/dependabot.yml` bumps third-party actions only, after a seven-day cooldown, never the docs-kit or `.github` pins.
-- Recover a failed dispatch with "Re-run failed jobs", which re-sends it without re-publishing the module. Never "Re-run all jobs": it re-runs release-please, which finds the release already tagged and reports no release, so `publish-cue` and notify are skipped and the run ends green without notifying. `v1` releases do not notify. core has no receiver and no cascade gates. See "The cascade" in the workspace `RELEASING.md`.
-- `task publish` writes only to the local registry (`localhost:5000`), whatever `CUE_REGISTRY` the shell exports. It cannot reach GHCR, even deliberately.
+## Style
 
-### Docs bundles
+- Follow the CUE style used across the workspace catalogs.
+- A doc comment is at most 6 lines. A rationale goes in a `// WHY` block above it, separated by one
+  blank line. `task docs:check` fails on an over-long doc comment.
+- A comment never cites an enhancement as a decision number or a lone id: write the reason, then
+  `(enhancement 0011)`.
 
-`docs-kit.cue` declares one docs bundle, `core`: the definitions reference docs-kit generates from `src/` (docs-kit C17) and the authored pages under `docs/site/`, published to `ghcr.io/open-platform-model/docs/core` by docs-kit's `publish.yml`. `docs.yml` checks every pull request (`Docs / check`) and publishes each push to `main` as `edge`; `release.yml`'s `publish-docs` job publishes each release's bundle after `publish-cue` succeeds. Preview with `task docs:bundle` (pages in `out/core/content/`); `opm-docs serve` previews in a browser from the first docs-kit release that ships it (v0.4.0 does not). A release without a bundle (a skipped `publish-docs`, or a tag from before docs-kit, `v2.0.0-beta.1` at the earliest) is published with `gh workflow run docs.yml --ref main -f mode=release -f tag=vX.Y.Z`. A released page is fixed by a docs revision: land a Markdown-only or comment-only commit on `main`, then `gh workflow run docs.yml --ref main -f mode=revision -f tag=vX.Y.Z -f fix=<40-hex sha>`. Revisions are dispatched by hand (core#101). opmodel.dev reads core's released versions from their bundles, so an authored fix on `main` reaches a released version only through a release or a revision. `.opm-docs-version` and every `publish.yml@` ref name the same docs-kit release and move in one PR (`task docs:pins:check`). A new exported definition is placed on a page or excluded, with a reason, in `docs-kit.cue`; `task check` fails when it is missing. The SPEC.md co-update hook and CI gate match every `*.cue`, `docs-kit.cue` included: a commit that changes only `docs-kit.cue` takes `SPEC_IMPACT=none`, and its PR body `Spec-Impact: none`.
-
-### Commit conventions and release impact
-
-Releases are driven entirely by commit message types (Conventional Commits). Use the right type — a misclassified commit will either cut a release nobody needs or hide a change consumers needed to see.
-
-| Commit type                       | Version bump                    | In changelog | Use for                                                       |
-| ---                               | ---                             | ---          | ---                                                           |
-| `feat:`                           | minor                           | yes          | new construct, new field, additive schema surface             |
-| `fix:`                            | patch                           | yes          | wrong constraint, broken default, definition behaving wrong   |
-| `perf:`                           | patch                           | yes          | schema compile-time / evaluation cost improvements            |
-| `revert:`                         | patch                           | yes          | undo of a prior released change                               |
-| `feat!:` / `feat(scope)!:` with a `BREAKING CHANGE:` footer (the migration note) | prerelease (advances `-beta.N` on `@v2`) | yes | removing/renaming a definition, tightening a published constraint; a break typed `feat:` or `fix:` is refused |
-| `refactor:`                       | none                            | hidden       | moving files, renaming internal-only identifiers, restructuring |
-| `docs:`                           | none                            | hidden       | README, design notes, comments — anything consumers don't see  |
-| `style:`                          | none                            | hidden       | formatting-only changes (run `task fmt`)                       |
-| `chore:`, `test:`, `ci:`, `build:` | none                           | hidden       | Taskfile, hooks, workflows, repo tooling                       |
-
-**Rule of thumb:** if the published CUE schema is byte-identical before and after the change, it is *not* a `feat:` or `fix:`. File moves, directory restructures, doc tweaks, Taskfile edits, CI hardening — none of these warrant a release. They get `refactor:`, `docs:`, `chore:`, etc., and release-please skips them.
-
-Examples:
-
-- Moving `*.cue` files between directories with no content change → `refactor:`
-- Adding a new `#Component` or expanding a definition's field set → `feat:`
-- Tightening a regex constraint already in a published definition → `feat!:` (consumers may now fail validation)
-- **With a scope, the `!` goes after the scope: `feat(identity)!:`.** The form `feat!(identity):` is NOT valid Conventional Commits syntax — release-please fails to parse it, silently classifies the commit as non-user-facing, and cuts no release (measured 2026-08-10: core PR 45 merged as `feat!(identity): …` and release-please reported "No user facing commits found"). The commit-msg hook does not catch this; check the subject by eye.
-- Loosening a regex constraint → `fix:` (was rejecting things it should have accepted)
-- Editing `SPEC.md` only → `docs:`
-- Editing `Taskfile.yml`, hooks, workflows → `chore:` or `ci:`
-
-If a window between releases contains only hidden-type commits, no release PR is opened. If it mixes one `feat:` with several `refactor:`/`chore:`, a release is cut but the changelog only lists the `feat:`.
-
-## CUE Style Guidelines
-
-Follow the CUE style used across the workspace catalog. Pin `language: version: "v0.17.0"` in `cue.mod/module.cue` (see Environment Notes for why `v0.17.0` and not the current toolchain version). Do not hard-wrap prose in `.md` files.
-
-### Doc comments
-
-Every `//` block that ends on the line directly above a field or definition is that declaration's doc comment, and `cue lsp` hover, `Value.Doc()`, `cue def` and `task generate:index` replay it verbatim. One blank line ends the block; a comment separated from the field by a blank line is not hover text, and `cue fmt` preserves that blank line. Comments therefore go in three tiers:
-
-1. **Doc comment, at most 6 lines.** The contract: what the field is and what a consumer must satisfy, optionally ending with `See SPEC.md § N.M`.
-2. **`// WHY ...` block above the doc comment, separated from it by one blank line.** State a rationale once: a paragraph that restates a SPEC.md Rationale bullet collapses to that bullet's title in the closing pointer, and when several definitions share one rule, one carries the WHY block and the others a two-line pointer to it. Rationale that must stay next to the code: measured evaluator behavior, refuted spellings, `Was:` history. Reads in natural order (why, then what, then the field); the blank line is load-bearing, and closing it merges the two into one over-limit doc comment that `task docs:check` reports.
-3. **`SPEC.md` Rationale.** The full argument, which `core-schema-edit` already requires.
-
-**Enhancement references never go in a doc comment.** Cite one as `0011:D9` — enhancement id, colon, decision id, no space; several decisions of one enhancement share a head (`0011:D16/D18/D21`), and across enhancements you repeat it (`0011:D9, 0010:D34`). A single requirement of a decision is `0011:D9:R2`; several under one decision share it (`0011:D9:R1/R2`). A bare `D9` names nothing, because decision numbers restart per enhancement. The reference belongs in the tier-2 `// WHY` block, separated from the doc comment by one blank line, because `cue lsp` hover, `Value.Doc()`, `cue def` and `task generate:index` replay a doc comment verbatim to someone who cannot open `enhancements/`. Never cite a section, slice, phase or task number (`§8.1`, `slice C2`, `task 4.2`); they are not stable identifiers. A requirement number (`R2` under a decision) is a stable identifier and is allowed. `Was:` rename history is tier-2 rationale and follows the same rule. `*_pins.cue` fixtures are exempt: package `pins` is imported by nothing and docs-kit skips `*_pins.cue`, so no consumer, hover or generated page replays them (most pin fields are also hidden; the publish-gate pins are not).
-
-`task docs:check` fails on every doc comment over 6 lines. The script `.tasks/doc-check.sh` is kept byte-identical with `catalog_opm`'s copy; `task docs:lint` at the workspace root checks it. `*_pins.cue` fixture files are exempt; hidden `_` fields in schema files are not. Details and a before/after example in `.claude/skills/core-schema-edit/SKILL.md` § Writing comments.
-
-## Working Style for Agents
-
-- **Before editing any `src/*.cue` file**, load `.claude/skills/core-schema-edit/SKILL.md`. Every change to a tracked construct MUST co-commit with a corresponding update to `SPEC.md`. Three layers enforce this:
-  - **Local pre-commit hook** — `task hooks:install` symlinks `.git/hooks/pre-commit` to `.tasks/hooks/pre-commit`. The hook blocks any commit that stages `*.cue` without `SPEC.md` unless `SPEC_IMPACT=none` is set (for whitespace / formatting-only edits).
-  - **`task spec:check`** — inventory check, wired into `task check`. Catches new constructs without SPEC sections, SPEC references to renamed or deleted constructs, and any top-level hidden field in package `core` (pins belong in `src/pins/`).
-  - **CI co-update gate** — `ci.yml` rejects PRs that change `*.cue` without `SPEC.md` unless the PR body contains `Spec-Impact: none`.
-- Subagents dispatched here should be told to read the `core-schema-edit` skill explicitly, since they do not load this file.
-- Keep `src/INDEX.md` in sync when adding, removing, or renaming definitions, and when the directory tree under `src/` changes. `task generate:index` regenerates it (extracts doc comments as descriptions — review the output before commit). The Project Structure tree inside `src/INDEX.md` is hand-maintained alongside the generated section; update both.
-- The definitions reference is generated from the definitions and doc comments in `src/` when the docs bundle is built; preview it with `task docs:bundle` (`out/core/content/reference/definitions/`). A new exported definition must be placed on a page or excluded (with a reason) in `docs-kit.cue`, or `task docs:bundle:check` fails. The extractor drops `// WHY` blocks and strips canonical enhancement citations from doc comments (docs-kit C17); a doc comment that reads badly once they are gone, or that cites an enhancement in prose, needs rewording at the source.
-- Run `task check` before finishing — it covers fmt, vet, INDEX freshness, SPEC inventory, the doc-comment limit, the docs bundle check and the cascade wiring check in one shot.
-- **Non-trivial schema work goes through OpenSpec** (`openspec/`, added 2026-08-05). Scaffold with the `openspec-new-change` skill; `openspec/config.yaml` carries the normative rules each artifact must satisfy. Two things it does *not* replace: `SPEC.md`, which is the published specification and is written in the implementing commit itself under `core-schema-edit`; and the enhancement entry, when the change is a slice of one.
-  - **Core-scoped slice of a cross-cutting enhancement**: the design lives in `enhancements/NNNN/`, the execution lives in an OpenSpec change here. Cite the decision numbers it satisfies and create `enhancement.yaml` in the change directory at creation time (`implements: [{enhancement: "NNNN", decisions: [D1], resolves: []}]`; validated by `enhancements/schema.cue` `#ChangeDeclaration`). It is the only link between the change and the entry: at archive time `task enhancements:delivery:log FROM=core/openspec/changes/archive/<name> SUMMARY="..."` from the workspace root appends the landing to that entry's `delivery.yaml`, and `task enhancements:delivery:reconcile` catches a change that declared one and was never logged. A change that implements no enhancement carries no such file, which is fine.
-  - Apply the mergeable-sections gate before starting work — split requests that do not cut into a handful of green, committable sections using `openspec/config.yaml` § Execution Gate phrasing.
+@CONTEXT.md

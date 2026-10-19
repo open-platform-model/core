@@ -4,7 +4,7 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 
 ## 1. src/transformer.cue
 
-- [x] 1.1 Add the `#transform.#context` projection block per design.md (the two computed metadata blocks with `!= _|_` guards on the optional sources; `version` from `#moduleInstance.#moduleMetadata.version`); rewrite the `#transform` doc comment (runtime supplies `#moduleInstance`, `#component`, `#runtimeName`; the context computes itself) within the 6-line rule with a `SPEC.md § 4.1` pointer. Pair: rewrite `SPEC.md` §4.1's `#TransformerContext`/`#transform` material per the pre-draft (`enhancements/0019/schemas/spec.md`), including the transitional fill rule.
+- [x] 1.1 Add the `#transform.#context` projection block per design.md (the two computed metadata blocks with `!= _|_` guards on the optional sources; `version` from `#moduleInstance.#moduleMetadata.version`); rewrite the `#transform` doc comment (runtime supplies `#moduleInstance`, `#component`, `#runtimeName`; the context computes itself) within the 6-line rule with a `SPEC.md § 4.1` pointer. Pair: rewrite `SPEC.md` §4.1's `#TransformerContext`/`#transform` material per the pre-draft (the pre-drafted spec of enhancement 0019), including the transitional fill rule.
 - [x] 1.2 Cross-check the projection's field sources against `library/opm/schema/context.go` field by field (name, namespace, fqn, uuid, version, labels, annotations on both blocks); record the result in this file. Any mismatch is a stop-and-ask, not a silent adaptation (the staged migration's "identical values" claim rests on it).
 
   **Cross-check record (2026-09-01, context.go at the current library main).** Nine of ten fields match source-for-source; one mismatch was found, raised as a stop-and-ask, and resolved by the owner (land as designed):
@@ -17,11 +17,11 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 
 - [x] 2.1 Add projection pins per design.md: a minimal filled `#transform` (small instance fixture with labels, component fixture, `#runtimeName`), pinning the projected instance and component fields by interpolation, the `controllerLabels` fold, and a rendered-labels count pin (the file's masked-pin rule for open structs).
 - [x] 2.2 Add the absent-optional pin (instance without annotations, `== _|_` disunification shape) and run the divergent-fill must-fail case once in place; record it commented out with the observed cue v0.17.x error text, per the file's rules. (Both the component-name and instance-name variants were run once in place on cue v0.17.1; the component-name case is the recorded one, being the k8up drift class.)
-- [x] 2.3 Confirm the existing `_pinRenderContext` standalone-construction pin and the 0010 D36 matchLabels pins pass untouched. (Same `task vet` run as the new pins; no existing pin edited.)
+- [x] 2.3 Confirm the existing `_pinRenderContext` standalone-construction pin and the enhancement 0010 ("Matching labels live in their own field, unified upward from primitives") matchLabels pins pass untouched. (Same `task vet` run as the new pins; no existing pin edited.)
 
 ## 3. Sanity check against the enhancement delta
 
-- [x] 3.1 Compare the landed projection against `enhancements/0019/schemas/target.cue` § D12 (shape-identical) and `examples.cue`'s D12 assertions (same pinned values); deviations get a note in design.md. (Shape-identical, same field order and guards; pins carry examples.cue's values — shop/apps/`opmodel.dev/modules/shop:shop:apps`/`0f8fad5b-…`/1.2.0, component `web`, controller fold `opm-cli`/`web`/`web`. No deviations; the pins additionally cover the rendered-labels count and the two absent-optional cases, which examples.cue does not assert.)
+- [x] 3.1 Compare the landed projection against the target schema of enhancement 0019 (context projection section, shape-identical) and the context projection assertions of `examples.cue` (same pinned values); deviations get a note in design.md. (Shape-identical, same field order and guards; pins carry examples.cue's values — shop/apps/`opmodel.dev/modules/shop:shop:apps`/`0f8fad5b-…`/1.2.0, component `web`, controller fold `opm-cli`/`web`/`web`. No deviations; the pins additionally cover the rendered-labels count and the two absent-optional cases, which examples.cue does not assert.)
 
 ## 4. Validation
 

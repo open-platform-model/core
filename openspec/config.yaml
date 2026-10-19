@@ -1,5 +1,13 @@
 schema: spec-driven
 
+# The enhancement store: the design record of OPM. `openspec instructions` lists its specs; read
+# one entry with `openspec show <id>-<slug> --store opm-enhancements`. If OpenSpec warns that the
+# store `opm-enhancements` is not registered, report the warning and go on; the human runs
+# `task enhancements:register`.
+references:
+  - id: opm-enhancements
+    remote: https://github.com/open-platform-model/enhancements.git
+
 context: |
   # OPM Core Development Constitution
 
@@ -123,7 +131,7 @@ context: |
   - CUE language floor: `v0.17.0`, declared in `src/cue.mod/module.cue`.
   - Toolchain: pinned separately (CI `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
   - Build/validate entrypoint: `Taskfile.yml`. All raw `cue` invocations run from `src/`.
-  - Registry vars (`CUE_REGISTRY`, `OPM_REGISTRY`) come from the workspace root `AGENTS.md`.
+  - Registry vars (`CUE_REGISTRY`, `OPM_REGISTRY`) are set as the workspace `references/registry.md` says.
 
   ## Code Style
 
@@ -155,17 +163,22 @@ context: |
     `feat:` or a `fix:`.
   - AI attribution: an optional plain `Co-Authored-By: Claude <noreply@anthropic.com>` trailer is
     the only allowed form — never generated-with footers, model-versioned co-author lines, or
-    session IDs/URLs in a commit message, PR title, PR body, issue or review comment. See
-    `AGENTS.md`.
+    session IDs/URLs in a commit message, PR title, PR body, issue or review comment. See the workspace
+    `references/git-text.md`.
 
   ### Comments
   - Default to no enhancement reference: say what the code does and why, in the comment's own words.
-  - When the rationale genuinely lives in an enhancement, cite it once at the symbol as `0011:D9` — enhancement id, colon, decision id, no space. One enhancement, several decisions: `0011:D16/D18/D21`. Across enhancements: `0011:D9, 0010:D34`. One requirement of a decision: `0011:D9:R2`; several: `0011:D9:R1/R2`. A bare `D9` names nothing, because decision numbers restart per enhancement.
-  - Never cite a section, slice, phase, task or design-doc-local id (`§8.1`, `slice C2`, `task 4.2`, `design LD3`). They are not stable identifiers; a requirement number (`R2`) is.
+  - When the rationale genuinely lives in an enhancement, write the reason in words and put the id beside it: `(enhancement 0011)`, or `(enhancements 0010 and 0011)` for two. In all text (proposal, design, specs, docs and comments), an enhancement id appears only beside a reason in words, never alone, and never with a decision number (no `NNNN:Dn`, no `NNNN Dn`, no `NNNN:OQn`, no bare `Dn`): the store has no decision numbers. A comment whose only content is an id, such as `// WHY name: enhancement 0011`, is a lone id: write the reason.
+  - Never cite a section, slice, phase, task or design-doc-local id (`§8.1`, `slice C2`, `task 4.2`, `design LD3`). They are not stable identifiers.
   - Never put a reference in a scaffold template, a generated file, a fixture a user copies, or a CLI output string. Those reach people with no access to the enhancements repo.
   - No `Was:` rename history in comments; `git log` owns it.
   - In CUE, the reference goes in a `// WHY` block separated from the doc comment by one blank line, never in the doc comment itself: `cue lsp` hover, `Value.Doc()` and `cue def` replay a doc comment verbatim.
   
+  ### Enhancements
+  - Enhancements live in the OpenSpec store `opm-enhancements` (see `references:`). Read an entry with `openspec show <id>-<slug> --store opm-enhancements`; its `tasks.md` says which repo still has work.
+  - A change here that delivers a line of an entry's `tasks.md` says so in its proposal (`## Enhancement`, `Delivers NNNN, task X.Y.`); otherwise the section says `None.`.
+  - If OpenSpec warns that the store `opm-enhancements` is not registered, report the warning and go on; the human runs `task enhancements:register`. No agent runs `openspec store register`.
+
   ## Validation Gates (before merge)
   1. `task fmt:check` — CUE files are formatted.
   2. `task vet` — the core schema package validates.
@@ -188,16 +201,17 @@ rules:
     - Breaking changes MUST be called out explicitly with downstream migration cost — a tightened
       constraint counts as breaking even when nothing is removed.
     - Additions to the published surface MUST justify themselves against Principle V.
+    - Cite an enhancement only as its id beside a reason in words (`enhancement 0011`), never alone
+      and never with a decision number.
     - Scope MUST cut into at most about five tasks.md sections, each ending green and leaving
       `main` releasable on its own (Principle VI).
     - "Delivery mode: one PR per change is the default and needs no statement. When a downstream
       consumer must pick up a published pin mid-change, add exactly one line to the proposal,
       `Delivery: one PR per section (<consumer> needs <pin> after section <N>)`, and the change
       ships section by section. In that mode the change stays active on main between PRs, and
-      spec sync and enhancement delivery logging wait for archive after the last PR."
-    - When the change implements a slice of an enhancement, cite the entry and the decision
-      numbers it satisfies (e.g. `enhancements/0010` D1, D6, D8) or, when only part of a decision lands, the requirement numbers (`0010:D4:R1/R2`) rather than restating the design.
-    - "If this change implements decisions from an enhancement in the sibling enhancements/ repo, create enhancement.yaml in this change directory declaring it (implements: [{enhancement: \"NNNN\", decisions: [D1, ...], resolves: []}]). Write it at creation time, while the enhancement is in context; it is what makes archive-time delivery logging mechanical."
+      spec sync waits for archive after the last PR."
+    - "If the change delivers a line of an enhancement's `tasks.md`, add `## Enhancement` with one line `Delivers NNNN, task X.Y.` per task; otherwise `None.`. Read the entry with `openspec show <id>-<slug> --store opm-enhancements` and name its reason in words rather than restating its design."
+    - "If the change has no spec delta, write `skip_specs: true` in `.openspec.yaml` and say why in the proposal."
 
   design:
     - "Focus: HOW we'll implement it technically"
@@ -219,6 +233,8 @@ rules:
       **Explored**: [What was investigated - link to exploration notes]
       **Decision**: [Chosen option]
       **Rationale**: [Why this option was selected]
+    - Cite an enhancement only as its id beside a reason in words (`enhancement 0011`), never alone
+      and never with a decision number.
     - Show the CUE, not a description of the CUE — the definition's shape is the design.
     - Name every `src/*.cue` file the change touches, and every construct in
       `.tasks/spec-tracked.txt` whose SPEC.md section moves with it.
@@ -231,9 +247,10 @@ rules:
     - "Focus: WHAT behavior is changing (not HOW it's implemented)"
     - "Updates when: New or changed requirements emerge"
     - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
-    - When a requirement implements an enhancement requirement, cite `NNNN:DN:Rn` in its body
-      (first sentence or a trailing `Source:` line), never inside the `### Requirement:` header,
-      which tools read as the requirement's name.
+    - When a requirement implements an enhancement requirement, name the enhancement as its id
+      beside the reason in words in its body (first sentence or a trailing `Source:` line), never
+      alone, never with a decision number, and never inside the `### Requirement:` header, which
+      tools read as the requirement's name.
     - Describe observable behavior — what an artifact may now express, what it may no longer
       express, and what error a consumer sees when it gets it wrong.
     - Use ADDED/MODIFIED/REMOVED sections to show deltas.
@@ -294,8 +311,8 @@ operations:
       - "Delivery mode: unless proposal.md carries `Delivery: one PR per section`, all section
         commits ship in one PR after the last section and the PR title carries the change's
         release class. In per-section mode each section commit is the PR title and therefore a
-        release trigger; the change stays active on main between PRs, and spec sync and enhancement
-        delivery logging wait for archive after the last PR."
+        release trigger; the change stays active on main between PRs, and spec sync waits for
+        archive after the last PR."
   archive:
     guidance:
-      - "If this change directory contains enhancement.yaml, finish the archive by logging the landing: from the workspace root run `task enhancements:delivery:log FROM=<archived-change-path> SUMMARY=\"<one line: what landed>\"`. It appends a CUE-validated entry to each declared enhancement's delivery.yaml; confirm it printed 'logged' for every declared enhancement."
+      - "If the change delivers a line of an enhancement's `tasks.md`, name it in the PR body; after the repo PR merges, a PR on `enhancements` ticks that line."

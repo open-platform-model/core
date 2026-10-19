@@ -11,7 +11,7 @@ import (
 	kind: "Module"
 
 	metadata: {
-		// WHY name: 0010:D8.
+		// WHY name: a module name is snake_case and equals the leaf of its module path (enhancement 0010).
 
 		// name: snake_case, and the leaf of modulePath. A module name has one
 		// spelling: it is the CUE package name, the registry-path leaf and the value
@@ -27,7 +27,7 @@ import (
 		// repository (major stripped); major is read from the path.
 		_ref: #ArtifactRef & {"modulePath": modulePath}
 
-		// WHY fqn: 0010:D1.
+		// WHY fqn: the fqn is the complete module path, with nothing recombined (enhancement 0010).
 
 		// fqn is the module path — nothing is recombined, and neither `name` nor
 		// `version` is interpolated into it. Artifact identity therefore
@@ -36,7 +36,7 @@ import (
 		// one fqn.
 		fqn: #ModulePathType & modulePath // Example: "example.com/modules/example_module@v1"
 
-		// WHY registryPath: 0010:D41.
+		// WHY registryPath: instance identity derives from the module's registry path, not from its fqn (enhancement 0010).
 
 		// registryPath: the major-free identity of the module lineage.
 		// #ModuleInstance derives its own fqn from this rather than from fqn, so
@@ -44,7 +44,7 @@ import (
 		// every address-composition site in `cli` and `library` collapses into.
 		registryPath: _ref.registryPath // Example: "example.com/modules/example_module"
 
-		// WHY _leaf: 0010:D8.
+		// WHY _leaf: the path's leaf must equal the module name (enhancement 0010).
 
 		// The path's leaf MUST be the module's name. Hidden, because it is a check
 		// rather than a value a consumer reads. Only the LEAF is constrained: CUE
@@ -55,7 +55,7 @@ import (
 		_leaf: true
 
 		// NO versionMajor field and NO assertion that `version`'s major equals
-		// the path's — deliberately, per 0010:D45 (transposing 0010:D43 from #Catalog).
+		// the path's — deliberately (enhancement 0010, as for #Catalog).
 		// Its absence is specified, not forgotten. `identity/identity.cue`
 		// asserts VersionMajor == Major at the point both values are WRITTEN,
 		// so a failure names the file the author has open; `core` re-deriving
@@ -65,7 +65,7 @@ import (
 		//
 		// ACCEPTED EXPOSURE: a module whose identity package is absent or
 		// non-conformant carries no consumer-runnable major check. Bounded by
-		// 0011:D8/D12/D21 at publish.
+		// publish-side validation (enhancement 0011).
 
 		// Unique identifier for the module, computed as a UUID v5 (SHA1) of the
 		// FQN using the OPM namespace UUID. Its input is the module path, so a
@@ -88,7 +88,7 @@ import (
 		}
 	}
 
-	// WHY #components: 0001:D3.
+	// WHY #components: the pattern constraint wires the per-component injection slot (enhancement 0001).
 
 	// Components defined in this module (developer-defined, required. May be
 	// added to by the platform-team). The pattern constraint wires the
@@ -99,7 +99,7 @@ import (
 			name: string | *Id
 			labels: "component.opmodel.dev/name": name
 		}
-		// WHY #instance: was #release: #ctx.release, renamed by 0002:D8.
+		// WHY #instance: was #release: #ctx.release, renamed by enhancement 0002.
 
 		#instance: #ctx.instance
 	}
@@ -113,7 +113,7 @@ import (
 	// It is unified and validated in the runtime
 	debugValues: _
 
-	// WHY optional, open and not unified with #config: 0016:D3/D4.
+	// WHY optional, open and not unified with #config: only instance init reads it, so a stale or non-concrete template must not fail every module load (enhancement 0016).
 	// SPEC.md § 3.2 Rationale.
 
 	// Values a freshly initialized instance package starts from.
@@ -124,18 +124,18 @@ import (
 	// WHY open and projected: open so future enhancements can add `platform`
 	// / `environment` siblings without breaking module bodies. Components are
 	// the single source of truth for their own identity; #ctx.components only
-	// mirrors them (0010:D2). SPEC.md § 3.2 Rationale, "Why `#ctx` is inline on
+	// mirrors them (enhancement 0010). SPEC.md § 3.2 Rationale, "Why `#ctx` is inline on
 	// `#Module` and not a wrapper type" and "Why `#ctx.components` is a
 	// projection, not an authored map".
 
-	// WHY #ctx: 0001:D1/D2.
+	// WHY #ctx: the context collapses to an inline channel with a projected components map (enhancement 0001).
 
 	// Inline runtime context channel, open at the top level (`...`).
 	// `instance` is set by #ModuleInstance from its own metadata; `components`
 	// is a pure CUE projection over every component's #names.
 	// See SPEC.md § 3.2.
 	#ctx: {
-		// WHY instance: was release: #ReleaseIdentity, renamed by 0002:D8.
+		// WHY instance: was release: #ReleaseIdentity, renamed by enhancement 0002.
 
 		instance: #InstanceIdentity
 

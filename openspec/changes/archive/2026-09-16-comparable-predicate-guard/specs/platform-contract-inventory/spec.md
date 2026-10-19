@@ -2,7 +2,7 @@
 
 ### Requirement: A transformer's match predicate is every required demand it declares
 
-An enabled transformer's match predicate MUST be the union of three demand kinds: every FQN in `requiredResources`, every FQN in `requiredTraits`, and every key-and-value pair in `requiredLabels`. A required label MUST contribute its key and its value together, so two transformers requiring the same label key with different values declare different demands. Optional demands MUST NOT contribute (0010 D32: tolerance is not fulfilment). A transformer declaring no map of a kind MUST be treated as declaring no demand of that kind.
+An enabled transformer's match predicate MUST be the union of three demand kinds: every FQN in `requiredResources`, every FQN in `requiredTraits`, and every key-and-value pair in `requiredLabels`. A required label MUST contribute its key and its value together, so two transformers requiring the same label key with different values declare different demands. Optional demands MUST NOT contribute (enhancement 0010 ("Two providers supplying one contract is a materialize-time error"): tolerance is not fulfilment). A transformer declaring no map of a kind MUST be treated as declaring no demand of that kind.
 
 #### Scenario: A required trait is part of the predicate, not only labels
 
@@ -70,7 +70,7 @@ A pair whose only shared required contracts are provider-fulfilled MUST NOT appe
 
 ### Requirement: The inventory reports and never refuses
 
-Neither report MUST make the platform value fail to evaluate: an over-subscribed, unfulfilled or undiscriminated platform MUST still evaluate, with the offending contracts and transformer pairs named in the lists (enhancement 0015 D18). Whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
+Neither report MUST make the platform value fail to evaluate: an over-subscribed, unfulfilled or undiscriminated platform MUST still evaluate, with the offending contracts and transformer pairs named in the lists (enhancement 0015, "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"). Whether `routable: false` or `discriminated: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
 
 #### Scenario: An over-subscribed platform still evaluates
 

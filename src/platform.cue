@@ -10,14 +10,14 @@ import (
 // and handed the result back on a materialized twin. The entry carries the
 // catalog itself, resolved through the platform module's cue.mod like every
 // other dependency, which is what lets one render build evaluate the
-// instance, the platform and the catalog together (0019:D5, D9).
-// Catalog selection stays a pure function of committed source (0010:D14):
+// instance, the platform and the catalog together (enhancement 0019).
+// Catalog selection stays a pure function of committed source (enhancement 0010):
 // cue.mod is committed source, and a prerelease is still selected by naming
 // it there. SPEC.md § 3.4 Rationale, "Why an import instead of a version
 // string", "Why the version is derived and not authored" and "Why the whole
 // transformer map".
 
-// WHY #CatalogEntry: 0019:D13.
+// WHY #CatalogEntry: the entry embeds the imported catalog whole, and the render module's cue.mod is derived from it (enhancement 0019).
 
 // #CatalogEntry declares that a #Platform admits a catalog, by carrying the
 // imported catalog value whole on #catalog. `version` and `#transformers` are
@@ -31,7 +31,7 @@ import (
 	// The imported catalog, embedded whole.
 	#catalog: #Catalog
 
-	// WHY the readouts: 0019:D13.
+	// WHY the readouts: the render module's cue.mod is derived by promotion, so identity is read, never authored (enhancement 0019).
 
 	// Derived readouts of the catalog's release-stamped identity. Neither
 	// is authored; #Catalog.metadata.version! has no development default,
@@ -50,7 +50,7 @@ import (
 // (Principle V). SPEC.md § 3.4 Rationale, "Why no per-contract routing
 // relation".
 
-// WHY #ContractInventory: 0015:D1/D2/D5/D18.
+// WHY #ContractInventory: contracts are published as members, one provider stands per contract, and an unfulfilled contract is reported, not refused (enhancement 0015).
 
 // #ContractInventory: what a #Platform derives about the contracts its
 // enabled catalogs define and its enabled transformers require: the members
@@ -70,7 +70,7 @@ import (
 	// Colliding keys are absent.
 	definedBy: [#ContractFQNType]: #ModulePathType
 
-	// WHY requiredBy counts required demands only: 0010:D32.
+	// WHY requiredBy counts required demands only: an optional demand is tolerance, not fulfilment (enhancement 0010).
 
 	// Contract FQN to the implementation FQNs of every enabled transformer
 	// whose requiredResources or requiredTraits name it. Required demands
@@ -78,7 +78,7 @@ import (
 	// a defined contract nothing requires maps to an empty list.
 	requiredBy: [#ContractFQNType]: [...#ImplFQNType]
 
-	// WHY unfulfilled: 0015:D18.
+	// WHY unfulfilled: an unfulfilled contract is reported, never refused (enhancement 0015).
 
 	// Defined provider-fulfilled resources and traits with no providedBy
 	// key. A report the controller surfaces as a non-gating condition; never
@@ -86,8 +86,8 @@ import (
 	// catalog defines.
 	unfulfilled: [...#ContractFQNType]
 
-	// WHY providedBy: 0010:D37, 0015:D2/D18. It is the one provider count:
-	// the render build reads it instead of keeping its own, so the refusal
+	// WHY providedBy: a provider-fulfilled contract admits exactly one provider (enhancements 0010 and 0015). It is
+	// the one provider count: the render build reads it instead of keeping its own, so the refusal
 	// and the generation gate cannot disagree. Keyed by registry key, major
 	// included, because the stamped transformer modulePath is major-free.
 
@@ -97,7 +97,7 @@ import (
 	// it. See SPEC.md § 3.4.
 	providedBy: [#ContractFQNType]: [...#ModulePathType]
 
-	// WHY overSubscribed: 0010:D37.
+	// WHY overSubscribed: a provider-fulfilled contract admits exactly one provider (enhancement 0010).
 
 	// Keys of providedBy with more than one registry entry, including a
 	// contract no enabled entry defines. Two majors of one catalog are two
@@ -140,12 +140,12 @@ import (
 }
 
 // WHY the fold copies per entry rather than unifying entry maps: the
-// catalog's provenance stamp (0010:D25) refuses a foreign transformer
+// catalog's provenance stamp (enhancement 0010) refuses a foreign transformer
 // unified into another catalog's member map, so map-level unification fails
-// on healthy multi-catalog input (measured,
-// enhancements/0019/experiments/05-match-in-one-build). Two entries writing
+// on healthy multi-catalog input (measured in the
+// match-in-one-build experiment of enhancement 0019). Two entries writing
 // one composed FQN still unify at that key: agreement collapses, divergent
-// bodies conflict loudly. #matchers is removed (0019:D17): its only reader
+// bodies conflict loudly. #matchers is removed (enhancement 0019): its only reader
 // was the Go matcher the render-path collapse deletes, and the in-build
 // matching glue folds its own buckets from #composedTransformers in a shape
 // core's list-valued buckets never matched. SPEC.md § 3.4 Rationale, "Why
@@ -165,13 +165,13 @@ import (
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// WHY type: 0014:OQ2. A future enhancement may enforce type-vs-transformer
+	// WHY type: an open question of enhancement 0014. A future enhancement may enforce type-vs-transformer
 	// compatibility; today nothing reads the field.
 
 	// Informational: an authored discriminator the matcher does not consult.
 	type!: string
 
-	// WHY #registry: 0019:D5; 0001:D13.
+	// WHY #registry: the platform embeds each catalog whole and the map is keyed by catalog path (enhancements 0019 and 0001).
 
 	// Path-keyed: the map key is the catalog's CUE module path, bound into the
 	// embedded catalog's metadata.modulePath, so key-versus-import drift is a
@@ -188,11 +188,11 @@ import (
 		}
 	}
 
-	// WHY the inventory reports rather than asserts (0015:D18): an
+	// WHY the inventory reports rather than asserts (enhancement 0015): an
 	// assertion inside #Platform is a bottom on the first over-subscribed
 	// contract, so the value cannot name it and every diagnostic reads a
 	// failed value. `routable: false` is the value the generation step
-	// (controller, CLI) refuses on. Under 0015:D18 the refusal named
+	// (controller, CLI) refuses on. Under enhancement 0015 the refusal named
 	// `overSubscribed` and `definedBy`; since collisions are reported it
 	// names `overSubscribed` or `collisions` (with `collidingEntries`),
 	// whichever made the platform not routable. `fulfilled: false` is surfaced as a
@@ -220,10 +220,10 @@ import (
 	//
 	// WHY a key two enabled entries list is a collision, not a conflict:
 	// folding it made two majors of one catalog sharing keys a bottom on
-	// metadata.catalogVersion, so no report could name them (0026:OQ17,
-	// measured in enhancements/0026/experiments/01-one-major-per-build and
-	// 06-collision-tolerant-fold). Only single-definer keys fold; the rest
-	// report with routable false, an interim net until 0026:D9. SPEC.md
+	// metadata.catalogVersion, so no report could name them (measured in the
+	// experiments of enhancement 0026: one major per build and a collision-tolerant
+	// fold). Only single-definer keys fold; the rest
+	// report with routable false, an interim net until a platform may admit several majors (enhancement 0026). SPEC.md
 	// § 3.4 Rationale, "Why the inventory reports and does not refuse", "Why
 	// over-subscription counts registry entries", "Why the predicate is every
 	// required demand, not only labels" and "Why a shared key is a collision
@@ -287,7 +287,7 @@ import (
 		unfulfilled: [for fqn, c in defined if c.kind != "Blueprint" if c.fulfilment == "provider" if providedBy[fqn] == _|_ {fqn}]
 		overSubscribed: [for fqn, ps in providedBy if len(ps) > 1 {fqn}]
 
-		// WHY _predicates: 0010:D32.
+		// WHY _predicates: two providers of one contract are an error, so the report compares required demands (enhancement 0010).
 
 		// Each enabled transformer's match predicate as a canonical token set:
 		// resource:, trait: and label:<key>=<value> tokens from the three REQUIRED

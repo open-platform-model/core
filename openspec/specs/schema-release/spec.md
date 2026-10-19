@@ -12,7 +12,7 @@ A re-run MAY publish only a version the registry still does not hold. Once the r
 
 A published version is immutable. A tag CI did not build is a tag nobody reviewed, and it cannot be withdrawn. This holds for every prerelease type the line carries and for a stable release alike.
 
-Source: `0021:D10:R2`.
+Source: enhancement 0021 ("Release tags are immutable").
 
 #### Scenario: A release is cut by merging the release PR
 
@@ -157,7 +157,7 @@ When the tag exists, the registry lacks the version and no release PR is pending
 
 `task publish` MUST publish to a local registry only, whatever `CUE_REGISTRY` the calling shell exports, so a laptop publish cannot write a release version to GHCR.
 
-Source: `0021:D10:R3`.
+Source: enhancement 0021 ("Release tags are immutable").
 
 #### Scenario: A new version is published
 

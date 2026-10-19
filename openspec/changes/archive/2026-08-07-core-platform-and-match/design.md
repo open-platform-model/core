@@ -1,6 +1,6 @@
 ## Context
 
-Three surfaces in `core` are reshaped together because all three are consequences of enhancement `0010` D4 moving the contract key off the build.
+Three surfaces in `core` are reshaped together because all three are consequences of enhancement 0010 ("A contract is keyed by its own API version; an implementation is keyed by its build") moving the contract key off the build.
 
 **Selection.** `src/platform.cue:16-20` defines `#SubscriptionFilter` with `range`, `allow` and `deny`; `:31-33` puts it on `#Subscription` as optional, and the doc comment records that "when every field is absent the kernel selects the highest SemVer published for the path". Under the *old* build-keyed contracts, breadth was load-bearing: a platform had to cover the authorship history of its installed fleet, because each module's demand key named the exact build it compiled against. D4 removed that requirement, and with it the default's reason to exist.
 
@@ -87,11 +87,11 @@ Every resource a component declares is required. Traits carry an explicit opt-ou
 
 The asymmetry is real rather than convenient: a component does not attach a resource it can do without, while a trait can be advisory — `optionalTraits` already exists on the *supply* side, and this is its demand-side counterpart. Giving resources an optionality marker too was rejected on that ground.
 
-`0010` D28 leaves only the **spelling** to the implementing slice; what it fixes is that there is exactly one opt-out, that it lives on the demand side, and that its absence means required. This change picks the spelling and is where it becomes reviewable.
+Enhancement 0010 ("An unresolved primitive demand is an error; a trait's optionality is stated by its catalog and overridden by the attachment") leaves only the **spelling** to the implementing slice; what it fixes is that there is exactly one opt-out, that it lives on the demand side, and that its absence means required. This change picks the spelling and is where it becomes reviewable.
 
 ## Risks / Trade-offs
 
-**A label disappears from every live workload.** Rendered objects carry `core.opmodel.dev/workload-type` today via the `componentLabels` fold at `src/transformer.cue:147-157`, and `matchLabels` is not rendered. This is the author's call and recorded as provisional — the opt-in render flag is a four-line struct-level guard, demonstrated in `experiments/04`, addable later without disturbing anything here. It was not shipped now because deciding where the flag lives is a separate question, and a runtime-only flag is ruled out by the byte-identical-render gate in `04-graduation.md`. It lands in the same window as the identity migration rather than adding a second one.
+**A label disappears from every live workload.** Rendered objects carry `core.opmodel.dev/workload-type` today via the `componentLabels` fold at `src/transformer.cue:147-157`, and `matchLabels` is not rendered. This is the author's call and recorded as provisional — the opt-in render flag is a four-line struct-level guard, demonstrated in `experiments/04`, addable later without disturbing anything here. It was not shipped now because deciding where the flag lives is a separate question, and a runtime-only flag is ruled out by the byte-identical-render gate in the graduation plan of enhancement 0010. It lands in the same window as the identity migration rather than adding a second one.
 
 **Every live Platform with a range breaks.** Unavoidable and out of scope here. It is a small, enumerable edit per platform, and it is visible: the schema refuses the old shape rather than silently reinterpreting it.
 

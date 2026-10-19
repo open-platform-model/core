@@ -12,9 +12,9 @@ import (
 		name!: #NameType // Example: "scaling"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/traits/v1beta1" (kind prefix + this trait's own apiVersion, 0010:D49)
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/traits/v1beta1" (kind prefix + this trait's own apiVersion, enhancement 0010)
 
-		// WHY apiVersion: 0010:D4.
+		// WHY apiVersion: a contract is keyed by its own API version, and a primitive carries one (enhancement 0010).
 
 		// apiVersion: this contract's own level, and the only component of its key.
 		// Moved when this trait's shape breaks — a catalog release does not move it,
@@ -22,13 +22,13 @@ import (
 		// on a primitive that is not derivable from its catalog's identity package.
 		apiVersion!: #APIVersionType // Example: "v1beta1"
 
-		// WHY catalogVersion: 0010:D25.
+		// WHY catalogVersion: apiVersion is authored per primitive, so the catalog build is named catalogVersion (enhancement 0010).
 
 		// catalogVersion: the catalog build this definition shipped in. Provenance
 		// only — no contract key interpolates it.
 		catalogVersion!: #VersionType // Example: "1.0.0"
 
-		// WHY fqn: 0010:D21.
+		// WHY fqn: the fqn is authored from the identity package, never derived here (enhancement 0010).
 
 		// fqn: authored by the catalog at the definition site, not derived here, so
 		// fqn, modulePath and catalogVersion trace to one identity package and a
@@ -40,7 +40,7 @@ import (
 		// Human-readable description of the definition
 		description?: string
 
-		// WHY labels: 0010:D36.
+		// WHY labels: matching labels live in their own field, so these stay descriptive (enhancement 0010).
 
 		// Optional metadata labels for categorization. Descriptive only — nothing
 		// selects on these, and they are never unified upward into a #Component.
@@ -55,7 +55,7 @@ import (
 	// WHY two fields: see #Resource.matchLabels for why the two cannot be one
 	// field. NOT rendered: matchLabels does not reach #TransformerContext.
 
-	// WHY matchLabels: 0010:D36.
+	// WHY matchLabels: matching labels live in their own field, unified upward from primitives (enhancement 0010).
 
 	// matchLabels: this trait's matching identity — the keys a
 	// #ComponentTransformer.requiredLabels predicate selects on, unified
@@ -68,7 +68,7 @@ import (
 	// stated once there (SPEC.md § 2.1 Rationale, "Why the primitive declares
 	// the name rule and the component asserts it"); this slot is the same slot.
 
-	// WHY #nameConstraint: 0019:D21; 0019:D23.
+	// WHY #nameConstraint: a primitive computes its own name rule and the component asserts it (enhancement 0019).
 
 	// nameConstraint: the name rule a kind this primitive renders enforces on the
 	// owning component's metadata.resourceName; top when the primitive is
@@ -83,7 +83,7 @@ import (
 	// exists for: a catalog declares the trait and ships nothing that renders
 	// it, which is today indistinguishable from having forgotten to.
 
-	// WHY fulfilment: 0010:D32.
+	// WHY fulfilment: a provider-fulfilled contract admits exactly one provider (enhancement 0010).
 
 	// fulfilment: where this contract's implementation is expected to come from.
 	// "catalog" (the default) means the declaring catalog implements it;
@@ -109,7 +109,7 @@ import (
 	// and why `core` states no default for it" and "Why the earlier
 	// demand-side marker was dropped".
 
-	// WHY optional: 0010:D28, trait half.
+	// WHY optional: a trait's optionality is stated by its catalog and overridden by the attachment (enhancement 0010).
 
 	// optional: whether an unhandled demand for this trait fails the render or
 	// degrades to a warning naming the trait. `core` sets no default: the
@@ -129,7 +129,7 @@ import (
 
 // WHY it ships in `core` beside the identity gates and is checked the same
 // way — the schema is the contract, CUE is the engine that checks contracts,
-// and what the author reads is CUE's own error (0011:D21/D22).
+// and what the author reads is CUE's own error (enhancement 0011).
 //
 // WHY it TAKES THE FIELD, NOT THE TRAIT. `#TraitOptionalGate & {trait:
 // SomeTrait}` would drag the trait's `spec` into concreteness checking under

@@ -7,8 +7,8 @@ import (
 	"opmodel.dev/core@v2"
 )
 
-// Schema-level pins for the contract inventory (0015:D1, D2,
-// D18): #ContractInventory and the #Platform.#contracts fold that derives it
+// Schema-level pins for the contract inventory (enhancement 0015):
+// #ContractInventory and the #Platform.#contracts fold that derives it
 // from the enabled entries' contract maps and the required demands of
 // their transformers. The enhancement ships no examples.cue for this
 // slice, so the delta is exercised here. Also pinned here: each fixture
@@ -27,7 +27,7 @@ import (
 // strings.Join over a sorted copy, so the pin states the exact members and
 // does not ride on registry iteration order.
 //
-// MUST-FAIL cases: none. The inventory reports and never refuses (0015:D18), so
+// MUST-FAIL cases: none. The inventory reports and never refuses (enhancement 0015), so
 // there is no platform value this file could show being rejected; the
 // over-subscribed and colliding platforms below are pinned EVALUATING, which
 // is the property.
@@ -37,7 +37,7 @@ import (
 
 // ─── Fixtures: nine stand-in catalogs ───────────────────────────────────────
 //
-// Shapes copied from catalog_opm and the provider design (0015 02-design.md);
+// Shapes copied from catalog_opm and the provider design of enhancement 0015;
 // `core` has no dependencies, so nothing is imported. Each member authors
 // only what the catalog stamp cannot supply. The base catalog lists one
 // member per map plus the provider-fulfilled `backup` trait and ships one
@@ -583,7 +583,7 @@ _pinInventoryOneProviderProvidedBy: "1|opmodel.dev/catalogs/k8up@v2"
 
 // ─── Two providers: over-subscribed, and the value STILL EVALUATES ──────────
 //
-// This is 0015:D18's whole point pinned: `routable: false` is a value a caller
+// This is the whole point of enhancement 0015 pinned: `routable: false` is a value a caller
 // reads, not a bottom. #composedTransformers is intact beside it, and the
 // report names the contract.
 
@@ -934,7 +934,7 @@ _pinParityResourceProvider: "opmodel.dev/catalogs/opm/traits/backup@v1alpha1=opm
 _pinInventoryResourceProviderReadout: (_pinInventoryReadout & {#in: _pinInventoryResourceProvider.#contracts}).out
 _pinInventoryResourceProviderReadout: "defined=4 unfulfilled=[] overSubscribed=[] fulfilled=true routable=true comparable=1 discriminated=false"
 
-// ─── Fixtures: the comparability report (0015:D5, OQ9) ──────────────────────
+// ─── Fixtures: the comparability report (enhancement 0015) ──────────────────────
 //
 // A second, independent family, so the platforms above keep reading as the
 // over-subscription story. One definition catalog lists the two
@@ -1032,7 +1032,7 @@ _pinCmpAlphaCatalog: (_pinCmpOne & {#name: "alpha", #demands: {
 }}).out
 
 // Identical predicate to alpha's, from a second catalog: the accidental
-// two-catalogs-one-adapter case 0015:D5 exists for.
+// two-catalogs-one-adapter case enhancement 0015 exists for.
 _pinCmpBetaCatalog: (_pinCmpOne & {#name: "beta", #demands: {
 	requiredResources: (_pinCmpWidget.metadata.fqn): _pinCmpWidget
 }}).out
@@ -1058,7 +1058,7 @@ _pinCmpEpsilonCatalog: (_pinCmpOne & {#name: "epsilon", #demands: {
 }}).out
 
 // The same trait, declared OPTIONAL: predicate is the resource alone, so
-// zeta reads exactly as alpha does (0010:D32).
+// zeta reads exactly as alpha does (enhancement 0010).
 _pinCmpZetaCatalog: (_pinCmpOne & {#name: "zeta", #demands: {
 	requiredResources: (_pinCmpWidget.metadata.fqn): _pinCmpWidget
 	optionalTraits: (_pinCmpTuning.metadata.fqn):    _pinCmpTuning
@@ -1183,7 +1183,7 @@ _pinCmpRows: {
 _pinCmpIdenticalRows: (_pinCmpRows & {#in: _pinCmpIdentical.#contracts}).out
 _pinCmpIdenticalRows: "opmodel.dev/catalogs/cmp-alpha/transformers/alpha@1.0.0>opmodel.dev/catalogs/cmp-beta/transformers/beta@1.0.0@[opmodel.dev/catalogs/cmp-base/resources/widget@v1beta1]"
 
-// 0015:D18 on the new report: an undiscriminated platform STILL EVALUATES.
+// Enhancement 0015 on the new report: an undiscriminated platform STILL EVALUATES.
 // The composed fold is intact and both transformer FQNs read back off the row.
 _pinCmpIdenticalEvaluates: "\(len(_pinCmpIdentical.#composedTransformers))|\(_pinCmpIdentical.#contracts.discriminated)|\(_pinCmpIdentical.#contracts.comparable[0].broader)|\(_pinCmpIdentical.#contracts.comparable[0].narrower)|\(len(_pinCmpIdentical.#contracts.comparable[0].contracts))"
 _pinCmpIdenticalEvaluates: "2|false|opmodel.dev/catalogs/cmp-alpha/transformers/alpha@1.0.0|opmodel.dev/catalogs/cmp-beta/transformers/beta@1.0.0|1"

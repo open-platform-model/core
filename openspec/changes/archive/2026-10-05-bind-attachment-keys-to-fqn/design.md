@@ -86,7 +86,7 @@ The key stays `string` rather than `#ContractFQNType`. The member's own `fqn!: #
 // #traits and #blueprints: the same line added under their own stamps.
 ```
 
-`#transformers` keeps its current pattern. The `catalog.cue` header and the §3.6 Rationale "Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`" are reworded. The transformer stamp still does not touch `fqn`. The contract maps now bind it to the key. Binding does not compute `fqn` from `name` or `modulePath`, so 0010:D21 (an fqn is authored, not derived) still holds: both the key and the fqn are authored, and core now requires them to agree. `#CatalogMemberFQNGate` still checks fqn against the identity package at publish.
+`#transformers` keeps its current pattern. The `catalog.cue` header and the §3.6 Rationale "Why the pattern stamps `modulePath` + `catalogVersion` but not `fqn`" are reworded. The transformer stamp still does not touch `fqn`. The contract maps now bind it to the key. Binding does not compute `fqn` from `name` or `modulePath`, so enhancement 0010 ("A primitive's `fqn` is authored from the identity package, and `version` stays required") (an fqn is authored, not derived) still holds: both the key and the fqn are authored, and core now requires them to agree. `#CatalogMemberFQNGate` still checks fqn against the identity package at publish.
 
 ### A member that leaves fqn unset
 
@@ -157,7 +157,7 @@ Run 2026-10-05 on cue v0.17.1, in scratch copies only; no consumer repo was chan
 
 **Positive controls.** A component keyed `#resources: container: #ContainerResource`, added to a scratch copy of catalog_opm `src/resources/v1beta1` and of `modules/apprise` (under `#components`), failed plain `cue vet` with `... .#resources.container.metadata.fqn: conflicting values "opmodel.dev/catalogs/opm/resources/container@v1beta1" and "container"`. Plain vet therefore reaches attachments in both regular fields and definitions, and the override was live.
 
-**Result: no mis-keyed member anywhere. No OWNER STOP (0021:D7:R5) fired.**
+**Result: no mis-keyed member anywhere. No OWNER STOP (enhancement 0021, "A `-beta.N` release line is pre-stable on the path to GA, and breaks only as a declared, migrated change") fired.**
 
 | Consumer (origin/main) | Command | beta.3 | beta.99 | Note |
 | --- | --- | --- | --- | --- |

@@ -60,7 +60,7 @@ ONE rule, computed once in core as `#Platform.#contracts.providedBy` and read by
 `#ContractInventory` gains one field; the doc comments on `unfulfilled` and `overSubscribed` are rewritten. Every doc comment stays at six lines or fewer (`task docs:check`); references go in `// WHY` blocks.
 
 ```cue
-	// WHY unfulfilled: 0015:D18.
+	// WHY unfulfilled: enhancement 0015.
 
 	// Defined provider-fulfilled resources and traits with no providedBy
 	// key. A report the operator surfaces as a non-gating condition; never
@@ -68,7 +68,7 @@ ONE rule, computed once in core as `#Platform.#contracts.providedBy` and read by
 	// catalog defines.
 	unfulfilled: [...#ContractFQNType]
 
-	// WHY providedBy: 0010:D37, 0015:D2/D18. It is the one provider count:
+	// WHY providedBy: a provider-fulfilled contract admits exactly one provider (enhancements 0010 and 0015). It is the one provider count:
 	// the render build reads it instead of keeping its own, so the refusal
 	// and the generation gate cannot disagree. Keyed by registry key, major
 	// included, because the stamped transformer modulePath is major-free.
@@ -79,7 +79,7 @@ ONE rule, computed once in core as `#Platform.#contracts.providedBy` and read by
 	// it. See SPEC.md § 3.4.
 	providedBy: [#ContractFQNType]: [...#ModulePathType]
 
-	// WHY overSubscribed: 0010:D37.
+	// WHY overSubscribed: enhancement 0010.
 
 	// Keys of providedBy with more than one registry entry, including a
 	// contract no enabled entry defines. Two majors of one catalog are two
@@ -147,7 +147,7 @@ Inside `#Platform.#contracts`, replacing `_providers` and the two list comprehen
 
 ### Count per registry key, not per stamped transformer path
 
-**Context**: Two keys were available: the transformer's stamped `metadata.modulePath` (unforgeable per 0010:D25 but major-free) and the registry key (major included).
+**Context**: Two keys were available: the transformer's stamped `metadata.modulePath` (unforgeable per enhancement 0010 ("`apiVersion` is authored per primitive; `version` is renamed `catalogVersion`") but major-free) and the registry key (major included).
 **Explored**: Scratch prototype `design/core/src/platform.cue` with `zz_parity_pins.cue`, cue v0.17.1, under the session scratchpad `parity/`. A verbatim replica of the library guard (`render.cue.tmpl:445-466`) was evaluated against the prototype inventory and against today's core (`design/core-orig`).
 **Decision**: The registry key.
 **Rationale**: It is what the render build already refuses on, so parity holds by construction once the render reads core's value. The prototype's key sets equal the guard's on 7 platforms (two-majors, definer-disabled, definer-absent, TwoProviders, OneProvider, BaseOnly, DisabledProvider). Today's core diverges on exactly the three bad platforms (inventory `routable=true`, guard refuses); the controls agree. Every existing core pin passes unchanged on the prototype (`cue vet ./...` OK).

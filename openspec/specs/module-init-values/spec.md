@@ -6,7 +6,7 @@ Lets a module author state, in the module itself, the values a freshly initializ
 
 ### Requirement: A module may declare initValues
 
-`#Module` SHALL accept an optional field `initValues` beside `debugValues`. The field is open: any CUE value is accepted, concrete or not, struct or not. A module without `initValues` SHALL remain valid and unchanged in meaning. `#Module` SHALL stay closed: no other new field becomes legal. Source: 0016:D3:R1, 0016:D4:R2.
+`#Module` SHALL accept an optional field `initValues` beside `debugValues`. The field is open: any CUE value is accepted, concrete or not, struct or not. A module without `initValues` SHALL remain valid and unchanged in meaning. `#Module` SHALL stay closed: no other new field becomes legal. Source: enhancement 0016 (an optional, open init template field).
 
 #### Scenario: Module sets concrete initValues
 
@@ -30,7 +30,7 @@ Lets a module author state, in the module itself, the values a freshly initializ
 
 ### Requirement: initValues is not checked against the config contract
 
-The schema SHALL NOT assert that `initValues` satisfies `#config`. A module whose `initValues` does not satisfy its `#config` SHALL still validate as a module; the mismatch surfaces only where the value is consumed. Source: 0016:D4:R1.
+The schema SHALL NOT assert that `initValues` satisfies `#config`. A module whose `initValues` does not satisfy its `#config` SHALL still validate as a module; the mismatch surfaces only where the value is consumed. Source: enhancement 0016 ("The field is `initValues?: _`, open and optional, with no schema-side `#config` assertion").
 
 #### Scenario: Non-conforming initValues still validates
 
@@ -39,7 +39,7 @@ The schema SHALL NOT assert that `initValues` satisfies `#config`. A module whos
 
 ### Requirement: initValues is inert for debugValues and identity
 
-Adding `initValues` SHALL change nothing about `debugValues`: its field, meaning and constraint are unchanged, and a module MAY carry both with different content. `initValues` SHALL NOT be an input to the module's `metadata.fqn` or `metadata.uuid`, nor to the `metadata.uuid` of any `#ModuleInstance` that deploys the module. An instance whose `#module` sets `initValues` SHALL evaluate exactly as one whose `#module` does not. Source: 0016:D3:R3.
+Adding `initValues` SHALL change nothing about `debugValues`: its field, meaning and constraint are unchanged, and a module MAY carry both with different content. `initValues` SHALL NOT be an input to the module's `metadata.fqn` or `metadata.uuid`, nor to the `metadata.uuid` of any `#ModuleInstance` that deploys the module. An instance whose `#module` sets `initValues` SHALL evaluate exactly as one whose `#module` does not. Source: enhancement 0016 (a separate init field).
 
 #### Scenario: Both fields with different content
 

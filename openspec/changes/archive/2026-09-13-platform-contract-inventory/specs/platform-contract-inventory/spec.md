@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines what a `#Platform` derives about the contracts its enabled catalogs define and its enabled transformers require: which contracts exist, which catalog lists each, which implementations require each, which provider-fulfilled contracts nothing implements, and which have more than one provider. The inventory is a report a platform carries with no module in hand (enhancement 0015 D1, D2, D18).
+Defines what a `#Platform` derives about the contracts its enabled catalogs define and its enabled transformers require: which contracts exist, which catalog lists each, which implementations require each, which provider-fulfilled contracts nothing implements, and which have more than one provider. The inventory is a report a platform carries with no module in hand (enhancement 0015, "`#Catalog` publishes its contracts as members, beside its transformers", "One provider per contract stands; provider classes are rejected in this entry" and "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation").
 
 ## ADDED Requirements
 
@@ -20,7 +20,7 @@ Defines what a `#Platform` derives about the contracts its enabled catalogs defi
 
 ### Requirement: Required demands are counted per contract across enabled transformers
 
-`#contracts.requiredBy` MUST map every defined contract FQN to the list of implementation FQNs, drawn from `#composedTransformers`, whose `requiredResources` or `requiredTraits` name that contract. Optional demands MUST NOT count (0010 D32: tolerance, not fulfilment). A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind. A defined contract nothing requires MUST map to an empty list.
+`#contracts.requiredBy` MUST map every defined contract FQN to the list of implementation FQNs, drawn from `#composedTransformers`, whose `requiredResources` or `requiredTraits` name that contract. Optional demands MUST NOT count (enhancement 0010 ("Two providers supplying one contract is a materialize-time error"): tolerance, not fulfilment). A transformer declaring no demand map of a kind MUST be treated as demanding nothing of that kind. A defined contract nothing requires MUST map to an empty list.
 
 #### Scenario: A contract required by transformers from two catalogs lists both
 
@@ -62,7 +62,7 @@ Defines what a `#Platform` derives about the contracts its enabled catalogs defi
 
 ### Requirement: The inventory reports and never refuses
 
-Neither report MUST make the platform value fail to evaluate: an over-subscribed or unfulfilled platform MUST still evaluate, with the offending contracts named in the lists (enhancement 0015 D18). Whether `routable: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
+Neither report MUST make the platform value fail to evaluate: an over-subscribed or unfulfilled platform MUST still evaluate, with the offending contracts named in the lists (enhancement 0015, "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"). Whether `routable: false` withholds a generated platform package is the generation step's decision, outside `core`; `fulfilled: false` MUST NOT gate anything.
 
 #### Scenario: An over-subscribed platform still evaluates
 

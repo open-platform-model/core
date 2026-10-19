@@ -4,7 +4,7 @@
 
 `#contracts.providedBy` MUST map every contract FQN that some enabled transformer names in its `requiredResources` or `requiredTraits` with a requirement whose `fulfilment` is `"provider"` to the ascending-sorted list of registry keys (the catalog module path with its major, `path@vN`) of the enabled entries whose transformers do so. It is derived per registry entry, over every transformer of every enabled entry, and it MUST NOT depend on whether any enabled entry defines the contract. Fulfilment MUST be read from the transformer's own requirement value, never from the defining catalog's member. A key MUST be present exactly when at least one enabled entry provides the contract. Optional demands, required labels, catalog-fulfilled requirements, blueprints and disabled entries MUST NOT contribute. Each registry key MUST appear at most once per contract, however many of that entry's transformers require it.
 
-Source: corrects the delivery of 0015:D2 (a refusal names both catalog paths) by exposing the paths it names.
+Source: corrects the delivery of enhancement 0015 ("One provider per contract stands; provider classes are rejected in this entry") (a refusal names both catalog paths) by exposing the paths it names.
 
 #### Scenario: One provider entry through two adapters is one key
 
@@ -35,7 +35,7 @@ Source: corrects the delivery of 0015:D2 (a refusal names both catalog paths) by
 
 `#contracts.overSubscribed` MUST list every key of `providedBy` whose list holds more than one registry key, including a contract no enabled entry defines. The counting key is the registry key, so two majors of one catalog MUST count as two providers, and two transformers of one entry requiring one contract MUST count as one provider. `#contracts.routable` MUST be true exactly when `overSubscribed` is empty.
 
-Source: corrects the delivery of 0015:D2 and 0015:D18; 0010:D37 is the rule counted.
+Source: corrects the delivery of enhancement 0015 ("One provider per contract stands; provider classes are rejected in this entry" and "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation") and enhancement 0010 ("A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider") is the rule counted.
 
 #### Scenario: Two catalogs providing one contract is over-subscription
 
