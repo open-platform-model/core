@@ -25,4 +25,4 @@ Per spec: read the requirement and its scenarios on `main`; pick the form (desig
 
 - [x] 4.1 Run the gate of guide section 6 with `LAST=1`, `N` = 34: `validate split-long-requirements --strict` exits 0, archive exits 0, `validate --specs --strict` exits 0, no "Archive would refuse" line, no new ERROR item; also `openspec validate --all --strict` exits 0 (core has no other open change)
 - [x] 4.2 Run the review checklist of the guide (items 1 to 14) and record each result in the report
-- [ ] 4.3 Archive the change on the branch (`openspec-archive-change`), `task check` green in the scratch copy named `core`, then commit `docs(openspec): archive split-long-requirements`
+- [x] 4.3 Archive the change on the branch (`openspec-archive-change`), `task check` green in the scratch copy named `core`, then commit `docs(openspec): archive split-long-requirements`

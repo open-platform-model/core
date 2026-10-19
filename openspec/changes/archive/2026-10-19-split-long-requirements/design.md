@@ -651,7 +651,7 @@ Old length to new lengths by the validator's rule. Each table lists every live s
 | when a `.github` reference lacks the one full SHA and the `.github main` comment; when `release.yml`'s workflow-level `env` holds a key other than `CUE_VERSION` and `CUE_REGISTRY` | The wiring check fails on a loose .github reference or a startup-code variable | two sentences, each "The wiring check MUST fail" plus the copied clause |
 | when a checkout of `.github` is not `actions/checkout` at a full SHA with exactly `repository`, `ref`, `path` and `persist-credentials: false` | The wiring check fails when a checkout of .github is not pinned | "The wiring check MUST fail" plus the copied clause |
 | and, in CI, when the pinned SHA is not on `.github` `main` or the copy differs from `.github/scripts/cascade/wiring-check.sh` at the pinned SHA | The wiring check fails in CI when the pinned SHA is off main or the copy differs | "The wiring check MUST fail, in CI, when ..." plus the copied clause |
-| Source: ... | every new block | whole line on four blocks; the part with the `.github` README and `RELEASING.md` titles on six more; a shorter README and wiring contract line on two; no title is dropped from every block |
+| Source: ... | every new block | whole line on four blocks; the part with the `.github` README and `RELEASING.md` titles on five more; a shorter README and wiring contract line on three; no title is dropped from every block |
 
 #### The schema is published only by CI, from a reviewed release (853 to 370 kept in place, 342 and 258 added; form b)
 
