@@ -1,6 +1,6 @@
 ## Why
 
-The Kubernetes controller `opm-operator` is renamed `opm-controller`: the repo, the Go module, the image, the namespace `opm-system`, the CLI noun `opm controller`, the docs section `/docs/reference/controller/`, and `spec.owner: controller` in place of `operator`, with no alias and no migration. "Operator" in the Kubernetes sense names a controller carrying app-specific day-2 knowledge; OPM's is a generic delivery engine. In the new vocabulary "the controller" is the product and its per-kind loops are "reconcilers". The rename is recorded in the controller repo's ADR-019 and in enhancement 0032 (The operator becomes the controller), which amends 0006.
+The Kubernetes controller `opm-operator` is renamed `opm-controller`: the repo, the Go module, the image, the namespace `opm-system`, the CLI noun `opm controller`, the docs section `/docs/reference/controller/`, and `spec.owner: controller` in place of `operator`, with no alias and no migration. "Operator" in the Kubernetes sense names a controller carrying app-specific day-2 knowledge; OPM's is a generic delivery engine. In the new vocabulary "the controller" is the product and its per-kind loops are "reconcilers". The rename is recorded in the controller repo's ADR-019.
 
 core names the product in prose only: the concept pages it ships to opmodel.dev, `SPEC.md`, four main specs, doc comments in `src/*.cue`, its own `AGENTS.md` and `openspec/config.yaml`, and one script comment. Left alone, those pages would tell a reader to run `opm operator install`, to set `spec.owner: operator` (which the CRD now refuses), and would cite source paths under `opm-operator/` that no longer exist.
 
@@ -12,6 +12,10 @@ core names the product in prose only: the concept pages it ships to opmodel.dev,
 - Four main-spec requirement bodies (`contract-fulfilment`, `instance-identity`, `platform-contract-inventory`, `release-cascade`) are MODIFIED with the new name; no requirement or scenario title carries the word, so nothing is retitled. The `instance-identity` Purpose line is edited in place.
 - Kept as written: `CHANGELOG.md` and `openspec/changes/archive/**` (history), the human "platform operator" and "an operator upgrading a catalog", Kubernetes-generic "operators installed in a cluster", and "Helm operators".
 - Not here: `.tasks/cascade/wiring-check.sh` names `opm-operator` twice, but it is a byte-identical copy of the `.github` wiring script whose hash the pin round checks, so it moves only with the `.github` pin round that retires the old repo name.
+
+## Enhancement
+
+None.
 
 ## Release class
 

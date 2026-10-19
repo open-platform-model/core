@@ -1,6 +1,6 @@
 ## Context
 
-The controller repo `opm-operator` becomes `opm-controller` (the owner's decisions are recorded in the controller repo's ADR-019 and in enhancement 0032, which amends 0006). core carries no code that names it, only prose and comments. This design fixes which "operator" words move.
+The controller repo `opm-operator` becomes `opm-controller` (the owner's decisions are recorded in the controller repo's ADR-019). core carries no code that names it, only prose and comments. This design fixes which "operator" words move.
 
 ## Goals / Non-Goals
 
