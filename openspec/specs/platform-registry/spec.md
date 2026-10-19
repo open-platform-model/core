@@ -86,20 +86,6 @@ A `#Platform` MUST NOT be able to express two builds of one catalog. CUE map sem
 - **WHEN** a `#Platform` declares two registry entries under the same catalog module path
 - **THEN** CUE map semantics collapse them to one key, so two distinct builds of one catalog are not expressible
 
-### Requirement: A platform carries no reverse index
-
-`#Platform` MUST NOT declare `#matchers`. A platform value declaring one is inert: nothing in `core` or in the render build's matching glue reads it (closedness does not refuse an undeclared definition field, measured 2026-09-13 on cue v0.17.1). Consumers that want a contract-to-transformers index for matching MUST derive it from `#composedTransformers`. `#contracts.requiredBy` is a derived readiness index (contract FQN to the implementation FQNs requiring it), not a matcher bucket: the matching glue MUST NOT read it, and it carries no primitive values.
-
-#### Scenario: A declared reverse index is refused
-
-- **WHEN** a platform value declares `#matchers: {...}` in any shape
-- **THEN** it is refused as an input: no derived field of `#Platform` and no matching step consults it, and the render's buckets come from `#composedTransformers` alone (closedness itself does not reject the field, measured 2026-09-13)
-
-#### Scenario: The readiness index is not a matcher bucket
-
-- **WHEN** a platform derives `#contracts.requiredBy` for a contract two transformers require
-- **THEN** the entry lists two implementation FQNs and no transformer or primitive value, and `#composedTransformers` is unchanged by it
-
 ### Requirement: Catalog selection is a pure function of committed source
 
 Nothing in the registry shape MUST require a resolution step against a registry at evaluation time to determine which build is selected. The platform module's own `cue.mod` MUST be the sole selector of each entry's catalog build: the declared dependency IS the selected build, prereleases selected by naming them there like any other version, with no lockfile, no maturity inference and no opt-in flag.
@@ -113,3 +99,21 @@ Nothing in the registry shape MUST require a resolution step against a registry 
 
 - **WHEN** a platform module's `cue.mod` names catalog build `1.0.0-alpha.2`
 - **THEN** the entry's derived `version` reads `"1.0.0-alpha.2"`, with no additional flag required
+
+### Requirement: A platform declares no reverse index
+
+`#Platform` MUST NOT declare `#matchers`. A platform value declaring one is inert: nothing in `core` or in the render build's matching glue reads it (closedness does not refuse an undeclared definition field, measured 2026-09-13 on cue v0.17.1). Consumers that want a contract-to-transformers index for matching MUST derive it from `#composedTransformers`.
+
+#### Scenario: A declared reverse index is refused
+
+- **WHEN** a platform value declares `#matchers: {...}` in any shape
+- **THEN** it is refused as an input: no derived field of `#Platform` and no matching step consults it, and the render's buckets come from `#composedTransformers` alone (closedness itself does not reject the field, measured 2026-09-13)
+
+### Requirement: The readiness index is not a matcher bucket
+
+`#contracts.requiredBy` is a derived readiness index (contract FQN to the implementation FQNs requiring it), not a matcher bucket: the matching glue MUST NOT read it, and it carries no primitive values.
+
+#### Scenario: The readiness index is not a matcher bucket
+
+- **WHEN** a platform derives `#contracts.requiredBy` for a contract two transformers require
+- **THEN** the entry lists two implementation FQNs and no transformer or primitive value, and `#composedTransformers` is unchanged by it

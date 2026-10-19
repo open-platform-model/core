@@ -6,9 +6,9 @@ Defines how a published OPM artifact declares who it is. Covers the CUE module p
 
 ### Requirement: An artifact declares its complete CUE module path
 
-`#Module.metadata.modulePath` and `#Catalog.metadata.modulePath` MUST be typed `#ModulePathType`, which MUST require a terminal `@vN` major suffix. The value MUST be the same string that `cue.mod/module.cue`'s `module:` field, the registry coordinate, and an `import` statement carry.
+`#Module.metadata.modulePath` and `#Catalog.metadata.modulePath` MUST be typed `#ModulePathType`, which MUST require a terminal `@vN` major suffix. The value MUST be the string that `cue.mod/module.cue`'s `module:` field, the registry coordinate and an `import` statement carry.
 
-`#ModulePathType` MUST admit underscores in path segments, because a module path's leaf is the module's own snake_case name. It MUST admit hyphens in non-leaf segments, so that an organisation such as `github.com/open-platform-model` remains expressible.
+`#ModulePathType` MUST admit underscores in path segments (a leaf is the module's own snake_case name) and hyphens in non-leaf segments (so `github.com/open-platform-model` stays expressible).
 
 #### Scenario: A module path with a major suffix is accepted
 
