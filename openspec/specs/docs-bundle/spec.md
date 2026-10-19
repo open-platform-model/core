@@ -7,7 +7,7 @@ Publishes core's pages for opmodel.dev as one signed docs-kit bundle, `ghcr.io/o
 
 ### Requirement: core publishes one docs bundle
 
-The repository SHALL declare one docs-kit project, `core`, in `docs-kit.cue`: placed in a site version's `/docs/` tree, owning `reference/definitions/`, versioned from tags with the prefix `v`, built from a `cue-definitions` source over `./src` (files matching `*_pins.cue` skipped) and a `markdown` source over `docs/site`. The bundle SHALL carry the authored pages under `docs/site/` and the generated definitions reference together (docs-kit DESIGN decision 20). `task docs:bundle` SHALL build it into `out/core/` and `task docs:bundle:check` SHALL build and lint it without publishing.
+The repository SHALL declare one docs-kit project, `core`, in `docs-kit.cue`: placed in a site version's `/docs/` tree, owning `reference/definitions/`, versioned from tags with the prefix `v`, built from a `cue-definitions` source over `./src` (files matching `*_pins.cue` skipped) and a `markdown` source over `docs/site`. The bundle SHALL carry the authored pages under `docs/site/` and the generated definitions reference together (docs-kit DESIGN decision 20).
 
 #### Scenario: The bundle holds both kinds of page
 
@@ -60,3 +60,17 @@ The repository SHALL declare one docs-kit project, `core`, in `docs-kit.cue`: pl
 
 - **WHEN** both forms name `v0.4.0`
 - **THEN** `task docs:pins:check` passes
+
+### Requirement: The bundle tasks build and check without publishing
+
+`task docs:bundle` SHALL build the bundle into `out/core/`. `task docs:bundle:check` SHALL build and lint it without publishing.
+
+#### Scenario: The build task writes the bundle to out/core
+
+- **WHEN** `task docs:bundle` runs
+- **THEN** it SHALL build the bundle into `out/core/`
+
+#### Scenario: The check task publishes nothing
+
+- **WHEN** `task docs:bundle:check` runs
+- **THEN** it SHALL build and lint the bundle and SHALL NOT publish it
