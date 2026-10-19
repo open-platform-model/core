@@ -366,3 +366,187 @@ The ADDED bodies of the last three rows use MUST where the old text stated a fac
 | `#Catalog.#transformers` is not bound by this requirement; Source: owner decision | The transformer map is not bound to the transformer fqn, body |
 
 No other file in this repo cites the three old catalog-contracts headers or the old primitive-keying FQN header (`grep -rn --exclude-dir=archive`); the one citation inside `primitive-keying` is rewritten above.
+
+### contract-fulfilment: A provider-fulfilled contract admits exactly one provider (1264 to 415, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Two providers for one contract are refused | same requirement, same name | no |
+| One provider is accepted | same requirement, same name | no |
+| Optional demands do not count as provision | same requirement, same name | no |
+| Two majors of one provider catalog are two providers | same requirement, same name | no |
+| Providers count when the defining catalog is not enabled | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| exactly one provider; a provider is an enabled registry entry whose transformers require the contract | parent body, unchanged |
+| two providers MUST be refused naming both registry keys and the contract key; two remain refused under the skip request | parent body |
+| the count is of registry entries keyed by registry key; two transformers of one entry are one provider; two enabled majors are two; a provider counts whether or not an entry defines the contract | ADDED "The provider count is of registry entries", new scenario "Two transformers of one entry are one provider" (the live scenarios "Two majors ..." and "Providers count ..." stay in the parent) |
+| zero providers is an unresolved demand that fails the render unless the caller asked to skip | ADDED "Zero providers are an unresolved demand", new scenario "A contract with no provider fails the render" |
+| `core` declares the intent and computes the count once as the inventory, which reports without refusing; enforced outside the schema; stated here because it is what `fulfilment: "provider"` means | ADDED "The contract inventory computes the provider count once", new scenario "The inventory reports the count without refusing" |
+| the render build and the generation step refuse on that one count; none keeps its own | ADDED "The render build and the generation step refuse on the one count", new scenario "Consumers refuse on the inventory count" |
+
+### contract-fulfilment: Every declared resource is a required demand (593 to 484, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| An unsupplied resource fails the render | same requirement, same name | no |
+| A component with a partially satisfied set does not render | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| every declared resource is a demand; an unsupplied FQN fails the render immediately, except a skipped unprovided provider-fulfilled resource | parent body, unchanged (the citation uses the new name of the skip requirement) |
+| a partly satisfied component renders no output for the satisfied part, under the skip request or without it | parent body keeps the rule; "under the skip request or without it" is the two outcomes of the scenario "A component with a partially satisfied set does not render" |
+| a resource has no demand-side optionality marker | ADDED "A resource has no demand-side optionality marker", new scenario "A resource carries no optionality marker on the demand side" |
+
+### contract-fulfilment: A trait states its own optionality, and the attachment may override it (721 to 401, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| An unhandled load-bearing trait fails | same requirement, same name | no |
+| An unhandled advisory trait warns | same requirement, same name | no |
+| A module overrules the catalog in either direction | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `#Trait` carries `optional: bool`, no `core` default, the catalog states a default | ADDED "A trait carries a posture its catalog states as a default", body, new scenario "Core gives optional no default" |
+| `#Component` carries no optionality field | same ADDED, body, new scenario "A component carries no optionality field" |
+| a component overrides the posture at the attachment, either direction, without conflict | parent body |
+| an unhandled `optional: false` trait fails the render, except a skipped unprovided provider-fulfilled one | parent body (the citation uses the new name of the skip requirement) |
+
+### contract-fulfilment: A render's caller may skip unprovided provider-fulfilled demands (1604 to 413, 368, 118, 187, 381 and 167, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Without the request the render still refuses | A render's caller may ask to skip unprovided demands, same name | no |
+| A provider on the platform is used, not skipped | A render's caller may ask to skip unprovided demands, same name | no |
+| A catalog-fulfilled demand still refuses under the request | Only unprovided demands are skippable, same name | no |
+| A present provider that did not match still refuses | Only unprovided demands are skippable, same name | no |
+| An over-subscribed contract still refuses under the request | Only unprovided demands are skippable, same name | no |
+| A skipped trait lets the rest of the component render | A skipped trait demand leaves the rest of its component rendering, same name | no |
+| A skipped resource omits the whole component | A skipped resource demand omits the whole component, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| the caller MAY ask to skip every unprovided demand (definition); per render, the caller's; without it every render behaves as the other requirements state | A render's caller may ask to skip unprovided demands, body ("MUST be per render", "MUST behave", because an ADDED body needs a keyword) |
+| only unprovided demands are skippable; three cases stay refused | Only unprovided demands are skippable, body, unchanged |
+| a skipped trait demand leaves the component rendering every pair it matched; the trait renders nothing | A skipped trait demand leaves the rest of its component rendering, body |
+| a skipped resource demand leaves the component rendering nothing; a partly satisfied component never renders; not reported as unmatched | A skipped resource demand omits the whole component, body |
+| every skipped demand reported (component, contract key, kind; resource report says the whole component rendered nothing); never silent; an optional trait is unaffected | Every skipped demand is reported, body; new scenario "An advisory trait warns with or without the request" |
+| enforcement is the kernel's; `core` states the rule; the inventory is unchanged | The kernel enforces the skip rule and the inventory is unchanged, body ("MUST"); new scenario "The inventory does not change under the request" |
+
+The citations of the old name in the three MODIFIED bodies above use the new name "A render's caller may ask to skip unprovided demands". No other file cites the old name as a requirement name (the phrase in `SPEC.md` is prose).
+
+### platform-contract-inventory: A platform derives its contract inventory from its enabled entries (628 to 458, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Listed members of an enabled catalog are defined | same requirement, same name | no |
+| A disabled entry defines nothing | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| derive `#contracts`; `defined`; `definedBy`; a disabled entry contributes nothing | parent body, unchanged |
+| a FQN more than one enabled entry lists is in neither map and is reported as a collision | ADDED "A contract FQN listed by more than one enabled entry is in neither map", new scenario "A shared contract FQN is not defined" |
+| the inventory is not authorable and no runtime fills it | ADDED "The inventory is derived and never authored", new scenario "The inventory is not authorable" |
+
+### platform-contract-inventory: A transformer's match predicate is every required demand it declares (608 to 351, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A required trait is part of the predicate, not only labels | same requirement, same name | no |
+| An optional demand does not widen the predicate | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| the predicate is the union of required resources, required traits and required label pairs | parent body, unchanged |
+| optional demands do not contribute (enhancement 0010 citation) | parent body, unchanged |
+| a required label contributes its key and value together | ADDED "A required label contributes its key and value together", new scenario "Different values of one label key are different demands" |
+| a transformer declaring no map of a kind demands nothing of that kind | ADDED "A missing demand map is no demand", new scenario "A transformer without a demand map demands nothing of that kind" |
+
+### platform-contract-inventory: Comparable predicates over a shared catalog-fulfilled contract are reported (645 to 396, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Two catalogs shipping the same adapter are comparable | same requirement, same name | no |
+| A strictly narrower predicate is comparable | same requirement, same name | no |
+| Differing required label values are not comparable | same requirement, same name | no |
+| A distinct required trait is not comparable | same requirement, same name | no |
+| A disabled entry's transformer is never paired | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `comparable` lists every unordered pair with a subset predicate and a shared catalog-fulfilled contract | parent body, unchanged |
+| equal predicates give one row; incomparable pairs do not appear | parent body, unchanged |
+| a row names both FQNs, distinguishes smaller from larger predicate, names the shared contracts | ADDED "A comparable row names both transformers and the shared contracts", new scenario "A comparable row names its parts" |
+
+### platform-contract-inventory: The inventory reports and never refuses (732 to 375, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| An over-subscribed platform still evaluates | same requirement, same name | no |
+| A platform with comparable predicates still evaluates | same requirement, same name | no |
+| Two majors with shared keys still evaluate | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| neither report makes the platform fail to evaluate; offenders are named in the lists (enhancement 0015 citation) | parent body, unchanged |
+| a platform whose entries list one contract key evaluates, key in `collisions` | ADDED "A shared contract key is a collision, not a conflict", new scenario "Entries listing one key evaluate with a collision" |
+| the generation step decides whether `routable: false` or `discriminated: false` withholds a package; `fulfilled: false` gates nothing | ADDED "The generation step decides whether a report withholds a package", new scenario "An unfulfilled platform gates nothing" |
+
+### platform-contract-inventory: The inventory names the registry entries providing each contract (1566 to 492, 227, 304, 413 and 217, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| One provider entry through two adapters is one key | A providedBy list holds each registry key once, ascending, same name | no |
+| Two majors of one catalog are two keys | providedBy maps a provider-fulfilled contract to its providing registry keys, same name | no |
+| Providers of a contract no enabled entry defines are listed | providedBy is derived from the transformers alone, same name | no |
+| A contract nobody provides has no key | A providedBy key is present exactly when an enabled entry provides the contract, same name | no |
+| A disabled entry provides nothing | A providedBy key is present exactly when an enabled entry provides the contract, same name | no |
+| A provider-fulfilled resource requirement folds through the catalog's provides | providedBy equals the fold of the catalogs' provides, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `providedBy` maps each provider-required contract FQN to the registry keys of the providing enabled entries | providedBy maps a provider-fulfilled contract to its providing registry keys, body |
+| Source: enhancement 0015 (exposing the paths a refusal names) | same, body |
+| ascending-sorted registry keys (`path@vN`); each key at most once per contract | A providedBy list holds each registry key once, ascending, body |
+| derived per registry entry over every enabled entry's transformers; independent of who defines the contract; fulfilment read from the transformer's own requirement | providedBy is derived from the transformers alone, body |
+| equals the fold of `#catalog.provides`; a transformer on the entry's own readout is outside the fold (core#119); Source: library ADR-012 | providedBy equals the fold of the catalogs' provides, body |
+| a key is present exactly when an enabled entry provides; optional demands, required labels, catalog-fulfilled requirements, blueprints and disabled entries do not contribute | A providedBy key is present exactly when an enabled entry provides the contract, body |
+
+### platform-contract-inventory: Over-subscription counts providing registry entries, not transformers (847 to 405, 345 and 100, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Two catalogs providing one contract is over-subscription | Over-subscription lists the contracts with more than one providing entry, same name | no |
+| Two providers of an undefined contract are over-subscription | Over-subscription lists the contracts with more than one providing entry, same name | no |
+| One catalog providing through two transformers is one provider | Over-subscription counts registry keys, not transformers, same name | no |
+| Two majors of one provider catalog are over-subscription | Over-subscription counts registry keys, not transformers, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `overSubscribed` lists every `providedBy` key with more than one registry key, including a contract no entry defines; Source: enhancement 0015, two titles | Over-subscription lists the contracts with more than one providing entry, body |
+| the counting key is the registry key; two majors count as two, two transformers of one entry as one; Source: enhancement 0010 is the rule counted | Over-subscription counts registry keys, not transformers, body |
+| `routable` is true exactly when `overSubscribed` and `collisions` are empty | A platform is routable when nothing is over-subscribed or colliding, body; new scenarios "Routable is true with no over-subscription and no collision" and "Routable is false with an over-subscription or a collision" |
+
+### platform-contract-inventory: Contract keys defined by more than one enabled entry are reported as collisions (1543 to 428, 345, 141, 133, 183 and 308, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Two majors sharing keys report every shared key as a collision | Collisions list the contract keys with more than one definer, same name | no |
+| A key only one major lists is folded as before | A colliding key leaves the other inventory fields, same name | no |
+| A platform with one enabled major is unchanged | A platform without collisions derives as before, same name | no |
+| A disabled second major defines nothing | A definer of a contract key is an enabled registry entry that lists it, same name | no |
+| A collision and an over-subscription are reported together | A collision and an over-subscription may be reported together, same name | no |
+| Fulfilled and discriminated can read true while a collision exists | A colliding platform may read fulfilled and discriminated true, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| a definer is an enabled entry whose catalog lists the key; a disabled entry never counts; Source: enhancement 0026 | A definer of a contract key is an enabled registry entry that lists it, body |
+| `collisions` sorted ascending; `collidingEntries` maps each such key, and no other, to sorted registry keys; `routable` false while `collisions` is non-empty | Collisions list the contract keys with more than one definer, body |
+| a colliding key absent from `defined`, `definedBy`, `requiredBy`; not in `unfulfilled` or any `comparable` row | A colliding key leaves the other inventory fields, body |
+| `providedBy` and `overSubscribed` unaffected; a collision and an over-subscription MAY be reported together | A collision and an over-subscription may be reported together, body |
+| a platform with no colliding key derives empty `collisions` and `collidingEntries` and every other field as before | A platform without collisions derives as before, body |
+| `fulfilled` and `discriminated` MAY read true on a colliding platform; a consumer MUST treat non-empty `collisions` as overriding both; `routable` is false | A colliding platform may read fulfilled and discriminated true, body |
+
+No other file cites these old headers as requirement names (`grep -rn --exclude-dir=archive`; a comment in `src/pins/platform_contracts_pins.cue` uses the phrase "reports and never refuses" in prose).
