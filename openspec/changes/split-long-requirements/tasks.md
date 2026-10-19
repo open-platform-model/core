@@ -2,7 +2,7 @@
 
 Per spec: read the requirement and its scenarios on `main`; pick the form (design); write the ledger into `design.md`; write `specs/<spec>/spec.md` as a delta; run the byte-equal command (guide checklist item 3) for each rewritten requirement; run the grep for the old header; run the gate in a scratch copy with the running `N`. One delta file per spec; a spec is done when its requirements show no long-requirement warning.
 
-- [ ] 1.1 `artifact-identity` (1), `definitions-reference` (1), `docs-bundle` (1), `instance-identity` (1)
+- [x] 1.1 `artifact-identity` (1), `definitions-reference` (1), `docs-bundle` (1), `instance-identity` (1)
 - [ ] 1.2 `name-constraints` (1), `platform-registry` (1), `transformer-context` (1); gate run, `N` = 7
 - [ ] 1.3 `schema-pins` (2), `primitive-keying` (3), `catalog-contracts` (3); gate run, `N` = 15
 - [ ] 1.4 `contract-fulfilment` (4), `platform-contract-inventory` (7); gate run, `N` = 26

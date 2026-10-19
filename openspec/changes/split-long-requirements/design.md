@@ -122,3 +122,59 @@ Assets: the CI job token and the published schema. Trust boundary: the npm regis
 - A new ADDED scenario can add a rule. Mitigation: it uses only words and values of the old body, and is flagged for the human.
 - The wiring check refuses a workflow shape. Mitigation: the CI step goes after the wiring step; the unit runs `task cascade:wiring:check`.
 - Prose elsewhere (`SPEC.md`, `docs/site`) cites a requirement phrase. Mitigation: grep before each rename; `SPEC.md` text is not edited here.
+
+## Scenario ledger tables
+
+Each table lists every live scenario of a rewritten requirement on `main`. Lengths are of the body by the validator's rule. `new:` scenarios are listed after the tables and use only words and values of the old body.
+
+### artifact-identity: An artifact declares its complete CUE module path (539 to 471, form a)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A module path with a major suffix is accepted | same requirement, same name | no |
+| A module path without a major suffix is refused | same requirement, same name | no |
+| Underscores are legal in a module path leaf | same requirement, same name | no |
+| Hyphens remain legal in non-leaf segments | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `modulePath` typed `#ModulePathType`, terminal `@vN` required | body, sentence 1, unchanged |
+| value is the string of `module:`, registry coordinate and `import` | body, sentence 2, same three carriers |
+| `#ModulePathType` admits underscores (leaf is snake_case) | body, sentence 3, with the reason in parentheses |
+| `#ModulePathType` admits hyphens in non-leaf segments (organisation stays expressible) | body, sentence 3, with the reason in parentheses |
+
+### definitions-reference: The definitions reference is generated into the docs bundle (503 to 465, form a)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A new definition is placed | same requirement, same name | no |
+| A new definition is left out | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| files matching `*_pins.cue` skipped | new scenario "Pins files are skipped" |
+| every other clause | body, unchanged |
+
+### docs-bundle: core publishes one docs bundle (589 to 465, form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| The bundle holds both kinds of page | same requirement, same name | no |
+| A committed generated page that is not excluded collides | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `task docs:bundle` SHALL build it into `out/core/` | ADDED "The bundle tasks build and check without publishing", body and new scenario "The build task writes the bundle to out/core" |
+| `task docs:bundle:check` SHALL build and lint it without publishing | same ADDED requirement, body and new scenario "The check task publishes nothing" |
+| project, placement, ownership, versioning, sources, authored plus generated together, citation | body of the parent, unchanged |
+
+### instance-identity: An instance FQN cannot be built from a module path (581 to 441, form a)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A module path in the registry-path position is refused | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `#PackagePathType` is a backstop that cannot fire on its own: `strings.SplitN(modulePath, "@", 2)[0]` carries no `@` under `#ModulePathType` | new scenario "The package path backstop cannot fire on its own"; the body keeps "The `#PackagePathType` backstop is also structural; only the reported error differs" |
+| registryPath derived from `#ArtifactRef`, refusal is a conflict against the computed value | body, unchanged in meaning |
