@@ -13,13 +13,13 @@ Per spec: read the requirement and its scenarios on `main`; pick the form (desig
 ## 2. Write the Purpose of `cite-lint`
 
 - [x] 2.1 Replace the placeholder under `## Purpose` in `openspec/specs/cite-lint/spec.md` with real text; the three requirements stay as they are
-- [ ] 2.2 Gate run in a scratch copy: the `cite-lint` warning is gone; `task check` green, then commit `docs(openspec): write the Purpose of cite-lint`
+- [x] 2.2 Gate run in a scratch copy: the `cite-lint` warning is gone; `task check` green, then commit `docs(openspec): write the Purpose of cite-lint`
 
 ## 3. Add the pinned OpenSpec gate
 
-- [ ] 3.1 `Taskfile.yml`: variable `OPENSPEC_VERSION: 1.14.1`, task `openspec:install` (`npm install -g --ignore-scripts`), task `openspec:check` (version precondition, `openspec validate --all --strict --no-interactive`), wired last into `check` and its description
-- [ ] 3.2 `.github/workflows/ci.yml`: after the wiring step in job `ci`, a SHA-pinned `setup-node` step, `task openspec:install`, `task openspec:check`; no new permission, no secret
-- [ ] 3.3 Run `task cascade:wiring:check` and `task openspec:check`; record the release age of 1.14.1 against the cooldown rule; `task check` green in the scratch copy named `core`, then commit `ci: gate the main specs with openspec validate --strict`
+- [x] 3.1 `Taskfile.yml`: variable `OPENSPEC_VERSION: 1.14.1`, task `openspec:install` (`npm install -g --ignore-scripts`), task `openspec:check` (version precondition, `openspec validate --all --strict --no-interactive`), wired last into `check` and its description
+- [x] 3.2 `.github/workflows/ci.yml`: after the wiring step in job `ci`, a SHA-pinned `setup-node` step, `task openspec:install`, `task openspec:check`; no new permission, no secret
+- [x] 3.3 Run `task cascade:wiring:check` and `task openspec:check`; record the release age of 1.14.1 against the cooldown rule; `task check` green in the scratch copy named `core`, then commit `ci: gate the main specs with openspec validate --strict`
 
 ## 4. Final gate (LAST=1)
 
