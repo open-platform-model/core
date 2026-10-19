@@ -45,6 +45,19 @@ jobs:
         with:
           version: 3.x
 
+      # task publish:branch runs task check, which runs task openspec:check.
+      # npm runs no install script (task openspec:install), and the registry
+      # login comes after this step.
+      - name: Setup Node for the OpenSpec CLI
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          # A publish job restores no cache.
+          package-manager-cache: false
+
+      - name: Install the pinned OpenSpec CLI
+        run: task openspec:install
+
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
