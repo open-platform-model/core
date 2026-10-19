@@ -2,7 +2,7 @@
 
 ### Requirement: A provider-fulfilled contract admits exactly one provider
 
-For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one provider of that contract, a provider being an enabled registry entry whose transformers *require* the contract. Two providers MUST be refused, naming both registry keys and the contract key, and remain refused when the render's caller asked to skip unprovided demands (see "A render's caller may ask to skip unprovided demands").
+For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one provider of that contract, a provider being an enabled registry entry whose transformers *require* the contract. Two providers MUST be refused, naming both registry keys and the contract key, and remain refused when the render's caller asked to skip unprovided demands (see "A render's caller may ask to skip unprovided demands"). This rule is enforced outside the schema.
 
 #### Scenario: Two providers for one contract are refused
 
@@ -87,7 +87,7 @@ Zero providers of a provider-fulfilled contract MUST be an unresolved demand, wh
 
 ### Requirement: The contract inventory computes the provider count once
 
-`core` MUST declare the intent and compute the provider count once, as the platform's contract inventory (`#Platform.#contracts.providedBy`, `overSubscribed` and `routable`), which MUST report it without refusing on it. This is enforced outside the schema; the requirement is stated here because it is what `fulfilment: "provider"` means.
+`core` MUST declare the intent and compute the provider count once, as the platform's contract inventory (`#Platform.#contracts.providedBy`, `overSubscribed` and `routable`), which MUST report it without refusing on it. The requirement is stated here because it is what `fulfilment: "provider"` means.
 
 #### Scenario: The inventory reports the count without refusing
 
@@ -96,7 +96,7 @@ Zero providers of a provider-fulfilled contract MUST be an unresolved demand, wh
 
 ### Requirement: The render build and the generation step refuse on the one count
 
-The kernel's render build and the generation step (operator, CLI) MUST refuse on that one count; none of them keeps a count of its own.
+The kernel's render build and the generation step (operator, CLI) MUST refuse on the inventory's one provider count; none of them keeps a count of its own.
 
 #### Scenario: Consumers refuse on the inventory count
 
@@ -129,11 +129,6 @@ A resource MUST NOT have a demand-side optionality marker.
 ### Requirement: A render's caller may ask to skip unprovided demands
 
 A render's caller MAY ask the render to skip every demand that is *unprovided*: a demand on a contract declaring `fulfilment: "provider"` for which no enabled catalog on the platform carries a transformer requiring the demanded key, the single-provider count at zero. The request MUST be per render and belong to the caller; without it, every render MUST behave as the other requirements of this capability state.
-
-#### Scenario: Without the request the render still refuses
-
-- **WHEN** the same component renders on the same platform and the caller did not ask to skip unprovided demands
-- **THEN** the render fails, naming the unresolved contract key
 
 #### Scenario: A provider on the platform is used, not skipped
 
@@ -183,6 +178,11 @@ A skipped **resource** demand MUST leave its component rendering nothing at all,
 - **THEN** the render succeeds and the component renders no object, not even for the supplied resource
 - **AND** the component is not reported as unmatched
 - **AND** the report names the component, the resource's contract key, and that the component rendered nothing
+
+#### Scenario: Without the request the render still refuses
+
+- **WHEN** the same component renders on the same platform and the caller did not ask to skip unprovided demands
+- **THEN** the render fails, naming the unresolved contract key
 
 ### Requirement: Every skipped demand is reported
 

@@ -93,8 +93,8 @@ The inventory MUST NOT be authorable and no runtime MUST fill it.
 
 #### Scenario: The inventory is not authorable
 
-- **WHEN** a platform value authors `#contracts` or a runtime fills it
-- **THEN** the inventory is not authorable and no runtime fills it
+- **WHEN** a platform value authors `#contracts`
+- **THEN** the authored value is not accepted as an input, because the platform derives the inventory and no runtime fills it
 
 ### Requirement: A required label contributes its key and value together
 
@@ -256,6 +256,8 @@ Source: enhancement 0026 recommends this fold as an interim core fix ahead of en
 
 `#contracts.collisions` MUST list, sorted ascending, every contract key with more than one definer. `#contracts.collidingEntries` MUST map each such key, and no other, to the ascending-sorted registry keys (the catalog module path with its major, `path@vN`) of its definers. `#contracts.routable` MUST be `false` while `collisions` is non-empty.
 
+Source: enhancement 0026 recommends this fold as an interim core fix.
+
 #### Scenario: Two majors sharing keys report every shared key as a collision
 
 - **WHEN** a platform enables `opmodel.dev/catalogs/opm@v1` and `opmodel.dev/catalogs/opm@v2`, both listing the same container resource, scaling and backup traits and stateless blueprint, and each shipping its own transformer requiring the container
@@ -264,6 +266,8 @@ Source: enhancement 0026 recommends this fold as an interim core fix ahead of en
 ### Requirement: A colliding key leaves the other inventory fields
 
 A colliding key MUST be absent from `defined`, `definedBy` and `requiredBy`, and MUST NOT appear in `unfulfilled` or in any `comparable` row.
+
+Source: enhancement 0026 recommends this fold as an interim core fix.
 
 #### Scenario: A key only one major lists is folded as before
 
@@ -274,6 +278,8 @@ A colliding key MUST be absent from `defined`, `definedBy` and `requiredBy`, and
 
 `providedBy` and `overSubscribed` MUST be unaffected by collisions, so a collision and an over-subscription MAY be reported together.
 
+Source: enhancement 0026 recommends this fold as an interim core fix.
+
 #### Scenario: A collision and an over-subscription are reported together
 
 - **WHEN** a platform enables two majors of the base catalog sharing keys, plus two provider entries each requiring the provider-fulfilled `backup` trait
@@ -281,7 +287,9 @@ A colliding key MUST be absent from `defined`, `definedBy` and `requiredBy`, and
 
 ### Requirement: A platform without collisions derives as before
 
-A platform with no key defined by more than one enabled entry MUST derive empty `collisions` and `collidingEntries` and every other inventory field exactly as before this requirement.
+A platform with no key defined by more than one enabled entry MUST derive empty `collisions` and `collidingEntries` and every other inventory field exactly as before collisions were reported.
+
+Source: enhancement 0026 recommends this fold as an interim core fix.
 
 #### Scenario: A platform with one enabled major is unchanged
 
@@ -291,6 +299,8 @@ A platform with no key defined by more than one enabled entry MUST derive empty 
 ### Requirement: A colliding platform may read fulfilled and discriminated true
 
 Because a colliding key leaves `defined`, `fulfilled` and `discriminated` MAY read `true` on a colliding platform whose single-major equivalent reads them `false`. This is a known limitation: a consumer MUST treat a non-empty `collisions` as overriding both, and `routable` is `false` on every such platform.
+
+Source: enhancement 0026 recommends this fold as an interim core fix.
 
 #### Scenario: Fulfilled and discriminated can read true while a collision exists
 

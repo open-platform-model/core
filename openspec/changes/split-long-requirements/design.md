@@ -222,7 +222,7 @@ Each table lists every live scenario of a rewritten requirement on `main`. Lengt
 | --- | --- |
 | `#moduleInstanceMetadata` and `#componentMetadata` computed from the inputs; runtime not required to supply either | body, unchanged |
 | field names and value shapes unchanged from the pre-projection context | body, unchanged |
-| so a transformer reading any context field observes the same value as before | scenario "Transformer-visible values are unchanged" (its THEN says the values are identical to the runtime-assembled context) |
+| so a transformer reading any context field observes the same value as before | body, restored ("Field names and value shapes are unchanged, so a transformer reading any context field observes the same value as before"); scenario "Transformer-visible values are unchanged" shows two fields |
 
 ### schema-pins: Schema pins live in a package no consumer loads (771 to 487, form b)
 
@@ -380,11 +380,11 @@ No other file in this repo cites the three old catalog-contracts headers or the 
 | Old clause | New place |
 | --- | --- |
 | exactly one provider; a provider is an enabled registry entry whose transformers require the contract | parent body, unchanged |
-| two providers MUST be refused naming both registry keys and the contract key; two remain refused under the skip request | parent body |
+| two providers MUST be refused naming both registry keys and the contract key; two remain refused under the skip request; the rule is enforced outside the schema | parent body ("This rule is enforced outside the schema") |
 | the count is of registry entries keyed by registry key; two transformers of one entry are one provider; two enabled majors are two; a provider counts whether or not an entry defines the contract | ADDED "The provider count is of registry entries", new scenario "Two transformers of one entry are one provider" (the live scenarios "Two majors ..." and "Providers count ..." stay in the parent) |
 | zero providers is an unresolved demand that fails the render unless the caller asked to skip | ADDED "Zero providers are an unresolved demand", new scenario "A contract with no provider fails the render" |
-| `core` declares the intent and computes the count once as the inventory, which reports without refusing; enforced outside the schema; stated here because it is what `fulfilment: "provider"` means | ADDED "The contract inventory computes the provider count once", new scenario "The inventory reports the count without refusing" |
-| the render build and the generation step refuse on that one count; none keeps its own | ADDED "The render build and the generation step refuse on the one count", new scenario "Consumers refuse on the inventory count" |
+| `core` declares the intent and computes the count once as the inventory, which reports without refusing; stated here because it is what `fulfilment: "provider"` means | ADDED "The contract inventory computes the provider count once", new scenario "The inventory reports the count without refusing" |
+| the render build and the generation step refuse on that one count (the inventory's provider count); none keeps its own | ADDED "The render build and the generation step refuse on the one count", new scenario "Consumers refuse on the inventory count" |
 
 ### contract-fulfilment: Every declared resource is a required demand (593 to 484, form b)
 
@@ -418,7 +418,7 @@ No other file in this repo cites the three old catalog-contracts headers or the 
 
 | Old scenario name | New place (requirement, scenario name) | Changed text? |
 | --- | --- | --- |
-| Without the request the render still refuses | A render's caller may ask to skip unprovided demands, same name | no |
+| Without the request the render still refuses | A skipped resource demand omits the whole component, same name (placed after "A skipped resource omits the whole component", whose component it refers to) | no |
 | A provider on the platform is used, not skipped | A render's caller may ask to skip unprovided demands, same name | no |
 | A catalog-fulfilled demand still refuses under the request | Only unprovided demands are skippable, same name | no |
 | A present provider that did not match still refuses | Only unprovided demands are skippable, same name | no |
@@ -550,3 +550,24 @@ The citations of the old name in the three MODIFIED bodies above use the new nam
 | `fulfilled` and `discriminated` MAY read true on a colliding platform; a consumer MUST treat non-empty `collisions` as overriding both; `routable` is false | A colliding platform may read fulfilled and discriminated true, body |
 
 No other file cites these old headers as requirement names (`grep -rn --exclude-dir=archive`; a comment in `src/pins/platform_contracts_pins.cue` uses the phrase "reports and never refuses" in prose).
+
+### Strength changes and repeated Source lines (review of unit 1)
+
+An ADDED body needs SHALL or MUST, so these present-tense statements of the old text are MUST in the new text. The human rules on each at the gate:
+
+| Block | Old wording | New wording |
+| --- | --- | --- |
+| contract-fulfilment, The provider count is of registry entries | "The count is of registry entries"; "A provider counts" | "MUST be of registry entries"; "MUST count" |
+| contract-fulfilment, Zero providers are an unresolved demand | "Zero is an unresolved demand, which fails the render" | "MUST be an unresolved demand, which fails the render" |
+| contract-fulfilment, The contract inventory computes the provider count once | "`core` declares the intent and computes the count once" | "MUST declare ... and compute ... once" |
+| contract-fulfilment, The render build and the generation step refuse on the one count | "The kernel's render build and the generation step ... refuse" | "MUST refuse" |
+| contract-fulfilment, A render's caller may ask to skip unprovided demands | "The request is per render"; "every render behaves" | "MUST be per render"; "MUST behave" |
+| contract-fulfilment, The kernel enforces the skip rule and the inventory is unchanged | "Enforcement is the kernel's"; "the inventory is unchanged by it" | "MUST be the kernel's"; "MUST be unchanged by it" |
+| primitive-keying, An unset FQN in an attachment map takes its key | "the map key binds `metadata.fqn`" | "MUST bind" |
+| primitive-keying, The six attachment maps bind a key to its member's fqn | "`core` binds the key" | "MUST bind" |
+| primitive-keying, Demand maps and implementation maps enforce the key form only | "`core` enforces the form only" | "MUST enforce" |
+| primitive-keying, A transformer map key is checked for form only | "is checked for form only"; "neither compares" | "MUST be checked for form only" (the second clause is the reason) |
+| primitive-keying, `#Trait.appliesTo` is not checked against the component's resources | "`#Trait.appliesTo` stays unchecked ...; core#99 tracks whether to enforce or drop it" | "MUST stay unchecked ..." (a status note became a prohibition; the human may prefer to drop the block, since core#99 may enforce it) |
+| platform-contract-inventory, A platform... and the other ADDED blocks | old text already held MUST | unchanged |
+
+Source lines kept on every split block that carries a rule they support: the owner decision of the beta.1 kernel plan walkthrough is on "A contract map binds each member's fqn to its key" and on "The transformer map is not bound to the transformer fqn"; the enhancement 0026 source is on all six collision blocks (in short form on five). Review nits fixed: the scenario "The inventory is not authorable" has an observable outcome; "exactly as before collisions were reported" replaces "before this requirement".

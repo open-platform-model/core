@@ -111,6 +111,8 @@ The field is derived and never authored: an authored value that disagrees MUST f
 
 Each of the three contract maps (`#Catalog.#resources`, `#traits` and `#blueprints`) MUST bind every member's `metadata.fqn` to the key the member is listed under. A member whose authored `metadata.fqn` differs from its key MUST fail validation with a `conflicting values` error on that member's `metadata.fqn` that names both the key and the authored fqn. The key MUST stay typed `#ContractFQNType`.
 
+Source: owner decision, beta.1 kernel plan walkthrough (2026-10-03).
+
 #### Scenario: A member listed under its own fqn is accepted
 
 - **WHEN** a `#Catalog` declaring `modulePath: "opmodel.dev/catalogs/opm@v4"` and `version: "4.1.0"` lists a trait with `fqn: "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"` under `#traits: (t.metadata.fqn): t`
