@@ -261,7 +261,7 @@ Each table lists every live scenario of a rewritten requirement on `main`. Lengt
 
 The header of this requirement stays: `.tasks/spec-check.sh` prints it.
 
-### primitive-keying: A catalog member's FQN is authored, not derived (905 to 481 and 472, form c2)
+### primitive-keying: A catalog member's FQN is authored, not derived (905 to 481 and 440, form c2)
 
 | Old scenario name | New place (requirement, scenario name) | Changed text? |
 | --- | --- | --- |
@@ -310,7 +310,7 @@ The ADDED bodies of the last three rows use MUST where the old text stated a fac
 | a differing entry fails `cue vet` with `conflicting values` at `<map>.<key>.metadata.fqn`, naming both | body, unchanged |
 | an entry keyed by its own fqn MUST validate as before, by hand or from a catalog wrapper or embedded blueprint | body keeps the rule; the two ways are in scenarios "A resource keyed by its fqn is accepted" and "Entries contributed by an embedded blueprint fragment are accepted" |
 | a short key such as `container` MUST be refused | scenario "A short resource key is refused" |
-| the binding MUST NOT derive `fqn` from `name`, `modulePath` or `apiVersion` | ADDED "An attachment map binding derives no fqn", body, sentence copied unchanged; new scenario "The attachment map binding derives no fqn" (a restatement); its Source line is the old one, repeated |
+| the binding MUST NOT derive `fqn` from `name`, `modulePath` or `apiVersion` | ADDED "An attachment map binding derives no fqn", body, the old sentence naming the three maps copied in front of it, then the sentence copied unchanged; new scenario "The attachment map binding derives no fqn" (a restatement); its Source line is the old one, repeated |
 | `#Trait.appliesTo` stays unchecked against the component's resources; core#99 | ADDED "`#Trait.appliesTo` is not checked against the component's resources", new scenario "appliesTo is not checked against the attached resources" |
 | Source: owner decision, beta.1 kernel plan walkthrough | body |
 

@@ -59,7 +59,7 @@ Source: owner decision, beta.1 kernel plan walkthrough (2026-10-03).
 
 ### Requirement: An attachment map binding derives no fqn
 
-The binding MUST NOT derive `fqn` from the member's `name`, `modulePath` or `apiVersion`.
+`#ResourceMap`, `#TraitMap` and `#BlueprintMap`, and therefore `#Component.#resources`, `#traits` and `#blueprints`, MUST bind every entry's `metadata.fqn` to the key the entry sits under. The binding MUST NOT derive `fqn` from the member's `name`, `modulePath` or `apiVersion`.
 
 Source: owner decision, beta.1 kernel plan walkthrough (2026-10-03).
 
