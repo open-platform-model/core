@@ -86,6 +86,7 @@ fixture harness lives in `library`, not here.
 | `task openspec:install`       | Install the `openspec` CLI at the version `OPENSPEC_VERSION` in `Taskfile.yml` pins (needs npm; install scripts do not run) |
 | `task openspec:check`         | Run `openspec validate --all --strict` with the pinned CLI; strict mode fails on the long-requirement warning |
 | `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + docs bundle check + cascade wiring check + openspec check |
+| `task check:base`             | `task check` without the openspec check; `task publish:branch` runs this one, so the publish job runs no npm code |
 
 For raw `cue` outside `task`, export `CUE_REGISTRY` and `OPM_REGISTRY` as the workspace registry
 reference says. `task publish` writes only to the local registry, whatever `CUE_REGISTRY` the shell
