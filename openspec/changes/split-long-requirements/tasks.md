@@ -12,7 +12,7 @@ Per spec: read the requirement and its scenarios on `main`; pick the form (desig
 
 ## 2. Write the Purpose of `cite-lint`
 
-- [ ] 2.1 Replace the placeholder under `## Purpose` in `openspec/specs/cite-lint/spec.md` with real text; the three requirements stay as they are
+- [x] 2.1 Replace the placeholder under `## Purpose` in `openspec/specs/cite-lint/spec.md` with real text; the three requirements stay as they are
 - [ ] 2.2 Gate run in a scratch copy: the `cite-lint` warning is gone; `task check` green, then commit `docs(openspec): write the Purpose of cite-lint`
 
 ## 3. Add the pinned OpenSpec gate
