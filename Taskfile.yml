@@ -254,7 +254,7 @@ tasks:
   # check:base is every gate of check except openspec:check. publish:branch
   # calls it: that job holds a token that can write packages, and the openspec
   # CLI is npm code that no lockfile pins, so it must not run there. The
-  # required ci.yml job runs the full check, openspec included.
+  # required ci.yml job runs openspec:check as its own step.
   check:base:
     desc: Every gate of check except the openspec check (the branch-publish job runs this one)
     cmds:
