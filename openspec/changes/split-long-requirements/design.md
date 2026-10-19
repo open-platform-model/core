@@ -572,3 +572,190 @@ An ADDED body needs SHALL or MUST, so these present-tense statements of the old 
 | platform-contract-inventory, the other ADDED blocks | old text already held MUST | unchanged |
 
 Source lines kept on every split block that carries a rule they support: the owner decision of the beta.1 kernel plan walkthrough is on "A contract map binds each member's fqn to its key" and on "The transformer map is not bound to the transformer fqn"; the enhancement 0026 source is on all six collision blocks (in short form on five). Review nits fixed: the scenario "The inventory is not authorable" has an observable outcome; "exactly as before collisions were reported" replaces "before this requirement".
+
+### Unit 2 ledger tables (release-cascade and schema-release)
+
+Old length to new lengths by the validator's rule. Each table lists every live scenario of the old requirement; `new:` scenarios are listed after the tables. Old Source lines are copied whole where 500 allows; otherwise a split block carries the shorter form of the Source line (DECISIONS.md 2026-10-19 16:20) and the whole line stays in at least one block.
+
+
+#### A published core release notifies its cascade downstreams (1292 to 495, 250, 341, 252, 361, 247; form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A release whose module is published notifies catalog_opm and library | A published core release notifies catalog_opm and library, same name | no |
+| A failed module publish notifies nobody | The notification starts only after the module publish succeeds, same name | no |
+| A push to main that cuts no release notifies nobody | A published core release notifies catalog_opm and library, same name | no |
+| A failed docs bundle publish does not stop the notification | The docs bundle publish and the notification do not gate each other, same name | no |
+| A v1 maintenance release notifies nobody | A v1 maintenance release notifies nobody, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| After a release ... is published from `main`, core's release run MUST send an `upstream-released` notification ... to no other repo: at least one per published release, one per run attempt | A published core release notifies catalog_opm and library | same sentence, copied |
+| A repeat is harmless, because a receiver re-resolves the newest published version itself | same | same sentence, copied |
+| A maintenance release of `opmodel.dev/core@v1` ... MUST NOT notify: every downstream pins `@v2` | A v1 maintenance release notifies nobody | same sentence, copied |
+| The notification MUST start only after the module publish for that tag has succeeded ... | The notification starts only after the module publish succeeds | same sentence, copied |
+| A failed or skipped module publish MUST NOT notify | same | same sentence, copied |
+| The docs bundle publish MUST NOT gate the notification, and the notification MUST NOT gate the docs bundle publish | The docs bundle publish and the notification do not gate each other | same sentence, copied |
+| The tag is the release tag release-please created, for example `v2.0.0-beta.3` | The notification payload carries only the source and the release tag | same sentence, copied |
+| The payload carries only the source and the tag; which repos are notified is fixed by the shared `cascade-notify` action, not chosen by core | same | "carries" became "MUST carry" (strength table) |
+| core has no receiver: no notification from any repo moves a pin in core, and core runs no cascade gates | core receives no cascade notification | "core has" became "core MUST have" (strength table) |
+| Source: ... | every new block | whole line on five blocks; the first block carries the short form `RELEASING.md`, "Notify after publish"; wiring contract §4.5 (the whole line does not fit 500) |
+
+#### The notification runs with the cascade App only, and can be switched off (1227 to 471, 434, 432, 412; form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Notify is switched off | CASCADE_NOTIFY set to off stops the notification, same name | no |
+| An unset switch leaves notify on | CASCADE_NOTIFY set to off stops the notification, same name | no |
+| A lost dispatch is recovered without a re-publish | A failed notification fails the release run and is re-sent without a re-publish, same name | no |
+| The notification never uses the release credentials | The notify job runs in the cascade Environment with a read-only token and never the release key, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| The key MUST be read only in the caller-owned `notify-downstream` job ... a reusable call MUST NOT pass `secrets:` or `secrets: inherit` | The cascade App key is read only in the notify-downstream job | same sentence; "The key" became "The `opm-cascade` App key" (a subject copied from the scenario "The notification never uses the release credentials") |
+| core's `cascade` Environment MUST limit deployments to `main` | The notify job runs in the cascade Environment with a read-only token and never the release key | same sentence, copied |
+| The job MUST grant the built-in token no more than read access to contents | same | "The job" became "The `notify-downstream` job" (the subject of the first sentence of the old body) |
+| The release App's key MUST NOT be used for the notification | same | same sentence, copied |
+| The repo variable `CASCADE_NOTIFY` set to exactly `off` MUST stop core's releases from notifying. Any other value, or no variable, MUST leave the notification on. The switch MUST NOT affect the release or the publish | CASCADE_NOTIFY set to off stops the notification | three sentences, copied |
+| A notification that fails after its retries MUST fail the release run visibly. Re-sending it MUST NOT re-publish the module; re-running the failed job sends the notification again for the same tag | A failed notification fails the release run and is re-sent without a re-publish | two sentences, copied |
+| Source: ... | every new block | whole line on three blocks; the block of the first row carries the short form `RELEASING.md`, "The opm-cascade App" |
+
+#### The cascade reference is pinned to one `.github` `main` SHA and checked on every PR (2993 to 382, 392, 454, 445, 497, 445, 458, 469, 453, 400, 463, 460; form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| The wiring as built passes | The required CI job and an offline task run the wiring check, same name | no |
+| A branch reference is refused | The cascade reference names one full SHA on .github main, same name | no |
+| Code added to the key-holding job is refused | The wiring check fails when the notify job differs from the contract shape, same name | no |
+| A startup-code variable in the release workflow is refused | The wiring check fails on a loose .github reference or a startup-code variable, same name | no |
+| A pin bump passes | The cascade reference moves only through a pin PR, same name | no |
+| A SHA only in a fork of `.github` is refused | The wiring check fails in CI when the pinned SHA is off main or the copy differs, same name | no |
+| A release-key reader outside the release Environment is refused | The wiring check fails when a key is read outside its Environment, same name | no |
+| A copy that drifted from the pinned file is refused | wiring-check.sh is a byte-identical copy that changes only with the pin, same name | no |
+| A step that could reach the wiring step is refused | No earlier step or setting of the CI job can reach the wiring step, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| core's cascade reference ... MUST name a full 40-character SHA ... and MUST NOT name a branch or a tag | The cascade reference names one full SHA on .github main | same sentence, copied |
+| It MUST move only through a pin PR ... prints `identical` or `ahead` | The cascade reference moves only through a pin PR | "It" became "core's cascade reference" (the subject of the first sentence) |
+| `.tasks/cascade/wiring-check.sh` MUST be a byte-identical copy ... and MUST change only with the pin; core's values MUST live in `.tasks/cascade/wiring-check.yaml` (...) | wiring-check.sh is a byte-identical copy that changes only with the pin; The values of core's wiring check live in wiring-check.yaml | one sentence cut at its semicolon: the first half ends with a full stop; the second half is copied from "core's values" to the end |
+| The required CI job ("Validate schema") MUST run it on every PR as the step ... with no `if:`, `continue-on-error`, `shell` or `working-directory` | The required CI job and an offline task run the wiring check | "run it" became "run the wiring check"; the clause list before the semicolon, with a full stop |
+| the CI workflow's and job's `env` MUST hold only ...; the job MUST have no `container` or `services`; every step before the wiring step MUST be an action from another repo at a full SHA with only `id`, `name`, `uses` and `with` | No earlier step or setting of the CI job can reach the wiring step | the clause after the semicolon, with a capital "The" |
+| `task cascade:wiring:check` MUST run the same check offline and MUST stay part of the aggregate `task check` | The required CI job and an offline task run the wiring check | same sentence, copied |
+| The check MUST fail when the `notify-downstream` job's keys ... differ from the contract shape | The wiring check fails when the notify job differs from the contract shape | "The check" became "The wiring check"; the clause copied |
+| when the cascade key is read or `environment: cascade` is declared anywhere else under `.github/workflows/`; when a job reads `RELEASE_APP_PRIVATE_KEY` without declaring exactly `environment: release`, or a job declares `release` without reading it | The wiring check fails when a key is read outside its Environment | two sentences, each "The wiring check MUST fail" plus the copied clause |
+| when a workflow in `publish-workflows` uses an Actions cache; when a call into `.github` passes `secrets` | The wiring check fails on a publish workflow cache or a secrets pass into .github | two sentences, each "The wiring check MUST fail" plus the copied clause |
+| when a `.github` reference lacks the one full SHA and the `.github main` comment; when `release.yml`'s workflow-level `env` holds a key other than `CUE_VERSION` and `CUE_REGISTRY` | The wiring check fails on a loose .github reference or a startup-code variable | two sentences, each "The wiring check MUST fail" plus the copied clause |
+| when a checkout of `.github` is not `actions/checkout` at a full SHA with exactly `repository`, `ref`, `path` and `persist-credentials: false` | The wiring check fails when a checkout of .github is not pinned | "The wiring check MUST fail" plus the copied clause |
+| and, in CI, when the pinned SHA is not on `.github` `main` or the copy differs from `.github/scripts/cascade/wiring-check.sh` at the pinned SHA | The wiring check fails in CI when the pinned SHA is off main or the copy differs | "The wiring check MUST fail, in CI, when ..." plus the copied clause |
+| Source: ... | every new block | whole line on four blocks; the part with the `.github` README and `RELEASING.md` titles on six more; a shorter README and wiring contract line on two; no title is dropped from every block |
+
+#### The schema is published only by CI, from a reviewed release (853 to 370 kept in place, 342 and 258 added; form b)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A release is cut by merging the release PR | same requirement, same name | no |
+| A failed publish is not repaired by hand | same requirement, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| A `core` release MUST be produced by merging the release-please PR ...; `cue mod publish` MUST NOT be run against a live registry by hand ... | parent body | two sentences, copied |
+| A re-run MAY publish only a version the registry still does not hold. Once the registry holds a version, that version MUST NOT be published again ... stays failed | Once the registry holds a version it is not published again | two sentences, copied |
+| A published version is immutable. A tag CI did not build is a tag nobody reviewed, and it cannot be withdrawn. This holds for every prerelease type the line carries and for a stable release alike | A published version is immutable | "is immutable" became "MUST be immutable" (strength table); two sentences copied |
+| Source: enhancement 0021 | parent and both ADDED blocks | whole line on each |
+
+#### A break on a prerelease line advances the prerelease, and only a stable line crosses a major (2239 to 493, 333, 176, 274, 431, 384, 208; form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| An absorbable break advances the prerelease counter | A breaking schema change advances the prerelease counter and not the module path, same name | no |
+| An unabsorbable break bumps the module major | Crossing a major is a stable-line act that is decided separately, same name | no |
+| A break during beta does not move the module path | A prerelease line does not cross a major before GA, same name | no |
+| A module line change during beta is refused | A prerelease line does not cross a major before GA, same name | no |
+| A break without a migration note is refused in review | A breaking schema change on a prerelease line lands as a feat! commit with a migration note, same name | no |
+| A break that would force a catalogs/opm major waits for sign-off | A core break that would force a catalogs/opm major needs owner sign-off, same name | no |
+| The declared major and the tag cannot disagree | A consumer retargets a crossing by an import rewrite, and the tag cannot disagree with the declared major, same name | no |
+| Rollback across a major is an import rewrite | A consumer retargets a crossing by an import rewrite, and the tag cannot disagree with the declared major, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| A major line with no stable `vX.0.0` release is a prerelease line. Its prerelease type is ...; `opmodel.dev/core@v2` is on type `beta`. The rules below write the type as `<type>` because ... | A breaking schema change on a prerelease line lands as a feat! commit with a migration note | three sentences, copied. The notation sentence sits in this block only; the next blocks write `<type>` the same way |
+| From its first beta, a prerelease line is on the path to GA. A breaking schema change of any kind MUST land on it as a `feat!:` commit ... | same | two sentences, copied |
+| It advances the prerelease counter, ..., and it MUST NOT move the module path to a new major | A breaking schema change advances the prerelease counter and not the module path | "It" became "A breaking schema change of any kind" (the subject of the sentence before it) |
+| While the line is a prerelease, every releasable commit ... advances the counter; minor and patch bumps apply only once the line is stable | same | copied |
+| The line MUST NOT cross a major before GA: a change on it MUST NOT edit `src/cue.mod/module.cue`'s `module:` line or carry a `Release-As:` footer naming a new major | A prerelease line does not cross a major before GA | "The line" became "The prerelease line" |
+| The stable lines built on core keep the normal SemVer rule ... A core break that would force a `catalogs/opm` major MUST NOT land without owner sign-off, and its proposal MUST record that sign-off | A core break that would force a catalogs/opm major needs owner sign-off | two sentences, copied |
+| Crossing a major is a stable-line act, taken only after GA. It is never implied by a break; ... MUST state it and why. The case for it is a break a consumer cannot absorb ... moves | Crossing a major is a stable-line act that is decided separately | three sentences, copied |
+| It requires two edits in the **same** commit on `main`: ... on its own | Crossing a major takes two edits in the same commit on main | "It requires" became "Crossing a major MUST require" (strength table); the dash became a semicolon |
+| Crossing changes every consumer's retarget from a dependency bump into an import rewrite | A consumer retargets a crossing by an import rewrite, and the tag cannot disagree with the declared major | copied |
+| `cue mod publish` refuses a tag whose major disagrees with the declared module path, so the two cannot land apart | same | "refuses" became "MUST refuse" (strength table) |
+
+#### The published schema is internally coherent before it is tagged (510 to 362; form a)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A stale cross-reference blocks the cut | same requirement, same name | no |
+| A design problem found during the pass is not resolved in the release | same requirement, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| Before a release is cut, `SPEC.md` MUST describe one schema: ... | body | copied |
+| Inventory checking is not coherence checking | body | copied |
+| `task spec:check` verifies that tracked constructs have sections and that sections name live constructs; it cannot detect two sections disagreeing | new scenario "Inventory checking does not detect disagreeing sections" | moved to the THEN line, copied (it holds no keyword in the old text) |
+
+#### A line changes prerelease type through a forced carrier commit and goes stable through a visible one (1121 to 422, 433, 268; form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A type flip with a forced first version cuts the first beta | A change of prerelease type lands together with a forced first version, same name | no |
+| A type flip without the footer cuts nothing new | A change of prerelease type lands together with a forced first version, same name | no |
+| GA drops the suffix | GA drops the suffix through a visible carrier commit, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| Changing `prerelease-type` ... MUST land together with a `Release-As:` footer ...; release-please keeps the existing label ...; a change made of hidden-type commits alone opens no release PR | A change of prerelease type lands together with a forced first version | first two sentences, copied |
+| A footer on an inner commit of a squashed PR does not count; only the squash commit's own message is read | The forced version comes from the squash commit footer alone and its release PR is read | copied |
+| The forced version MUST NOT be written as a `release-as` key ...; `.release-please-manifest.json` MUST NOT be edited by hand. The release PR the footer opens MUST be read ... names the forced version | same | two sentences, copied |
+| GA drops the suffix: `prerelease: false` ... plus a visible carrier commit ... No force is needed for GA: ... | GA drops the suffix through a visible carrier commit | "GA drops" became "GA MUST drop" (strength table); two sentences copied |
+
+#### A release publishes only a version the registry does not hold (1254 to 412, 454, 450, 256, 221; form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A new version is published | A release is published only when GHCR answers that the version is absent, same name | no |
+| A version GHCR already holds is refused | A version GHCR already holds is not published again, same name | no |
+| An inconclusive probe is refused and re-run | An inconclusive registry answer stops the publish, same name | no |
+| A laptop publish never reaches GHCR | task publish publishes to a local registry only, same name | no |
+
+
+| Old clause | New requirement | New sentence |
+| --- | --- | --- |
+| A version-named module tag on GHCR ... always names the bytes first pushed under it. Branch builds (`-0.dev.*`) are outside this requirement | A release is published only when GHCR answers that the version is absent (both sentences); A version GHCR already holds is not published again (the second sentence) | copied; the second sentence is repeated in the second block, which speaks of "the version" |
+| Before `cue mod publish` runs for a release, CI MUST ask GHCR ... and MUST publish only when the answer is "absent": | the first three blocks | the colon became a full stop, because the list below it is cut into blocks; the sentence is copied into each of the three |
+| "Present": the job MUST fail before `cue mod publish` and name the version as already published. Recovery is the next version; the tag MUST NOT be moved or re-created, and the version MUST NOT be re-published | A version GHCR already holds is not published again | copied; the list dash is dropped |
+| Any answer other than "present" or "absent" (...): the job MUST fail before `cue mod publish` and say the registry state could not be determined. Nothing was pushed, so recovery is re-running the job in CI | An inconclusive registry answer stops the publish | copied; the list dash is dropped |
+| When the tag exists, the registry lacks the version and no release PR is pending (...), a re-run publishes nothing; the recovery MUST be the next version | A re-run publishes nothing when the tag exists and the registry lacks the version | copied |
+| `task publish` MUST publish to a local registry only, whatever `CUE_REGISTRY` ... to GHCR | task publish publishes to a local registry only | copied |
+| Source: enhancement 0021 | the first, fourth and fifth block | whole line; the two blocks with the list sentences hold no room for it (every title stays in three blocks) |
+
+The 17 `new:` scenarios of unit 2 each restate a clause of the old body or its plain negation, and add no value: release-cascade "The payload names only the source and the tag", "A notification from another repo moves no pin in core", "The cascade key is read in the key-holding job only", "A key-holding job with code of its own does not meet the rule", "The values of core are read from wiring-check.yaml", "A publish workflow with an Actions cache is refused", "A call into .github that passes secrets is refused", "A .github reference without the one full SHA is refused", "A checkout of .github that is not pinned is refused"; schema-release "A re-run finds the version present", "A published version never changes", "A break lands as a feat! commit with a BREAKING CHANGE footer", "A fix commit advances the counter on a prerelease line", "A crossing carries both edits in one commit", "Inventory checking does not detect disagreeing sections", "A footer on an inner commit does not count", "A re-run after release-please failed publishes nothing". No other file cites the 8 old headers (`grep -rnF --exclude-dir=archive`: no hit outside the specs themselves).
+
+### Strength changes of unit 2
+
+| Block | Old wording | New wording |
+| --- | --- | --- |
+| release-cascade, The notification payload carries only the source and the release tag | "The payload carries only the source and the tag" | "The payload MUST carry only the source and the tag" |
+| release-cascade, core receives no cascade notification | "core has no receiver" | "core MUST have no receiver" |
+| schema-release, A published version is immutable | "A published version is immutable." | "A published version MUST be immutable." |
+| schema-release, Crossing a major takes two edits in the same commit on main | "It requires two edits in the same commit" | "Crossing a major MUST require two edits in the same commit" |
+| schema-release, A consumer retargets a crossing by an import rewrite, and the tag cannot disagree with the declared major | "`cue mod publish` refuses a tag" | "`cue mod publish` MUST refuse a tag" |
+| schema-release, GA drops the suffix through a visible carrier commit | "GA drops the suffix:" | "GA MUST drop the suffix:" |
+
+Other wording edits, none of strength: subjects restated from the same old requirement (rows above); a full stop for a colon or a semicolon where a sentence or a list was cut (release-cascade 3 sentence at "only with the pin" and at the clause lists; schema-release "absent" sentence); the em-dash before `versioning: prerelease` became a semicolon; the one 1000-character sentence of the wiring check ("The check MUST fail when ...; when ...") became eight sentences, each "The wiring check MUST fail" plus one clause copied. The owner decision of 2026-10-19 (verbatim-sentence rule) is the basis; the human may rule on the split sentence.

@@ -6,8 +6,8 @@ Per spec: read the requirement and its scenarios on `main`; pick the form (desig
 - [x] 1.2 `name-constraints` (1), `platform-registry` (1), `transformer-context` (1); gate run, `N` = 7
 - [x] 1.3 `schema-pins` (2), `primitive-keying` (3), `catalog-contracts` (3); gate run, `N` = 15
 - [x] 1.4 `contract-fulfilment` (4), `platform-contract-inventory` (7); gate run, `N` = 26
-- [ ] 1.5 `release-cascade` (3), `schema-release` (5); gate run, `N` = 34
-- [ ] 1.6 Review the clause tables and the ledger: every old scenario is in a new place; no `**Key**:` line, level 5 heading or fenced block in a changed body; no stale reference; each new body has SHALL or MUST and scenarios in both directions where the behavior has a rejection
+- [x] 1.5 `release-cascade` (3), `schema-release` (5); gate run, `N` = 34
+- [x] 1.6 Review the clause tables and the ledger: every old scenario is in a new place; no `**Key**:` line, level 5 heading or fenced block in a changed body; no stale reference; each new body has SHALL or MUST and scenarios in both directions where the behavior has a rejection
 - [ ] 1.7 `task check` green in a scratch copy of the worktree named `core`, then commit `docs(openspec): split the long requirements of the core specs` (one commit per task 1.1 to 1.5 is allowed)
 
 ## 2. Write the Purpose of `cite-lint`
