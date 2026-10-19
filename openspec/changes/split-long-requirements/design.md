@@ -178,3 +178,48 @@ Each table lists every live scenario of a rewritten requirement on `main`. Lengt
 | --- | --- |
 | `#PackagePathType` is a backstop that cannot fire on its own: `strings.SplitN(modulePath, "@", 2)[0]` carries no `@` under `#ModulePathType` | new scenario "The package path backstop cannot fire on its own"; the body keeps "The `#PackagePathType` backstop is also structural; only the reported error differs" |
 | registryPath derived from `#ArtifactRef`, refusal is a conflict against the computed value | body, unchanged in meaning |
+
+### name-constraints: The component asserts the resolved name against every attached constraint (520 to 485, form a)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| Default name admitted by a constraint | same requirement, same name | no |
+| Override refused by a constraint | same requirement, same name | no |
+| Default refused by a constraint | same requirement, same name | no |
+| Overlong default refused by a length-bearing constraint | same requirement, same name | no |
+| Two constraints compose | same requirement, same name | no |
+| Override that satisfies the constraint is admitted | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| collect every attached `#nameConstraint` into one conjunction, unconditionally | body, "conjoin ... unconditionally" |
+| assert the resolved `metadata.resourceName` (default or override, as a string) against the conjunction on a hidden field | body, "against it on a hidden field" |
+| conjunction not unified into `metadata.resourceName`, so default, override and refusal behaviour (component-names) is unchanged | body, "The conjunction SHALL NOT be unified ..." |
+| two constraints compose by unification with no precedence rule | body, unchanged |
+
+### platform-registry: A platform carries no reverse index (559 to 356 and 202, form c2)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| A declared reverse index is refused | A platform declares no reverse index, same name | no |
+| The readiness index is not a matcher bucket | The readiness index is not a matcher bucket, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `#Platform` MUST NOT declare `#matchers` | A platform declares no reverse index, body |
+| a declaring value is inert; nothing reads it (closedness does not refuse, measured 2026-09-13 on cue v0.17.1) | same, body |
+| consumers MUST derive the index from `#composedTransformers` | same, body |
+| `#contracts.requiredBy` is a derived readiness index, not a matcher bucket; glue MUST NOT read it; carries no primitive values | The readiness index is not a matcher bucket, body |
+
+### transformer-context: The context's metadata blocks are projections of the other two inputs (531 to 453, form a)
+
+| Old scenario name | New place (requirement, scenario name) | Changed text? |
+| --- | --- | --- |
+| The context computes from filled inputs | same requirement, same name | no |
+| Transformer-visible values are unchanged | same requirement, same name | no |
+
+| Old clause | New place |
+| --- | --- |
+| `#moduleInstanceMetadata` and `#componentMetadata` computed from the inputs; runtime not required to supply either | body, unchanged |
+| field names and value shapes unchanged from the pre-projection context | body, unchanged |
+| so a transformer reading any context field observes the same value as before | scenario "Transformer-visible values are unchanged" (its THEN says the values are identical to the runtime-assembled context) |
