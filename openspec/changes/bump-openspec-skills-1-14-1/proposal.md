@@ -23,3 +23,7 @@ None. The change has no spec delta (`skip_specs: true`).
 
 - Files: `.claude/skills/openspec-*/SKILL.md` only.
 - No code, no schema, no spec text. Agent instruction files change, so the diff is reviewed as code and scanned for hidden Unicode.
+
+## Enhancement
+
+None.
