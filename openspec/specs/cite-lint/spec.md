@@ -1,7 +1,8 @@
 # cite-lint Specification
 
 ## Purpose
-TBD - created by archiving change wire-cite-lint. Update Purpose after archive.
+
+Defines how core applies the org comment rule, that an enhancement id appears in a comment only beside a reason in words: a local `cite-lint` task that runs the shared tool at one pinned commit, a CI job that calls the shared `.github` workflow as a plain call, and the cascade wiring check that declares that call.
 
 ## Requirements
 

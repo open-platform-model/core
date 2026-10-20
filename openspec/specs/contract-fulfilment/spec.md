@@ -37,9 +37,7 @@ Defines where a contract's implementation is expected to come from, and what a c
 
 ### Requirement: A provider-fulfilled contract admits exactly one provider
 
-For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one provider of that contract, a provider being an enabled registry entry whose transformers *require* the contract. The count is of registry entries, keyed by registry key (the catalog module path with its major): two transformers of one entry requiring the contract are one provider, and two enabled majors of one catalog are two. A provider counts whether or not any enabled entry defines the contract. Two providers MUST be refused, naming both registry keys and the contract key. Zero is an unresolved demand, which fails the render unless the render's caller asked to skip unprovided provider-fulfilled demands (see "A render's caller may skip unprovided provider-fulfilled demands"). Two remain refused under that request.
-
-This is enforced outside the schema: `core` declares the intent and computes the count once, as the platform's contract inventory (`#Platform.#contracts.providedBy`, `overSubscribed` and `routable`), which reports it without refusing on it. The kernel's render build and the generation step (controller, CLI) refuse on that one count; none of them keeps a count of its own. The requirement is stated here because it is what `fulfilment: "provider"` means.
+For a contract declaring `fulfilment: "provider"`, a platform MUST carry exactly one provider of that contract, a provider being an enabled registry entry whose transformers *require* the contract. Two providers MUST be refused, naming both registry keys and the contract key, and remain refused when the render's caller asked to skip unprovided demands (see "A render's caller may ask to skip unprovided demands"). This rule is enforced outside the schema.
 
 #### Scenario: Two providers for one contract are refused
 
@@ -68,9 +66,7 @@ This is enforced outside the schema: `core` declares the intent and computes the
 
 ### Requirement: Every declared resource is a required demand
 
-Every resource a component declares MUST be a demand the platform must satisfy. A demanded resource FQN that no transformer in the platform supplies MUST fail the render immediately, with one exception: an unprovided provider-fulfilled resource the render's caller asked to skip, which omits the whole component instead (see "A render's caller may skip unprovided provider-fulfilled demands").
-
-A resource MUST NOT have a demand-side optionality marker. A component whose resource set is only partly satisfied MUST NOT render output for the satisfied part, under the skip request or without it.
+Every resource a component declares MUST be a demand the platform must satisfy. A demanded resource FQN that no transformer in the platform supplies MUST fail the render immediately, with one exception: an unprovided provider-fulfilled resource the render's caller asked to skip, which omits the whole component instead (see "A render's caller may ask to skip unprovided demands"). A component whose resource set is only partly satisfied MUST NOT render output for the satisfied part.
 
 #### Scenario: An unsupplied resource fails the render
 
@@ -84,11 +80,9 @@ A resource MUST NOT have a demand-side optionality marker. A component whose res
 
 ### Requirement: A trait states its own optionality, and the attachment may override it
 
-`#Trait` MUST carry `optional: bool`. `core` MUST NOT give it a default: the declaring catalog states the posture, and MUST state it as a *default* (`bool | *true` for advisory, `bool | *false` for load-bearing) rather than as a concrete value.
+A `#Component` MUST be able to override the declared posture at the attachment site, in either direction, without conflict.
 
-A `#Component` MUST be able to override the declared posture at the attachment site, in either direction, without conflict. A `#Component` MUST NOT carry an optionality field of its own.
-
-An unhandled trait whose resolved `optional` is `false` fails the render, except when its contract is provider-fulfilled, nothing on the platform provides it, and the render's caller asked to skip unprovided demands (see "A render's caller may skip unprovided provider-fulfilled demands").
+An unhandled trait whose resolved `optional` is `false` fails the render, except when its contract is provider-fulfilled, nothing on the platform provides it, and the render's caller asked to skip unprovided demands (see "A render's caller may ask to skip unprovided demands").
 
 #### Scenario: An unhandled load-bearing trait fails
 
@@ -127,39 +121,81 @@ This is enforced at publish rather than by the schema: CUE cannot express "this 
 - **WHEN** a catalog publishes a trait that never mentions `optional`
 - **THEN** publish fails under concrete evaluation, naming the field
 
-### Requirement: A render's caller may skip unprovided provider-fulfilled demands
+### Requirement: The provider count is of registry entries
 
-A render's caller MAY ask the render to skip every demand that is *unprovided*: a demand on a contract declaring `fulfilment: "provider"` for which no enabled catalog on the platform carries a transformer requiring the demanded key, the single-provider count at zero. The request is per render and belongs to the caller; without it, every render behaves as the other requirements of this capability state.
+For a contract declaring `fulfilment: "provider"`, the count MUST be of registry entries, keyed by registry key (the catalog module path with its major): two transformers of one entry requiring the contract are one provider, and two enabled majors of one catalog are two. A provider MUST count whether or not any enabled entry defines the contract.
+
+#### Scenario: Two transformers of one entry are one provider
+
+- **WHEN** two transformers of one enabled registry entry both require a provider-fulfilled contract
+- **THEN** the entry is counted as one provider
+
+### Requirement: Zero providers are an unresolved demand
+
+Zero providers of a provider-fulfilled contract MUST be an unresolved demand, which fails the render unless the render's caller asked to skip unprovided provider-fulfilled demands (see "A render's caller may ask to skip unprovided demands").
+
+#### Scenario: A contract with no provider fails the render
+
+- **WHEN** a demanded provider-fulfilled contract has no provider and the render's caller did not ask to skip unprovided demands
+- **THEN** the render fails on the unresolved demand
+
+### Requirement: The contract inventory computes the provider count once
+
+`core` MUST declare "A provider-fulfilled contract admits exactly one provider" and compute the provider count once, as the platform's contract inventory (`#Platform.#contracts.providedBy`, `overSubscribed` and `routable`), which MUST report it without refusing on it. The requirement is stated here because it is what `fulfilment: "provider"` means.
+
+#### Scenario: The inventory reports the count without refusing
+
+- **WHEN** a platform has a contract with two providers
+- **THEN** `#Platform.#contracts` reports it in `overSubscribed` and `routable`, and `core` refuses nothing
+
+### Requirement: The render build and the generation step refuse on the one count
+
+The kernel's render build and the generation step (controller, CLI) MUST refuse on the inventory's one provider count; none of them keeps a count of its own.
+
+#### Scenario: Consumers refuse on the inventory count
+
+- **WHEN** a platform's contract inventory reports a contract as over-subscribed
+- **THEN** the render build and the generation step refuse on that one count and keep no count of their own
+
+### Requirement: A resource has no demand-side optionality marker
+
+A resource MUST NOT have a demand-side optionality marker.
+
+#### Scenario: A resource carries no optionality marker on the demand side
+
+- **WHEN** a component declares a resource
+- **THEN** the demand for it carries no optionality marker, so the platform must satisfy it
+
+### Requirement: A trait carries a posture its catalog states as a default
+
+`#Trait` MUST carry `optional: bool`. `core` MUST NOT give it a default: the declaring catalog states the posture, and MUST state it as a *default* (`bool | *true` for advisory, `bool | *false` for load-bearing) rather than as a concrete value. A `#Component` MUST NOT carry an optionality field of its own.
+
+#### Scenario: Core gives optional no default
+
+- **WHEN** a `#Trait` is evaluated with no declaring catalog stating `optional`
+- **THEN** `core` supplies no default for `optional`
+
+#### Scenario: A component carries no optionality field
+
+- **WHEN** a `#Component` is evaluated
+- **THEN** it carries no optionality field of its own
+
+### Requirement: A render's caller may ask to skip unprovided demands
+
+A render's caller MAY ask the render to skip every demand that is *unprovided*: a demand on a contract declaring `fulfilment: "provider"` for which no enabled catalog on the platform carries a transformer requiring the demanded key, the single-provider count at zero. The request MUST be per render and belong to the caller; without it, every render MUST behave as the other requirements of this capability state.
+
+#### Scenario: A provider on the platform is used, not skipped
+
+- **WHEN** exactly one enabled catalog carries a transformer requiring the provider-fulfilled contract, that transformer matches the component, and the caller asked to skip unprovided demands
+- **THEN** the render uses that provider's transformer, and nothing is reported as skipped
+
+### Requirement: Only unprovided demands are skippable
 
 Only unprovided demands are skippable. Under the request:
 
 - a demand on a catalog-fulfilled contract that nothing supplies MUST still fail the render;
 - a demand on a provider-fulfilled contract whose provider is present on the platform but did not match the component MUST still fail the render;
 - an over-subscribed provider-fulfilled contract MUST still be refused.
-
-A skipped **trait** demand MUST leave its component rendering every pair it matched; the trait itself renders nothing. A skipped **resource** demand MUST leave its component rendering nothing at all, so a partly satisfied component still never renders, and that component MUST NOT be reported as unmatched.
-
-Every skipped demand MUST be reported, naming the component, the contract key and whether it was a resource or a trait demand; a skipped resource demand's report MUST also say that the whole component rendered nothing. A skip MUST never be silent. An unhandled trait whose resolved `optional` is `true` is unaffected by the request: it continues with a warning, with or without it.
-
-Enforcement is the kernel's, like the rest of this capability. `core` states the rule; the platform's contract inventory is unchanged by it.
-
-#### Scenario: A skipped trait lets the rest of the component render
-
-- **WHEN** a component attaches a trait whose contract declares `fulfilment: "provider"` and resolves `optional: false`, no enabled catalog on the platform carries a transformer requiring that contract, and the render's caller asked to skip unprovided demands
-- **THEN** the render succeeds and the component renders every pair it matched
-- **AND** the report names the component, the trait's contract key and the trait kind
-
-#### Scenario: A skipped resource omits the whole component
-
-- **WHEN** a component declares two resources, one of which is provider-fulfilled with zero providers on the platform, the other supplied by a matched transformer, and the render's caller asked to skip unprovided demands
-- **THEN** the render succeeds and the component renders no object, not even for the supplied resource
-- **AND** the component is not reported as unmatched
-- **AND** the report names the component, the resource's contract key, and that the component rendered nothing
-
-#### Scenario: Without the request the render still refuses
-
-- **WHEN** the same component renders on the same platform and the caller did not ask to skip unprovided demands
-- **THEN** the render fails, naming the unresolved contract key
 
 #### Scenario: A catalog-fulfilled demand still refuses under the request
 
@@ -176,7 +212,46 @@ Enforcement is the kernel's, like the rest of this capability. `core` states the
 - **WHEN** transformers from two enabled catalogs both require the same provider-fulfilled contract, and the caller asked to skip unprovided demands
 - **THEN** the render is refused, naming both catalog paths and the contract key
 
-#### Scenario: A provider on the platform is used, not skipped
+### Requirement: A skipped trait demand leaves the rest of its component rendering
 
-- **WHEN** exactly one enabled catalog carries a transformer requiring the provider-fulfilled contract, that transformer matches the component, and the caller asked to skip unprovided demands
-- **THEN** the render uses that provider's transformer, and nothing is reported as skipped
+A skipped **trait** demand MUST leave its component rendering every pair it matched; the trait itself renders nothing.
+
+#### Scenario: A skipped trait lets the rest of the component render
+
+- **WHEN** a component attaches a trait whose contract declares `fulfilment: "provider"` and resolves `optional: false`, no enabled catalog on the platform carries a transformer requiring that contract, and the render's caller asked to skip unprovided demands
+- **THEN** the render succeeds and the component renders every pair it matched
+- **AND** the report names the component, the trait's contract key and the trait kind
+
+### Requirement: A skipped resource demand omits the whole component
+
+A skipped **resource** demand MUST leave its component rendering nothing at all, so a partly satisfied component still never renders, and that component MUST NOT be reported as unmatched.
+
+#### Scenario: A skipped resource omits the whole component
+
+- **WHEN** a component declares two resources, one of which is provider-fulfilled with zero providers on the platform, the other supplied by a matched transformer, and the render's caller asked to skip unprovided demands
+- **THEN** the render succeeds and the component renders no object, not even for the supplied resource
+- **AND** the component is not reported as unmatched
+- **AND** the report names the component, the resource's contract key, and that the component rendered nothing
+
+#### Scenario: Without the request the render still refuses
+
+- **WHEN** the same component renders on the same platform and the caller did not ask to skip unprovided demands
+- **THEN** the render fails, naming the unresolved contract key
+
+### Requirement: Every skipped demand is reported
+
+Every skipped demand MUST be reported, naming the component, the contract key and whether it was a resource or a trait demand; a skipped resource demand's report MUST also say that the whole component rendered nothing. A skip MUST never be silent. An unhandled trait whose resolved `optional` is `true` is unaffected by the request: it continues with a warning, with or without it.
+
+#### Scenario: An advisory trait warns with or without the request
+
+- **WHEN** a component attaches an unhandled trait whose resolved `optional` is `true` and the caller asked to skip unprovided demands
+- **THEN** the render continues with a warning, as it does without the request
+
+### Requirement: The kernel enforces the skip rule and the inventory is unchanged
+
+Enforcement of the skip rule MUST be the kernel's, like the rest of this capability. `core` states the rule; the platform's contract inventory MUST be unchanged by it.
+
+#### Scenario: The inventory does not change under the request
+
+- **WHEN** a render's caller asked to skip unprovided demands
+- **THEN** the platform's contract inventory is unchanged

@@ -3,6 +3,11 @@ version: "3"
 # Silent by default — set TASK_VERBOSE=1 or use --verbose to show commands
 silent: true
 
+vars:
+  # The OpenSpec CLI that the generated skills under .claude/skills/ come from.
+  # The one pin: task openspec:install and the CI step both read it from here.
+  OPENSPEC_VERSION: 1.14.1
+
 tasks:
   default:
     desc: Show available tasks
@@ -206,7 +211,7 @@ tasks:
   publish:branch:
     desc: Publish HEAD as a -dev pre-release derived from the commit
     cmds:
-      - task: check
+      - task: check:base
       - |
         set -euo pipefail
         tag=$(bash .tasks/branch-tag.sh "$(pwd)")
@@ -225,10 +230,33 @@ tasks:
     cmds:
       - go run github.com/open-platform-model/enhancements/tools/enh@e0335b2ec44e659c0191bc3523d79d17f26f8e7d cite-lint --root .
 
+  ## OpenSpec
+
+  openspec:install:
+    desc: Install the openspec CLI at OPENSPEC_VERSION (needs npm; install scripts do not run)
+    cmds:
+      - npm install -g --ignore-scripts @fission-ai/openspec@{{.OPENSPEC_VERSION}}
+
+  openspec:check:
+    desc: Validate every main spec and change with the pinned openspec in strict mode (the long-requirement limit is a warning, and strict fails on it)
+    env:
+      OPENSPEC_TELEMETRY: "0"
+    preconditions:
+      - sh: command -v openspec >/dev/null
+        msg: "openspec not found: run `task openspec:install` (needs npm)"
+      - sh: test "$(openspec --version)" = "{{.OPENSPEC_VERSION}}"
+        msg: "openspec is not {{.OPENSPEC_VERSION}}: run `task openspec:install`"
+    cmds:
+      - openspec validate --all --strict --no-interactive
+
   ## Aggregate
 
-  check:
-    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, and the cascade wiring check
+  # check:base is every gate of check except openspec:check. publish:branch
+  # calls it: that job holds a token that can write packages, and the openspec
+  # CLI is npm code that no lockfile pins, so it must not run there. The
+  # required ci.yml job runs openspec:check as its own step.
+  check:base:
+    desc: Every gate of check except the openspec check (the branch-publish job runs this one)
     cmds:
       - task: fmt:check
       - task: vet
@@ -237,3 +265,9 @@ tasks:
       - task: docs:check
       - task: docs:bundle:check
       - task: cascade:wiring:check
+
+  check:
+    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, the cascade wiring check, and the openspec check
+    cmds:
+      - task: check:base
+      - task: openspec:check

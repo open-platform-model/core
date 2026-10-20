@@ -83,7 +83,10 @@ fixture harness lives in `library`, not here.
 | `task cascade:wiring:check`   | Run the canonical release-cascade wiring check offline (notify shape, `.github` SHA pin, release key, caches) |
 | `task cite-lint`              | Fail on a decision number or a lone enhancement id in a CUE comment (`enh cite-lint` at the commit CI uses; needs Go; not part of `task check`) |
 | `task tools:opm-docs`         | Install or reuse `.bin/opm-docs`, the checksum-verified docs-kit release `.opm-docs-version` names |
-| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + docs bundle check + cascade wiring check |
+| `task openspec:install`       | Install the `openspec` CLI at the version `OPENSPEC_VERSION` in `Taskfile.yml` pins (needs npm; install scripts do not run) |
+| `task openspec:check`         | Run `openspec validate --all --strict` with the pinned CLI; strict mode fails on the long-requirement warning |
+| `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + docs bundle check + cascade wiring check + openspec check |
+| `task check:base`             | `task check` without the openspec check; `task publish:branch` runs this one, so the publish job runs no npm code |
 
 For raw `cue` outside `task`, export `CUE_REGISTRY` and `OPM_REGISTRY` as the workspace registry
 reference says. `task publish` writes only to the local registry, whatever `CUE_REGISTRY` the shell
