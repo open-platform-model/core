@@ -52,7 +52,7 @@ import (
 		// Stable UUID for this instance, computed as a UUID v5 (SHA1) of the
 		// instance's own fqn — mirroring #Module's own fqn → uuid shape. This
 		// is the value carried in the module-instance.opmodel.dev/uuid label
-		// below, which the operator reads to decide whether it owns a live
+		// below, which the controller reads to decide whether it owns a live
 		// object.
 		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
 

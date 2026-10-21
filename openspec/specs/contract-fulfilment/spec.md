@@ -150,7 +150,7 @@ Zero providers of a provider-fulfilled contract MUST be an unresolved demand, wh
 
 ### Requirement: The render build and the generation step refuse on the one count
 
-The kernel's render build and the generation step (operator, CLI) MUST refuse on the inventory's one provider count; none of them keeps a count of its own.
+The kernel's render build and the generation step (controller, CLI) MUST refuse on the inventory's one provider count; none of them keeps a count of its own.
 
 #### Scenario: Consumers refuse on the inventory count
 

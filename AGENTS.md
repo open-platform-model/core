@@ -1,7 +1,7 @@
 # Core repository guide
 
 The OPM core schema, pure CUE, published as `opmodel.dev/core@v2`. Every OPM artifact is typed against
-these definitions. Downstream repos (`library`, `cli`, `opm-operator`, `modules`, `catalog_opm`)
+these definitions. Downstream repos (`library`, `cli`, `opm-controller`, `modules`, `catalog_opm`)
 consume `core` as a published dependency, never by file path. The repo holds definitions and the
 tooling to validate and publish them, and no Go code. The definitions reference on opmodel.dev is
 generated from `src/` when the docs bundle is built; nothing generated is committed.

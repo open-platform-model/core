@@ -15,7 +15,7 @@ context: |
 
   This repo defines and publishes the Open Platform Model **core schema** as a versioned CUE
   module (`opmodel.dev/core@v2`). It is the source of truth for OPM: every OPM artifact is typed
-  against these definitions, and `library`, `catalog`, `cli`, `opm-operator`, `modules` and the
+  against these definitions, and `library`, `catalog`, `cli`, `opm-controller`, `modules` and the
   deployment repositories all consume it as a published dependency — never by filesystem path.
   The schema is pure CUE, with no Go. The definitions reference is generated from `src/` by
   docs-kit when the docs bundle (`docs-kit.cue`) is built; nothing generated is committed.
@@ -193,7 +193,7 @@ rules:
   proposal:
     - "Focus: WHY we're doing this, WHAT's in/out of scope"
     - "Updates when: Scope changes, intent clarifies, approach fundamentally shifts"
-    - Name every downstream consumer the change reaches (`library`, `cli`, `opm-operator`, the
+    - Name every downstream consumer the change reaches (`library`, `cli`, `opm-controller`, the
       catalogs, `modules`) and what each of them has to do about it.
     - State whether this is MAJOR/MINOR/PATCH per Principle I, whether it relies on the `@v2`
       beta break licence (Principle IV), and, for a break, whether it would force a

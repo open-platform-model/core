@@ -34,7 +34,7 @@ The platform also reports a contract inventory, `#contracts`. It lists the contr
 
 A platform has a `type` as well. It is a label. Every platform must set it, and rendering does not consult it.
 
-The operator renders against the cluster's platform. The CLI renders against a directory you pass with `--platform`, the cluster's platform, or, when it uses neither, a platform it generates from the render's own catalog pins. [Platforms and catalogs](/docs/concepts/platforms-and-catalogs/) explains each source.
+The controller renders against the cluster's platform. The CLI renders against a directory you pass with `--platform`, the cluster's platform, or, when it uses neither, a platform it generates from the render's own catalog pins. [Platforms and catalogs](/docs/concepts/platforms-and-catalogs/) explains each source.
 
 That is the whole platform half today. It decides which transformers, from which catalog builds, may render an instance, and what happens when the instance pins a newer build than the platform does.
 
@@ -42,7 +42,7 @@ That is the whole platform half today. It decides which transformers, from which
 
 OPM has no platform model. No OPM definition describes a cluster's global settings, the controllers and APIs it is built from, or the services it offers to teams. [What OPM does not do](/docs/start/what-opm-does-not-do/#a-model-of-the-platform-itself) lists what OPM has in their place.
 
-One mechanism a platform model would build on already works: a module can extend the platform it runs on. A provider module renders a `TransformerRegistration`, with the opm catalog's `transformer-registration` resource, that claims its catalog implements provider-fulfilled contracts, such as the opm catalog's `backup` trait. Once the operator accepts the claim and the provider's instance reports `Ready`, the catalog joins the platform, and every other module on that platform can use the trait. The module supplied a capability, and the platform offers it to everyone else. No published module uses this mechanism today.
+One mechanism a platform model would build on already works: a module can extend the platform it runs on. A provider module renders a `TransformerRegistration`, with the opm catalog's `transformer-registration` resource, that claims its catalog implements provider-fulfilled contracts, such as the opm catalog's `backup` trait. Once the controller accepts the claim and the provider's instance reports `Ready`, the catalog joins the platform, and every other module on that platform can use the trait. The module supplied a capability, and the platform offers it to everyone else. No published module uses this mechanism today.
 
 > [!NOTE]
 > **Direction**
@@ -79,13 +79,13 @@ So the application model does not depend on the shape of any platform. A module 
 
 ### The Platform resource is not the platform model
 
-The operator, and the CLI when it renders against the cluster, read a cluster-scoped `Platform` resource, which must be named `cluster`. Its spec holds three fields:
+The controller, and the CLI when it renders against the cluster, read a cluster-scoped `Platform` resource, which must be named `cluster`. Its spec holds three fields:
 
 - `type`, the same label as on `#Platform`
 - `registry`, the catalogs the platform subscribes to, each with `enable` and `version`
 - `skewPolicy`, which decides what a render does when the instance pins a newer build of core or an OPM catalog than the platform does: `Warn`, the default, renders against the platform's build and reports the skew, and `Refuse` refuses the render
 
-The operator adds the catalogs of active `TransformerRegistration` claims and records the result in `status.registry`. From that it generates a platform module, the same kind of `#Platform` the CLI renders against.
+The controller adds the catalogs of active `TransformerRegistration` claims and records the result in `status.registry`. From that it generates a platform module, the same kind of `#Platform` the CLI renders against.
 
 ### A provider contract is not a service the platform offers
 
@@ -100,9 +100,9 @@ Each rule names what refuses a violation. [What enforces a rule](/docs/concepts/
 - `cue`: A registry key is the module path of the catalog its entry imports. A key that disagrees with the import is a conflict that names the entry.
 - `cue`: An entry's `version` is read from the imported catalog. An entry that states another version conflicts.
 - `kernel`: A render uses the platform's build of every OPM catalog the platform pins. When the instance pins a newer build, the render warns, or refuses with `SkewError` when the skew policy is `Refuse`.
-- `kernel`: A provider-fulfilled contract has at most one provider on a platform, counted per registry entry, so two majors of one catalog are two providers. The render refuses more with `OverSubscribedContractsError`. `opm platform check` exits with the validation error code. The operator sets the `Platform`'s `Ready` condition to `False` with reason `OverSubscribedContracts`, and keeps rendering against the last platform it accepted.
-- `kernel`: A contract key is listed by the catalog of at most one enabled registry entry, so two majors of one catalog that share keys collide. The render refuses a platform with a collision, with `ContractCollisionsError`, whatever the instance. `opm platform check` exits with the validation error code. The operator sets the `Platform`'s `Ready` condition to `False` with reason `ContractCollisions`, and keeps rendering against the last platform it accepted.
+- `kernel`: A provider-fulfilled contract has at most one provider on a platform, counted per registry entry, so two majors of one catalog are two providers. The render refuses more with `OverSubscribedContractsError`. `opm platform check` exits with the validation error code. The controller sets the `Platform`'s `Ready` condition to `False` with reason `OverSubscribedContracts`, and keeps rendering against the last platform it accepted.
+- `kernel`: A contract key is listed by the catalog of at most one enabled registry entry, so two majors of one catalog that share keys collide. The render refuses a platform with a collision, with `ContractCollisionsError`, whatever the instance. `opm platform check` exits with the validation error code. The controller sets the `Platform`'s `Ready` condition to `False` with reason `ContractCollisions`, and keeps rendering against the last platform it accepted.
 - `cue`: A platform sets `type`.
 - `convention`: A platform's `type` names what kind of platform it is. Nothing acts on its value.
 
-Two transformers whose match predicates overlap on a shared catalog contract make `opm platform check` exit with the validation error code, and the operator refuses the platform with reason `ComparablePredicates`. The render does not refuse them. Nothing enforces the platform model, because it does not exist.
+Two transformers whose match predicates overlap on a shared catalog contract make `opm platform check` exit with the validation error code, and the controller refuses the platform with reason `ComparablePredicates`. The render does not refuse them. Nothing enforces the platform model, because it does not exist.
