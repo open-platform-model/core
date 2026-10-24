@@ -5,7 +5,7 @@ import (
 )
 
 // Schema-level pins for the name types and the per-primitive name
-// constraint (0019:D20, D21, D23).
+// constraint (enhancement 0019).
 //
 // Companion to platform_and_match_pins.cue and written to the same rules:
 // every value here is a HIDDEN top-level field of package `pins`, which
@@ -50,7 +50,7 @@ _pinNameIndifferent: core.#Resource & {
 }
 
 // The container, shaped like the catalog's: the workload-type key is
-// REQUIRED, and the constraint is computed from it (0019:D23) — #NameType
+// REQUIRED, and the constraint is computed from it (enhancement 0019) — #NameType
 // when stateful (pod DNS <sts>-<n>.<svc>… puts the name in a label
 // position, and the server enforces the label rule on both axes there),
 // top otherwise. List-index form: a default arm would win over the concrete
@@ -115,7 +115,7 @@ _pinNameTypeLeadingDigit: "1prod-web"
 // Default under Expose: the qualified default is already DNS-1035.
 _pinNameExposedDefault: core.#Component & {
 	metadata: name:                                            "web"
-	#resources: container:                                     _pinNameContainer & _pinNameStateless
+	#resources: (_pinNameContainer.metadata.fqn):              _pinNameContainer & _pinNameStateless
 	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinNameExpose
 	#instance: _pinNameInstance
 }
@@ -128,18 +128,18 @@ _pinNameDottedOverride: core.#Component & {
 		name:         "exporter"
 		resourceName: "metrics.internal.example"
 	}
-	#resources: container: _pinNameContainer & _pinNameStateless
+	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateless
 	#instance: _pinNameInstance
 }
 _pinNameDottedOverrideFqdn: "\(_pinNameDottedOverride.#names.dns.fqdn)"
 _pinNameDottedOverrideFqdn: "metrics.internal.example.media.svc.cluster.local"
 
 // A 65-rune default with no constraint: admitted (the 63-rune guard that
-// refused this before 0019:D20 is retired; both operands are labels, so the
+// refused this before enhancement 0019 is retired; both operands are labels, so the
 // default cannot exceed 127 runes and the 253 ceiling is unreachable).
 _pinNameLongDefault: core.#Component & {
-	metadata: name:        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	#resources: container: _pinNameContainer & _pinNameStateless
+	metadata: name:                               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateless
 	#instance: _pinNameInstance
 }
 _pinNameLongDefaultLen: len(_pinNameLongDefault.#names.resourceName)
@@ -147,21 +147,21 @@ _pinNameLongDefaultLen: 65
 
 // The 127-rune maximum: admitted.
 _pinNameMaxDefault: core.#Component & {
-	metadata: name:        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-	#resources: container: _pinNameContainer & _pinNameStateless
+	metadata: name:                               "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateless
 	#instance: {name: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", namespace: "media"}
 }
 _pinNameMaxDefaultLen: len(_pinNameMaxDefault.#names.resourceName)
 _pinNameMaxDefaultLen: 127
 
-// Exact override that satisfies Expose: the 0019:D22 spelling for a workload,
+// Exact override that satisfies Expose: the enhancement 0019 spelling for a workload,
 // Service and projection that share one name.
 _pinNameExposedExact: core.#Component & {
 	metadata: {
 		name:         "istiod"
 		resourceName: "istiod"
 	}
-	#resources: container:                                     _pinNameContainer & _pinNameStateless
+	#resources: (_pinNameContainer.metadata.fqn):              _pinNameContainer & _pinNameStateless
 	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinNameExpose
 	#instance: _pinNameInstance
 }
@@ -171,8 +171,8 @@ _pinNameExposedExactFqdn: "istiod.media.svc.cluster.local"
 // Raw stateful container, default: the conditional constraint reads
 // #NameType, which the default satisfies.
 _pinNameStatefulDefault: core.#Component & {
-	metadata: name:        "cache"
-	#resources: container: _pinNameContainer & _pinNameStateful
+	metadata: name:                               "cache"
+	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateful
 	#instance: _pinNameInstance
 }
 _pinNameStatefulDefaultValue: "\(_pinNameStatefulDefault.#names.resourceName)"
@@ -182,7 +182,7 @@ _pinNameStatefulDefaultValue: "prod-cache"
 // with no precedence rule written anywhere.
 _pinNameComposed: core.#Component & {
 	metadata: name:                                                               "db"
-	#resources: container:                                                        _pinNameContainer & _pinNameStateful
+	#resources: (_pinNameContainer.metadata.fqn):                                 _pinNameContainer & _pinNameStateful
 	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1":                    _pinNameExpose
 	#blueprints: "opmodel.dev/catalogs/opm/blueprints/stateful-workload@v1beta1": _pinNameStatefulBlueprint
 	#instance: _pinNameInstance
@@ -200,7 +200,7 @@ _pinNameComposedValue: "prod-db"
 //
 //   _failNameExposedDots: core.#Component & {
 //   	metadata: {name: "web", resourceName: "web.internal"}
-//   	#resources: container: _pinNameContainer & _pinNameStateless
+//   	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateless
 //   	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinNameExpose
 //   	#instance: _pinNameInstance
 //   }
@@ -212,7 +212,7 @@ _pinNameComposedValue: "prod-db"
 //
 //   _failNameLeadingDigit: core.#Component & {
 //   	metadata: name: "web"
-//   	#resources: container: _pinNameContainer & _pinNameStateless
+//   	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateless
 //   	#traits: "opmodel.dev/catalogs/opm/traits/expose@v1beta1": _pinNameExpose
 //   	#instance: {name: "1prod", namespace: "media"}
 //   }
@@ -220,11 +220,11 @@ _pinNameComposedValue: "prod-db"
 //   _failNameLeadingDigit._nameFits: invalid value "1prod-web"
 //     (out of bound =~"^[a-z]([a-z0-9-]*[a-z0-9])?$")
 //
-// Raw stateful container, dotted override (0019:D23):
+// Raw stateful container, dotted override (enhancement 0019):
 //
 //   _failNameStatefulDots: core.#Component & {
 //   	metadata: {name: "cache", resourceName: "cache.internal"}
-//   	#resources: container: _pinNameContainer & _pinNameStateful
+//   	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateful
 //   	#instance: _pinNameInstance
 //   }
 //
@@ -235,7 +235,7 @@ _pinNameComposedValue: "prod-db"
 //
 //   _failNameStatefulLong: core.#Component & {
 //   	metadata: name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-//   	#resources: container: _pinNameContainer & _pinNameStateful
+//   	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateful
 //   	#instance: _pinNameInstance
 //   }
 //
@@ -247,7 +247,7 @@ _pinNameComposedValue: "prod-db"
 //
 //   _failNameOverlongOverride: core.#Component & {
 //   	metadata: {name: "x", resourceName: "<254 × a>"}
-//   	#resources: container: _pinNameContainer & _pinNameStateless
+//   	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateless
 //   	#instance: _pinNameInstance
 //   }
 //
@@ -259,7 +259,7 @@ _pinNameComposedValue: "prod-db"
 //
 //   _failNameBad: core.#Component & {
 //   	metadata: {name: "x", resourceName: "Bad_Name"}
-//   	#resources: container: _pinNameContainer & _pinNameStateless
+//   	#resources: (_pinNameContainer.metadata.fqn): _pinNameContainer & _pinNameStateless
 //   	#instance: _pinNameInstance
 //   }
 //

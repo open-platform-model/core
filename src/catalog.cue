@@ -1,5 +1,7 @@
 package core
 
+import "list"
+
 // WHY it is authored this way. The full authoring shape:
 //
 //
@@ -30,7 +32,7 @@ package core
 //
 // Catalog identity lives in a sibling `identity/` subpackage so transformer
 // subpackages can source it without a circular import. That subpackage is a
-// COMMITTED `identity/identity.cue` (0010:D5): it holds the real
+// COMMITTED `identity/identity.cue` (enhancement 0010): it holds the real
 // ModulePath and Version, so a checkout and a published artifact compute the
 // same values. It replaces the earlier arrangement, in which the committed
 // tree carried a placeholder version and publish stamped the real one into a
@@ -42,12 +44,13 @@ package core
 // `metadata.modulePath` to "\(_ref.registryPath)/transformers" — the MAJOR-FREE
 // path, because a transformer declares a #PackagePathType — and
 // `metadata.catalogVersion` to the catalog's version. It does NOT stamp
-// `metadata.fqn`: under 0010:D21 an fqn is AUTHORED at the
-// definition site rather than derived, and the map key already carries the
-// transformer's own fqn. 0001:D18 lockstep on the build stays structural, since
-// the stamp is what supplies the key's version component.
+// `metadata.fqn`: under enhancement 0010 an fqn is AUTHORED at the definition site
+// rather than derived, and the map key carries the transformer's own fqn by
+// authoring convention: core checks the key's form only, and the publish
+// gate never reads it. The build lockstep of enhancement 0001 stays structural,
+// since the stamp is what supplies the key's version component.
 //
-// `M=metadata` is a field-label alias (0001:D25). It binds the
+// `M=metadata` is a field-label alias (enhancement 0001). It binds the
 // label `M` to the metadata field path so the pattern constraint can reach
 // `M.modulePath` and `M.version` across the nested struct boundary. The
 // value-alias form `metadata: M={...}` does NOT carry across this boundary
@@ -55,30 +58,38 @@ package core
 // both sound forms (label alias + hidden mirror); the label alias is
 // chosen for inline locality.
 //
+// The contract maps DO bind `metadata.fqn`: each binds it to the member's map
+// key, so a member listed under another contract's key is a conflict. That
+// derives nothing — the key and the fqn are both authored, and core now
+// requires them to agree.
+//
 // The contract maps (#resources, #traits, #blueprints) list what the catalog
 // DEFINES, separately from what its #transformers implement (enhancement
-// 0015:D1): a `fulfilment: "provider"` contract ships no adapter and was
+// 0015): a `fulfilment: "provider"` contract ships no adapter and was
 // otherwise invisible to a subscribing platform. Each map stamps the same
 // two fields the transformer map does, but its modulePath stamp carries the
-// member's own apiVersion as the filing segment (0010:D49) — the value
+// member's own apiVersion as the filing segment (enhancement 0010) — the value
 // #CatalogMemberFQNGate derives at publish — read through an `A=apiVersion`
 // label alias: a bare `apiVersion` inside the stamp literal is "reference
 // apiVersion not found", because lexical resolution sees only the fields the
 // literal itself declares, not those the primitive supplies by unification
 // (measured on cue v0.17.1). The transformer stamp stays flat: a transformer
-// carries no apiVersion (0010:D44). SPEC.md § 3.6 Rationale, "Why a single
+// carries no apiVersion (enhancement 0010). SPEC.md § 3.6 Rationale, "Why a single
 // `#Catalog` construct instead of a `#Module.#defines` block", "Why the
-// `M=metadata` field-label alias", "Why the pattern stamps `modulePath` +
-// `catalogVersion` but not `fqn`", "Why a catalog publishes its contracts as
+// `M=metadata` field-label alias", "Why the transformer pattern stamps
+// `modulePath` + `catalogVersion` but not `fqn`", "Why contract keys are bound
+// and transformer keys are not", "Why a catalog publishes its contracts as
 // members", "Why the contract stamp carries the member's apiVersion segment
-// while the transformer stamp does not" and "Why the member is the primitive
-// itself rather than a projection".
+// while the transformer stamp does not", "Why the member is the primitive
+// itself rather than a projection" and "Why a catalog derives the contracts
+// it provides".
 
 // #Catalog: top-level catalog definition. Authoring shape uses the modules
 // pattern — bare `c.#Catalog` at file root, fields written at package level,
 // no `Catalog:` wrapper; identity comes from the sibling `identity/` package.
-// Publishes the contracts it defines (#resources, #traits, #blueprints)
-// beside the transformers that implement them (#transformers). See SPEC.md § 3.6.
+// Publishes the contracts it defines (#resources, #traits, #blueprints) beside
+// the transformers that implement them (#transformers), and derives the
+// provider-fulfilled contracts those require (provides). See SPEC.md § 3.6.
 #Catalog: {
 	kind: "Catalog"
 	M=metadata: {
@@ -89,7 +100,7 @@ package core
 		// being wrong.
 		version!: #VersionType
 
-		// WHY fqn: 0010:D1.
+		// WHY fqn: the fqn is the complete module path, and the version does not join it (enhancement 0010).
 
 		// fqn is the module path; the version does not join it.
 		fqn: #ModulePathType & modulePath
@@ -98,8 +109,8 @@ package core
 		// member stamps below are built on.
 		_ref: #ArtifactRef & {"modulePath": modulePath}
 
-		// NO version/path major assertion here, deliberately — 0010:D43, the same
-		// holding #Module carries under 0010:D45. `identity/identity.cue` asserts
+		// NO version/path major assertion here, deliberately, the same
+		// holding #Module carries (enhancement 0010). `identity/identity.cue` asserts
 		// VersionMajor == Major at the point both values are WRITTEN; `core`
 		// re-deriving it one hop downstream tests the same relation over the
 		// same two values. The exposure — a catalog whose identity package is
@@ -114,19 +125,21 @@ package core
 		annotations?: #LabelsAnnotationsType
 	}
 
-	// WHY one stamping rule for three maps, and why it reads apiVersion
-	// through a label alias: the file header. #traits and #blueprints below
-	// carry the same stamp under their own kind segment and point here.
+	// WHY one stamping rule for three maps, why it binds fqn to the key, and
+	// why it reads apiVersion through a label alias: the file header.
+	// #traits and #blueprints below carry the same stamp under their own
+	// kind segment and point here.
 
-	// WHY #resources: 0015:D1.
+	// WHY #resources: a catalog publishes its contracts as members, beside its transformers (enhancement 0015).
 
 	// resources: the #Resource contracts this catalog defines, keyed by contract
-	// fqn; listing one requires no adapter. Stamps metadata.modulePath to
-	// "<registryPath>/resources/<apiVersion>" and metadata.catalogVersion to the
-	// catalog's version, never fqn; an authored value that disagrees is a
-	// conflict. See SPEC.md § 3.6.
-	#resources: [#ContractFQNType]: #Resource & {
+	// fqn; listing one requires no adapter. Binds metadata.fqn to the key and
+	// stamps metadata.modulePath to "<registryPath>/resources/<apiVersion>" and
+	// metadata.catalogVersion to the catalog's version; an authored value that
+	// disagrees is a conflict. See SPEC.md § 3.6.
+	#resources: [K=#ContractFQNType]: #Resource & {
 		metadata: {
+			fqn:            K
 			A=apiVersion:   #APIVersionType
 			modulePath:     "\(M._ref.registryPath)/resources/\(A)"
 			catalogVersion: M.version
@@ -137,8 +150,9 @@ package core
 	// fqn; the #resources stamp under the `traits` segment. A `fulfilment:
 	// "provider"` trait is listed here and implemented nowhere in this
 	// catalog: this map is what makes it visible. See SPEC.md § 3.6.
-	#traits: [#ContractFQNType]: #Trait & {
+	#traits: [K=#ContractFQNType]: #Trait & {
 		metadata: {
+			fqn:            K
 			A=apiVersion:   #APIVersionType
 			modulePath:     "\(M._ref.registryPath)/traits/\(A)"
 			catalogVersion: M.version
@@ -148,13 +162,39 @@ package core
 	// blueprints: the #Blueprint contracts this catalog defines, keyed by
 	// contract fqn; the #resources stamp under the `blueprints` segment.
 	// See SPEC.md § 3.6.
-	#blueprints: [#ContractFQNType]: #Blueprint & {
+	#blueprints: [K=#ContractFQNType]: #Blueprint & {
 		metadata: {
+			fqn:            K
 			A=apiVersion:   #APIVersionType
 			modulePath:     "\(M._ref.registryPath)/blueprints/\(A)"
 			catalogVersion: M.version
 		}
 	}
+
+	// Every provider-fulfilled contract some transformer requires, deduplicated
+	// through struct keys. Both demand maps are optional on #ComponentTransformer,
+	// so each is presence-guarded before comprehending.
+	let providerSet = {
+		for _, tf in #transformers {
+			if tf.requiredResources != _|_ {
+				for fqn, req in tf.requiredResources if req.fulfilment == "provider" {(fqn): true}
+			}
+			if tf.requiredTraits != _|_ {
+				for fqn, req in tf.requiredTraits if req.fulfilment == "provider" {(fqn): true}
+			}
+		}
+	}
+
+	// WHY provides: library ADR-012 moves one derived rule into core at a
+	// time; this is the rule Catalog.Provides() folds in Go and the
+	// enhancement 0015 claim check compares against. SPEC.md § 3.6 Rationale,
+	// "Why a catalog derives the contracts it provides".
+
+	// provides: the provider-fulfilled contracts this catalog implements,
+	// sorted and deduplicated: every requiredResources or requiredTraits
+	// key of its #transformers whose requirement reads fulfilment
+	// "provider". Derived, never authored. See SPEC.md § 3.6.
+	provides: [...#ContractFQNType] & list.Sort([for fqn, _ in providerSet {fqn}], list.Ascending)
 
 	#transformers: [#ImplFQNType]: #ComponentTransformer & {
 		metadata: {
@@ -162,7 +202,7 @@ package core
 			// declares a #PackagePathType, which admits no "@vN".
 			modulePath: "\(M._ref.registryPath)/transformers"
 
-			// WHY catalogVersion: 0010:D25.
+			// WHY catalogVersion: apiVersion is authored per primitive, so the catalog build is named catalogVersion (enhancement 0010).
 
 			// The catalog's own version is the build every member of it shipped
 			// in, stamped rather than authored per leaf.

@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines the three name types that transcribe the Kubernetes API server's name validators, and how a primitive declares the name rule a kind it renders enforces so that `#Component` refuses a violating `resourceName` at authoring time instead of the server refusing it at apply (enhancement 0019 D20, D21, D23).
+Defines the three name types that transcribe the Kubernetes API server's name validators, and how a primitive declares the name rule a kind it renders enforces so that `#Component` refuses a violating `resourceName` at authoring time instead of the server refusing it at apply (enhancement 0019, "Three name types, the label stays the safety floor, the subdomain becomes the override ceiling, DNS-1035 closes the Service gap", "Dot-hostile primitives declare a `#nameConstraint`; the component asserts the resolved name against their conjunction, the matchLabels pattern applied to naming" and "A primitive computes its `#nameConstraint` from its own state; the stateful constraint lives on the container resource").
 
 ## Requirements
 
@@ -45,7 +45,7 @@ Core SHALL provide `#NameType` (RFC 1123 DNS label: lowercase alphanumerics and 
 
 ### Requirement: The component asserts the resolved name against every attached constraint
 
-`#Component` SHALL collect the `#nameConstraint` of every attached resource, trait and blueprint into one conjunction, unconditionally, and SHALL assert the resolved `metadata.resourceName` (the default or the explicit override, as a string) against that conjunction on a hidden field. The conjunction SHALL NOT be unified into `metadata.resourceName` itself, so the field's own default, override and refusal behaviour (component-names) is unchanged. Two constraints SHALL compose by unification with no precedence rule.
+`#Component` SHALL conjoin the `#nameConstraint` of every attached resource, trait and blueprint unconditionally, and SHALL assert the resolved `metadata.resourceName` (the default or the explicit override, as a string) against it on a hidden field. The conjunction SHALL NOT be unified into `metadata.resourceName` itself, so that field's own default, override and refusal behaviour (component-names) is unchanged. Two constraints SHALL compose by unification with no precedence rule.
 
 #### Scenario: Default name admitted by a constraint
 

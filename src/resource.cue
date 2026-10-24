@@ -13,7 +13,7 @@ import (
 		name!: #NameType // Example: "container"
 		#definitionName: (#KebabToPascal & {"in": name}).out
 
-		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/resources/v1beta1" (kind prefix + this resource's own apiVersion, 0010:D49)
+		modulePath!: #PackagePathType // Example: "opmodel.dev/catalogs/opm/resources/v1beta1" (kind prefix + this resource's own apiVersion, enhancement 0010)
 
 		// WHY a field rather than an interpolation: it is the one identity
 		// value on a primitive that is NOT derivable from its catalog's
@@ -21,14 +21,14 @@ import (
 		// Rationale, "Why the key carries `apiVersion` and not
 		// `catalogVersion`".
 
-		// WHY apiVersion: 0010:D4.
+		// WHY apiVersion: a contract is keyed by its own API version, and a primitive carries one (enhancement 0010).
 
 		// apiVersion: this contract's own level, and the only component of its key.
 		// Moved when this resource's shape breaks — a catalog release does not move
 		// it, which is what lets a module's demand survive one. See SPEC.md § 2.1.
 		apiVersion!: #APIVersionType // Example: "v1beta1"
 
-		// WHY catalogVersion: 0010:D25.
+		// WHY catalogVersion: apiVersion is authored per primitive, so the catalog build is named catalogVersion (enhancement 0010).
 
 		// catalogVersion: the catalog build this definition shipped in. Provenance
 		// only — no contract key interpolates it. It is what lets a diagnostic say
@@ -44,7 +44,7 @@ import (
 		// "Why `fqn` is authored rather than computed, and what replaces the
 		// check that lost".
 
-		// WHY fqn: 0010:D21.
+		// WHY fqn: the fqn is authored from the identity package, never derived here (enhancement 0010).
 
 		// fqn: authored by the catalog at the definition site, not derived here.
 		// `core` does not check it against this definition's own name or path;
@@ -54,7 +54,7 @@ import (
 		// Human-readable description of the definition
 		description?: string
 
-		// WHY labels: 0010:D36.
+		// WHY labels: matching labels live in their own field, so these stay descriptive (enhancement 0010).
 
 		// Optional metadata labels for categorization. Descriptive only — nothing
 		// selects on these, and they are never unified upward into a #Component.
@@ -86,7 +86,7 @@ import (
 	// not to look at some keys.
 	//
 	// NOT rendered: matchLabels does not reach #TransformerContext, so it
-	// appears on no rendered object (0010:D36). SPEC.md § 2.1 Rationale, "Why
+	// appears on no rendered object (enhancement 0010). SPEC.md § 2.1 Rationale, "Why
 	// matching has its own field instead of riding on `metadata.labels`",
 	// "Why `core` names no matching key" and "Why `matchLabels` is not
 	// rendered".
@@ -110,13 +110,13 @@ import (
 	// so an optional slot behind an existence guard silently never propagates
 	// while the code reads correctly.
 	//
-	// WHY it may be computed (0019:D23): the catalog's container resource
+	// WHY it may be computed (enhancement 0019): the catalog's container resource
 	// declares #NameType when its own workload-type key reads "stateful" and
 	// top otherwise, in list-index form so a default arm cannot win over the
 	// concrete one. SPEC.md § 2.1 Rationale, "Why the primitive declares the
 	// name rule and the component asserts it".
 
-	// WHY #nameConstraint: 0019:D21; 0019:D23.
+	// WHY #nameConstraint: a primitive computes its own name rule and the component asserts it (enhancement 0019).
 
 	// nameConstraint: the name rule a kind this primitive renders enforces on the
 	// owning component's metadata.resourceName; top when the primitive is
@@ -154,7 +154,7 @@ import (
 	// it", "Why a closed enum and not a boolean `providedExternally`" and
 	// "Why exactly one provider, with no arbitration between two".
 
-	// WHY fulfilment: 0010:D32.
+	// WHY fulfilment: a provider-fulfilled contract admits exactly one provider (enhancement 0010).
 
 	// fulfilment: where this contract's implementation is expected to come from.
 	// "catalog" (the default): the declaring catalog implements it. "provider":
@@ -169,4 +169,17 @@ import (
 	spec!: (strings.ToCamel(metadata.#definitionName)): _
 }
 
-#ResourceMap: [string]: #Resource
+// WHY the key is bound to the member's fqn: every reader treats the key as
+// the member's identity (the platform's contract fold, the render build's
+// demand match), so a short key validated and then demanded a contract no
+// transformer supplies. The key stays `string` so a wrong key reports
+// `conflicting values "<key>" and "<fqn>"`, naming both strings; a
+// `#ContractFQNType` key would report `field not allowed` at the key and
+// never name the fqn. With fqn unset, a short key is still refused: the key
+// fills fqn and fails its `#ContractFQNType` bound.
+// SPEC.md § 3.1 Rationale, "Why an attachment key must equal the member's fqn".
+
+// ResourceMap: the resources attached to a component, each keyed by its own
+// contract fqn. A key that differs from the member's metadata.fqn is a
+// conflict; an unset fqn takes the key. See SPEC.md § 3.1.
+#ResourceMap: [FQN=string]: #Resource & {metadata: fqn: FQN}

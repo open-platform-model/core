@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines how a `#Component` computes its rendered resource name and DNS variants: the `metadata.resourceName` cascade, its instance-qualified default, the explicit override, and the subdomain ceiling on an explicit name. `#names` is the single source of truth every consumer reads; `#Module.#ctx.components` is a projection of it (enhancement 0019 D16).
+Defines how a `#Component` computes its rendered resource name and DNS variants: the `metadata.resourceName` cascade, its instance-qualified default, the explicit override, and the subdomain ceiling on an explicit name. `#names` is the single source of truth every consumer reads; `#Module.#ctx.components` is a projection of it (enhancement 0019, "`metadata.resourceName` defaults to the instance-qualified name, and the flip lands before the sweep").
 
 ## Requirements
 

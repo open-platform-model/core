@@ -2,7 +2,7 @@
 
 Defines what a `#Platform` declares about the catalogs it admits. A registry entry carries its catalog **by import**: the platform module names the build in its own `cue.mod` the way any CUE module names a dependency, and the entry embeds the imported value whole, deriving its `version` and `#transformers` from it. Covers the shape of an entry, the key-to-import binding, the derived transformer fold, why selection cannot move when the registry does, why two builds of one catalog is two platforms, and why a platform carries no reverse index.
 
-Supersedes the `platform-subscription` capability, which described the same surface when an entry named its build with an inert `version!` scalar (enhancement 0019 D5, D17).
+Supersedes the `platform-subscription` capability, which described the same surface when an entry named its build with an inert `version!` scalar (enhancement 0019, "A platform imports its catalog and embeds it whole into the registry entry, which derives everything else" and "`#Platform.#matchers` is removed, and the render build's glue owns the reverse index").
 
 ## ADDED Requirements
 

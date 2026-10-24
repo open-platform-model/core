@@ -7,11 +7,14 @@ import (
 	"opmodel.dev/core@v2"
 )
 
-// Schema-level pins for the contract inventory (0015:D1, D2,
-// D18): #ContractInventory and the #Platform.#contracts fold that derives it
+// Schema-level pins for the contract inventory (enhancement 0015):
+// #ContractInventory and the #Platform.#contracts fold that derives it
 // from the enabled entries' contract maps and the required demands of
 // their transformers. The enhancement ships no examples.cue for this
-// slice, so the delta is exercised here.
+// slice, so the delta is exercised here. Also pinned here: each fixture
+// catalog's own provider set, #Catalog.provides (library ADR-012),
+// against literals and against a reference re-derivation, and its fold per
+// registry key against #contracts.providedBy.
 //
 // Companion to catalog_pins.cue and platform_and_match_pins.cue and written
 // to the same rules: every value here is a HIDDEN top-level field of package
@@ -24,7 +27,7 @@ import (
 // strings.Join over a sorted copy, so the pin states the exact members and
 // does not ride on registry iteration order.
 //
-// MUST-FAIL cases: none. The inventory reports and never refuses (0015:D18), so
+// MUST-FAIL cases: none. The inventory reports and never refuses (enhancement 0015), so
 // there is no platform value this file could show being rejected; the
 // over-subscribed and colliding platforms below are pinned EVALUATING, which
 // is the property.
@@ -32,9 +35,9 @@ import (
 // As there, the filename must NOT begin with an underscore: CUE skips such
 // files, and every pin below would then vet clean by never running.
 
-// ─── Fixtures: eight stand-in catalogs ──────────────────────────────────────
+// ─── Fixtures: nine stand-in catalogs ───────────────────────────────────────
 //
-// Shapes copied from catalog_opm and the provider design (0015 02-design.md);
+// Shapes copied from catalog_opm and the provider design of enhancement 0015;
 // `core` has no dependencies, so nothing is imported. Each member authors
 // only what the catalog stamp cannot supply. The base catalog lists one
 // member per map plus the provider-fulfilled `backup` trait and ships one
@@ -49,6 +52,9 @@ import (
 // majors v2 and v3 re-lists its keys (v2 adds a `volume` resource, v3 lists
 // only the container and `backup`), each shipping its own deployment
 // adapter: the collision shapes, two or three enabled definers of one key.
+// An s3-shaped catalog ships one adapter requiring a provider-fulfilled
+// RESOURCE (`bucket`) beside `backup`: the requiredResources arm of the
+// provider rule, which no other fixture exercises.
 
 _pinInventoryContainer: core.#Resource & {
 	metadata: {
@@ -237,6 +243,43 @@ _pinInventoryResticCatalog: core.#Catalog & {
 	#transformers: (_pinInventoryResticOptional.metadata.fqn): _pinInventoryResticOptional
 }
 
+// A provider-fulfilled resource no fixture catalog defines. Its FQN sorts
+// AFTER `backup`'s while its demand map is walked first, so a provides
+// that skipped the sort would read in the wrong order.
+_pinInventoryBucket: core.#Resource & {
+	metadata: {
+		name:       "bucket"
+		apiVersion: "v1alpha1"
+		fqn:        "opmodel.dev/catalogs/s3/resources/bucket@v1alpha1"
+	}
+	fulfilment: "provider"
+	spec: bucket: name: string
+}
+
+// The s3 adapter: requiredResources names the provider-fulfilled bucket
+// AND the catalog-fulfilled container (which must not count);
+// requiredTraits names the provider-fulfilled `backup`.
+_pinInventoryS3Bucket: core.#ComponentTransformer & {
+	metadata: {
+		name:        "bucket"
+		fqn:         "opmodel.dev/catalogs/s3/transformers/bucket@1.0.0"
+		description: "Pin fixture: an adapter requiring a provider-fulfilled resource"
+	}
+	requiredResources: {
+		(_pinInventoryContainer.metadata.fqn): _pinInventoryContainer
+		(_pinInventoryBucket.metadata.fqn):    _pinInventoryBucket
+	}
+	requiredTraits: (_pinInventoryBackup.metadata.fqn): _pinInventoryBackup
+}
+
+_pinInventoryS3Catalog: core.#Catalog & {
+	metadata: {
+		modulePath: "opmodel.dev/catalogs/s3@v1"
+		version:    "1.0.0"
+	}
+	#transformers: (_pinInventoryS3Bucket.metadata.fqn): _pinInventoryS3Bucket
+}
+
 // A resource only the base catalog's second major lists: the one key a
 // colliding platform still folds into `defined` and `definedBy`.
 _pinInventoryVolume: core.#Resource & {
@@ -299,7 +342,7 @@ _pinInventoryBaseV3Catalog: core.#Catalog & {
 	#transformers: (_pinInventoryDeploymentV3.metadata.fqn): _pinInventoryDeploymentV3
 }
 
-// ─── The thirteen platforms ─────────────────────────────────────────────────
+// ─── The fourteen platforms ─────────────────────────────────────────────────
 
 _pinInventoryEmpty: core.#Platform & {
 	metadata: name: "empty"
@@ -436,6 +479,17 @@ _pinInventoryCollideThreeMajors: core.#Platform & {
 	}
 }
 
+// The defining catalog beside the s3 provider: `backup` and `bucket` are
+// each provided by one entry, through one adapter's two demand maps.
+_pinInventoryResourceProvider: core.#Platform & {
+	metadata: name: "resource-provider"
+	type: "kubernetes"
+	#registry: {
+		(_pinInventoryBaseCatalog.metadata.modulePath): #catalog: _pinInventoryBaseCatalog
+		(_pinInventoryS3Catalog.metadata.modulePath): #catalog:   _pinInventoryS3Catalog
+	}
+}
+
 // One readout per platform. Lists join over a sorted copy; an empty list
 // joins to "". Interpolation forces every value (the ONE RULE).
 _pinInventoryReadout: {
@@ -529,7 +583,7 @@ _pinInventoryOneProviderProvidedBy: "1|opmodel.dev/catalogs/k8up@v2"
 
 // ─── Two providers: over-subscribed, and the value STILL EVALUATES ──────────
 //
-// This is 0015:D18's whole point pinned: `routable: false` is a value a caller
+// This is the whole point of enhancement 0015 pinned: `routable: false` is a value a caller
 // reads, not a bottom. #composedTransformers is intact beside it, and the
 // report names the contract.
 
@@ -737,7 +791,150 @@ _pinInventoryCollideThreeMajorsCollisions: "collisions=[opmodel.dev/catalogs/opm
 _pinInventoryCollideThreeMajorsDefinedBy: "\(_pinInventoryCollideThreeMajors.#contracts.definedBy["opmodel.dev/catalogs/opm/resources/volume@v1beta1"])|\(len(_pinInventoryCollideThreeMajors.#contracts.defined))|\(len(_pinInventoryCollideThreeMajors.#contracts.definedBy))|\(len(_pinInventoryCollideThreeMajors.#composedTransformers))"
 _pinInventoryCollideThreeMajorsDefinedBy: "opmodel.dev/catalogs/opm@v2|1|1|3"
 
-// ─── Fixtures: the comparability report (0015:D5, OQ9) ──────────────────────
+// ─── Per-catalog provider sets: #Catalog.provides ───────────────────────────
+//
+// Three statements of one rule are pinned against each other: a literal per
+// fixture, the field core derives, and _pinProviderRef below, which
+// re-derives the set with the per-transformer rule independently of src/
+// (walk #transformers, presence-guard both demand maps, keep the keys whose
+// requirement reads fulfilment "provider"). Once #Platform.#contracts folds
+// providedBy from #catalog.provides, the reference is the only second
+// statement of the rule left, so the parity pins compare against it and
+// never fold provides against itself. Each value is "<len>|<joined list>",
+// so an empty list and a missing one cannot read alike.
+
+_pinProviderRef: {
+	#cat: _
+	_set: {
+		for _, tf in #cat.#transformers {
+			if tf.requiredResources != _|_ {
+				for fqn, req in tf.requiredResources if req.fulfilment == "provider" {(fqn): true}
+			}
+			if tf.requiredTraits != _|_ {
+				for fqn, req in tf.requiredTraits if req.fulfilment == "provider" {(fqn): true}
+			}
+		}
+	}
+	out: list.Sort([for fqn, _ in _set {fqn}], list.Ascending)
+}
+
+// The reference per platform: each enabled entry's re-derived set, folded by
+// registry key and sorted, the shape of #contracts.providedBy.
+_pinProvidedByRef: {
+	#in: _
+	_set: {
+		for rkey, entry in #in.#registry if entry.enable
+		for _, fqn in (_pinProviderRef & {#cat: entry.#catalog}).out {(fqn): (rkey): true}
+	}
+	out: {for fqn, ps in _set {(fqn): list.Sort([for k, _ in ps {k}], list.Ascending)}}
+}
+
+// A providedBy-shaped map as one string, keys sorted, so two maps compare
+// as two concrete strings.
+_pinProvidedByString: {
+	#in: [string]: [...string]
+	out: strings.Join([for fqn in list.Sort([for k, _ in #in {k}], list.Ascending) {"\(fqn)=\(strings.Join(#in[fqn], "+"))"}], ";")
+}
+
+// Two adapters requiring one provider contract give one FQN.
+_pinProvidesK8up: "\(len(_pinInventoryK8upCatalog.provides))|\(strings.Join(_pinInventoryK8upCatalog.provides, ","))"
+_pinProvidesK8up: "1|opmodel.dev/catalogs/opm/traits/backup@v1alpha1"
+_pinProvidesK8up: "\(len((_pinProviderRef & {#cat: _pinInventoryK8upCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinInventoryK8upCatalog}).out, ","))"
+
+_pinProvidesVelero: "\(len(_pinInventoryVeleroCatalog.provides))|\(strings.Join(_pinInventoryVeleroCatalog.provides, ","))"
+_pinProvidesVelero: "1|opmodel.dev/catalogs/opm/traits/backup@v1alpha1"
+_pinProvidesVelero: "\(len((_pinProviderRef & {#cat: _pinInventoryVeleroCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinInventoryVeleroCatalog}).out, ","))"
+
+// Both demand arms, sorted rather than in demand-map order; the
+// catalog-fulfilled container the same adapter requires does not count.
+_pinProvidesS3: "\(len(_pinInventoryS3Catalog.provides))|\(strings.Join(_pinInventoryS3Catalog.provides, ","))"
+_pinProvidesS3: "2|opmodel.dev/catalogs/opm/traits/backup@v1alpha1,opmodel.dev/catalogs/s3/resources/bucket@v1alpha1"
+_pinProvidesS3: "\(len((_pinProviderRef & {#cat: _pinInventoryS3Catalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinInventoryS3Catalog}).out, ","))"
+
+// Defining the provider-fulfilled `backup` is not providing it.
+_pinProvidesBase: "\(len(_pinInventoryBaseCatalog.provides))|\(strings.Join(_pinInventoryBaseCatalog.provides, ","))"
+_pinProvidesBase: "0|"
+_pinProvidesBase: "\(len((_pinProviderRef & {#cat: _pinInventoryBaseCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinInventoryBaseCatalog}).out, ","))"
+
+// An optional demand is consumption, not provision.
+_pinProvidesRestic: "\(len(_pinInventoryResticCatalog.provides))|\(strings.Join(_pinInventoryResticCatalog.provides, ","))"
+_pinProvidesRestic: "0|"
+_pinProvidesRestic: "\(len((_pinProviderRef & {#cat: _pinInventoryResticCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinInventoryResticCatalog}).out, ","))"
+
+// The bare definition, with no #transformers entry, provides nothing.
+_pinProvidesBare: "\(len(core.#Catalog.provides))|\(strings.Join(core.#Catalog.provides, ","))"
+_pinProvidesBare: "0|"
+
+// A catalog-fulfilled REQUIRED trait (tuning) beside a catalog-fulfilled
+// resource: neither counts, so a requiredTraits arm that dropped the
+// fulfilment filter reads one entry here.
+_pinProvidesEpsilon: "\(len(_pinCmpEpsilonCatalog.provides))|\(strings.Join(_pinCmpEpsilonCatalog.provides, ","))"
+_pinProvidesEpsilon: "0|"
+_pinProvidesEpsilon: "\(len((_pinProviderRef & {#cat: _pinCmpEpsilonCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinCmpEpsilonCatalog}).out, ","))"
+
+// Required labels are a predicate, not a contract demand.
+_pinProvidesGamma: "\(len(_pinCmpGammaCatalog.provides))|\(strings.Join(_pinCmpGammaCatalog.provides, ","))"
+_pinProvidesGamma: "0|"
+_pinProvidesGamma: "\(len((_pinProviderRef & {#cat: _pinCmpGammaCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinCmpGammaCatalog}).out, ","))"
+
+// The provider-fulfilled bucket named only under optionalResources: an
+// optional resource demand is consumption, not provision.
+_pinInventoryS3OptionalCatalog: core.#Catalog & {
+	metadata: {
+		modulePath: "opmodel.dev/catalogs/s3-optional@v1"
+		version:    "1.0.0"
+	}
+	#transformers: "opmodel.dev/catalogs/s3-optional/transformers/bucket@1.0.0": core.#ComponentTransformer & {
+		metadata: {
+			name:        "bucket"
+			fqn:         "opmodel.dev/catalogs/s3-optional/transformers/bucket@1.0.0"
+			description: "Pin fixture: an adapter naming a provider-fulfilled resource as optional"
+		}
+		requiredResources: (_pinInventoryContainer.metadata.fqn): _pinInventoryContainer
+		optionalResources: (_pinInventoryBucket.metadata.fqn):    _pinInventoryBucket
+	}
+}
+
+_pinProvidesS3Optional: "\(len(_pinInventoryS3OptionalCatalog.provides))|\(strings.Join(_pinInventoryS3OptionalCatalog.provides, ","))"
+_pinProvidesS3Optional: "0|"
+_pinProvidesS3Optional: "\(len((_pinProviderRef & {#cat: _pinInventoryS3OptionalCatalog}).out))|\(strings.Join((_pinProviderRef & {#cat: _pinInventoryS3OptionalCatalog}).out, ","))"
+
+// ─── providedBy is the fold of the enabled entries' provider sets ───────────
+//
+// Each pin holds three values: the reference fold, #contracts.providedBy,
+// and the literal both must read.
+
+_pinParityOneProvider: (_pinProvidedByString & {#in: (_pinProvidedByRef & {#in: _pinInventoryOneProvider}).out}).out
+_pinParityOneProvider: (_pinProvidedByString & {#in: _pinInventoryOneProvider.#contracts.providedBy}).out
+_pinParityOneProvider: "opmodel.dev/catalogs/opm/traits/backup@v1alpha1=opmodel.dev/catalogs/k8up@v2"
+
+_pinParityTwoProviders: (_pinProvidedByString & {#in: (_pinProvidedByRef & {#in: _pinInventoryTwoProviders}).out}).out
+_pinParityTwoProviders: (_pinProvidedByString & {#in: _pinInventoryTwoProviders.#contracts.providedBy}).out
+_pinParityTwoProviders: "opmodel.dev/catalogs/opm/traits/backup@v1alpha1=opmodel.dev/catalogs/k8up@v2+opmodel.dev/catalogs/velero@v1"
+
+// The disabled k8up entry's own provides still lists `backup`
+// (_pinProvidesK8up); the fold skips it.
+_pinParityDisabledProvider: (_pinProvidedByString & {#in: (_pinProvidedByRef & {#in: _pinInventoryDisabledProvider}).out}).out
+_pinParityDisabledProvider: (_pinProvidedByString & {#in: _pinInventoryDisabledProvider.#contracts.providedBy}).out
+_pinParityDisabledProvider: ""
+
+_pinParityTwoMajors: (_pinProvidedByString & {#in: (_pinProvidedByRef & {#in: _pinInventoryTwoMajors}).out}).out
+_pinParityTwoMajors: (_pinProvidedByString & {#in: _pinInventoryTwoMajors.#contracts.providedBy}).out
+_pinParityTwoMajors: "opmodel.dev/catalogs/opm/traits/backup@v1alpha1=opmodel.dev/catalogs/k8up@v2+opmodel.dev/catalogs/k8up@v3"
+
+_pinParityResourceProvider: (_pinProvidedByString & {#in: (_pinProvidedByRef & {#in: _pinInventoryResourceProvider}).out}).out
+_pinParityResourceProvider: (_pinProvidedByString & {#in: _pinInventoryResourceProvider.#contracts.providedBy}).out
+_pinParityResourceProvider: "opmodel.dev/catalogs/opm/traits/backup@v1alpha1=opmodel.dev/catalogs/s3@v1;opmodel.dev/catalogs/s3/resources/bucket@v1alpha1=opmodel.dev/catalogs/s3@v1"
+
+// `bucket` is provided although no enabled entry defines it, so it is in no
+// report; `backup` is defined and provided once, so nothing is unfulfilled.
+// The base deployment adapter's container-only predicate is narrower than
+// the s3 adapter's, as with k8up's Schedule (_pinInventoryWithMatchersInert),
+// hence the one comparable row.
+_pinInventoryResourceProviderReadout: (_pinInventoryReadout & {#in: _pinInventoryResourceProvider.#contracts}).out
+_pinInventoryResourceProviderReadout: "defined=4 unfulfilled=[] overSubscribed=[] fulfilled=true routable=true comparable=1 discriminated=false"
+
+// ─── Fixtures: the comparability report (enhancement 0015) ──────────────────────
 //
 // A second, independent family, so the platforms above keep reading as the
 // over-subscription story. One definition catalog lists the two
@@ -835,7 +1032,7 @@ _pinCmpAlphaCatalog: (_pinCmpOne & {#name: "alpha", #demands: {
 }}).out
 
 // Identical predicate to alpha's, from a second catalog: the accidental
-// two-catalogs-one-adapter case 0015:D5 exists for.
+// two-catalogs-one-adapter case enhancement 0015 exists for.
 _pinCmpBetaCatalog: (_pinCmpOne & {#name: "beta", #demands: {
 	requiredResources: (_pinCmpWidget.metadata.fqn): _pinCmpWidget
 }}).out
@@ -861,7 +1058,7 @@ _pinCmpEpsilonCatalog: (_pinCmpOne & {#name: "epsilon", #demands: {
 }}).out
 
 // The same trait, declared OPTIONAL: predicate is the resource alone, so
-// zeta reads exactly as alpha does (0010:D32).
+// zeta reads exactly as alpha does (enhancement 0010).
 _pinCmpZetaCatalog: (_pinCmpOne & {#name: "zeta", #demands: {
 	requiredResources: (_pinCmpWidget.metadata.fqn): _pinCmpWidget
 	optionalTraits: (_pinCmpTuning.metadata.fqn):    _pinCmpTuning
@@ -986,7 +1183,7 @@ _pinCmpRows: {
 _pinCmpIdenticalRows: (_pinCmpRows & {#in: _pinCmpIdentical.#contracts}).out
 _pinCmpIdenticalRows: "opmodel.dev/catalogs/cmp-alpha/transformers/alpha@1.0.0>opmodel.dev/catalogs/cmp-beta/transformers/beta@1.0.0@[opmodel.dev/catalogs/cmp-base/resources/widget@v1beta1]"
 
-// 0015:D18 on the new report: an undiscriminated platform STILL EVALUATES.
+// Enhancement 0015 on the new report: an undiscriminated platform STILL EVALUATES.
 // The composed fold is intact and both transformer FQNs read back off the row.
 _pinCmpIdenticalEvaluates: "\(len(_pinCmpIdentical.#composedTransformers))|\(_pinCmpIdentical.#contracts.discriminated)|\(_pinCmpIdentical.#contracts.comparable[0].broader)|\(_pinCmpIdentical.#contracts.comparable[0].narrower)|\(len(_pinCmpIdentical.#contracts.comparable[0].contracts))"
 _pinCmpIdenticalEvaluates: "2|false|opmodel.dev/catalogs/cmp-alpha/transformers/alpha@1.0.0|opmodel.dev/catalogs/cmp-beta/transformers/beta@1.0.0|1"

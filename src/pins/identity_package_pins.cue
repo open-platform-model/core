@@ -7,12 +7,17 @@ import (
 )
 
 // Schema-level pins for the identity package and the catalog-member gate
-// (0011:D21/D22, resting on 0010:D40, D42, D43, D44, D45).
+// (enhancements 0011 and 0010).
 //
 // Same mechanism as identity_pins.cue, and the same rules apply: every value
-// here is a HIDDEN top-level field of package `pins`, which nothing imports,
-// so `task vet` evaluates it and fails on a conflict while no consumer ever
-// loads it, and none of them adds a row to src/INDEX.md.
+// here is a top-level field of package `pins`, which nothing imports, so
+// `task vet` evaluates it and fails on a conflict while no consumer ever loads
+// it, and none of them adds a row to src/INDEX.md. Every value is HIDDEN
+// except the five gate applications (pinGate*), which are regular fields:
+// SPEC.md § 5.1 requires a gate to be unified into a non-hidden value, since
+// `cue vet` checks only regular fields for completeness. The commented
+// MUST-FAIL gate cases (_failGate*) keep the hidden shape: each records a
+// conflict, which a hidden field reports too, and was measured that way.
 //
 // MUST-FAIL cases are commented out with the exact error uncommenting yields.
 // A commented case is not self-verifying, so each was run once, in place, at
@@ -21,11 +26,11 @@ import (
 // which no `cue vet` invocation reports and whose recorded error is `cue
 // export`'s. That exception names the command it was measured with.
 //
-// THESE PINS ARE LOAD-BEARING FOR TWO OTHER CHANGES. Enhancement 0010:D43 and
-// D45 deleted `core`'s version-major assertion from #Catalog and #Module on the
+// THESE PINS ARE LOAD-BEARING FOR TWO OTHER CHANGES. Enhancement 0010 deleted
+// core's version-major assertion from #Catalog and #Module on the
 // strength of the one #IdentityPackage makes, so _failIdentityMajorSkew below
 // is the only place that relation is checked anywhere in the system — see the
-// note on that case for why the downstream backstop 0010:D43/D45 assumed was never
+// note on that case for why the downstream backstop enhancement 0010 assumed was never
 // built in the first place.
 //
 // NOTE ON THE FILENAME: this file must NOT be named with a leading underscore.
@@ -53,7 +58,7 @@ _pinIdentityCatalog: core.#IdentityPackage & {
 }
 
 // A MODULE's identity package, at a different major. The same definition serves
-// both artifact kinds (0010:D2, 0011:D12) — which is why it ships
+// both artifact kinds (enhancements 0010 and 0011) — which is why it ships
 // in `core` rather than in a catalog: a module need not depend on any catalog.
 _pinIdentityModule: core.#IdentityPackage & {
 	ModulePath:   "opmodel.dev/modules/postgres@v2"
@@ -81,7 +86,7 @@ _pinIdentityDoubleDigitMajor: core.#IdentityPackage & {
 	VersionMajor: "v10"
 }
 
-// kindPrefix carries NO major (0010:D1) — a catalog member declares
+// kindPrefix carries NO major (enhancement 0010) — a catalog member declares
 // a #PackagePathType. Stated as a property rather than left implicit in the
 // literals above, so it survives someone editing the example: an "@" in any of
 // the four is what a re-appended major would look like.
@@ -95,10 +100,10 @@ _pinKindPrefixCarriesNoMajor: [false, false, false, false]
 
 // ─── #CatalogMemberFQNGate: one conformant member per kind ──────────────────
 
-// A resource, filed under its own apiVersion (0010:D49). The key
+// A resource, filed under its own apiVersion (enhancement 0010). The key
 // is built from the member's OWN apiVersion, not from the catalog's build
-// (0010:D4) — and note the KEY carries no filing segment.
-_pinGateResource: core.#CatalogMemberFQNGate & {
+// (enhancement 0010) — and note the KEY carries no filing segment.
+pinGateResource: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
 	name:                   "config-maps"
@@ -110,8 +115,8 @@ _pinGateResource: core.#CatalogMemberFQNGate & {
 
 // A GA raw-family member of the same kind, filing under a DIFFERENT segment of
 // the same prefix — per-member apiVersion is what made the filing segment
-// derived content rather than grouping (0010:D48, D49).
-_pinGateResourceGA: core.#CatalogMemberFQNGate & {
+// derived content rather than grouping (enhancement 0010).
+pinGateResourceGA: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "resources"
 	name:                   "k8s-deployment"
@@ -122,8 +127,8 @@ _pinGateResourceGA: core.#CatalogMemberFQNGate & {
 }
 
 // A trait. Same catalog, same build, a different kind segment — which is what
-// keeps two members sharing a name apart (0010:D21).
-_pinGateTrait: core.#CatalogMemberFQNGate & {
+// keeps two members sharing a name apart (enhancement 0010).
+pinGateTrait: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "traits"
 	name:                   "scaling"
@@ -133,11 +138,11 @@ _pinGateTrait: core.#CatalogMemberFQNGate & {
 	declaredFQN:            "opmodel.dev/catalogs/opm/traits/scaling@v1beta1"
 }
 
-// A blueprint, at the versioned path 0010:D49 requires. Note what
+// A blueprint, at the versioned path enhancement 0010 requires. Note what
 // is absent: an ARBITRARY grouping segment like the "/workload" catalog_opm
-// once shipped (0010:D42's must-fail case below) — the only admitted segment is the
+// once shipped (the must-fail case below) — the only admitted segment is the
 // member's own apiVersion.
-_pinGateBlueprint: core.#CatalogMemberFQNGate & {
+pinGateBlueprint: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "blueprints"
 	name:                   "stateless-workload"
@@ -147,19 +152,19 @@ _pinGateBlueprint: core.#CatalogMemberFQNGate & {
 	declaredFQN:            "opmodel.dev/catalogs/opm/blueprints/stateless-workload@v1beta1"
 }
 
-// The filing segment never enters the key (0010:D49): filing is
+// The filing segment never enters the key (enhancement 0010): filing is
 // versioned, the key space stays flat.
 _pinKeyOmitsFilingSegment: [
-	strings.Contains(_pinGateResource.declaredFQN, "/v1beta1/"),
-	strings.Contains(_pinGateResourceGA.declaredFQN, "/v1/"),
+	strings.Contains(pinGateResource.declaredFQN, "/v1beta1/"),
+	strings.Contains(pinGateResourceGA.declaredFQN, "/v1/"),
 ]
 _pinKeyOmitsFilingSegment: [false, false]
 
 // The ADAPTER, and DIRECTION ONE of the conditional optional: declaredAPIVersion
 // is ABSENT and the case vets clean. Its key is interpolated from the BUILD
-// (0010:D4), which _keyVersion selects before the absent optional is
+// (enhancement 0010), which _keyVersion selects before the absent optional is
 // ever reached — so the field costs a transformer nothing.
-_pinGateTransformer: core.#CatalogMemberFQNGate & {
+pinGateTransformer: core.#CatalogMemberFQNGate & {
 	identity:               _pinIdentityCatalog
 	kind:                   "transformers"
 	name:                   "configmap-transformer"
@@ -172,10 +177,10 @@ _pinGateTransformer: core.#CatalogMemberFQNGate & {
 // build. Stated against the two versions side by side, because a gate that had
 // silently keyed everything on identity.Version would satisfy the transformer
 // case above on its own.
-_pinPrimitiveKeysOnAPIVersion: strings.HasSuffix(_pinGateResource.declaredFQN, "@v1beta1")
+_pinPrimitiveKeysOnAPIVersion: strings.HasSuffix(pinGateResource.declaredFQN, "@v1beta1")
 _pinPrimitiveKeysOnAPIVersion: true
 
-_pinTransformerKeysOnBuild: strings.HasSuffix(_pinGateTransformer.declaredFQN, "@1.2.0")
+_pinTransformerKeysOnBuild: strings.HasSuffix(pinGateTransformer.declaredFQN, "@1.2.0")
 _pinTransformerKeysOnBuild: true
 
 // DIRECTION THREE is the MUST-FAIL case at the bottom of this file: a primitive
@@ -185,7 +190,7 @@ _pinTransformerKeysOnBuild: true
 // The two keys are structurally distinct forms, not two spellings of one form.
 // #FQNType is a disjunction of exactly these two, and the gate must not have
 // collapsed them.
-_pinContractAndImplKeysDiffer: _pinGateResource.declaredFQN != _pinGateTransformer.declaredFQN
+_pinContractAndImplKeysDiffer: pinGateResource.declaredFQN != pinGateTransformer.declaredFQN
 _pinContractAndImplKeysDiffer: true
 
 // ─── MUST FAIL ──────────────────────────────────────────────────────────────
@@ -193,11 +198,11 @@ _pinContractAndImplKeysDiffer: true
 // Each was uncommented once and run; the recorded error is `task vet`'s output.
 
 // THE MOST LOAD-BEARING CASE IN THIS FILE — a declared version whose major
-// disagrees with the path's. Enhancement 0010:D43 and D45 deleted the
+// disagrees with the path's. Enhancement 0010 deleted the
 // equivalent assertion from #Catalog and #Module on the strength of this one,
 // so if it stops firing, NOTHING in the system checks the relation.
 //
-// 0010:D43/D45 recorded a downstream backstop for that exposure — the platform's
+// Enhancement 0010 recorded a downstream backstop for that exposure — the platform's
 // subscription-selection major check. It was NEVER BUILT in `core`, rather
 // than built and then removed: an earlier revision of this note blamed the
 // scalar-subscription collapse and was wrong. Measured 2026-08-08, no such
@@ -205,7 +210,7 @@ _pinContractAndImplKeysDiffer: true
 // subscription filter carried only range/allow/deny. Nothing in #Platform
 // ever related an entry's `version` to the "@vN" its #registry key carries:
 // not the removed Subscription definition, and not #CatalogEntry, whose key
-// binding constrains modulePath but not the version major (0019:D5); the
+// binding constrains modulePath but not the version major (enhancement 0019); the
 // platform-side check is unbuilt and tracked as library#160. The residue is a
 // registry resolution failure on the platform module's catalog import, naming a
 // tag that does not resolve, which is a symptom rather than a diagnosis.
@@ -222,17 +227,17 @@ _pinContractAndImplKeysDiffer: true
 
 // An ARBITRARY grouping segment — catalog_opm's blueprint path as it once
 // shipped, "/workload" where the member's apiVersion belongs. This is the case
-// 0010:D42 exists for, and 0010:D49's amendment keeps it failing: the
+// enhancement 0010 exists for, and its filing amendment keeps it failing: the
 // only segment the filing derivation produces is the member's own apiVersion,
 // so "/workload" conflicts with "/v1beta1". Re-measured 2026-08-10 under the
-// 0010:D49 gate.
+// enhancement 0010 gate.
 //
 // It fails on BOTH fields, because the gate builds the path and the key from
 // the same identity. The declaredFQN one arrives WRAPPED as "2 errors in empty
 // disjunction" — #FQNType is a disjunction of the contract and implementation
 // forms, so CUE reports the failure of each arm. That wrapper is precisely the
 // diagnostic a hand-rolled string comparison in Go would have discarded, and it
-// is the measured reason 0011:D21/D22 chose unification:
+// is the measured reason enhancement 0011 chose unification:
 //   _failGateGroupedBlueprint.declaredFQN: 2 errors in empty disjunction:
 //   _failGateGroupedBlueprint.declaredFQN: conflicting values
 //     ".../blueprints/stateless-workload@v1beta1" and
@@ -254,9 +259,9 @@ _pinContractAndImplKeysDiffer: true
 //   declaredFQN:            "opmodel.dev/catalogs/opm/blueprints/workload/stateless-workload@v1beta1"
 //  }
 
-// The OTHER half of the 0010:D49 filing pin — a contract member filing FLAT at its
-// kind prefix, the shape that was conformant before 0010:D49 and is refused after
-// it. A transformer filing flat stays conformant (_pinGateTransformer above);
+// The OTHER half of the filing pin of enhancement 0010 — a contract member filing FLAT at its
+// kind prefix, the shape that was conformant before enhancement 0010 filed contracts under a version segment, and is refused after
+// it. A transformer filing flat stays conformant (pinGateTransformer above);
 // only the three contract kinds carry the derived segment. Measured
 // 2026-08-10:
 //   _failGateFlatContractMember.declaredModulePath: conflicting values
@@ -288,12 +293,12 @@ _pinContractAndImplKeysDiffer: true
 //   declaredFQN:            "opmodel.dev/catalogs/opm/resources/secrets@v1beta1"
 //  }
 
-// A stale KEY on a transformer — the failure 0010:D21 accepted and
+// A stale KEY on a transformer — the failure enhancement 0010 accepted and
 // delegated here, and the one that costs the most. With `core`'s fqn derivation
 // removed, a catalog on 1.2.0 shipping a key naming 1.1.0 passes its own
 // `cue vet -c` at exit 0 (measured; see identity_pins.cue's
 // _pinTransformerBuildSkewAccepted, which is that case left deliberately
-// clean). Under 0010:D4 that key is what a platform executes against permanently.
+// clean). Under enhancement 0010 that key is what a platform executes against permanently.
 // This gate is the only thing that catches it:
 //   _failGateStaleTransformerFQN.declaredFQN: 2 errors in empty disjunction:
 //   _failGateStaleTransformerFQN.declaredFQN: conflicting values
@@ -312,11 +317,11 @@ _pinContractAndImplKeysDiffer: true
 //   declaredFQN:            "opmodel.dev/catalogs/opm/transformers/configmap-transformer@1.1.0"
 //  }
 
-// A member declaring ANOTHER catalog's path — 0010:D17's rule, and
+// A member declaring ANOTHER catalog's path — the rule of enhancement 0010, and
 // what a member copied wholesale between catalogs looks like. The case files
 // at the foreign catalog's VERSIONED path so it isolates the foreign-path
 // failure rather than compounding it with a missing filing segment.
-// Re-measured 2026-08-10 under the 0010:D49 gate:
+// Re-measured 2026-08-10 under the enhancement 0010 gate:
 //   _failGateForeignPath.declaredFQN: 2 errors in empty disjunction:
 //   _failGateForeignPath.declaredFQN: conflicting values
 //     "opmodel.dev/catalogs/opm/resources/config-maps@v1beta1" and
@@ -363,7 +368,7 @@ _pinContractAndImplKeysDiffer: true
 
 // DIRECTION THREE of the conditional optional — a PRIMITIVE omitting
 // declaredAPIVersion — and the one MUST-FAIL case in this file that `task vet`
-// does not catch. Measured 2026-08-07 and re-measured 2026-08-10 under the 0010:D49
+// does not catch. Measured 2026-08-07 and re-measured 2026-08-10 under the enhancement 0010
 // gate, cue v0.17.1: `cue vet ./...` AND `cue vet -c ./...` both exit 0 on the
 // case below. A missing required field is an incomplete value, not a wrong
 // one, so only concrete evaluation reports it:
@@ -380,12 +385,12 @@ _pinContractAndImplKeysDiffer: true
 // it; there is no vet-visible form of this case. The same exception, for the
 // same reason, is recorded at the bottom of identity_pins.cue.
 //
-// Note the TWO derived-field lines: under 0010:D49 both declaredModulePath (the
+// Note the TWO derived-field lines: under enhancement 0010 both declaredModulePath (the
 // filing segment) and _keyVersion (the key) name the missing field — the two
 // places the apiVersion reaches, each reporting its absence. That is the
 // conditional working as designed — the transformer arm was not selected, so
 // evaluation reached the optional and found nothing. It is also why
-// _pinGateTransformer above vets clean: there the arm IS selected, and the
+// pinGateTransformer above vets clean: there the arm IS selected, and the
 // absent optional is never reached.
 //
 //  _failGateMissingAPIVersion: core.#CatalogMemberFQNGate & {

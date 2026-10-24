@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines how a deployed `#ModuleInstance` derives its own identity, separately from the identity of the module it deploys. The instance FQN composes the module's major-free `registryPath` with the instance's `name` and `namespace`, so that instance identity survives both a version change and a major bump while still distinguishing modules, namespaces and instance names. The operator's ownership label depends on this stability.
+Defines how a deployed `#ModuleInstance` derives its own identity, separately from the identity of the module it deploys. The instance FQN composes the module's major-free `registryPath` with the instance's `name` and `namespace`, so that instance identity survives both a version change and a major bump while still distinguishing modules, namespaces and instance names. The controller's ownership label depends on this stability.
 
 ## Requirements
 
@@ -40,7 +40,7 @@ Defines how a deployed `#ModuleInstance` derives its own identity, separately fr
 
 For one `{module registry path, name, namespace}` triple, `#ModuleInstance.metadata.uuid` MUST NOT change when the module's `version` changes, and MUST NOT change when the module path's **major** changes.
 
-This is the requirement the ownership label depends on: the operator skips deleting any live object whose owner label disagrees with the instance UUID it recorded, so an instance UUID that moves on upgrade orphans whatever the new render stopped emitting, while reporting success.
+This is the requirement the ownership label depends on: the controller skips deleting any live object whose owner label disagrees with the instance UUID it recorded, so an instance UUID that moves on upgrade orphans whatever the new render stopped emitting, while reporting success.
 
 #### Scenario: A patch release does not move the instance UUID
 
@@ -77,9 +77,14 @@ Without this, the survival requirement above is satisfiable by an identity that 
 
 The field that `#ModuleInstance.metadata.fqn` derives from MUST be the major-free registry path. Substituting a full module path MUST be refused structurally rather than silently producing a third identity.
 
-`#Module.metadata.registryPath` is derived from `#ArtifactRef` rather than authored, so the refusal is a conflict against the already-computed value. Its `#PackagePathType` is a backstop that cannot fire on its own: `strings.SplitN(modulePath, "@", 2)[0]` carries no `@` by construction under `#ModulePathType`. Both refusals are structural; only the reported error differs.
+`#Module.metadata.registryPath` is derived from `#ArtifactRef` rather than authored, so the refusal is a conflict against the already-computed value. The `#PackagePathType` backstop is also structural; only the reported error differs.
 
 #### Scenario: A module path in the registry-path position is refused
 
 - **WHEN** the value supplied as the module's `registryPath` is `"opmodel.dev/modules/postgres@v2"`
 - **THEN** validation fails with a conflict between `"opmodel.dev/modules/postgres"` and `"opmodel.dev/modules/postgres@v2"`, rather than yielding an `fqn` of `"opmodel.dev/modules/postgres@v2:postgres-prod:prod"`
+
+#### Scenario: The package path backstop cannot fire on its own
+
+- **WHEN** a `modulePath` satisfies `#ModulePathType`
+- **THEN** `strings.SplitN(modulePath, "@", 2)[0]` carries no `@` by construction, so the `#PackagePathType` backstop of `#Module.metadata.registryPath` cannot fire on its own

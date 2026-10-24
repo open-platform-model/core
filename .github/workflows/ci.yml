@@ -20,7 +20,7 @@ jobs:
       contents: read
     steps:
       - name: Clone the code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The SPEC.md co-update gate diffs origin/<base>...HEAD (triple-dot),
           # which needs the merge base in the local repo. Default fetch-depth: 1
@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup CUE
-        uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
+        uses: cue-lang/setup-cue@b0e30e540a2dae47304ebf16586a5b2db023b61c # v2.0.0
         with:
           version: v0.17.1
 
@@ -37,8 +37,12 @@ jobs:
         with:
           version: 3.x
 
+      # The canonical check (a byte-identical copy from .github at the pinned
+      # SHA), plus the API check that the SHA is on .github main.
       - name: Verify the cascade wiring
-        run: task cascade:wiring:check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .tasks/cascade/wiring-check.sh --pin-on-main
 
       # The schema imports only the CUE standard library, so vet runs fully
       # offline — no registry service needed.
@@ -61,6 +65,20 @@ jobs:
       # same release. The bundle build itself is Docs / check (docs.yml).
       - name: Verify the docs-kit pins agree
         run: task docs:pins:check
+
+      # The main specs and changes, validated by the OpenSpec CLI that
+      # Taskfile.yml pins once (OPENSPEC_VERSION). npm runs no install script
+      # (task openspec:install), and the job token only reads.
+      - name: Setup Node for the OpenSpec CLI
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
+      - name: Install the pinned OpenSpec CLI
+        run: task openspec:install
+
+      - name: Validate the specs in strict mode
+        run: task openspec:check
 
       - name: Reject bare @mentions in the PR title, body and commit messages
         if: github.event_name == 'pull_request'
@@ -115,7 +133,7 @@ jobs:
             echo
             echo "Fix: glue the @ to its path (opmodel.dev/core@v2), or drop it"
             echo "     entirely (\"the v2 line\", \"major v2\"). Quoting does NOT work."
-            echo "Rule: AGENTS.md § \"Never Write a Bare \`@name\` Into GitHub Text\""
+            echo "Rule: references/git-text.md at the workspace root, section \"Bare \`@name\`\""
             exit 1
           fi
           echo "OK: no bare @mentions."
@@ -148,3 +166,15 @@ jobs:
           echo "Either: update SPEC.md and include it in this PR."
           echo "Or:     add 'Spec-Impact: none' to the PR body with justification."
           exit 1
+
+  # The org comment rule (an enhancement id only beside a reason in words),
+  # run by the shared workflow of .github. Reads the repo, runs none of its
+  # files, so it holds only a read token. The local twin is `task cite-lint`;
+  # both run without excludes, so add an exclude to both or to neither.
+  cite-lint:
+    name: Cite lint
+    permissions:
+      contents: read
+    uses: open-platform-model/.github/.github/workflows/cite-lint.yml@3dcc82b2f30328cc01bbc478f825842de3fd207f # .github main
+    with:
+      paths: .

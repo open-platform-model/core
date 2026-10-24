@@ -2,19 +2,19 @@
 
 See `proposal.md` § Why. Three existing facts shape the approach:
 
-- `#ContractInventory` already carries the split this change extends: `core` derives a report (`unfulfilled`, `overSubscribed`) and a boolean (`fulfilled`, `routable`); the generation step outside `core` decides what to refuse (0015 D18). The new report follows that shape exactly rather than inventing one.
+- `#ContractInventory` already carries the split this change extends: `core` derives a report (`unfulfilled`, `overSubscribed`) and a boolean (`fulfilled`, `routable`); the generation step outside `core` decides what to refuse (enhancement 0015, "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation"). The new report follows that shape exactly rather than inventing one.
 - The demand maps `requiredResources`, `requiredTraits` and `requiredLabels` are all **optional** on `#ComponentTransformer` (`src/transformer.cue:78,86,93`), so every fold over them needs a presence guard. `requiredBy` already does this.
 - `src/platform.cue` currently imports nothing. It gains `list` and `strings`, both already used by other schema files (`src/schemas.cue`).
 
 ## Goals / Non-Goals
 
-**Goals**: derive the report; define "comparable" operationally (0015 OQ9); keep the platform value evaluable when it reports a pair.
+**Goals**: derive the report; define "comparable" operationally (enhancement 0015); keep the platform value evaluable when it reports a pair.
 
-**Non-Goals**: the refusal (a `library` change); arbitration or most-specific-wins (0015 D5 excludes it, and a successor entry may add it additively on top of this report); any check against the shipped `catalog_opm` catalog, which `core` cannot import.
+**Non-Goals**: the refusal (a `library` change); arbitration or most-specific-wins (enhancement 0015 ("Comparable predicates within one catalog-fulfilled bucket are refused, not arbitrated") excludes it, and a successor entry may add it additively on top of this report); any check against the shipped `catalog_opm` catalog, which `core` cannot import.
 
 ## Research & Decisions
 
-### What "comparable" means operationally (0015 OQ9)
+### What "comparable" means operationally (enhancement 0015)
 
 **Context**: D5 says "one's required set a subset of the other's" without fixing which demands form the set. A differing required *label value* is the discriminator that first comes to mind, and it is what keeps the shipped 8-transformer `#ContainerResource` bucket legal in the five-workload half of that bucket. (Corrected during implementation: `src/platform.cue` carried no WHY block on this at all — it names labels nowhere — so the file gains one rather than having one rewritten.)
 

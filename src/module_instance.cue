@@ -4,7 +4,7 @@ import (
 	cue_uuid "uuid"
 )
 
-// WHY #ModuleInstance: was #ModuleRelease, renamed by 0002:D8.
+// WHY #ModuleInstance: was #ModuleRelease, renamed by enhancement 0002.
 
 // #ModuleInstance is one deployment of a #Module: the module to deploy, the
 // values that satisfy its #config, and the name and namespace it deploys
@@ -24,7 +24,7 @@ import (
 
 		// WHY registryPath: it derives from the module's registryPath rather than from its fqn or
 		// uuid, so NEITHER the module's version NOR its major reaches instance
-		// identity (0010:D41). The two values answer different
+		// identity (enhancement 0010). The two values answer different
 		// questions and were forced to agree by deriving one from the other:
 		// module.uuid answers "which module is this" and MUST move across a
 		// major; instance.uuid answers "which resources does this manage" and
@@ -41,7 +41,7 @@ import (
 		// module's `registryPath` and not from its `fqn` or `uuid`" and "Why not
 		// derive instance identity from the module's `name`".
 
-		// WHY fqn: 0010:D41.
+		// WHY fqn: instance identity derives from the module's registry path, not from its fqn (enhancement 0010).
 
 		// fqn: this instance's own identity — the deployed module's major-free
 		// registry path, this instance's name, and its namespace. Neither the
@@ -52,7 +52,7 @@ import (
 		// Stable UUID for this instance, computed as a UUID v5 (SHA1) of the
 		// instance's own fqn — mirroring #Module's own fqn → uuid shape. This
 		// is the value carried in the module-instance.opmodel.dev/uuid label
-		// below, which the operator reads to decide whether it owns a live
+		// below, which the controller reads to decide whether it owns a live
 		// object.
 		uuid: #UUIDType & cue_uuid.SHA1(OPMNamespace, fqn)
 
@@ -69,7 +69,7 @@ import (
 
 	}
 
-	// WHY #module: introduced by 0001:D1/D4.
+	// WHY #module: introduced when the context collapsed to an inline channel (enhancement 0001).
 
 	// Reference to the Module to deploy. The #ctx.instance wiring sets the
 	// module's runtime context from this instance's metadata — every #Component
@@ -110,6 +110,6 @@ import (
 	values: _
 }
 
-// WHY #ModuleInstanceMap: was #ModuleReleaseMap, renamed by 0002:D8.
+// WHY #ModuleInstanceMap: was #ModuleReleaseMap, renamed by enhancement 0002.
 
 #ModuleInstanceMap: [string]: #ModuleInstance

@@ -1,13 +1,13 @@
 ## Why
 
-`opm instance init` (cli change `add-instance-init`, enhancement 0016) fills a new instance's `values.cue` from the module. Today its only source is `debugValues`, whose contract is "values for testing and debugging". Authors put throwaway hostnames, debug log levels and dummy credentials there, and none of that belongs in a user's deployment file. `#Module` has no field through which an author can say "this is what a new deployment should start from". Enhancement 0016 D3 and D4 add one.
+`opm instance init` (cli change `add-instance-init`, enhancement 0016) fills a new instance's `values.cue` from the module. Today its only source is `debugValues`, whose contract is "values for testing and debugging". Authors put throwaway hostnames, debug log levels and dummy credentials there, and none of that belongs in a user's deployment file. `#Module` has no field through which an author can say "this is what a new deployment should start from". Enhancement 0016 ("`#Module` gains an optional field carrying the author-intended init template, taking precedence over `debugValues`" and "The field is `initValues?: _`, open and optional, with no schema-side `#config` assertion") add one.
 
-Implements `enhancements/0016` D3 and D4 on the schema side (`0016:D3:R1/R3`, `0016:D4:R1/R2`). The reader side (`0016:D3:R2`, `0016:D4:R3`) lands in cli.
+Implements enhancement 0016 on the schema side (enhancement 0016, "`#Module` gains an optional field carrying the author-intended init template, taking precedence over `debugValues`" and "The field is `initValues?: _`, open and optional, with no schema-side `#config` assertion"). The reader side (enhancement 0016, "`#Module` gains an optional field carrying the author-intended init template, taking precedence over `debugValues`" and "The field is `initValues?: _`, open and optional, with no schema-side `#config` assertion") lands in cli.
 
 ## What Changes
 
 - **`#Module` gains `initValues?: _`**, an optional, open sibling of `debugValues`. It means "the values a freshly initialized instance package starts from".
-- **No `#config` assertion.** The schema does not check `initValues` against `#config`. Conformance is observed where the value is consumed, by `opm instance vet` on the generated package (0016 D4). `initValues` may be non-concrete: an undefaulted disjunction is the "pick one" prompt a first-time deployer should see.
+- **No `#config` assertion.** The schema does not check `initValues` against `#config`. Conformance is observed where the value is consumed, by `opm instance vet` on the generated package (enhancement 0016, "The field is `initValues?: _`, open and optional, with no schema-side `#config` assertion"). `initValues` may be non-concrete: an undefaulted disjunction is the "pick one" prompt a first-time deployer should see.
 - **`debugValues` is unchanged.** Same field, same meaning, same SHOULD-satisfy-`#config` constraint. A module may carry both with different content.
 - **Identity is untouched.** `initValues` reaches neither `fqn` nor `uuid`, for the module or for any instance that deploys it.
 - `SPEC.md` § 3.2 co-updates in the same commit, `docs/constructs.md` gains the field beside `debugValues`, and `src/INDEX.md` regenerates.

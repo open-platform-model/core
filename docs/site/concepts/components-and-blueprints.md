@@ -81,10 +81,12 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - Two attached members disagreeing on a matching label: cue (conflicting values).
 - An unanswered required matching key: cue, under concrete evaluation only (`cue export`, and so at every OPM render); plain `cue vet` and `cue vet -c` pass it. Verify whether `opm module vet` reports it: it validates `#config` and does not render.
 - `spec` accepts only the attached members' fields: cue.
+- An attachment or contract map key equals the member's fqn: cue (conflicting values).
+- A trait is attached only to a component with a resource in its `appliesTo`: convention; nothing checks it (core#99).
 - `metadata.resourceName` is a DNS subdomain and satisfies every attached member's name rule: cue (`#ObjectNameType`, `_nameFits`).
 - A component no transformer matches: kernel (`UnmatchedComponentsError`).
 - A blueprint carries no `fulfilment`: cue (field not allowed).
 - A blueprint files under `.../blueprints/<apiVersion>` and its FQN agrees with the catalog's identity: publish (`#CatalogMemberFQNGate` in `opm catalog publish`).
 - `composedResources` is non-empty, a trait in `composedTraits` applies to a composed resource, and both lists agree with what the catalog's wrapper attaches: convention. The specification states the first two as unification failures; core/src/blueprint.cue checks none of them.
 - One default per field, and author defaults only in `#config`: convention.
-Check against: core/src/component.cue, core/src/blueprint.cue, core/src/types.cue, core/src/pins/platform_and_match_pins.cue, cli/internal/publish/catalog_gates.go, cli/internal/cmd/module/vet.go, library/opm/errors/unmatched.go, core/SPEC.md §3.3 Constraints, core/SPEC.md §6.1 -->
+Check against: core/src/component.cue, core/src/resource.cue, core/src/blueprint.cue, core/src/types.cue, core/src/pins/platform_and_match_pins.cue, cli/internal/publish/catalog_gates.go, cli/internal/cmd/module/vet.go, library/opm/errors/unmatched.go, core/SPEC.md §3.3 Constraints, core/SPEC.md §6.1 -->

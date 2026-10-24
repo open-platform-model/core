@@ -5,7 +5,7 @@ type: explanation
 weight: 35
 ---
 
-<!-- Open with OPM as the subject: OPM artifacts carry four separate version numbers, each answering a different question, and this page says what each one promises and what reads it. The four: the major at the end of a module or catalog path (`@v3`), the release SemVer in `identity/identity.cue` (`3.0.1`), a contract's `apiVersion` (`v1beta1`), and the major of the core schema every artifact imports (`opmodel.dev/core@v2`). Assumes Modules and instances and Platforms and catalogs. Link The Catalog Contract for the full additive-only rule rather than restating it. The CLI and operator release versions are outside the four; give them one sentence at most (the CLI refuses to apply when the cluster's operator is newer than it). Check against: core/SPEC.md, core/src/types.cue, modules/apprise/identity/identity.cue, modules/apprise/cue.mod/module.cue, cli/internal/inventory/gates.go (GateOperatorVersionCeiling) 
+<!-- Open with OPM as the subject: OPM artifacts carry four separate version numbers, each answering a different question, and this page says what each one promises and what reads it. The four: the major at the end of a module or catalog path (`@v3`), the release SemVer in `identity/identity.cue` (`3.0.1`), a contract's `apiVersion` (`v1beta1`), and the major of the core schema every artifact imports (`opmodel.dev/core@v2`). Assumes Modules and instances and Platforms and catalogs. Link The Catalog Contract for the full additive-only rule rather than restating it. The CLI and controller release versions are outside the four; give them one sentence at most (the CLI refuses to apply when the cluster's controller is newer than it). Check against: core/SPEC.md, core/src/types.cue, modules/apprise/identity/identity.cue, modules/apprise/cue.mod/module.cue, cli/internal/inventory/gates.go (GateControllerVersionCeiling) 
 Kubernetes comparison, only if it helps: weave it into the sentence that introduces the concept, or into How it works, never as a section of its own. Researched candidate: Nearest idea: a Kubernetes API version on the alpha, beta, GA ladder (`v1beta1` becoming `v1`). A contract's `apiVersion` uses the same ladder with the same meaning: alpha promises nothing, beta and GA promise compatibility. Where it stops: the API server serves several versions of one kind and converts between them. OPM converts nothing. `…/scaling@v1beta1` and `…/scaling@v1` are two unrelated contract keys, a module demands exactly one, and a transformer matches only the key it names. For the release version, make no comparison: a release version names fixed bytes, and a module's breaking release puts a new major inside its module path (`…/apprise@v3`), so a new major is a new module, not a new version of the old one. Check against: core/src/types.cue (#APIVersionType, #APIVersionGated, #ContractFQNType, #ModulePathType), cli/internal/compat/level.go, library/opm/errors/match.go -->
 
 ## How it works
@@ -30,7 +30,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Which build a render uses
 
-<!-- A module's `cue.mod/module.cue` pins the core and catalog builds it was written against; the platform module pins its own. For every path both pin, the render uses the platform's build. When the module requires a newer build of an `opmodel.dev` path than the platform carries, core included, that is version skew: by default the render continues against the platform's build and reports the skew; under the refuse policy it stops before evaluation. The policy is the cluster Platform's `spec.skewPolicy` (`Warn` or `Refuse`) when the cluster Platform is the platform source, otherwise `skewPolicy` in the CLI config (`warn` or `refuse`, default `warn`). Link Version skew. Check against: library/opm/internal/renderstage/promote.go, library/opm/internal/renderstage/skew.go, library/opm/kernel/render.go (SkewPolicy), opm-operator/api/v1alpha1/platform_types.go, cli/internal/config/config.go, cli/internal/workflow/render/env.go -->
+<!-- A module's `cue.mod/module.cue` pins the core and catalog builds it was written against; the platform module pins its own. For every path both pin, the render uses the platform's build. When the module requires a newer build of an `opmodel.dev` path than the platform carries, core included, that is version skew: by default the render continues against the platform's build and reports the skew; under the refuse policy it stops before evaluation. The policy is the cluster Platform's `spec.skewPolicy` (`Warn` or `Refuse`) when the cluster Platform is the platform source, otherwise `skewPolicy` in the CLI config (`warn` or `refuse`, default `warn`). Link Version skew. Check against: library/opm/internal/renderstage/promote.go, library/opm/internal/renderstage/skew.go, library/opm/kernel/render.go (SkewPolicy), opm-controller/api/v1alpha1/platform_types.go, cli/internal/config/config.go, cli/internal/workflow/render/env.go -->
 
 ## Why it is built this way
 
@@ -46,7 +46,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### Why the release version stays out of identity
 
-<!-- When a module's `fqn` included its version, its uuid moved on every release, the instance uuid derived from it moved too, and the operator, which skips deleting objects whose instance label disagrees with the uuid it recorded, left stale objects running on every upgrade while reporting success. Now module identity moves only with the path major, and instance identity moves with neither. Check against: core/SPEC.md (§3.2 and §3.5 Rationale), core/src/module.cue, core/src/module_instance.cue, opm-operator/internal/apply/prune.go -->
+<!-- When a module's `fqn` included its version, its uuid moved on every release, the instance uuid derived from it moved too, and the controller, which skips deleting objects whose instance label disagrees with the uuid it recorded, left stale objects running on every upgrade while reporting success. Now module identity moves only with the path major, and instance identity moves with neither. Check against: core/SPEC.md (§3.2 and §3.5 Rationale), core/src/module.cue, core/src/module_instance.cue, opm-controller/internal/apply/prune.go -->
 
 ### Why a transformer key names the build
 
@@ -70,9 +70,9 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 <!-- Misreading: publishing `3.0.2` creates a new module or a new instance. Correct: `fqn` and `uuid` are the same for every release inside `@v3`; only the `module.opmodel.dev/version` label on rendered objects changes. A major bump changes the module's uuid and leaves the instance's alone. Check against: core/src/module.cue, core/src/module_instance.cue, core/src/pins/identity_pins.cue -->
 
-### The operator's API version is not a contract level
+### The controller's API version is not a contract level
 
-<!-- Misreading: the `v1alpha1` in `apiVersion: opmodel.dev/v1alpha1` on a ModuleInstance or Platform is a contract level, or says how mature the module is. Correct: it is the Kubernetes API version of the operator's custom resources, a separate number. Check against: opm-operator/api/v1alpha1/groupversion_info.go, cli/internal/inventory/cr.go -->
+<!-- Misreading: the `v1alpha1` in `apiVersion: opmodel.dev/v1alpha1` on a ModuleInstance or Platform is a contract level, or says how mature the module is. Correct: it is the Kubernetes API version of the controller's custom resources, a separate number. Check against: opm-controller/api/v1alpha1/groupversion_info.go, cli/internal/inventory/cr.go -->
 
 ### The platform's catalog build is the one that renders
 

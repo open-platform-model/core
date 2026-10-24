@@ -3,6 +3,11 @@ version: "3"
 # Silent by default — set TASK_VERBOSE=1 or use --verbose to show commands
 silent: true
 
+vars:
+  # The OpenSpec CLI that the generated skills under .claude/skills/ come from.
+  # The one pin: task openspec:install and the CI step both read it from here.
+  OPENSPEC_VERSION: 1.14.1
+
 tasks:
   default:
     desc: Show available tasks
@@ -29,6 +34,44 @@ tasks:
     dir: src
     cmds:
       - cue vet ./...
+      # cue vet never reports an incomplete hidden pin, so a regression that
+      # leaves #Catalog.provides optional or incomplete, or drops the bind of
+      # an attachment map key to its member's fqn, would pass silently.
+      # Exporting these pins demands concrete values (SPEC §3.1, §3.6).
+      - |
+        cue export ./pins -e '[
+          _pinAttachFillBlueprintFQN,
+          _pinAttachFillResourceFQN,
+          _pinAttachFillTraitFQN,
+          _pinContractFillBlueprintFQN,
+          _pinContractFillResourceFQN,
+          _pinContractFillTraitFQN,
+          _pinInventoryBareProvidedBy,
+          _pinInventoryBaseOnlyProvidedBy,
+          _pinInventoryCollideOverSubscribedProvidedBy,
+          _pinInventoryDefinerAbsentProvidedBy,
+          _pinInventoryDefinerDisabledProvidedBy,
+          _pinInventoryDisabledProviderProvidedBy,
+          _pinInventoryEmptyProvidedBy,
+          _pinInventoryOneProviderProvidedBy,
+          _pinInventoryOptionalOnlyProvidedBy,
+          _pinInventoryTwoMajorsProvidedBy,
+          _pinInventoryTwoProvidersProvidedBy,
+          _pinParityDisabledProvider,
+          _pinParityOneProvider,
+          _pinParityResourceProvider,
+          _pinParityTwoMajors,
+          _pinParityTwoProviders,
+          _pinProvidesBare,
+          _pinProvidesBase,
+          _pinProvidesEpsilon,
+          _pinProvidesGamma,
+          _pinProvidesK8up,
+          _pinProvidesRestic,
+          _pinProvidesS3,
+          _pinProvidesS3Optional,
+          _pinProvidesVelero,
+        ]' >/dev/null
 
   tidy:
     desc: Tidy the CUE module manifest
@@ -98,7 +141,7 @@ tasks:
       - bash .tasks/opm-docs.sh pin-check
 
   cascade:wiring:check:
-    desc: Check the release-cascade caller workflows (Phase 3 wiring contract 10.1)
+    desc: Run the canonical release-cascade wiring check offline (copy of .github's at the pinned SHA)
     cmds:
       - bash .tasks/cascade/wiring-check.sh
 
@@ -168,17 +211,52 @@ tasks:
   publish:branch:
     desc: Publish HEAD as a -dev pre-release derived from the commit
     cmds:
-      - task: check
+      - task: check:base
       - |
         set -euo pipefail
         tag=$(bash .tasks/branch-tag.sh "$(pwd)")
         echo "Publishing opmodel.dev/core@${tag}"
         (cd src && cue mod publish "${tag}")
 
+  ## Comment rule
+
+  # The tool commit equals the enh-ref default of cite-lint.yml in the pinned
+  # .github; move both together. No excludes: the tool skips .git, vendor,
+  # agent-swarm/, .claude/, CHANGELOG.md and the CUE caches itself. Add an
+  # exclude here and to the cite-lint job of .github/workflows/ci.yml, with
+  # the reason beside each.
+  cite-lint:
+    desc: Fail on a decision number or a lone enhancement id in a CUE comment (needs Go; same tool commit as CI)
+    cmds:
+      - go run github.com/open-platform-model/enhancements/tools/enh@e0335b2ec44e659c0191bc3523d79d17f26f8e7d cite-lint --root .
+
+  ## OpenSpec
+
+  openspec:install:
+    desc: Install the openspec CLI at OPENSPEC_VERSION (needs npm; install scripts do not run)
+    cmds:
+      - npm install -g --ignore-scripts @fission-ai/openspec@{{.OPENSPEC_VERSION}}
+
+  openspec:check:
+    desc: Validate every main spec and change with the pinned openspec in strict mode (the long-requirement limit is a warning, and strict fails on it)
+    env:
+      OPENSPEC_TELEMETRY: "0"
+    preconditions:
+      - sh: command -v openspec >/dev/null
+        msg: "openspec not found: run `task openspec:install` (needs npm)"
+      - sh: test "$(openspec --version)" = "{{.OPENSPEC_VERSION}}"
+        msg: "openspec is not {{.OPENSPEC_VERSION}}: run `task openspec:install`"
+    cmds:
+      - openspec validate --all --strict --no-interactive
+
   ## Aggregate
 
-  check:
-    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, and the cascade wiring check
+  # check:base is every gate of check except openspec:check. publish:branch
+  # calls it: that job holds a token that can write packages, and the openspec
+  # CLI is npm code that no lockfile pins, so it must not run there. The
+  # required ci.yml job runs openspec:check as its own step.
+  check:base:
+    desc: Every gate of check except the openspec check (the branch-publish job runs this one)
     cmds:
       - task: fmt:check
       - task: vet
@@ -187,3 +265,9 @@ tasks:
       - task: docs:check
       - task: docs:bundle:check
       - task: cascade:wiring:check
+
+  check:
+    desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, the cascade wiring check, and the openspec check
+    cmds:
+      - task: check:base
+      - task: openspec:check

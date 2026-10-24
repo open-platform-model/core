@@ -76,7 +76,7 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 
 ### `opm module vet` runs matching too
 
-<!-- `opm module vet` checks the module's identity and validates `#config` against `debugValues` or `-f` files, then renders the module as `opm module build` does and reports each object without printing it, so the two reach the same verdict against the same platform. Matching verdicts appear at `opm module vet`, `opm module build`, `opm module apply`, `opm instance vet`, `opm instance build`, `opm instance diff` and `opm instance apply`, and in the operator's reconcile. Check against: cli/internal/cmd/module/vet.go, cli/internal/cmd/instance/vet.go, cli/internal/cmd/module/build.go, cli/internal/cmd/instance/diff.go -->
+<!-- `opm module vet` checks the module's identity and validates `#config` against `debugValues` or `-f` files, then renders the module as `opm module build` does and reports each object without printing it, so the two reach the same verdict against the same platform. Matching verdicts appear at `opm module vet`, `opm module build`, `opm module apply`, `opm instance vet`, `opm instance build`, `opm instance diff` and `opm instance apply`, and in the controller's reconcile. Check against: cli/internal/cmd/module/vet.go, cli/internal/cmd/instance/vet.go, cli/internal/cmd/module/build.go, cli/internal/cmd/instance/diff.go -->
 
 ### A missing transformer fails the render
 
@@ -93,5 +93,5 @@ Kubernetes comparison, only if it helps: weave it into the sentence that introdu
 - An unhandled advisory trait: kernel, warning only.
 - A unify conflict on a candidate: kernel, reported and the candidate disqualified.
 - `matchLabels` never reach a rendered object: cue (`#TransformerContext` has no path from them). Verify against the catalog wrappers' copy in `metadata.labels` noted above.
-- Two transformers where one matches every component the other does, over a shared catalog contract: reported by `#Platform.#contracts.comparable`, and `opm platform check` exits with the validation error code. The operator reports it as Platform `Ready=False`, reason `ComparablePredicates`; the render gate does not refuse it. Verify which badge fits a platform check.
+- Two transformers where one matches every component the other does, over a shared catalog contract: reported by `#Platform.#contracts.comparable`, and `opm platform check` exits with the validation error code. The controller reports it as Platform `Ready=False`, reason `ComparablePredicates`; the render gate does not refuse it. Verify which badge fits a platform check.
 Check against: core/src/component.cue, core/src/transformer.cue, core/src/platform.cue (`#ContractInventory`), library/opm/internal/renderstage/render.cue.tmpl, library/opm/kernel/render_decode.go, library/opm/platform/contracts.go, cli/internal/cmd/platform/check.go -->

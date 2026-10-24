@@ -5,7 +5,7 @@ Load `.claude/skills/core-schema-edit/SKILL.md` before task 1.1. Schema tasks an
 ## 1. src/platform.cue
 
 - [x] 1.1 Add `#ContractInventory` beside `#CatalogEntry` per design.md, with a doc comment of at most 6 lines ending in `See SPEC.md § 3.4`. Pair: `SPEC.md` §3.4 gains the `#ContractInventory` subsection (Definition, Shape, Constraints, Rationale). Add `#ContractInventory` to `.tasks/spec-tracked.txt`. Verify: `(cd src && cue vet ./...)` passes and `task spec:check` passes.
-- [x] 1.2 Add `#Platform.#contracts` after `#composedTransformers` per design.md (the fold, the guarded demand comprehensions, `_providers` keyed by the stamped `modulePath`), with a WHY block on report-versus-gate (0015 D18) and on counting catalogs. Pair: `SPEC.md` §3.4 `#Platform` Shape, Constraints (derived, never authored; reports, never refuses) and the three Rationale bullets named in design.md. Verify: `(cd src && cue eval -e '#Platform.#contracts' ./)` prints the empty inventory with both booleans true.
+- [x] 1.2 Add `#Platform.#contracts` after `#composedTransformers` per design.md (the fold, the guarded demand comprehensions, `_providers` keyed by the stamped `modulePath`), with a WHY block on report-versus-gate (enhancement 0015, "An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation") and on counting catalogs. Pair: `SPEC.md` §3.4 `#Platform` Shape, Constraints (derived, never authored; reports, never refuses) and the three Rationale bullets named in design.md. Verify: `(cd src && cue eval -e '#Platform.#contracts' ./)` prints the empty inventory with both booleans true.
 
 ## 2. src/platform_contracts_pins.cue
 

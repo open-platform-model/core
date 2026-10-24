@@ -7,7 +7,7 @@ The single-provider rule for a provider-fulfilled contract is counted in two pla
 
 `opm-operator` generates a platform package only when the inventory is routable, so on both shapes it hands out a platform on which every render then fails, and `opm platform check` says "routable: yes". The user approved (2026-09-29) making the render guard's count the only count: core computes it once, and the library render reads core's value instead of keeping its own guard, so the two cannot drift again.
 
-This corrects the delivery of `0015:D2` (one provider per contract, refused naming both catalog paths) and `0015:D18` (routable is the generation gate), both already delivered; `0010:D37` is the rule being counted. It implements no undelivered decision, so it carries no `enhancement.yaml`.
+This corrects the delivery of enhancement 0015 ("One provider per contract stands; provider classes are rejected in this entry") (one provider per contract, refused naming both catalog paths) and enhancement 0015 ("An unfulfilled contract is reported, never refused; only over-subscription refuses platform-package generation") (routable is the generation gate), both already delivered; enhancement 0010 ("A contract declares where its fulfilment comes from, and a provider-fulfilled contract admits exactly one provider") is the rule being counted. It implements no undelivered decision, so it carries no `enhancement.yaml`.
 
 ## What Changes
 

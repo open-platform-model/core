@@ -6,7 +6,7 @@ Three unrelated-looking defects in the platform and match surface share one root
 
 **Matching rides on `metadata.labels`.** A component's matching identity is unioned up from its primitives' `metadata.labels` — the same field that carries categorisation. Measured in `experiments/04`: a full union fails on `resource.opmodel.dev/category`, which takes `workload` on Container, `storage` on Volumes and `config` on ConfigMaps. Real `catalog_opm` fails at `#StatefulWorkload` before reaching a module at all. Every filtered union that was tried must *iterate*, and CUE refuses to iterate a struct holding an unset required field — so each filter design forced dropping `!` from the container's workload type, degrading "the author must pick" into an incomplete value.
 
-**An unmet demand renders successfully.** `Match` records a `MissingFQN` for a demanded FQN with no bucket — and that field has no production consumer. It is populated, asserted in one integration test, and read nowhere else. A bucket that exists but disqualifies every candidate records nothing at all. So a component carrying `#Container` and `#Backup`, on a platform with no backup provider, matches the deployment transformer, is not `Unmatched`, renders successfully, and has no backup. Under enhancement `0010` D4's contract model that is not an edge case — it is the routine failure.
+**An unmet demand renders successfully.** `Match` records a `MissingFQN` for a demanded FQN with no bucket — and that field has no production consumer. It is populated, asserted in one integration test, and read nowhere else. A bucket that exists but disqualifies every candidate records nothing at all. So a component carrying `#Container` and `#Backup`, on a platform with no backup provider, matches the deployment transformer, is not `Unmatched`, renders successfully, and has no backup. Under the contract model of enhancement 0010 that is not an edge case — it is the routine failure.
 
 This change is the schema half of all three fixes.
 
@@ -51,4 +51,4 @@ None. The three capabilities above are new surfaces. `primitive-keying` and `art
 
 **The library half is a separate slice.** `library-subscription-collapse` deletes `materialize/filter.go`; `library-match-labels` moves `compile/match.go:111` off `metadata.labels`; `library-contract-match` implements the unresolved-demand error and the single-provider guard. Shipping this change's schema without them leaves matching reading a field the design has emptied.
 
-**Design source.** `enhancements/0010` — D14, D28, D32, D36, D37. Measurements in `experiments/04-component-label-union/`.
+**Design source.** enhancement 0010. Measurements in `experiments/04-component-label-union/`.

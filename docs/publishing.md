@@ -115,7 +115,7 @@ Verified against CUE 0.16.1:
 | `cue mod get opmodel.dev/core@v0.4` | **highest release on v0.4** — branch builds sort below every named channel on that base, so they are never selected here |
 | `cue mod get opmodel.dev/core@v0.4.0-0.dev.<ts>.g<sha>` | exact pin |
 
-A platform resolves nothing by itself: since 0019:D5 a `#Platform` imports each catalog through its own module's `cue.mod` and derives the entry's `version` from the embedded catalog, so a branch build reaches a platform only by being pinned in that `cue.mod`. The table above is therefore the whole of the selection surface — it governs `cue.mod` dependency resolution, and nothing else queries a range.
+A platform resolves nothing by itself: since enhancement 0019 ("A platform imports its catalog and embeds it whole into the registry entry, which derives everything else") a `#Platform` imports each catalog through its own module's `cue.mod` and derives the entry's `version` from the embedded catalog, so a branch build reaches a platform only by being pinned in that `cue.mod`. The table above is therefore the whole of the selection surface — it governs `cue.mod` dependency resolution, and nothing else queries a range.
 
 So two pin styles are blessed by this strategy:
 
@@ -156,7 +156,7 @@ Full transcript of the resolver tests is in the design conversation; not duplica
 
 - `.tasks/branch-tag.sh` — pure shell function that prints the tag for HEAD. Reads the major from `src/cue.mod/module.cue` and `NEXT_MINOR` from the highest stable `vMAJOR.*.*` git tag (falls back to `0` if no stable release exists yet for the current major). Refuses to run on `main` or against a dirty worktree.
 - `task branch-tag` — prints the tag without side effects.
-- `task publish:branch` — runs `task check` then `cue mod publish $TAG` from `src/`. Honours `CUE_REGISTRY`, so the same command publishes to the workspace local registry (`localhost:5000+insecure`) or GHCR depending on the environment. In CI this is the sanctioned `-dev.*` pre-release path; a laptop publish is a gated exception (Registry Policy rule 2, workspace root `AGENTS.md`).
+- `task publish:branch` — runs `task check` then `cue mod publish $TAG` from `src/`. Honours `CUE_REGISTRY`, so the same command publishes to the workspace local registry (`localhost:5000+insecure`) or GHCR depending on the environment. In CI this is the sanctioned `-dev.*` pre-release path; a laptop publish is a gated exception (the workspace `references/registry.md`).
 - `task publish`: publishes `VERSION` to the local registry only: it forces `CUE_REGISTRY` to `opmodel.dev=localhost:5000+insecure` inside its script, whatever the shell exports, so a laptop publish cannot reach GHCR.
 - `.tasks/publish-probe.sh`: the release path's existence check. The `publish-cue` job in `release.yml` runs it before `cue mod publish`: it sends an anonymous `HEAD` for the version's manifest on GHCR and publishes only on a 404. A 200 fails the job (the version is published; release the next one), and any other answer fails it too (nothing was pushed; re-run the job).
 - `.github/workflows/branch-publish.yml` — fires on `push` to any branch except `main`. Skipped on forks (no `packages: write`). Calls `task publish:branch` after logging into GHCR with `GITHUB_TOKEN`.
