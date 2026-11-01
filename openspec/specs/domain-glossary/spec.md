@@ -1,7 +1,7 @@
 # domain-glossary Specification
 
 ## Purpose
-TBD - created by archiving change add-glossary. Update Purpose after archive.
+Defines how core keeps its domain terms in a root glossary, so that agents and the owner use one word per schema concept, and how the agent entry points route to it.
 
 ## Requirements
 
