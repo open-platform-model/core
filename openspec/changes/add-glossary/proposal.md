@@ -7,6 +7,10 @@ Agents and the owner use loose words for the schema concepts of this repo: "rele
 - Add `GLOSSARY.md` at the repo root with the domain terms of the core schema.
 - Route to it once from `AGENTS.md` and once from `CONTEXT.md`.
 
+## Enhancement
+
+None.
+
 ## Capabilities
 
 ### New Capabilities

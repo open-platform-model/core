@@ -27,8 +27,12 @@ The `path/name@vN` key (a contract FQN) under which a primitive is published and
 _Avoid_: FQN (unqualified), id, name
 
 **Fulfilment**:
-The field on a `#Resource` or `#Trait` that says where the implementation of the contract comes from: `"catalog"` (default) or `"provider"`. A provider-fulfilled contract admits exactly one provider on a platform.
+The field on a `#Resource` or `#Trait` that says where the implementation of the contract comes from: `"catalog"` (default) or `"provider"`. A provider-fulfilled contract admits exactly one **Provider** on a platform.
 _Avoid_: Implementation source, backend
+
+**Provider**:
+An enabled `#Platform` registry entry whose transformers require a provider-fulfilled contract, counted per registry key; a transformer is not a provider.
+_Avoid_: Plugin, implementer
 
 ### Constructs
 
@@ -41,11 +45,11 @@ The smallest deployable unit a `#Module` ships. It unifies the primitives attach
 _Avoid_: Service, workload, microservice
 
 **#Module**:
-The portable, versioned application blueprint: a set of `#components` plus a `#config` schema. It describes what an application is and carries no concrete values.
+The portable, versioned application blueprint: a set of `#components` plus a `#config` schema. It describes what an application is and carries no deployment values; a `#ModuleInstance` supplies them.
 _Avoid_: Package, app, chart, release
 
 **#ModuleInstance**:
-A `#Module` paired with the values that satisfy its `#config`, plus instance identity (name, namespace, uuid, cluster domain). It is what a runtime renders. Renamed from `#ModuleRelease`.
+A `#Module` paired with the values that satisfy its `#config`, plus instance identity (name, namespace, uuid, cluster domain). It is what a runtime renders.
 _Avoid_: Release, deployment, ModuleRelease
 
 **#Catalog**:
@@ -93,5 +97,5 @@ The three name types transcribe the Kubernetes validators: `#NameType` (DNS labe
 _Avoid_: Slug, identifier
 
 **Layering contract**:
-The rule set for which authoring layer (primitive schema, blueprint, module `#config`, module `#components`, transformer) may write bounds, narrowing, defaults or concrete data onto a component field. CUE cannot enforce it; catalogs and publish tools do.
+The rule set for which authoring layer (primitive schema, blueprint, module `#config`, module `#components`, transformer) may write bounds, narrowing, defaults or concrete data onto a component field. CUE cannot enforce it; catalog authors follow it today, and `cli` publish gates are to check it later.
 _Avoid_: Override order, precedence rules
