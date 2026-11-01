@@ -57,6 +57,7 @@ docs/           schema design notes
 docs/site/      site pages opmodel.dev builds
 docs-kit.cue    the core docs bundle: generated reference plus docs/site/
 SPEC.md         normative schema specification (definitions, constraints, rationale)
+GLOSSARY.md     the domain terms of this repo, one word per concept
 openspec/       OpenSpec specs, active changes and archive
 .tasks/         Taskfile script fragments and git hooks
 .claude/skills/ repo-local skills (core-schema-edit, openspec-*)
