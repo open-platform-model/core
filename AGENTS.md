@@ -60,7 +60,8 @@ SPEC.md         normative schema specification (definitions, constraints, ration
 GLOSSARY.md     the domain terms of this repo, one word per concept
 openspec/       OpenSpec specs, active changes and archive
 .tasks/         Taskfile script fragments and git hooks
-.claude/skills/ repo-local skills (core-schema-edit, openspec-*)
+.agents/skills/ generated openspec skills, never edited: every openspec update rewrites them
+.claude/skills/ repo-local skills (core-schema-edit, commit, openspec-cleanup-change), links to .agents/skills/
 ```
 
 All raw `cue` invocations run from `src/`; the Taskfile does this with `dir: src`. A new major would
