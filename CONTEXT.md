@@ -14,6 +14,7 @@ Router only. Facts and rules are in `AGENTS.md`.
 | Add a definition to a docs page, or fix a released page | `references/docs-bundle.md` | `docs-kit.cue` |
 | Change a site page | `docs/site/` | `STYLE.md` at the workspace root |
 | Run, format or vet | `Taskfile.yml` | `AGENTS.md` |
-| Start a feature change | `openspec/config.yaml` | `.claude/skills/` |
+| Start a feature change | `openspec/config.yaml` | `.agents/skills/` |
+| Verify a change before archive | `openspec/verify.md` | `.agents/skills/` |
 | Deliver or cite an enhancement | `references/enhancements.md` at the workspace root | `openspec/config.yaml` |
 | Commit, open a PR or write GitHub text | `references/git-text.md` at the workspace root | |

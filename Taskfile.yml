@@ -4,9 +4,9 @@ version: "3"
 silent: true
 
 vars:
-  # The OpenSpec CLI that the generated skills under .claude/skills/ come from.
+  # The OpenSpec CLI that the generated skills under .agents/skills/ come from.
   # The one pin: task openspec:install and the CI step both read it from here.
-  OPENSPEC_VERSION: 1.14.1
+  OPENSPEC_VERSION: 2.1.1
 
 tasks:
   default:
