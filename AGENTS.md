@@ -22,6 +22,8 @@ reshape must not leak into the v1 contract. The `v1` branch carries its own copy
   `CONSTITUTION.md`. If they disagree, `Taskfile.yml` wins on how commands run.
 - Cut work into mergeable steps: each ends green under `task check` and closes with its own commit
   (`openspec/config.yaml`). A request that does not cut that way is split first.
+- A verify run on an OpenSpec change also applies `openspec/verify.md`, because the generated verify
+  skill does not name that file.
 - Prefer additive schema changes. The schema is a published contract, so a break in the `core` package
   breaks every consumer.
 - A break is allowed in beta only as `feat!` with a `BREAKING CHANGE:` footer, and it advances
