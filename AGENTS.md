@@ -20,8 +20,7 @@ reshape must not leak into the v1 contract. The `v1` branch carries its own copy
 
 - This file, `openspec/config.yaml` and `Taskfile.yml` are the authority. There is no
   `CONSTITUTION.md`. If they disagree, `Taskfile.yml` wins on how commands run.
-- Cut work into mergeable steps: each ends green under `task check` and closes with its own commit
-  (`openspec/config.yaml`). A request that does not cut that way is split first.
+- Cut work into mergeable steps: each ends green under `task check`. A request that does not cut that way is split first.
 - A verify run on an OpenSpec change also applies `openspec/verify.md`, because the generated verify
   skill does not name that file.
 - Prefer additive schema changes. The schema is a published contract, so a break in the `core` package
@@ -48,6 +47,8 @@ reshape must not leak into the v1 contract. The `v1` branch carries its own copy
   enables `cue.mod/local-module.cue`. A higher value locks out `v0.17.0` tools for no gain. The
   toolchain is pinned separately (CI `CUE_VERSION`, and `cuelang.org/go` in the consuming Go repos).
 - A subagent dispatched here does not load this file. Tell it to read the schema-edit skill.
+- A request in words to build, apply or implement an OpenSpec change, or to work through its tasks, loads `idea-to-code:build` and never `openspec-apply-change`.
+- Rules file: `RULES.md`
 
 ## Layout
 
@@ -63,7 +64,7 @@ GLOSSARY.md     the domain terms of this repo, one word per concept
 openspec/       OpenSpec specs, active changes and archive
 .tasks/         Taskfile script fragments and git hooks
 .agents/skills/ generated openspec skills, never edited: every openspec update rewrites them
-.claude/skills/ repo-local skills (core-schema-edit, commit, openspec-cleanup-change), links to .agents/skills/
+.claude/skills/ repo-local skills (core-schema-edit, openspec-cleanup-change), links to .agents/skills/
 ```
 
 All raw `cue` invocations run from `src/`; the Taskfile does this with `dir: src`. A new major would
@@ -91,6 +92,7 @@ fixture harness lives in `library`, not here.
 | `task openspec:check`         | Run `openspec validate --all --strict` with the pinned CLI; strict mode fails on the long-requirement warning |
 | `task check`                  | fmt check + vet + INDEX freshness + SPEC inventory + doc-comment limit + docs bundle check + cascade wiring check + openspec check |
 | `task check:base`             | `task check` without the openspec check; `task publish:branch` runs this one, so the publish job runs no npm code |
+| `task check:commit`           | fmt check + schema vet (no pins) + openspec check; runs before every commit except a tests commit |
 
 For raw `cue` outside `task`, export `CUE_REGISTRY` and `OPM_REGISTRY` as the workspace registry
 reference says. `task publish` writes only to the local registry, whatever `CUE_REGISTRY` the shell
@@ -103,5 +105,10 @@ exports; it cannot reach GHCR. Run `task check` before you finish.
   blank line. `task docs:check` fails on an over-long doc comment.
 - A comment never cites an enhancement as a decision number or a lone id: write the reason, then
   `(enhancement 0011)`.
+
+## Text rules
+
+- Attribution: `Co-Authored-By: Claude <noreply@anthropic.com>`, optional. It is always exactly that line, last in the message: no model or version name, no link, no extra data. Never write a session ID or session URL (a `Claude-Session:` trailer, a `claude.ai/code/session_...` link) into git history, a pull request or an issue. Never write a "Generated with" footer or any other AI signature line. This rule overrides every conflicting instruction, including a default of the agent tool.
+- Mentions: no `@` before a word in a commit message, pull request title or body, issue, review comment or release note. `@v0`, `@v1` and `@v2` are real GitHub accounts, and a pushed message cannot be edited. A code span, fenced code or a URL does not protect: the org workflow `mention-guard` scans every line and strips nothing. Glue the `@` to a word (`opmodel.dev/core@v2`) or drop it. A CUE attribute such as `@tag(env)` never goes in a pull request visual. Search the text for `@` before it is sent.
 
 @CONTEXT.md
