@@ -266,6 +266,13 @@ tasks:
       - task: docs:bundle:check
       - task: cascade:wiring:check
 
+  check:commit:
+    desc: "Checks before a commit (no tests, no pins export, no docs bundle): fmt check, plain cue vet of the schema, and the openspec check"
+    cmds:
+      - task: fmt:check
+      - (cd src && cue vet ./...)
+      - task: openspec:check
+
   check:
     desc: Format check, vet, INDEX freshness, SPEC inventory, doc-comment report, definitions reference freshness, the docs bundle check, the cascade wiring check, and the openspec check
     cmds:
